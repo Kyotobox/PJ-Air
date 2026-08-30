@@ -579,5 +579,61 @@
     "exile_name": "1787884197343_database.sqlite",
     "hash": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
     "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\database.sqlite"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:27.013276",
+    "original_name": "AGENTS.md",
+    "exile_name": "1788115106998_AGENTS.md",
+    "hash": "F714A612033D148C8A9BA3A13F32E711AB14F10444BEA62BFD86EEBBE124DB3A",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\AGENTS.md"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:27.039810",
+    "original_name": "database.sqlite",
+    "exile_name": "1788115107016_database.sqlite",
+    "hash": "D42F58729779D7B9672066B315F80423C427477B37CF9BF564CA549283EC6764",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\database.sqlite"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:32.822674",
+    "original_name": "deploy_update.tar.gz",
+    "exile_name": "1788115107042_deploy_update.tar.gz",
+    "hash": "E14DA2042133FECF1E7E509B611A1DBC2FF492CA1D331383D31FE98CAEF8D11D",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\deploy_update.tar.gz"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:34.136887",
+    "original_name": "GENESIS_REFERENCE.md",
+    "exile_name": "1788115114128_GENESIS_REFERENCE.md",
+    "hash": "66BECD18C9F3913C1AA42E8106362DA0D4BFB15C3978C876A3BDFCE7A17AAA32",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\GENESIS_REFERENCE.md"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:36.962765",
+    "original_name": "logix.old",
+    "exile_name": "1788115114897_logix.old",
+    "hash": "C5F35B543839FFC8DF96F8816823DCA1B94A9A940754C601A75A5B25484A19ED",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\bin\\logix.old"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:38.094102",
+    "original_name": "pulse.old",
+    "exile_name": "1788115116964_pulse.old",
+    "hash": "CB8BEDE4DF5A89173BC3D651E2317B36DA4F62CEEAC75921DF7FFBC0420FB090",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\bin\\pulse.old"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:38.297630",
+    "original_name": "sentinel.old",
+    "exile_name": "1788115118284_sentinel.old",
+    "hash": "E28CA3B42C3C30B70F16B500B7FD478F62096FB0360DF9C1FA2A31A9F22479D5",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\bin\\sentinel.old"
+  },
+  {
+    "timestamp": "2026-08-30T14:38:44.925019",
+    "original_name": "watcher.old",
+    "exile_name": "1788115118304_watcher.old",
+    "hash": "098FBBC27B79376C7A91C8073BA2C0AD40D02140A5A630950F6C2BF3B99F34FB",
+    "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\bin\\watcher.old"
   }
 ]

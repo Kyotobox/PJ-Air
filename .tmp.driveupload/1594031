@@ -1,0 +1,22 @@
+{
+  "session_uuid": "SESS-1788115237899-5986",
+  "session_start_ts": "2026-08-30T14:40:37.900875",
+  "total_bytes": 442,
+  "total_bytes_out": 442,
+  "context_base_bytes": 0,
+  "cli_bytes": 0,
+  "chat_bytes": 0,
+  "total_tokens": 0,
+  "turns": 0,
+  "peak_bytes": 442,
+  "strike_count": 0,
+  "hwc_complete": true,
+  "last_update": "2026-08-30T14:40:37.900875",
+  "input_pressure": 0,
+  "degraded_ops_count": 0,
+  "session_count": 3,
+  "test_warning_count": 0,
+  "takeover_bytes_offset": 20899,
+  "conversation_uuid": "5b854f59-8b4d-4466-b5a1-628a4d380724",
+  "hwc_ts": "2026-08-30T16:11:55.848612"
+}
