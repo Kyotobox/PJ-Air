@@ -1,0 +1,7 @@
+{
+  "red_zone_paths": [
+    ".agents/",
+    ".gemini/",
+    "vault/"
+  ]
+}

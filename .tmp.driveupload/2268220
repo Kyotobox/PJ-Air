@@ -1,1 +1,0 @@
-{"timestamp":"2026-07-19T16:18:19.755701","role":"AI","sessionid":"DEV_BYPASS","prevhash":"f201612761afc759e82268db08ff027b99474a522ce5b3d3a09575785633c7a2","type":"ALERT","task":"GOV_MODE","detail":"[DEV-MODE-BYPASS] Búnker operando en modo dev (DPI_GOV_MODE=dev) sin auditoría."}
