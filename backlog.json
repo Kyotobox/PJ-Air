@@ -3,8 +3,8 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "COMPLETED",
-  "current_sprint": "S29",
-  "current_task": "TASK-29-03",
+  "current_sprint": "S30",
+  "current_task": "TASK-30-01",
   "sprints": [
     {
       "id": "S27",
@@ -75,7 +75,7 @@
     {
       "id": "S29",
       "name": "Sprint 29: Pruebas E2E UI/UX con Capturas y Despliegue a Servidor de Testing (Staging)",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-09",
       "goal": "Ejecutar suite automatizada Playwright con capturas de pantalla de flujos UI/UX y certificar despliegue seguro al entorno de testing en VPS.",
       "tasks": [
@@ -96,6 +96,39 @@
           "label": "GOV/BASELINE",
           "desc": "Auditoría de integridad logix audit y re-sellado baseline.",
           "status": "DONE"
+        }
+      ]
+    },
+    {
+      "id": "S30",
+      "name": "Sprint 30: Auditoría Transversal del Sistema de Crédito B2B, Notificaciones y Límite Forense",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-10",
+      "goal": "Implementar disparadores automáticos de alertas de crédito y certificar mediante suite E2E Playwright el ciclo de vida de crédito, bloqueo por límite, sobregiros autorizados y liberación de cupos en testing.",
+      "tasks": [
+        {
+          "id": "TASK-30-01",
+          "label": "NOTIFICATIONS/TECH",
+          "desc": "Conexión del disparador automático sendCreditAlert en OrdersService ante pedidos en sobregiro y umbrales de cupo.",
+          "status": "PLANNED"
+        },
+        {
+          "id": "TASK-30-02",
+          "label": "CREDIT/E2E",
+          "desc": "Suite E2E Playwright del ciclo de checkout a crédito (flujo feliz sin Stripe, bloqueo 400 por cupo insuficiente y sobregiro administrativo con override).",
+          "status": "PLANNED"
+        },
+        {
+          "id": "TASK-30-03",
+          "label": "ADMIN/RECONCILIATION",
+          "desc": "Auditoría interactiva de liberación y restauración de cupos desde /admin (marcado de órdenes pagadas y cancelaciones).",
+          "status": "PLANNED"
+        },
+        {
+          "id": "TASK-30-04",
+          "label": "GOV/BASELINE",
+          "desc": "Validación de regresión completa, auditoría de integridad logix audit y certificación baseline.",
+          "status": "PLANNED"
         }
       ]
     }
