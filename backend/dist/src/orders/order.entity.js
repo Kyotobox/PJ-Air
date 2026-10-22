@@ -19,6 +19,8 @@ let Order = class Order {
     user_id;
     total;
     status;
+    payment_status;
+    delivery_fee_charged;
     address_id;
     delivery_date;
     payment_due_date;
@@ -49,6 +51,14 @@ __decorate([
     (0, typeorm_1.Column)({ default: 'pending' }),
     __metadata("design:type", String)
 ], Order.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'pending' }),
+    __metadata("design:type", String)
+], Order.prototype, "payment_status", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "delivery_fee_charged", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

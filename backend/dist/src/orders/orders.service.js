@@ -177,24 +177,47 @@ let OrdersService = class OrdersService {
     }
     async create(userId, orderData) {
         const { items, ...rest } = orderData;
-        const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, ...otherData } = rest;
-        let finalTotal = 0;
+        const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, paymentStatus, ...otherData } = rest;
+        let itemsTotal = 0;
         let validatedItems = [];
         if (items && items.length > 0) {
             const result = await this.calculateOrderPricesAndTotal(userId, items);
             validatedItems = result.validatedItems;
-            finalTotal = result.total;
+            itemsTotal = result.total;
+        }
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            relations: ['orders']
+        });
+        const appliedDeliveryType = deliveryType || rest.delivery_type || 'saved';
+        const appliedDeliveryDate = deliveryDate || rest.delivery_date;
+        const appliedPaymentDueDate = paymentDueDate || rest.payment_due_date;
+        const appliedAddressId = addressId || rest.address_id || null;
+        const appliedDeliveryAddressText = deliveryAddressText || rest.delivery_address_text || null;
+        const appliedPaymentStatus = paymentStatus || rest.payment_status || 'pending';
+        const deliveryFee = appliedDeliveryType === 'pickup' ? 0 : Number(user?.delivery_fee || 0);
+        const finalTotal = Math.round((itemsTotal + deliveryFee + Number.EPSILON) * 100) / 100;
+        if (user?.account_type === 'credit') {
+            const unpaidOrders = (user.orders || []).filter((o) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado');
+            const usedCredit = unpaidOrders.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+            const creditLimit = Number(user.credit_limit || 0);
+            const prospectiveTotal = usedCredit + finalTotal;
+            if (prospectiveTotal > creditLimit && !user.credit_override) {
+                throw new common_1.BadRequestException(`Límite de crédito excedido: Tu límite es de $${creditLimit.toFixed(2)}, tienes $${usedCredit.toFixed(2)} pendiente y esta orden suma $${finalTotal.toFixed(2)}. Contacta a la administración para una autorización.`);
+            }
         }
         const savedOrderId = await this.dataSource.transaction(async (manager) => {
             const orderToCreate = manager.create(order_entity_1.Order, {
                 ...otherData,
-                delivery_date: deliveryDate,
-                payment_due_date: paymentDueDate,
-                address_id: addressId || null,
-                delivery_type: deliveryType || 'saved',
-                delivery_address_text: deliveryAddressText || null,
+                delivery_date: appliedDeliveryDate,
+                payment_due_date: appliedPaymentDueDate,
+                address_id: appliedAddressId,
+                delivery_type: appliedDeliveryType,
+                delivery_address_text: appliedDeliveryAddressText,
                 user_id: userId,
                 total: finalTotal,
+                delivery_fee_charged: deliveryFee,
+                payment_status: appliedPaymentStatus,
             });
             const savedResult = await manager.save(order_entity_1.Order, orderToCreate);
             const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
@@ -224,10 +247,13 @@ let OrdersService = class OrdersService {
     }
     async update(id, updateData, userRole) {
         const order = await this.findOne(id);
-        const { status, total, delivery_date, address_id, motivo, items } = updateData;
+        const { status, total, delivery_date, address_id, motivo, items, payment_status, paymentStatus } = updateData;
         if (status) {
             this.validateStatusTransition(order.status, status, userRole);
             order.status = status;
+        }
+        if (payment_status !== undefined || paymentStatus !== undefined) {
+            order.payment_status = payment_status || paymentStatus;
         }
         if (motivo) {
             const originalLines = (order.items || []).map(item => `${item.quantity} Unidades de ${item.product?.name || 'Producto'}, precio unitario: ${item.price_at_time}, subtotal: ${(item.quantity * item.price_at_time).toFixed(2)}`).join('; ');

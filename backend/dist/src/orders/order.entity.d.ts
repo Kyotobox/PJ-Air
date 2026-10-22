@@ -6,6 +6,8 @@ export declare class Order {
     user_id: string;
     total: number;
     status: string;
+    payment_status: string;
+    delivery_fee_charged: number;
     address_id: string;
     delivery_date: string;
     payment_due_date: string;

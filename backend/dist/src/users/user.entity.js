@@ -25,6 +25,9 @@ let User = class User {
     orders;
     general_discount;
     delivery_fee;
+    account_type;
+    credit_limit;
+    credit_override;
     productDiscounts;
 };
 exports.User = User;
@@ -64,6 +67,18 @@ __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)
 ], User.prototype, "delivery_fee", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'cash' }),
+    __metadata("design:type", String)
+], User.prototype, "account_type", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], User.prototype, "credit_limit", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "credit_override", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

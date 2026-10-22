@@ -15,6 +15,20 @@ export declare class UsersController {
     updateDeliveryFee(id: string, body: {
         fee: number;
     }): Promise<void>;
+    updateCredit(id: string, body: {
+        account_type?: 'cash' | 'credit';
+        credit_limit?: number;
+        credit_override?: boolean;
+    }): Promise<import("./user.entity").User>;
+    getCreditSummary(id: string): Promise<{
+        account_type: "cash" | "credit";
+        credit_limit: number;
+        credit_override: boolean;
+        used_credit: number;
+        available_credit: number;
+        is_overdraft: boolean;
+        can_order: boolean;
+    }>;
     getProductDiscounts(id: string): Promise<import("./product-discount.entity").ProductDiscount[]>;
     setProductDiscount(id: string, body: {
         productId: number;

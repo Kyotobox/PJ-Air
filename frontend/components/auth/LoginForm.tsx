@@ -71,6 +71,7 @@ export const LoginForm = ({
 
             <div className="pt-4 space-y-4">
                 <button
+                    type="submit"
                     disabled={isLoading}
                     className="w-full premium-button bg-[#111] hover:bg-[#222] text-white text-sm uppercase tracking-widest py-4 flex items-center justify-center gap-3"
                 >

@@ -99,6 +99,12 @@ let UsersController = class UsersController {
     async updateDeliveryFee(id, body) {
         return this.usersService.updateDeliveryFee(id, body.fee);
     }
+    async updateCredit(id, body) {
+        return this.usersService.updateCreditSettings(id, body);
+    }
+    async getCreditSummary(id) {
+        return this.usersService.getUserCreditSummary(id);
+    }
     async getProductDiscounts(id) {
         return this.usersService.getProductDiscounts(id);
     }
@@ -199,6 +205,23 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateDeliveryFee", null);
+__decorate([
+    (0, common_1.Patch)(':id/credit'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateCredit", null);
+__decorate([
+    (0, common_1.Get)(':id/credit-summary'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getCreditSummary", null);
 __decorate([
     (0, common_1.Get)(':id/product-discounts'),
     __param(0, (0, common_1.Param)('id')),

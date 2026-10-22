@@ -1,8 +1,7 @@
-# SPRINT S28 - Sprint 28: Panel Ejecutivo, Torre Operativa y Pipeline de Despliegue Staging
-**Objetivo**: Construir panel ejecutivo integral, torre de control interactiva y pipeline de despliegue remoto a entorno staging aislado.
+# SPRINT S29 - Sprint 29: Pruebas E2E UI/UX con Capturas y Despliegue a Servidor de Testing (Staging)
+**Objetivo**: Ejecutar suite automatizada Playwright con capturas de pantalla de flujos UI/UX y certificar despliegue seguro al entorno de testing en VPS.
 **Fecha**: 2026-10-22
 
-- [x] **TASK-28-01** [UI/ADMIN] Rediseño de Executive Control Panel en /admin con KPIs financieros, torre operativa y alertas.
-- [x] **TASK-28-02** [REPORTS/OPS] Reportes interactivos de producción con reprogramación de fechas y excepciones post-corte.
-- [x] **TASK-28-03** [INFRA/DEPLOY] Pipeline y script de despliegue remoto seguro a staging aislando estrictamente producción.
-- [x] **TASK-28-04** [GOV/BASELINE] Pruebas de suite completa, auditoría de integridad logix audit y re-sellado baseline.
+- [x] **TASK-29-01** [UI/UX-TESTS] Suite automatizada Playwright con capturas de pantalla de catálogo, checkout, admin y reportes.
+- [x] **TASK-29-02** [STAGING/VERIFY] Verificación y preparación de despliegue a testing en VPS (aislamiento y pipeline).
+- [x] **TASK-29-03** [GOV/BASELINE] Auditoría de integridad logix audit y re-sellado baseline.

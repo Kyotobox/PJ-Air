@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_SECURE = exports.SMTP_PORT = exports.SMTP_HOST = exports.SITE_URL = exports.NODE_ENV = exports.GOOGLE_MAPS_KEY = exports.SUPABASE_KEY = exports.JWT_SECRET = exports.DATABASE_PATH = exports.UPLOAD_PATH = exports.PORT = void 0;
+exports.STRIPE_WEBHOOK_SECRET = exports.STRIPE_PUBLISHABLE_KEY = exports.STRIPE_SECRET_KEY = exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_SECURE = exports.SMTP_PORT = exports.SMTP_HOST = exports.SITE_URL = exports.NODE_ENV = exports.GOOGLE_MAPS_KEY = exports.SUPABASE_KEY = exports.JWT_SECRET = exports.DATABASE_PATH = exports.UPLOAD_PATH = exports.PORT = void 0;
 exports.initialize = initialize;
 const fs = __importStar(require("fs"));
 const path_1 = require("path");
@@ -60,6 +60,9 @@ exports.SMTP_PORT = process.env.SMTP_PORT || '587';
 exports.SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 exports.SMTP_USER = process.env.SMTP_USER;
 exports.SMTP_PASS = process.env.SMTP_PASS;
+exports.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+exports.STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY;
+exports.STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 function initialize() {
     if (!exports.DATABASE_PATH) {
         throw new Error('❌ CRITICAL ERROR: DATABASE_PATH is missing. The backend cannot start.');

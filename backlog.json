@@ -3,42 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "COMPLETED",
-  "current_sprint": "S28",
-  "current_task": "TASK-28-04",
+  "current_sprint": "S29",
+  "current_task": "TASK-29-03",
   "sprints": [
-    {
-      "id": "S26",
-      "name": "Sprint 26: Motor de Crédito B2B, Límites y Gestión Centralizada de Clientes",
-      "status": "COMPLETED",
-      "start_date": "2026-11-06",
-      "goal": "Implementar cuentas de contado vs crédito, límite de crédito, balance vivo, conmutador de sobregiro y panel administrativo unificado.",
-      "tasks": [
-        {
-          "id": "TASK-26-01",
-          "label": "DOMAIN/DB",
-          "desc": "Extensión de entidad User con account_type, credit_limit, credit_override y migración de esquemas SQLite.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-26-02",
-          "label": "UI/ADMIN",
-          "desc": "Panel de control financiero en /admin/clients con gestión de límites, saldo vivo, override y cobros.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-26-03",
-          "label": "LOGIC/GATE",
-          "desc": "Compuerta de validación de crédito en checkout, bloqueo por sobregiro y alerta en tiempo real.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-26-04",
-          "label": "GOV/BASELINE",
-          "desc": "Pruebas unitarias de motor de crédito, auditoría logix audit y re-sellado de ADN baseline.",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S27",
       "name": "Sprint 27: Pasarela de Pagos Stripe, Webhooks y Servicio Transaccional de Correo",
@@ -104,8 +71,35 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S29",
+      "name": "Sprint 29: Pruebas E2E UI/UX con Capturas y Despliegue a Servidor de Testing (Staging)",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-09",
+      "goal": "Ejecutar suite automatizada Playwright con capturas de pantalla de flujos UI/UX y certificar despliegue seguro al entorno de testing en VPS.",
+      "tasks": [
+        {
+          "id": "TASK-29-01",
+          "label": "UI/UX-TESTS",
+          "desc": "Suite automatizada Playwright con capturas de pantalla de catálogo, checkout, admin y reportes.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-29-02",
+          "label": "STAGING/VERIFY",
+          "desc": "Verificación y preparación de despliegue a testing en VPS (aislamiento y pipeline).",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-29-03",
+          "label": "GOV/BASELINE",
+          "desc": "Auditoría de integridad logix audit y re-sellado baseline.",
+          "status": "DONE"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 25,
+  "archived_sprints_count": 26,
   "archive_file": "vault/runtime/backlog_archive.json"
 }

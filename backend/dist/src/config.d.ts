@@ -11,4 +11,7 @@ export declare const SMTP_PORT: string;
 export declare const SMTP_SECURE: boolean;
 export declare const SMTP_USER: string | undefined;
 export declare const SMTP_PASS: string | undefined;
+export declare const STRIPE_SECRET_KEY: string | undefined;
+export declare const STRIPE_PUBLISHABLE_KEY: string | undefined;
+export declare const STRIPE_WEBHOOK_SECRET: string | undefined;
 export declare function initialize(): void;

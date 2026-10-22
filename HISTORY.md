@@ -1,9 +1,5 @@
 | Timestamp | Role | SessionID | PrevHash | Type | Task | Detail |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-07-05 18:02 | AI | Sentinel | a711a7d | CHALLENGE_ISSUED | 0334bc53ee8136ee30881132eb79cd49391d9098f2322628a61eed6c55461f3e | Level: GATE-1 | Project: PJ_AIR | Nonce: l6vCg763ncSIzb0LrLiDqlJFYYpk5YdDJC9x6H5Zue4 |
-| 2026-07-05 18:02 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | a6703be | TRACE | SYNC-CONTEXT | Ejecución administrativa detectada: logix sync-context |
-| 2026-07-05 18:02 | ARCHITECT | aa506f91880ef1d5ec9fd870ab5a0aff | 05b96be | TRACE | TAKEOVER | Ejecución administrativa detectada: logix takeover |
-| 2026-07-05 18:03 | AGENT | aa506f91880ef1d5ec9fd870ab5a0aff | c6715d5 | ODOMETER_RESET | TAKEOVER | Odómetro reiniciado. Nueva sesión UUID: aa506f91880ef1d5ec9fd870ab5a0aff |
 | 2026-07-05 19:11 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | c30d259 | TRACE | HANDOVER | Ejecución administrativa detectada: logix handover |
 | 2026-07-05 19:14 | AI | RED | 5fdd712 | ALERT | TEST-FAIL | Pruebas unitarias fallidas durante el baseline. |
 | 2026-07-05 19:15 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | d0e3785 | TRACE | HANDOVER | Ejecución administrativa detectada: logix handover |
@@ -200,3 +196,7 @@
   - TASK-22-02: IN_PROGRESS -> DONE
   - TASK-22-03: TODO -> IN_PROGRESS |
 | 2026-10-22 06:10 | AI | 1792649444128 | 35f8d49 | HANDOVER | Session Transfer | Automated Fast-Handover completed. Status: LOCKED. |
+| 2026-10-22 10:11 | AGENT | 617e2090041717fcd02ce9f008323d23 | bcf6326 | ODOMETER_RESET | TAKEOVER | Odómetro reiniciado. Nueva sesión UUID: 617e2090041717fcd02ce9f008323d23 |
+| 2026-10-22 10:11 | AI | S24 | 7c1440d | SNAP | HOOKS | Git Hooks (pre-commit, pre-push) instalados exitosamente. |
+| 2026-10-22 12:28 | AI | BACKLOG_SYNC | 9364222 | STATE_MUTATION | SYNC | Mutations applied:
+  - TASK-25-01: TODO -> IN_PROGRESS |

@@ -21,6 +21,8 @@ const devtools_module_1 = require("./devtools/devtools.module");
 const auth_module_1 = require("./auth/auth.module");
 const system_configs_module_1 = require("./system-configs/system-configs.module");
 const admin_actions_module_1 = require("./admin-actions/admin-actions.module");
+const payments_module_1 = require("./payments/payments.module");
+const mail_module_1 = require("./mail/mail.module");
 const product_entity_1 = require("./products/product.entity");
 const category_entity_1 = require("./products/category.entity");
 const user_entity_1 = require("./users/user.entity");
@@ -55,6 +57,8 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             auth_module_1.AuthModule,
             system_configs_module_1.SystemConfigsModule,
             admin_actions_module_1.AdminActionsModule,
+            payments_module_1.PaymentsModule,
+            mail_module_1.MailModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

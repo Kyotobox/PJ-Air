@@ -12,5 +12,8 @@ export declare class User {
     orders: Order[];
     general_discount: number;
     delivery_fee: number;
+    account_type: 'cash' | 'credit';
+    credit_limit: number;
+    credit_override: boolean;
     productDiscounts: ProductDiscount[];
 }

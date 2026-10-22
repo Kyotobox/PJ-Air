@@ -20,6 +20,20 @@ export declare class UsersService {
     updatePassword(userId: string, newPassword: string): Promise<void>;
     updateGeneralDiscount(userId: string, discount: number): Promise<void>;
     updateDeliveryFee(userId: string, fee: number): Promise<void>;
+    updateCreditSettings(userId: string, data: {
+        account_type?: 'cash' | 'credit';
+        credit_limit?: number;
+        credit_override?: boolean;
+    }): Promise<User>;
+    getUserCreditSummary(userId: string): Promise<{
+        account_type: 'cash' | 'credit';
+        credit_limit: number;
+        credit_override: boolean;
+        used_credit: number;
+        available_credit: number;
+        is_overdraft: boolean;
+        can_order: boolean;
+    }>;
     setProductDiscount(userId: string, productId: number, data: {
         discount_percentage?: number;
         special_price?: number;
