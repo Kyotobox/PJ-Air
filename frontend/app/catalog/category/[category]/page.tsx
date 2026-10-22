@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { useCart } from '@/context/CartContext';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArrowLeft, Tag, Search, ShoppingCart, Check, Plus, Minus, Info } from 'lucide-react';
+import { ArrowLeft, Tag, Search, ShoppingCart, Check, Plus, Minus, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { API_URL } from '@/lib/config';
@@ -40,8 +40,15 @@ function ProductCard({
                         <span className="text-[9px] font-black uppercase tracking-tight">{locale === 'en' ? `Min: ${product.category.min_qty} units` : `Mínimo: ${product.category.min_qty} unidades`}</span>
                     </div>
                 )}
-                <div className="flex items-center bg-muted/60 rounded-xl overflow-hidden border border-border/30">
-                    <button onClick={() => onDecrement(product.id)} className="px-3 py-2 text-muted-foreground hover:text-primary transition-all active:scale-90"><Minus size={13} /></button>
+                <div className="w-full flex items-center justify-between bg-muted/40 rounded-2xl border border-border/50 p-1">
+                    <button 
+                        type="button"
+                        onClick={() => onDecrement(product.id)}
+                        aria-label="Disminuir cantidad"
+                        className="w-9 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white rounded-xl transition-all active:scale-90"
+                    >
+                        <Minus size={13} strokeWidth={2.5} />
+                    </button>
                     <input 
                         type="number" 
                         value={quantity}
@@ -51,9 +58,16 @@ function ProductCard({
                                 onQuantityChange(product.id, val);
                             }
                         }}
-                        className="w-10 bg-transparent text-center text-sm font-bold outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="flex-1 bg-transparent text-center text-sm font-black outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none py-1"
                     />
-                    <button onClick={() => onIncrement(product.id)} className="px-3 py-2 text-muted-foreground hover:text-primary transition-all active:scale-90"><Plus size={13} /></button>
+                    <button 
+                        type="button"
+                        onClick={() => onIncrement(product.id)}
+                        aria-label="Aumentar cantidad"
+                        className="w-9 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white rounded-xl transition-all active:scale-90"
+                    >
+                        <Plus size={13} strokeWidth={2.5} />
+                    </button>
                 </div>
                 <button onClick={() => onAddToCart(product)}
                     className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isJustAdded ? 'bg-green-500 text-white scale-95' : 'bg-primary text-white hover:bg-primary/90'}`}>
@@ -77,6 +91,25 @@ export default function CategoryPage() {
     const [addedIds, setAddedIds] = useState<number[]>([]);
     const [quantities, setQuantities] = useState<Record<number, number>>({});
 
+    // ── Category Rail Horizontal Scroll ────────────────────────────────────
+    const railRef = useRef<HTMLDivElement>(null);
+    const [canRailScrollLeft, setCanRailScrollLeft] = useState(false);
+    const [canRailScrollRight, setCanRailScrollRight] = useState(false);
+
+    const checkRailScroll = useCallback(() => {
+        const el = railRef.current;
+        if (!el) return;
+        setCanRailScrollLeft(el.scrollLeft > 4);
+        setCanRailScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    }, []);
+
+    const scrollCategoryRail = (dir: 'left' | 'right') => {
+        railRef.current?.scrollBy({
+            left: dir === 'left' ? -240 : 240,
+            behavior: 'smooth',
+        });
+    };
+
     useEffect(() => {
         let mounted = true;
         (async () => {
@@ -92,19 +125,36 @@ export default function CategoryPage() {
         return () => { mounted = false; };
     }, []);
 
-    // All categories (for the menu pills)
+    // All categories (Sorted by highest product count descending)
     const categoryGroups = useMemo(() => {
-        const map: Record<string, string> = {};
+        const map: Record<string, { labelEn: string; count: number }> = {};
         products.forEach(p => {
-            if (p.category?.name) map[p.category.name] = p.category.name_en || p.category.name;
+            if (p.category?.name) {
+                const key = p.category.name;
+                if (!map[key]) map[key] = { labelEn: p.category.name_en || key, count: 0 };
+                map[key].count++;
+            }
         });
         return Object.entries(map)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([key, labelEn]) => ({
+            .sort(([keyA, a], [keyB, b]) => (b.count - a.count) || keyA.localeCompare(keyB))
+            .map(([key, { labelEn, count }]) => ({
                 key,
                 label: locale === 'en' ? labelEn : key,
+                count,
             }));
     }, [products, locale]);
+
+    useEffect(() => {
+        checkRailScroll();
+        const el = railRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', checkRailScroll, { passive: true });
+        window.addEventListener('resize', checkRailScroll);
+        return () => {
+            el.removeEventListener('scroll', checkRailScroll);
+            window.removeEventListener('resize', checkRailScroll);
+        };
+    }, [checkRailScroll, categoryGroups]);
 
     const categoryProducts = useMemo(() =>
         products
@@ -151,49 +201,89 @@ export default function CategoryPage() {
             <Navbar />
             <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-14 py-10">
 
-                {/* ── Same category pills + search bar as homepage ───── */}
-                <div className="mb-8 flex flex-wrap items-center justify-end gap-2">
-
-                    {/* Back link as first "pill" */}
-                    <Link
-                        href="/"
-                        className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full bg-muted border border-border/50 text-[11px] font-black uppercase tracking-wider text-foreground/60 hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-all"
-                    >
-                        <ArrowLeft size={13} />
-                        {locale === 'en' ? 'All' : 'Todos'}
-                    </Link>
-
-                    {/* Category pills — active one highlighted */}
-                    {!isLoading && categoryGroups.map(({ key, label }) => (
-                        <Link
-                            key={key}
-                            href={`/catalog/category/${encodeURIComponent(key)}`}
-                            className={`shrink-0 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider shadow-sm transition-all border ${
-                                key === categoryKey
-                                    ? 'bg-primary text-white border-primary'
-                                    : 'bg-white border-border/50 text-foreground/60 hover:bg-primary hover:text-white hover:border-primary'
-                            }`}
+                {/* ── Category Navigation Rail + Search Bar ─── */}
+                <div className="mb-8 flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-white/70 backdrop-blur-md p-3 sm:p-3.5 rounded-[2rem] border border-border/60 shadow-xs">
+                    
+                    {/* Scrollable Category Rail with Navigation Arrows */}
+                    <div className="relative flex-1 min-w-0 flex items-center">
+                        {/* Left Arrow for Rail */}
+                        <button 
+                            type="button"
+                            onClick={() => scrollCategoryRail('left')}
+                            aria-label="Scroll categories left"
+                            className={`hidden sm:flex shrink-0 w-8 h-8 rounded-full bg-white border border-border/60 shadow-xs items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all mr-1 z-10 ${canRailScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         >
-                            {label}
-                        </Link>
-                    ))}
+                            <ChevronLeft size={16} strokeWidth={2.5} />
+                        </button>
 
-                    {/* Divider */}
-                    <div className="h-6 w-px bg-border/50 shrink-0 hidden sm:block" />
+                        {/* Scrollable track */}
+                        <div 
+                            ref={railRef}
+                            onScroll={checkRailScroll}
+                            className="flex items-center gap-2 overflow-x-auto scroll-smooth py-1 px-1 no-scrollbar flex-1"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                            {/* "All" pill — Back to homepage */}
+                            <Link
+                                href="/"
+                                className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-border/60 text-[11px] font-black uppercase tracking-wider text-foreground/75 hover:bg-primary hover:text-white hover:border-primary shadow-xs transition-all group"
+                            >
+                                <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+                                <span>{locale === 'en' ? 'All' : 'Todos'}</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-muted group-hover:bg-white/20 text-muted-foreground group-hover:text-white transition-colors">
+                                    {products.length}
+                                </span>
+                            </Link>
 
-                    {/* Search — rightmost */}
-                    <div className="relative shrink-0" style={{ width: 'min(100%, 220px)' }}>
-                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                            {/* Category pills ordered by highest product count */}
+                            {!isLoading && categoryGroups.map(({ key, label, count }) => (
+                                <Link
+                                    key={key}
+                                    href={`/catalog/category/${encodeURIComponent(key)}`}
+                                    className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider shadow-xs transition-all border ${
+                                        key === categoryKey
+                                            ? 'bg-primary text-white border-primary shadow-sm'
+                                            : 'bg-white border-border/60 text-foreground/75 hover:bg-primary hover:text-white hover:border-primary'
+                                    }`}
+                                >
+                                    <span>{label}</span>
+                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                                        key === categoryKey
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-muted text-muted-foreground'
+                                    }`}>
+                                        {count}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+
+                        {/* Right Arrow for Rail */}
+                        <button 
+                            type="button"
+                            onClick={() => scrollCategoryRail('right')}
+                            aria-label="Scroll categories right"
+                            className={`hidden sm:flex shrink-0 w-8 h-8 rounded-full bg-white border border-border/60 shadow-xs items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all ml-1 z-10 ${canRailScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                        >
+                            <ChevronRight size={16} strokeWidth={2.5} />
+                        </button>
+                    </div>
+
+                    {/* Search Box — clean docking */}
+                    <div className="relative shrink-0 w-full md:w-64 border-t md:border-t-0 md:border-l border-border/40 pt-2 md:pt-0 md:pl-3">
+                        <Search size={15} className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <input
                             type="text"
                             placeholder={t.catalog.searchPlaceholder}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-8 py-2.5 rounded-full bg-white border border-border/60 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 transition-all shadow-sm placeholder:text-muted-foreground/50"
+                            className="w-full pl-9 pr-8 py-2 rounded-full bg-white border border-border/60 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 transition-all shadow-xs placeholder:text-muted-foreground/50"
                         />
                         {searchQuery && (
-                            <button onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary text-xs font-bold">✕</button>
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary text-xs font-bold"
+                            >✕</button>
                         )}
                     </div>
                 </div>

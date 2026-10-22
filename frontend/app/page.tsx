@@ -254,9 +254,13 @@ function ProductCard({
                 )}
 
                 {/* Quantity */}
-                <div className="flex items-center bg-muted/60 rounded-xl border border-border/30 overflow-hidden">
-                    <button onClick={() => onDecrement(product.id)}
-                        className="px-2.5 py-2 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all">
+                <div className="w-full flex items-center justify-between bg-muted/40 rounded-2xl border border-border/50 p-1">
+                    <button 
+                        type="button"
+                        onClick={() => onDecrement(product.id)}
+                        aria-label="Disminuir cantidad"
+                        className="w-9 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white rounded-xl transition-all active:scale-90"
+                    >
                         <Minus size={13} strokeWidth={2.5} />
                     </button>
                     <input 
@@ -270,10 +274,14 @@ function ProductCard({
                             }
                             e.target.select();
                         }}
-                        className="w-10 bg-transparent text-center text-sm font-bold outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-primary/5"
+                        className="flex-1 bg-transparent text-center text-sm font-black outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-primary/5 py-1"
                     />
-                    <button onClick={() => onIncrement(product.id)}
-                        className="px-2.5 py-2 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all">
+                    <button 
+                        type="button"
+                        onClick={() => onIncrement(product.id)}
+                        aria-label="Aumentar cantidad"
+                        className="w-9 h-8 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white rounded-xl transition-all active:scale-90"
+                    >
                         <Plus size={13} strokeWidth={2.5} />
                     </button>
                 </div>
@@ -350,81 +358,96 @@ function CategoryCarousel({
     };
 
     return (
-        <>
-            {/* Scrollable row + arrows */}
-            <div className="relative group/row">
-                {/* Left arrow */}
-                <button
-                    onClick={() => scroll('left')}
-                    aria-label="Scroll left"
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10
-                        w-10 h-10 rounded-full bg-white border border-border shadow-md
-                        flex items-center justify-center text-foreground
-                        hover:bg-primary hover:text-white hover:border-primary
-                        transition-all duration-200
-                        ${canScrollLeft ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                >
-                    <ChevronLeft size={20} strokeWidth={2.5} />
-                </button>
-
-                {/* Scrollable track */}
-                <div
-                    ref={scrollRef}
-                    className="flex gap-4 overflow-x-auto scroll-smooth pb-1"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    onScroll={checkScroll}
-                >
-                    {group.products.map(product => (
-                        <div
-                            key={product.id}
-                            style={{ width: '220px', minWidth: '220px' }}
-                        >
-                            <ProductCard
-                                product={product}
-                                quantity={quantities[product.id] || 1}
-                                isInCart={cart.find(i => i.id === product.id)?.quantity}
-                                isJustAdded={addedIds.includes(product.id)}
-                                onIncrement={onIncrement}
-                                onDecrement={onDecrement}
-                                onQuantityChange={onQuantityChange}
-                                onAddToCart={onAddToCart}
-                                profile={profile}
-                            />
-                        </div>
-                    ))}
+        <div>
+            {/* Header with Title on Left and Navigation Controls on Right */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0">
+                        <Tag size={18} />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black tracking-tight leading-none">
+                            {group.label}
+                        </h2>
+                        <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+                            {group.products.length} {locale === 'en' ? 'products' : 'productos'}
+                        </p>
+                    </div>
                 </div>
 
-                {/* Right arrow */}
-                <button
-                    onClick={() => scroll('right')}
-                    aria-label="Scroll right"
-                    className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10
-                        w-10 h-10 rounded-full bg-white border border-border shadow-md
-                        flex items-center justify-center text-foreground
-                        hover:bg-primary hover:text-white hover:border-primary
-                        transition-all duration-200
-                        ${canScrollRight ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                >
-                    <ChevronRight size={20} strokeWidth={2.5} />
-                </button>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <Link
+                        href={`/catalog/category/${encodeURIComponent(group.key)}`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-border/60 rounded-full text-[11px] font-black uppercase tracking-wider text-primary hover:bg-primary hover:text-white hover:border-primary transition-all shadow-xs group/vab"
+                    >
+                        <ArrowRight size={13} className="group-hover/vab:translate-x-0.5 transition-transform" />
+                        <span>{viewAllLabel}</span>
+                        {group.products.length > 3 && (
+                            <span className="bg-primary/10 group-hover/vab:bg-white/20 px-2 py-0.5 rounded-full text-[10px]">
+                                {group.products.length}
+                            </span>
+                        )}
+                    </Link>
+
+                    {/* Unobtrusive Header Navigation Arrows */}
+                    <div className="flex items-center gap-1 bg-white p-1 rounded-full border border-border/60 shadow-xs">
+                        <button
+                            type="button"
+                            onClick={() => scroll('left')}
+                            disabled={!canScrollLeft}
+                            aria-label="Scroll left"
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                                canScrollLeft
+                                    ? 'text-foreground hover:bg-primary hover:text-white cursor-pointer'
+                                    : 'text-muted-foreground/30 cursor-not-allowed'
+                            }`}
+                        >
+                            <ChevronLeft size={16} strokeWidth={2.5} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => scroll('right')}
+                            disabled={!canScrollRight}
+                            aria-label="Scroll right"
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                                canScrollRight
+                                    ? 'text-foreground hover:bg-primary hover:text-white cursor-pointer'
+                                    : 'text-muted-foreground/30 cursor-not-allowed'
+                            }`}
+                        >
+                            <ChevronRight size={16} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            {/* View All button — below the row */}
-            <div className="mt-5 flex justify-center sm:justify-end">
-                <Link
-                    href={`/catalog/category/${encodeURIComponent(group.key)}`}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-primary/25 rounded-full text-[11px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm group/vab"
-                >
-                    <ArrowRight size={14} className="group-hover/vab:translate-x-0.5 transition-transform" />
-                    {viewAllLabel} {group.label}
-                    {group.products.length > 3 && (
-                        <span className="bg-primary/10 group-hover/vab:bg-white/20 px-2 py-0.5 rounded-full text-[10px]">
-                            {group.products.length}
-                        </span>
-                    )}
-                </Link>
+            {/* Scrollable track — clean, unobstructed and touch friendly */}
+            <div
+                ref={scrollRef}
+                className="flex gap-4 overflow-x-auto scroll-smooth pb-2 pt-1 no-scrollbar"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                onScroll={checkScroll}
+            >
+                {group.products.map(product => (
+                    <div
+                        key={product.id}
+                        style={{ width: '220px', minWidth: '220px' }}
+                    >
+                        <ProductCard
+                            product={product}
+                            quantity={quantities[product.id] || 1}
+                            isInCart={cart.find(i => i.id === product.id)?.quantity}
+                            isJustAdded={addedIds.includes(product.id)}
+                            onIncrement={onIncrement}
+                            onDecrement={onDecrement}
+                            onQuantityChange={onQuantityChange}
+                            onAddToCart={onAddToCart}
+                            profile={profile}
+                        />
+                    </div>
+                ))}
             </div>
-        </>
+        </div>
     );
 }
 
@@ -445,6 +468,25 @@ export default function Home() {
     const [searchQuery, setSearchQuery] = useState('');
     const [addedIds, setAddedIds] = useState<number[]>([]);
     const [quantities, setQuantities] = useState<Record<number, number>>({});
+
+    // ── Category Rail Horizontal Scroll ────────────────────────────────────
+    const railRef = useRef<HTMLDivElement>(null);
+    const [canRailScrollLeft, setCanRailScrollLeft] = useState(false);
+    const [canRailScrollRight, setCanRailScrollRight] = useState(false);
+
+    const checkRailScroll = useCallback(() => {
+        const el = railRef.current;
+        if (!el) return;
+        setCanRailScrollLeft(el.scrollLeft > 4);
+        setCanRailScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    }, []);
+
+    const scrollCategoryRail = (dir: 'left' | 'right') => {
+        railRef.current?.scrollBy({
+            left: dir === 'left' ? -240 : 240,
+            behavior: 'smooth',
+        });
+    };
 
     // ── Fetch ──────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -501,7 +543,7 @@ export default function Home() {
         setTimeout(() => setAddedIds(p => p.filter(i => i !== product.id)), 2000);
     };
 
-    // ── Category groups ────────────────────────────────────────────────────
+    // ── Category groups (Sorted by highest product count descending) ───────
     const categoryGroups = useMemo(() => {
         const map: Record<string, { labelEn: string; items: any[] }> = {};
         products.forEach(p => {
@@ -510,13 +552,26 @@ export default function Home() {
             map[key].items.push(p);
         });
         return Object.entries(map)
-            .sort(([a], [b]) => a.localeCompare(b))
+            .sort(([keyA, a], [keyB, b]) => (b.items.length - a.items.length) || keyA.localeCompare(keyB))
             .map(([key, { labelEn, items }]) => ({
                 key,
                 label: locale === 'en' ? labelEn : key,
+                count: items.length,
                 products: items.sort((a, b) => a.name.localeCompare(b.name)),
             }));
     }, [products, locale]);
+
+    useEffect(() => {
+        checkRailScroll();
+        const el = railRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', checkRailScroll, { passive: true });
+        window.addEventListener('resize', checkRailScroll);
+        return () => {
+            el.removeEventListener('scroll', checkRailScroll);
+            window.removeEventListener('resize', checkRailScroll);
+        };
+    }, [checkRailScroll, categoryGroups]);
 
     // ── Search results ─────────────────────────────────────────────────────
     const searchResults = useMemo(() => {
@@ -544,7 +599,7 @@ export default function Home() {
             .slice(0, 6);
     }, [products]);
 
-    const catPills = categoryGroups.map(g => ({ key: g.key, label: g.label }));
+    const catPills = categoryGroups.map(g => ({ key: g.key, label: g.label, count: g.products.length }));
 
     // "View All" label with category name
     const viewAllLabel = locale === 'en' ? 'View All' : 'Ver todos';
@@ -589,45 +644,79 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* ── Category pills + Search — right-aligned flex row ─── */}
-                <div id="catalogo" className="mb-10 flex flex-wrap items-center justify-end gap-2">
-
-                    {/* "All" pill — first */}
-                    <a
-                        href="#top"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            setSearchQuery('');
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="shrink-0 px-4 py-2 rounded-full bg-primary text-white text-[11px] font-black uppercase tracking-wider shadow-sm transition-all hover:bg-primary/90"
-                    >
-                        {locale === 'en' ? 'All' : 'Todos'}
-                    </a>
-
-                    {/* Category pills */}
-                    {!isLoading && catPills.map(({ key, label }) => (
-                        <Link
-                            key={key}
-                            href={`/catalog/category/${encodeURIComponent(key)}`}
-                            className="shrink-0 px-4 py-2 rounded-full bg-white border border-border/50 text-[11px] font-black uppercase tracking-wider text-foreground/60 hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-all"
+                {/* ── Category Navigation Rail + Search Bar ─── */}
+                <div id="catalogo" className="mb-10 flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-white/70 backdrop-blur-md p-3 sm:p-3.5 rounded-[2rem] border border-border/60 shadow-xs">
+                    
+                    {/* Scrollable Category Rail with Navigation Arrows */}
+                    <div className="relative flex-1 min-w-0 flex items-center">
+                        {/* Left Arrow for Rail */}
+                        <button 
+                            type="button"
+                            onClick={() => scrollCategoryRail('left')}
+                            aria-label="Scroll categories left"
+                            className={`hidden sm:flex shrink-0 w-8 h-8 rounded-full bg-white border border-border/60 shadow-xs items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all mr-1 z-10 ${canRailScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         >
-                            {label}
-                        </Link>
-                    ))}
+                            <ChevronLeft size={16} strokeWidth={2.5} />
+                        </button>
 
-                    {/* Divider */}
-                    <div className="h-6 w-px bg-border/50 shrink-0 hidden sm:block" />
+                        {/* Scrollable track */}
+                        <div 
+                            ref={railRef}
+                            onScroll={checkRailScroll}
+                            className="flex items-center gap-2 overflow-x-auto scroll-smooth py-1 px-1 no-scrollbar flex-1"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                            {/* "All" pill — always first */}
+                            <a
+                                href="#catalogo"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setSearchQuery('');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className={`shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider shadow-xs transition-all ${!searchQuery ? 'bg-primary text-white shadow-sm' : 'bg-white border border-border/60 text-foreground/70 hover:bg-primary/5 hover:text-primary'}`}
+                            >
+                                <span>{locale === 'en' ? 'All' : 'Todos'}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${!searchQuery ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'}`}>
+                                    {products.length}
+                                </span>
+                            </a>
 
-                    {/* Search — rightmost */}
-                    <div className="relative shrink-0" style={{ width: 'min(100%, 220px)' }}>
-                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                            {/* Category pills ordered by highest product count */}
+                            {!isLoading && catPills.map(({ key, label, count }) => (
+                                <Link
+                                    key={key}
+                                    href={`/catalog/category/${encodeURIComponent(key)}`}
+                                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-border/60 text-[11px] font-black uppercase tracking-wider text-foreground/75 hover:bg-primary hover:text-white hover:border-primary shadow-xs transition-all group"
+                                >
+                                    <span>{label}</span>
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-muted group-hover:bg-white/20 text-muted-foreground group-hover:text-white transition-colors">
+                                        {count}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+
+                        {/* Right Arrow for Rail */}
+                        <button 
+                            type="button"
+                            onClick={() => scrollCategoryRail('right')}
+                            aria-label="Scroll categories right"
+                            className={`hidden sm:flex shrink-0 w-8 h-8 rounded-full bg-white border border-border/60 shadow-xs items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-all ml-1 z-10 ${canRailScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                        >
+                            <ChevronRight size={16} strokeWidth={2.5} />
+                        </button>
+                    </div>
+
+                    {/* Search Box — clean docking */}
+                    <div className="relative shrink-0 w-full md:w-64 border-t md:border-t-0 md:border-l border-border/40 pt-2 md:pt-0 md:pl-3">
+                        <Search size={15} className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         <input
                             type="text"
                             placeholder={t.catalog.searchPlaceholder}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-8 py-2.5 rounded-full bg-white border border-border/60 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 transition-all shadow-sm placeholder:text-muted-foreground/50"
+                            className="w-full pl-9 pr-8 py-2 rounded-full bg-white border border-border/60 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 transition-all shadow-xs placeholder:text-muted-foreground/50"
                         />
                         {searchQuery && (
                             <button
@@ -711,23 +800,6 @@ export default function Home() {
                         id={`cat-${group.key}`}
                         className="mb-14 scroll-mt-24"
                     >
-                        {/* Section header */}
-                        <div className="flex items-center gap-3 mb-5">
-                            <div className="w-10 h-10 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0">
-                                <Tag size={18} />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-black tracking-tight leading-none">
-                                    {group.label}
-                                </h2>
-                                <p className="text-xs text-muted-foreground font-semibold mt-0.5">
-                                    {group.products.length}{' '}
-                                    {locale === 'en' ? 'products' : 'productos'}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Carousel with arrows + View All button */}
                         <CategoryCarousel
                             group={group}
                             quantities={quantities}
