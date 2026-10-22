@@ -1,7 +1,8 @@
-# SPRINT S10-PAYMENTS-DEBT - Sprint 10: Reintegración de Pasarelas de Pago y Xero (Deuda Técnica)
-**Objetivo**: Reintegrar y probar los archivos exiliados en purgatory para Stripe, PayPal y Xero.
-**Fecha**: 2026-07-05
+# SPRINT S12 - Sprint 12: Remediación y Blindaje de Gobernanza
+**Objetivo**: Aplicar correcciones de gobernanza, alinear versiones, re-sellar ADN e higienizar metadatos.
+**Fecha**: 2026-10-22
 
-- [ ] **TASK-10-01** [TECH/INFRA] Recrear tabla 'payments' y campos de pago en 'orders' en SQLite.
-- [ ] **TASK-10-02** [TECH/DOMAIN] Reintegrar módulos de pagos backend y procesadores Xero exiliados.
-- [ ] **TASK-10-03** [TECH/UI] Reintegrar formularios de Stripe y botones de PayPal en el frontend.
+- [x] **TASK-12-01** [GOV/FIX] Sincronizar SSSoT de versión a 4.0.0 en GEMINI.md, VISION.md, backlog.json y bunker_profile.json.
+- [x] **TASK-12-02** [GOV/FIX] Corregir lógica multiplataforma en .git/hooks para command -v logix en Linux y symlink bin/logix.
+- [x] **TASK-12-03** [GOV/FIX] Desindexar vault/runtime/logix.db y artefactos de odómetro volátiles de git, agregando package.json al índice.
+- [/] **TASK-12-04** [GOV/SECURITY] Sanear oracle_anchor.json, re-sellar ADN (logix baseline -f) y solicitar firma RSA física del PO.

@@ -1,0 +1,9 @@
+{
+  "id": "pj-air",
+  "bunker_type": "satellite",
+  "node_type": "SATELLITE",
+  "project": "pj-air",
+  "domain": "pedidos_jhoanes",
+  "kernel_version": "4.0.0",
+  "doctrine_version": "1.0.0"
+}

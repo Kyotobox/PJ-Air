@@ -1,1 +1,1 @@
-{"issuer":"AGENT","timestamp":"2026-07-05T20:01:47.353185","has_critical":false,"version":"2.2.11","changed_files":[]}
+{"issuer":"AGENT","timestamp":"2026-10-22T03:30:54.799276","has_critical":true,"version":"4.0.0","changed_files":["_agent/workflows/act.md","_agent/workflows/purge-saturation.md","_agent/workflows/recovery.md","_agent/workflows/takeover.md","vault/rules/oracle_anchor.json","GEMINI.md","VISION.md"]}

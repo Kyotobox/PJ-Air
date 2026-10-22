@@ -1,4 +1,4 @@
-# GEMINI.md — conext_core (2.2.11)
+# GEMINI.md — conext_core (4.0.0)
 
 > **ADN Físico**: El mapa completo de archivos de código fuente del proyecto se encuentra en [`vault/runtime/CODE_MAP.md`](vault/runtime/CODE_MAP.md). Consultarlo ante dudas de ruta o responsabilidad de módulo.
 
@@ -63,7 +63,7 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 4. **Proscripción Léxica**: Queda terminantemente prohibido el uso de los términos "Sovereign", "Autonomous" o sus derivados en la documentación, registros de auditoría y metadatos del sistema. El término canónico obligatorio es **"Autárquico"**.
 5. **Silencio Forense (Anti-Bypass)**: Queda terminantemente prohibido a la IA intentar investigar o indagar bypasses mediante el uso de binarios de diagnóstico cuando el sistema emita un desafío de seguridad (RSA). Ante un bloqueo, la IA debe detenerse y reportar el desafío al PO.
 
-*[2.2.11] Arquitectura Orbit Evolution, Protocolo SPL, SSSoT de Versión y Estandarización UVS-15 certificados.*
+*[4.0.0] Arquitectura Orbit Evolution, Protocolo SPL, SSSoT de Versión y Estandarización UVS-15 certificados.*
 
 ## 11. PROTOCOLO DE INMUNIDAD PREVENTIVA (DNA-GÉNESIS)
 1. **Recursión de Blindaje**: Ante cada error corregido, la IA debe implementar un mecanismo (test, script o blindaje de tipos) que asegure que dicho error no pueda volver a ocurrir.
@@ -93,7 +93,7 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 3. **Resiliencia ante Bloqueos (RSA Context)**: Ante un desafío de seguridad (RSA), la IA debe emitir el reporte de bloqueo y suspender cualquier comando de reintento automático hasta la firma del PO. Queda prohibida la investigación de bypasses de autenticación.
 4. **Validación de Integridad**: Los cambios en `axioma` requieren la validación de tipos (`dart analyze`) en el nodo actual antes de cualquier commit.
 
-*[2.2.11] Blindaje de Gobernanza, Protocolo Anti-Fragilidad IA y SSSoT de Axioma certificados.*
+*[4.0.0] Blindaje de Gobernanza, Protocolo Anti-Fragilidad IA y SSSoT de Axioma certificados.*
 
 ## 17. GOBERNANZA PREVENTIVA (GÉNESIS)
 1. **Turno Adversarial (Pre-Código)**: Antes de modificar lógica, el agente adopta el rol **Antagonista** (Regla 2.2 del Framework de Roles). Debe declarar riesgos identificados (máx 2 líneas) o "Sin riesgos identificados".
@@ -107,7 +107,7 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
    - **Post-Código**: Evaluación de utilidad funcional (2 líneas).
 5. **Capas de Prueba Progresivas**: Implementación mandatoria en orden: Unitarias (`test/`), UI (`flutter test`), Integración y validación de Negocio (simulada).
 
-*[2.2.11] Marco Cognitivo Preventivo y Taxonomía de Especialistas GÉNESIS certificados.*
+*[4.0.0] Marco Cognitivo Preventivo y Taxonomía de Especialistas GÉNESIS certificados.*
 
 ## 18. AUTARQUÍA DE AXIOMAS (GÉNESIS)
 1. **Blindaje de Integridad**: El núcleo de gobernanza ignora activamente la deriva en `packages/` para permitir la evolución rápida de axiomas sin comprometer el sellado RSA del Kernel.
@@ -134,7 +134,7 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 3. **Validation por Handover**: El sistema bloqueará el comando `handover` mediante `tool/verify_veracity.dart` si detecta cambios físicos huérfanos de documentación.
 4. **Excepciones de Metadatos**: Los cambios en `vault/runtime/`, `.meta/` o logs están exentos de validación de tarea, ya que son subproductos automáticos de la operación.
 
-*[2.2.11] Protocolo de Veracidad Física y Blindaje Documental certificados.*
+*[4.0.0] Protocolo de Veracidad Física y Blindaje Documental certificados.*
 
 
 ## 22. PROTOCOLO DE VÍNCULO DE CONSUMO (GÉNESIS)
@@ -143,14 +143,14 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 3. **Certificación de Uso**: Cada nueva entidad en `axioma` debe registrar su primer punto de consumo en el `forensic_ledger` para ser considerada "Estable".
 4. **Consulta Mandataria de Vecindad**: Ante cualquier requerimiento de nueva funcionalidad, el Agente DEBE consultar `vault/intel/neighborhood.json`. Si la capacidad existe en la flota, se priorizará la ADOPCIÓN (`nexus adopt`) sobre la creación de código nuevo.
 
-*[2.2.11] Protocolo de Vínculo de Consumo y Blindaje de Integración certificados.*
+*[4.0.0] Protocolo de Vínculo de Consumo y Blindaje de Integración certificados.*
 
 ## 23. PROTOCOLO DE INDEXACIÓN ESTRICTA (SECUENCIA)
 1. **Unicidad y Secuencialidad**: Todos los Sprints y Tareas deben mantener una nomenclatura estricta y secuencial. Queda prohibido mezclar series (ej. pasar de G38 a S01). Si la serie actual es G, el siguiente sprint debe ser G39, luego G40, etc.
 2. **Re-Indexación Automática**: Al reorganizar el backlog o insertar tareas, el Agente tiene la obligación ineludible de re-indexar toda la numeración para mantener el orden lineal y evitar saltos (ej. prohibido tener G32 seguido de G29).
 3. **SSSoT de Secuencia**: El `backlog.json` y el `task.md` deben coincidir exactamente en su numeración. Cualquier discrepancia en la secuencia o el uso de IDs legacy desordenados será considerado Deriva Documental y bloqueará el Handover.
 
-*[2.2.11] Protocolo de Indexación Estricta certificado.
+*[4.0.0] Protocolo de Indexación Estricta certificado.
 
 ## 24. PROTOCOLO DE GOBERNANZA LÍQUIDA Y ALTA VELOCIDAD (PGL-GÉNESIS)
 1. **Regla del Recibo Visual**: No se considera que un ADN ha sido sellado si el HUD no refleja la metadata de la firma (`last_signature.json`). La visibilidad es un requisito de integridad.
@@ -164,7 +164,7 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 6. **Handover de Destilación**: Ante la acumulación del 3er strike de saturación de contexto, la IA ejecutará de forma autónoma la rutina de "Handover de Destilación", liberando el lock de sesión y archivando el backlog para asegurar un takeover fresco.
 7. **Directiva de Output Conciso**: En Zona Verde y Ámbar con ruta clara, la respuesta del agente al PO no debe exceder 8 líneas de texto plano. Queda prohibido listar archivos modificados, repetir bloques de código ya escritos o generar resúmenes narrativos de acciones técnicas ya ejecutadas. El reporte adversarial de 2 líneas (Regla 17.1) y los mensajes de bloqueo de gobernanza están exentos de este límite.
 
-*[2.2.11] Suplemento de Alta Velocidad: Consentimiento Tácito, Silencio Sintáctico, Alcabala Técnica y Directiva de Output Conciso certificados.*
+*[4.0.0] Suplemento de Alta Velocidad: Consentimiento Tácito, Silencio Sintáctico, Alcabala Técnica y Directiva de Output Conciso certificados.*
 
 ## 25. PROTOCOLO DE ALTERACIÓN DE VISIÓN (PAV-GÉNESIS)
 1. **Umbral Híbrido de Alteración**: Toda modificación a `VISION.md` debe someterse a una Auditoría de Impacto en el Backlog. 
@@ -183,7 +183,7 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 2. **Bloqueo de Masa Desconocida**: Se prohíbe la persistencia de cambios que no hayan sido auditados por el odómetro determinista. Los cambios manuales externos al flujo del Agente durante una sesión activa serán revertidos o penalizados.
 3. **Inviolabilidad de Telemetría**: El Agente no puede modificar los logs de telemetría (`.meta/`, `vault/runtime/`) para ocultar actividad. El Kernel detectará cualquier alteración de marcas de tiempo como un intento de evasión.
 
-*[2.2.11] Hardening de Telemetría, Determinismo Forense y SSSoT de Veracidad certificados.*
+*[4.0.0] Hardening de Telemetría, Determinismo Forense y SSSoT de Veracidad certificados.*
 
 ## 28. PROTOCOLO DE AUTORIDAD Y SILENCIO FORENSE (PASF-GÉNESIS)
 1. **Silencio Forense Activo**: Ante un bloqueo de seguridad crítico (`SECURITY-HALT`, `KERNEL-HALT`) o cualquier falla de integridad (ej. Masa Desconocida), la IA debe entrar en parálisis inmediata ("Silencio Forense"). Queda terminantemente prohibido generar scripts, usar comandos o intentar resolver o mitigar la falla por cuenta propia. El control debe retornar obligatoriamente al PO para investigación.
@@ -201,10 +201,10 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 2. **Monitoreo de Firmas**: La IA de Trae debe monitorizar activamente `vault/runtime/signature_request.json` para alertar al usuario sobre desafíos RSA pendientes.
 3. **Bloqueo de Ghost Progress**: Trae aplicará estrictamente el Protocolo de Veracidad Física (Regla 21), impidiendo modificaciones de código sin una tarea activa con estado `[/]` en `task.md`.
 
-*[2.2.11] Protocolo de Interacción Trae.ai y Soporte Nativo GÉNESIS certificados.*
+*[4.0.0] Protocolo de Interacción Trae.ai y Soporte Nativo GÉNESIS certificados.*
 
 ## 31. PROTOCOLO DE MAPA DE CÓDIGO (CODE MAP)
 1. **Mantenimiento del Mapa Físico**: Cada nodo de la flota y el núcleo central deben mantener actualizado su correspondiente archivo `vault/runtime/CODE_MAP.md` utilizando el generador `tool/generate_code_map.dart` (o ejecutándolo vía `dart run c:/Users/Ruben/Documents/conext_core/tool/generate_code_map.dart`).
 2. **Auto-Generación**: Ante cualquier cambio estructural en el disco (creación, eliminación o renombrado de archivos `.dart`, `.ps1` o `.md`), la IA debe ejecutar mandatoriamente el generador local de mapa de código para sincronizar el estado físico antes del handover.
 
-*[2.2.11] Protocolo de Mapa de Código (CODE MAP) certificado.*
+*[4.0.0] Protocolo de Mapa de Código (CODE MAP) certificado.*
