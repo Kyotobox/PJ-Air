@@ -780,17 +780,19 @@ export default function CheckoutPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4 shrink-0">
-                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-border/60 p-1 shadow-sm">
+                                                <div className="grid grid-cols-[24px_auto_24px] items-center gap-1.5 bg-white rounded-xl border border-border/60 p-1 shadow-sm shrink-0">
                                                     <button
+                                                        type="button"
                                                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                        className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                                                        className="w-6 h-6 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
                                                     >
                                                         <Minus size={12} />
                                                     </button>
-                                                    <span className="text-xs font-black min-w-[1rem] text-center">{item.quantity}</span>
+                                                    <span className="text-xs font-black min-w-[1.25rem] text-center px-1">{item.quantity}</span>
                                                     <button
+                                                        type="button"
                                                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                        className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                                                        className="w-6 h-6 shrink-0 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
                                                     >
                                                         <Plus size={12} />
                                                     </button>

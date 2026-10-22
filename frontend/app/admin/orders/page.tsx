@@ -627,10 +627,10 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
 
                                             {editMode ? (
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex bg-white rounded-2xl border border-slate-200 p-1 shadow-inner">
-                                                        <button onClick={() => updateItemQuantity(item.id, -1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-primary rounded-xl transition-all"><Minus size={14} /></button>
+                                                    <div className="grid grid-cols-[40px_48px_40px] items-center bg-white rounded-2xl border border-slate-200 p-1 shadow-inner shrink-0">
+                                                        <button type="button" onClick={() => updateItemQuantity(item.id, -1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-primary rounded-xl transition-all"><Minus size={14} /></button>
                                                         <span className="w-12 h-10 flex items-center justify-center font-black text-slate-800 border-x border-slate-100">{item.quantity}</span>
-                                                        <button onClick={() => updateItemQuantity(item.id, 1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-primary rounded-xl transition-all"><Plus size={14} /></button>
+                                                        <button type="button" onClick={() => updateItemQuantity(item.id, 1)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 text-slate-400 hover:text-primary rounded-xl transition-all"><Plus size={14} /></button>
                                                     </div>
                                                     <button onClick={() => removeItem(item.id)} className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-400 hover:bg-red-500 hover:text-white rounded-2xl transition-all shadow-sm"><Trash2 size={18}/></button>
                                                 </div>

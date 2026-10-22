@@ -51,3 +51,9 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Universal input and button fix for flex and grid containers in Chromium / Edge / Safari */
+input[type="number"] {
+  min-width: 0 !important;
+}
+

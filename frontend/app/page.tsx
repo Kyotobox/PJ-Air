@@ -254,7 +254,7 @@ function ProductCard({
                 )}
 
                 {/* Quantity */}
-                <div className="w-full flex items-center justify-between bg-muted/40 rounded-2xl border border-border/50 p-1">
+                <div className="w-full grid grid-cols-[36px_minmax(0,1fr)_36px] items-center bg-muted/40 rounded-2xl border border-border/50 p-1">
                     <button 
                         type="button"
                         onClick={() => onDecrement(product.id)}
@@ -274,7 +274,7 @@ function ProductCard({
                             }
                             e.target.select();
                         }}
-                        className="flex-1 bg-transparent text-center text-sm font-black outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-primary/5 py-1"
+                        className="w-full min-w-0 bg-transparent text-center text-sm font-black outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-primary/5 py-1"
                     />
                     <button 
                         type="button"

@@ -40,7 +40,7 @@ function ProductCard({
                         <span className="text-[9px] font-black uppercase tracking-tight">{locale === 'en' ? `Min: ${product.category.min_qty} units` : `Mínimo: ${product.category.min_qty} unidades`}</span>
                     </div>
                 )}
-                <div className="w-full flex items-center justify-between bg-muted/40 rounded-2xl border border-border/50 p-1">
+                <div className="w-full grid grid-cols-[36px_minmax(0,1fr)_36px] items-center bg-muted/40 rounded-2xl border border-border/50 p-1">
                     <button 
                         type="button"
                         onClick={() => onDecrement(product.id)}
@@ -58,7 +58,7 @@ function ProductCard({
                                 onQuantityChange(product.id, val);
                             }
                         }}
-                        className="flex-1 bg-transparent text-center text-sm font-black outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none py-1"
+                        className="w-full min-w-0 bg-transparent text-center text-sm font-black outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none py-1"
                     />
                     <button 
                         type="button"

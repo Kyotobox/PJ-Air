@@ -127,8 +127,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-stretch gap-4 mb-12">
-                            <div className="flex items-center justify-between bg-white border-2 border-neutral-200 rounded-2xl p-1 shadow-sm overflow-hidden focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/30 transition-all w-full sm:w-44 h-16">
+                            <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center bg-white border-2 border-neutral-200 rounded-2xl p-1 shadow-sm overflow-hidden focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/30 transition-all w-full sm:w-48 h-16">
                                 <button 
+                                    type="button"
                                     onClick={handleDecrement}
                                     className="w-12 h-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all rounded-xl"
                                     aria-label="Disminuir cantidad"
@@ -147,9 +148,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                                         e.target.select();
                                     }}
                                     title="Haga clic para editar cantidad"
-                                    className="flex-1 h-full bg-transparent text-center font-bold text-xl outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-pointer focus:bg-primary/5 border-x border-neutral-100" 
+                                    className="w-full min-w-0 h-full bg-transparent text-center font-bold text-xl outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-pointer focus:bg-primary/5 border-x border-neutral-100" 
                                 />
                                 <button 
+                                    type="button"
                                     onClick={handleIncrement}
                                     className="w-12 h-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all rounded-xl"
                                     aria-label="Aumentar cantidad"

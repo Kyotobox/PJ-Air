@@ -79,7 +79,7 @@ export const ProductCard = ({
                         <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
                             {t.product.quantity} <Edit3 size={8} />
                         </span>
-                        <div className="flex items-center justify-between bg-white border-2 border-neutral-200 rounded-2xl p-1 shadow-sm overflow-hidden focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/30 transition-all w-full h-12">
+                        <div className="w-full grid grid-cols-[40px_minmax(0,1fr)_40px] items-center bg-white border-2 border-neutral-200 rounded-2xl p-1 shadow-sm overflow-hidden focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/30 transition-all h-12">
                             <button 
                                 type="button"
                                 onClick={() => {
@@ -109,7 +109,7 @@ export const ProductCard = ({
                                     e.target.select();
                                 }}
                                 title="Haga clic para editar cantidad"
-                                className="flex-1 h-full bg-transparent text-center font-bold text-lg outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-pointer focus:bg-primary/5 border-x border-neutral-100" 
+                                className="w-full min-w-0 h-full bg-transparent text-center font-bold text-lg outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none cursor-pointer focus:bg-primary/5 border-x border-neutral-100" 
                             />
                             <button 
                                 type="button"

@@ -55,18 +55,20 @@ export const ProductCardCompact = ({
 
                 {/* Qty + Cart */}
                 <div className="flex items-center gap-2 mt-auto pt-2">
-                    <div className="flex items-center bg-muted rounded-xl overflow-hidden border border-border/40">
+                    <div className="grid grid-cols-[28px_auto_28px] items-center bg-muted rounded-xl overflow-hidden border border-border/40 shrink-0">
                         <button
+                            type="button"
                             onClick={() => onDecrement(product.id)}
-                            className="px-2 py-1.5 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
                             aria-label="Decrease"
                         >
                             <Minus size={13} strokeWidth={2.5} />
                         </button>
-                        <span className="px-2 text-sm font-bold min-w-[24px] text-center">{quantity}</span>
+                        <span className="px-1 text-sm font-bold min-w-[24px] text-center">{quantity}</span>
                         <button
+                            type="button"
                             onClick={() => onIncrement(product.id)}
-                            className="px-2 py-1.5 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
                             aria-label="Increase"
                         >
                             <Plus size={13} strokeWidth={2.5} />
