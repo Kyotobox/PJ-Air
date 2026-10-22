@@ -110,7 +110,7 @@
           "id": "TASK-30-01",
           "label": "NOTIFICATIONS/TECH",
           "desc": "Conexión del disparador automático sendCreditAlert en OrdersService ante pedidos en sobregiro y umbrales de cupo.",
-          "status": "PLANNED"
+          "status": "DONE"
         },
         {
           "id": "TASK-30-02",

@@ -7,9 +7,13 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem, User, Product])],
+  imports: [
+    TypeOrmModule.forFeature([Order, OrderItem, User, Product]),
+    MailModule,
+  ],
   providers: [OrdersService, ExcelService],
   controllers: [OrdersController],
   exports: [OrdersService, ExcelService],

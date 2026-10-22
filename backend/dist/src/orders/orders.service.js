@@ -20,18 +20,21 @@ const order_entity_1 = require("./order.entity");
 const order_item_entity_1 = require("./order-item.entity");
 const user_entity_1 = require("../users/user.entity");
 const product_entity_1 = require("../products/product.entity");
+const mail_service_1 = require("../mail/mail.service");
 let OrdersService = class OrdersService {
     orderRepository;
     orderItemRepository;
     userRepository;
     productRepository;
     dataSource;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource) {
+    mailService;
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, mailService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.dataSource = dataSource;
+        this.mailService = mailService;
     }
     validateStatusTransition(currentStatus, newStatus, userRole) {
         if (userRole === 'admin')
@@ -187,7 +190,7 @@ let OrdersService = class OrdersService {
         }
         const user = await this.userRepository.findOne({
             where: { id: userId },
-            relations: ['orders']
+            relations: ['orders', 'profile']
         });
         const appliedDeliveryType = deliveryType || rest.delivery_type || 'saved';
         const appliedDeliveryDate = deliveryDate || rest.delivery_date;
@@ -197,13 +200,26 @@ let OrdersService = class OrdersService {
         const appliedPaymentStatus = paymentStatus || rest.payment_status || 'pending';
         const deliveryFee = appliedDeliveryType === 'pickup' ? 0 : Number(user?.delivery_fee || 0);
         const finalTotal = Math.round((itemsTotal + deliveryFee + Number.EPSILON) * 100) / 100;
+        let shouldSendCreditAlert = false;
+        let isOverdraftAlert = false;
+        let prospectiveCreditTotal = 0;
+        let clientCreditLimit = 0;
         if (user?.account_type === 'credit') {
             const unpaidOrders = (user.orders || []).filter((o) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado');
             const usedCredit = unpaidOrders.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-            const creditLimit = Number(user.credit_limit || 0);
-            const prospectiveTotal = usedCredit + finalTotal;
-            if (prospectiveTotal > creditLimit && !user.credit_override) {
-                throw new common_1.BadRequestException(`Límite de crédito excedido: Tu límite es de $${creditLimit.toFixed(2)}, tienes $${usedCredit.toFixed(2)} pendiente y esta orden suma $${finalTotal.toFixed(2)}. Contacta a la administración para una autorización.`);
+            clientCreditLimit = Number(user.credit_limit || 0);
+            prospectiveCreditTotal = Math.round((usedCredit + finalTotal + Number.EPSILON) * 100) / 100;
+            const isOverride = Boolean(user.credit_override);
+            if (prospectiveCreditTotal > clientCreditLimit && !isOverride) {
+                throw new common_1.BadRequestException(`Límite de crédito excedido: Tu límite es de $${clientCreditLimit.toFixed(2)}, tienes $${usedCredit.toFixed(2)} pendiente y esta orden suma $${finalTotal.toFixed(2)}. Contacta a la administración para una autorización.`);
+            }
+            if (prospectiveCreditTotal > clientCreditLimit && isOverride) {
+                shouldSendCreditAlert = true;
+                isOverdraftAlert = true;
+            }
+            else if (prospectiveCreditTotal >= clientCreditLimit * 0.8 && prospectiveCreditTotal <= clientCreditLimit) {
+                shouldSendCreditAlert = true;
+                isOverdraftAlert = false;
             }
         }
         const savedOrderId = await this.dataSource.transaction(async (manager) => {
@@ -232,7 +248,14 @@ let OrdersService = class OrdersService {
             }
             return savedOrder.id;
         });
-        return this.findOne(savedOrderId);
+        const createdOrder = await this.findOne(savedOrderId);
+        if (shouldSendCreditAlert && this.mailService && user?.email) {
+            const clientName = user.profile?.full_name || 'Cliente B2B';
+            this.mailService.sendCreditAlert(user.email, clientName, prospectiveCreditTotal, clientCreditLimit, isOverdraftAlert).catch(err => {
+                console.error('[OrdersService] Error sending credit alert email:', err?.message || err);
+            });
+        }
+        return createdOrder;
     }
     async updateStatus(id, status, userRole) {
         const order = await this.findOne(id);
@@ -291,10 +314,12 @@ exports.OrdersService = OrdersService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(order_item_entity_1.OrderItem)),
     __param(2, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __param(3, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(5, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.DataSource])
+        typeorm_2.DataSource,
+        mail_service_1.MailService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

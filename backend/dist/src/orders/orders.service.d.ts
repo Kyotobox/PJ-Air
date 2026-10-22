@@ -3,13 +3,15 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
+import { MailService } from '../mail/mail.service';
 export declare class OrdersService {
     private orderRepository;
     private orderItemRepository;
     private userRepository;
     private productRepository;
     private dataSource;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource);
+    private mailService?;
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, mailService?: MailService | undefined);
     private validateStatusTransition;
     private calculateOrderPricesAndTotal;
     findInRange(startDate: string, endDate: string, userId?: string): Promise<Order[]>;

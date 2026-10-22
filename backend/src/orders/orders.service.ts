@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, DataSource } from 'typeorm';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrdersService {
@@ -18,6 +19,8 @@ export class OrdersService {
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     private dataSource: DataSource,
+    @Optional()
+    private mailService?: MailService,
   ) {}
 
   private validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string) {
@@ -206,7 +209,7 @@ export class OrdersService {
 
     const user = await this.userRepository.findOne({ 
       where: { id: userId },
-      relations: ['orders']
+      relations: ['orders', 'profile']
     });
     const appliedDeliveryType = deliveryType || (rest as any).delivery_type || 'saved';
     const appliedDeliveryDate = deliveryDate || (rest as any).delivery_date;
@@ -218,19 +221,33 @@ export class OrdersService {
     const deliveryFee = appliedDeliveryType === 'pickup' ? 0 : Number(user?.delivery_fee || 0);
     const finalTotal = Math.round((itemsTotal + deliveryFee + Number.EPSILON) * 100) / 100;
 
+    let shouldSendCreditAlert = false;
+    let isOverdraftAlert = false;
+    let prospectiveCreditTotal = 0;
+    let clientCreditLimit = 0;
+
     // Credit gate validation for B2B accounts
     if (user?.account_type === 'credit') {
       const unpaidOrders = (user.orders || []).filter(
         (o: any) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado'
       );
       const usedCredit = unpaidOrders.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
-      const creditLimit = Number(user.credit_limit || 0);
-      const prospectiveTotal = usedCredit + finalTotal;
+      clientCreditLimit = Number(user.credit_limit || 0);
+      prospectiveCreditTotal = Math.round((usedCredit + finalTotal + Number.EPSILON) * 100) / 100;
+      const isOverride = Boolean(user.credit_override);
 
-      if (prospectiveTotal > creditLimit && !user.credit_override) {
+      if (prospectiveCreditTotal > clientCreditLimit && !isOverride) {
         throw new BadRequestException(
-          `Límite de crédito excedido: Tu límite es de $${creditLimit.toFixed(2)}, tienes $${usedCredit.toFixed(2)} pendiente y esta orden suma $${finalTotal.toFixed(2)}. Contacta a la administración para una autorización.`
+          `Límite de crédito excedido: Tu límite es de $${clientCreditLimit.toFixed(2)}, tienes $${usedCredit.toFixed(2)} pendiente y esta orden suma $${finalTotal.toFixed(2)}. Contacta a la administración para una autorización.`
         );
+      }
+
+      if (prospectiveCreditTotal > clientCreditLimit && isOverride) {
+        shouldSendCreditAlert = true;
+        isOverdraftAlert = true;
+      } else if (prospectiveCreditTotal >= clientCreditLimit * 0.8 && prospectiveCreditTotal <= clientCreditLimit) {
+        shouldSendCreditAlert = true;
+        isOverdraftAlert = false;
       }
     }
 
@@ -264,7 +281,22 @@ export class OrdersService {
       return savedOrder.id;
     });
 
-    return this.findOne(savedOrderId);
+    const createdOrder = await this.findOne(savedOrderId);
+
+    if (shouldSendCreditAlert && this.mailService && user?.email) {
+      const clientName = user.profile?.full_name || 'Cliente B2B';
+      this.mailService.sendCreditAlert(
+        user.email,
+        clientName,
+        prospectiveCreditTotal,
+        clientCreditLimit,
+        isOverdraftAlert,
+      ).catch(err => {
+        console.error('[OrdersService] Error sending credit alert email:', err?.message || err);
+      });
+    }
+
+    return createdOrder;
   }
 
   async updateStatus(id: string, status: string, userRole?: string): Promise<Order> {

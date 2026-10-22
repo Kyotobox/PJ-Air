@@ -5,6 +5,7 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
+import { MailService } from '../mail/mail.service';
 import { DataSource } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 
@@ -16,6 +17,7 @@ describe('OrdersService', () => {
   let productRepository: any;
   let dataSource: any;
   let mockManager: any;
+  let mockMailService: any;
 
   beforeEach(async () => {
     orderRepository = {
@@ -50,6 +52,11 @@ describe('OrdersService', () => {
       transaction: jest.fn().mockImplementation(async (cb) => cb(mockManager)),
     };
 
+    mockMailService = {
+      sendCreditAlert: jest.fn().mockResolvedValue(true),
+      sendOrderReceipt: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
@@ -58,6 +65,7 @@ describe('OrdersService', () => {
         { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: getRepositoryToken(Product), useValue: productRepository },
         { provide: DataSource, useValue: dataSource },
+        { provide: MailService, useValue: mockMailService },
       ],
     }).compile();
 
@@ -222,6 +230,8 @@ describe('OrdersService', () => {
 
     userRepository.findOne.mockResolvedValue({
       id: 'user-credit-2',
+      email: 'credit2@test.com',
+      profile: { full_name: 'Empresa B2B Test' },
       account_type: 'credit',
       credit_limit: 500,
       credit_override: true, // Emergency exception authorized
@@ -242,6 +252,85 @@ describe('OrdersService', () => {
 
     const result = await service.create('user-credit-2', orderData);
     expect(result.id).toBe('order-approved');
+    expect(mockMailService.sendCreditAlert).toHaveBeenCalledWith(
+      'credit2@test.com',
+      'Empresa B2B Test',
+      550,
+      500,
+      true,
+    );
+  });
+
+  it('should trigger sendCreditAlert threshold warning when prospective total is between 80% and 100% of credit limit', async () => {
+    const orderData = {
+      items: [{ productId: 1, quantity: 2 }], // 50 * 2 = 100
+      delivery_type: 'pickup',
+    };
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-credit-3',
+      email: 'credit3@test.com',
+      profile: { full_name: 'Cliente Alerta 80%' },
+      account_type: 'credit',
+      credit_limit: 500, // 80% is 400. Prospective total will be 320 + 100 = 420 (>= 400 and <= 500)
+      credit_override: false,
+      orders: [
+        { id: 'o-prev', total: 320, payment_status: 'pending', status: 'En Producción' },
+      ],
+      productDiscounts: [],
+    });
+
+    productRepository.find.mockResolvedValue([
+      { id: 1, price: 50 },
+    ]);
+
+    const createdOrder = { id: 'order-threshold-approved', total: 100 };
+    mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+    mockManager.save.mockResolvedValue(createdOrder);
+    service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+    const result = await service.create('user-credit-3', orderData);
+    expect(result.id).toBe('order-threshold-approved');
+    expect(mockMailService.sendCreditAlert).toHaveBeenCalledWith(
+      'credit3@test.com',
+      'Cliente Alerta 80%',
+      420,
+      500,
+      false,
+    );
+  });
+
+  it('should not trigger sendCreditAlert when prospective total is below 80% of credit limit', async () => {
+    const orderData = {
+      items: [{ productId: 1, quantity: 1 }], // 50 * 1 = 50
+      delivery_type: 'pickup',
+    };
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-credit-4',
+      email: 'credit4@test.com',
+      profile: { full_name: 'Cliente Bajo Cupo' },
+      account_type: 'credit',
+      credit_limit: 500, // 80% is 400. Prospective total: 50 + 50 = 100 (< 400)
+      credit_override: false,
+      orders: [
+        { id: 'o-prev', total: 50, payment_status: 'pending', status: 'En Producción' },
+      ],
+      productDiscounts: [],
+    });
+
+    productRepository.find.mockResolvedValue([
+      { id: 1, price: 50 },
+    ]);
+
+    const createdOrder = { id: 'order-low-total', total: 50 };
+    mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+    mockManager.save.mockResolvedValue(createdOrder);
+    service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+    const result = await service.create('user-credit-4', orderData);
+    expect(result.id).toBe('order-low-total');
+    expect(mockMailService.sendCreditAlert).not.toHaveBeenCalled();
   });
 
   it('should allow invalid order status transitions (e.g., Delivered -> Pending) if user is admin', async () => {
