@@ -30,6 +30,12 @@ let AddressesService = class AddressesService {
             where: { user_id: userId, is_temporary: false },
         });
     }
+    async findOne(id) {
+        const address = await this.addressRepository.findOne({ where: { id } });
+        if (!address)
+            throw new common_1.NotFoundException('Address not found');
+        return address;
+    }
     async create(userId, addressData) {
         const address = this.addressRepository.create({
             ...addressData,

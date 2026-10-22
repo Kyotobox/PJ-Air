@@ -1,6 +1,7 @@
 export declare const PORT: string;
 export declare const UPLOAD_PATH: string;
 export declare const DATABASE_PATH: string | undefined;
+export declare const JWT_SECRET: string | undefined;
 export declare const SUPABASE_KEY: string | undefined;
 export declare const GOOGLE_MAPS_KEY: string | undefined;
 export declare const NODE_ENV: string | undefined;

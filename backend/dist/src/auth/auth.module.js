@@ -9,8 +9,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const core_1 = require("@nestjs/core");
 const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
+const auth_guard_1 = require("./auth.guard");
+const roles_guard_1 = require("./roles.guard");
 const users_module_1 = require("../users/users.module");
 const system_config_entity_1 = require("../system-configs/system-config.entity");
 let AuthModule = class AuthModule {
@@ -22,9 +25,9 @@ exports.AuthModule = AuthModule = __decorate([
             users_module_1.UsersModule,
             typeorm_1.TypeOrmModule.forFeature([system_config_entity_1.SystemConfig]),
         ],
-        providers: [auth_service_1.AuthService],
+        providers: [auth_service_1.AuthService, auth_guard_1.AuthGuard, roles_guard_1.RolesGuard, core_1.Reflector],
         controllers: [auth_controller_1.AuthController],
-        exports: [auth_service_1.AuthService]
+        exports: [auth_service_1.AuthService, auth_guard_1.AuthGuard, roles_guard_1.RolesGuard, core_1.Reflector],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

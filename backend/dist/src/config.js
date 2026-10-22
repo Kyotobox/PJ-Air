@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_SECURE = exports.SMTP_PORT = exports.SMTP_HOST = exports.SITE_URL = exports.NODE_ENV = exports.GOOGLE_MAPS_KEY = exports.SUPABASE_KEY = exports.DATABASE_PATH = exports.UPLOAD_PATH = exports.PORT = void 0;
+exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_SECURE = exports.SMTP_PORT = exports.SMTP_HOST = exports.SITE_URL = exports.NODE_ENV = exports.GOOGLE_MAPS_KEY = exports.SUPABASE_KEY = exports.JWT_SECRET = exports.DATABASE_PATH = exports.UPLOAD_PATH = exports.PORT = void 0;
 exports.initialize = initialize;
 const fs = __importStar(require("fs"));
 const path_1 = require("path");
@@ -50,6 +50,7 @@ if (fs.existsSync(envPath)) {
 exports.PORT = process.env.BACKEND_PORT || '3001';
 exports.UPLOAD_PATH = process.env.UPLOAD_PATH || 'uploads';
 exports.DATABASE_PATH = process.env.DATABASE_PATH;
+exports.JWT_SECRET = process.env.JWT_SECRET;
 exports.SUPABASE_KEY = process.env.SUPABASE_KEY;
 exports.GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_KEY;
 exports.NODE_ENV = process.env.NODE_ENV;
@@ -62,6 +63,9 @@ exports.SMTP_PASS = process.env.SMTP_PASS;
 function initialize() {
     if (!exports.DATABASE_PATH) {
         throw new Error('❌ CRITICAL ERROR: DATABASE_PATH is missing. The backend cannot start.');
+    }
+    if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+        throw new Error('❌ CRITICAL ERROR: JWT_SECRET is missing in production environment.');
     }
     if (!exports.SUPABASE_KEY) {
         console.warn('⚠️ WARNING: SUPABASE_KEY is missing. Storage will fail.');

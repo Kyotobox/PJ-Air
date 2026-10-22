@@ -53,6 +53,9 @@ const multer_1 = require("multer");
 const path_1 = require("path");
 const fs = __importStar(require("fs"));
 const config_1 = require("../config");
+const auth_guard_1 = require("../auth/auth.guard");
+const roles_guard_1 = require("../auth/roles.guard");
+const roles_decorator_1 = require("../auth/roles.decorator");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
@@ -133,6 +136,8 @@ __decorate([
 ], UsersController.prototype, "updateProfile", null);
 __decorate([
     (0, common_1.Patch)(':id/role'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

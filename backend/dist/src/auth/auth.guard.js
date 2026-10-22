@@ -6,7 +6,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthGuard = void 0;
+exports.JwtAuthGuard = exports.AuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const crypto_util_1 = require("./crypto.util");
 let AuthGuard = class AuthGuard {
@@ -29,7 +29,8 @@ let AuthGuard = class AuthGuard {
     }
 };
 exports.AuthGuard = AuthGuard;
-exports.AuthGuard = AuthGuard = __decorate([
+exports.JwtAuthGuard = AuthGuard;
+exports.JwtAuthGuard = exports.AuthGuard = AuthGuard = __decorate([
     (0, common_1.Injectable)()
 ], AuthGuard);
 //# sourceMappingURL=auth.guard.js.map
