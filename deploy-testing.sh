@@ -53,8 +53,8 @@ cd "$TESTING_DIR"
 pm2 delete pj-air-backend-testing || true
 pm2 delete pj-air-frontend-testing || true
 
-BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start backend/dist/src/main.js --name pj-air-backend-testing --cwd "$TESTING_DIR/backend"
-PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start node_modules/next/dist/bin/next --name pj-air-frontend-testing --cwd "$TESTING_DIR/frontend" -- start
+BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name pj-air-backend-testing --cwd "$TESTING_DIR/backend"
+PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start "$TESTING_DIR/node_modules/next/dist/bin/next" --name pj-air-frontend-testing --cwd "$TESTING_DIR/frontend" -- start -p 3200
 pm2 save
 
 echo "=========================================================="
