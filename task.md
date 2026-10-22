@@ -1,8 +1,8 @@
-# SPRINT S24 - Sprint 24: Consolidación DevOps y Pipeline de Release
-**Objetivo**: Modernizar scripts de release, asegurar idempotencia de backups y documentar procedimientos.
+# SPRINT S28 - Sprint 28: Panel Ejecutivo, Torre Operativa y Pipeline de Despliegue Staging
+**Objetivo**: Construir panel ejecutivo integral, torre de control interactiva y pipeline de despliegue remoto a entorno staging aislado.
 **Fecha**: 2026-10-22
 
-- [x] **TASK-24-01** [INFRA/TECH] Crear .dockerignore en raíz, frontend y backend; limpiar variables de Supabase en frontend/Dockerfile.
-- [x] **TASK-24-02** [INFRA/TECH] Refactorizar scripts de backup remoto a sqlite3 .backup atómico y pm2 reload con validación de código de salida.
-- [x] **TASK-24-03** [INFRA/DOC] Elaborar la Guía Operativa de Recuperación y Manual de Despliegue en vault/intel/OPERATIONS_DISASTER_RECOVERY.md.
-- [x] **TASK-24-04** [GOV/BASELINE] Ejecutar logix audit, sincronizar backlog y re-sellar el ADN del satélite con logix baseline -f.
+- [x] **TASK-28-01** [UI/ADMIN] Rediseño de Executive Control Panel en /admin con KPIs financieros, torre operativa y alertas.
+- [x] **TASK-28-02** [REPORTS/OPS] Reportes interactivos de producción con reprogramación de fechas y excepciones post-corte.
+- [x] **TASK-28-03** [INFRA/DEPLOY] Pipeline y script de despliegue remoto seguro a staging aislando estrictamente producción.
+- [x] **TASK-28-04** [GOV/BASELINE] Pruebas de suite completa, auditoría de integridad logix audit y re-sellado baseline.

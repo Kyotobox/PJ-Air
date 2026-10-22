@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import ProduccionSidebar from '@/components/layout/ProduccionSidebar';
+import InteractiveBatchManager from '@/components/reports/InteractiveBatchManager';
 import { API_URL } from '@/lib/config';
 import { 
     Calendar as CalendarIcon, 
@@ -52,6 +53,10 @@ interface CategoryBlock {
 
 const getProductionDate = (dateStr: string) => {
     if (!dateStr) return '';
+    const clean = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(clean) && !dateStr.includes(':')) {
+        return clean;
+    }
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return '';
     const nyDate = new Date(d.toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -160,7 +165,7 @@ function ReportsPageContent() {
             const rawData = await res.json();
             
             const validOrders = (Array.isArray(rawData) ? rawData : []).filter(order => {
-                const prodDate = getProductionDate(order.created_at || order.delivery_date || '');
+                const prodDate = getProductionDate(order.delivery_date || order.created_at || '');
                 return prodDate >= s && prodDate <= e;
             });
             
@@ -228,7 +233,7 @@ function ReportsPageContent() {
 
             if (isSpecific) {
                 // For specific client, columns are dates or periods
-                const datePart = getProductionDate(order.created_at || order.delivery_date || '');
+                const datePart = getProductionDate(order.delivery_date || order.created_at || '');
                 if (reportType === 'monthly') {
                     key = 'period_monthly';
                     label = t.adminSettings.spanish; // Placeholder or month name? User said "indicando el mes"
@@ -262,7 +267,7 @@ function ReportsPageContent() {
         const catMap: Record<string, CategoryBlock> = {};
 
         orders.forEach(order => {
-            const datePart = getProductionDate(order.created_at || order.delivery_date || '');
+            const datePart = getProductionDate(order.delivery_date || order.created_at || '');
             let colKey = '';
             if (isSpecific) {
                 if (reportType === 'monthly') colKey = 'period_monthly';
@@ -594,6 +599,16 @@ function ReportsPageContent() {
                             )}
                         </div>
                     </div>
+
+                    {/* Interactive Production Batch Manager */}
+                    <InteractiveBatchManager
+                        orders={orders}
+                        onOrderUpdated={(updatedOrder, newDate) => {
+                            setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder, delivery_date: newDate } : o));
+                        }}
+                        currentRangeStart={reportMeta.start}
+                        currentRangeEnd={reportMeta.end}
+                    />
 
                     {/* Category Tables (Print chunked version) */}
                     {reportData.categories.map((cat, catIdx) => (

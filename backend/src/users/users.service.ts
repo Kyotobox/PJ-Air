@@ -111,6 +111,49 @@ export class UsersService {
     await this.userRepository.update(userId, { delivery_fee: fee });
   }
 
+  async updateCreditSettings(
+    userId: string, 
+    data: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean }
+  ): Promise<User> {
+    const user = await this.findOne(userId);
+    if (data.account_type !== undefined) user.account_type = data.account_type;
+    if (data.credit_limit !== undefined) user.credit_limit = Number(data.credit_limit) || 0;
+    if (data.credit_override !== undefined) user.credit_override = Boolean(data.credit_override);
+    
+    await this.userRepository.save(user);
+    return this.findOne(userId);
+  }
+
+  async getUserCreditSummary(userId: string): Promise<{
+    account_type: 'cash' | 'credit';
+    credit_limit: number;
+    credit_override: boolean;
+    used_credit: number;
+    available_credit: number;
+    is_overdraft: boolean;
+    can_order: boolean;
+  }> {
+    const user = await this.findOne(userId);
+    const unpaidOrders = (user.orders || []).filter(
+      (o: any) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado'
+    );
+    const used_credit = unpaidOrders.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
+    const credit_limit = Number(user.credit_limit || 0);
+    const available_credit = Math.max(0, credit_limit - used_credit);
+    const is_overdraft = used_credit > credit_limit;
+    const can_order = user.account_type === 'cash' || !is_overdraft || Boolean(user.credit_override);
+
+    return {
+      account_type: user.account_type || 'cash',
+      credit_limit,
+      credit_override: Boolean(user.credit_override),
+      used_credit: Math.round(used_credit * 100) / 100,
+      available_credit: Math.round(available_credit * 100) / 100,
+      is_overdraft,
+      can_order,
+    };
+  }
+
   async setProductDiscount(userId: string, productId: number, data: { discount_percentage?: number; special_price?: number }): Promise<ProductDiscount> {
     let discount = await this.productDiscountRepository.findOne({ where: { user_id: userId, product_id: productId } });
     if (discount) {

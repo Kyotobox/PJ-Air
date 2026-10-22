@@ -17,5 +17,11 @@ Nuestra meta principal es automatizar y agilizar el canal de ventas y logística
 3. **Módulos Independientes de Reportes**: Desarrollo de herramientas de analítica y reportes adicionales que consuman la base de datos SQLite actual directamente, sin crear dependencias que modifiquen el backend NestJS existente.
 
 ## 4. Cercas Eléctricas y Exclusiones (Fuera de Alcance)
-- **NO Alteración del Esquema de Base de Datos**: No se permite añadir, renombrar o eliminar campos en las tablas existentes de la base de datos (`database.sqlite`) para evitar romper la compatibilidad con el entorno de producción actual.
-- **NO Modificación de Controladores Existentes**: Los endpoints API existentes son inmutables.
+- **NO Modificación Destructiva del Esquema**: No se permite renombrar o eliminar campos en las tablas existentes de la base de datos para preservar la compatibilidad con el entorno de producción actual.
+- **Inviolabilidad de Producción en el VPS**: Queda estrictamente prohibido alterar la ruta `/var/www/pj-air`, sus procesos PM2 o su base de datos productiva. Todo despliegue y validación remota debe realizarse en el entorno aislado de staging/testing (`/var/www/pj-air-staging`).
+
+## 5. Evolución Wholesale (Sprints S25-S28) — Autorizado por el PO
+1. **Pasarela de Pago y Facturación Stripe**: Habilitación formal de Stripe (`Payments` para cobro inmediato de clientes de contado y `Invoicing` para facturación B2B con enlace de pago diferido).
+2. **Sistema de Crédito B2B y Tarifas de Delivery**: Extensión controlada de modelos en desarrollo/testing para soportar clientes de contado vs crédito (`account_type`, `credit_limit`, `credit_override`) y persistencia del delivery fee cobrado (`delivery_fee_charged`, `payment_status`).
+3. **Vitrina Pública y Términos Comerciales**: Desbloqueo del catálogo público mayorista, carrito de compra anónimo y marco legal dinámico en `system_configs`.
+4. **Logística y Torre de Producción**: Regla de corte de pedidos a las 12:00 PM (1.5 días de anticipación) y reportes de producción interactivos con recálculo dinámico.

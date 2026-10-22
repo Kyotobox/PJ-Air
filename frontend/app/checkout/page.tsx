@@ -15,6 +15,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { api } from '@/lib/api';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
+import StripePaymentModal from '@/components/checkout/StripePaymentModal';
 
 // MIN_ORDER_AMOUNT was migrated to dynamic configuration loaded from the backend API
 
@@ -293,9 +294,12 @@ export default function CheckoutPage() {
 
     const [deliveryDate, setDeliveryDate] = useState('');
     const [paymentDate, setPaymentDate] = useState('');
+    const [rawDeliveryDate, setRawDeliveryDate] = useState('');
     const [isBeforeCutoff, setIsBeforeCutoff] = useState(true);
     const [showMinAmountModal, setShowMinAmountModal] = useState(false);
     const [minOrderAmount, setMinOrderAmount] = useState<number>(500);
+    const [cutoffHour, setCutoffHour] = useState<number>(12);
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     const [addresses, setAddresses] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -314,8 +318,21 @@ export default function CheckoutPage() {
 
     const lbl = (es: string, en: string) => locale === 'en' ? en : es;
 
-    // Discounts
+    // Discounts & Credit
     const [userDiscounts, setUserDiscounts] = useState<any>(null);
+    const [creditSummary, setCreditSummary] = useState<any>(null);
+    const [stripePaymentData, setStripePaymentData] = useState<{ clientSecret: string; amount: number; orderId: string } | null>(null);
+
+    const handleStripePaymentSuccess = async () => {
+        if (!stripePaymentData) return;
+        try {
+            await api.patch(`/orders/${stripePaymentData.orderId}/payment-status`, { payment_status: 'paid' });
+        } catch (e) {
+            console.error('Error updating payment status:', e);
+        }
+        clearCart();
+        window.location.href = `/orders/${stripePaymentData.orderId}`;
+    };
 
     // ── Fetch user & discounts ──────────────────────────────────────────────
     useEffect(() => {
@@ -325,15 +342,17 @@ export default function CheckoutPage() {
         // Parallel fetch for speed
         Promise.all([
             api.get(`/addresses/user/${user.id}`) as Promise<any[]>,
-            api.get(`/users/${user.id}`).catch(() => null) // Includes general_discount and productDiscounts
-        ]).then(([addrData, userData]) => {
+            api.get(`/users/${user.id}`).catch(() => null), // Includes general_discount and productDiscounts
+            api.get(`/users/${user.id}/credit-summary`).catch(() => null)
+        ]).then(([addrData, userData, creditData]) => {
             setAddresses(Array.isArray(addrData) ? addrData : []);
             if (addrData?.length > 0) setSelectedAddressId(addrData[0].id);
             setUserDiscounts(userData);
+            setCreditSummary(creditData);
         }).finally(() => setIsFetchingAddresses(false));
     }, [user]);
 
-    // ── Fetch min order amount configuration ──────────────────────────────────
+    // ── Fetch min order amount & cutoff configuration ────────────────────────
     useEffect(() => {
         api.get('/configs/min_order_amount')
             .then((res: any) => {
@@ -342,6 +361,14 @@ export default function CheckoutPage() {
                 }
             })
             .catch(err => console.error('Error fetching min_order_amount:', err));
+
+        api.get('/configs/cutoff_hour')
+            .then((res: any) => {
+                if (res && res.value) {
+                    setCutoffHour(Number(res.value) || 12);
+                }
+            })
+            .catch(err => console.error('Error fetching cutoff_hour:', err));
     }, []);
 
     // ── Calculation logic ─────────────────────────────────────────────────────
@@ -352,23 +379,49 @@ export default function CheckoutPage() {
     const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + Number.EPSILON) * 100) / 100;
     const subtotal = rawSubtotal;
 
+    const isCreditAccount = creditSummary?.account_type === 'credit';
+    const creditLimit = Number(creditSummary?.credit_limit || 0);
+    const usedCredit = Number(creditSummary?.used_credit || 0);
+    const availableCredit = Number(creditSummary?.available_credit || 0);
+    const hasCreditOverride = Boolean(creditSummary?.credit_override);
+    const exceedsCreditLimit = isCreditAccount && (usedCredit + finalTotal > creditLimit) && !hasCreditOverride;
+
     // ── Delivery date (NY timezone) ───────────────────────────────────────────
     useEffect(() => {
         const nowNY = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const before = nowNY.getHours() < 13;
+        const before = nowNY.getHours() < cutoffHour;
         const daysToAdd = before ? 2 : 3;
         const delDate = new Date(nowNY);
         delDate.setDate(nowNY.getDate() + daysToAdd);
         const payDate = new Date(delDate);
         payDate.setDate(delDate.getDate() + 6);
         setIsBeforeCutoff(before);
-        setDeliveryDate(delDate.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' }));
-        setPaymentDate(payDate.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' }));
-    }, []);
+
+        const yyyy = delDate.getFullYear();
+        const mm = String(delDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(delDate.getDate()).padStart(2, '0');
+        setRawDeliveryDate(`${yyyy}-${mm}-${dd}`);
+
+        setDeliveryDate(delDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
+        setPaymentDate(payDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
+    }, [cutoffHour, locale]);
 
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         if (!user || cart.length === 0) return;
+
+        if (!termsAccepted) {
+            alert(lbl('Por favor acepta los Términos y Condiciones para continuar.', 'Please accept the Terms and Conditions to proceed.'));
+            return;
+        }
+
+        if (exceedsCreditLimit) {
+            alert(lbl(
+                `Tu pedido excede tu línea de crédito disponible ($${availableCredit.toFixed(2)}). Comunícate con administración.`,
+                `Your order exceeds your available credit line ($${availableCredit.toFixed(2)}). Please contact administration.`
+            ));
+            return;
+        }
 
         // Minimum order amount check
         if (finalTotal < minOrderAmount) {
@@ -421,7 +474,7 @@ export default function CheckoutPage() {
                 deliveryAddressText,
                 total: finalTotal,
                 status: 'Pedido Enviado',
-                deliveryDate,
+                deliveryDate: rawDeliveryDate || deliveryDate,
                 paymentDueDate: paymentDate,
                 items: cart.map(item => ({
                     productId: item.id,
@@ -429,8 +482,33 @@ export default function CheckoutPage() {
                     price: getItemPrice(item),
                 })),
             }) as any;
-            clearCart();
-            window.location.href = `/orders/${order.id}`;
+
+            if (isCreditAccount) {
+                clearCart();
+                window.location.href = `/orders/${order.id}`;
+            } else {
+                // Cash customer: launch Stripe payment modal
+                try {
+                    const intentRes = await api.post('/payments/create-intent', {
+                        amount: finalTotal,
+                        orderId: order.id,
+                        customerEmail: user.email,
+                    }) as any;
+
+                    if (intentRes && intentRes.clientSecret) {
+                        setStripePaymentData({
+                            clientSecret: intentRes.clientSecret,
+                            amount: finalTotal,
+                            orderId: order.id,
+                        });
+                        return; // Wait for modal completion
+                    }
+                } catch (payErr) {
+                    console.error('Could not initialize payment intent:', payErr);
+                }
+                clearCart();
+                window.location.href = `/orders/${order.id}`;
+            }
         } catch (error) {
             console.error('Error placing order:', error);
             alert(lbl(
@@ -811,9 +889,69 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
+                            {/* B2B Credit Notice */}
+                            {isCreditAccount && (
+                                <div className="p-4 rounded-2xl border text-xs my-4 space-y-1.5 shadow-sm transition-all bg-blue-50/70 border-blue-200 text-blue-900">
+                                    <div className="flex items-center justify-between font-bold">
+                                        <span className="flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                                            <CreditCard size={14} className="text-blue-600" />
+                                            {lbl('Modalidad de Cuenta', 'Account Mode')}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-black uppercase">
+                                            {lbl('Línea de Crédito', 'Credit Account')}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-muted-foreground">{lbl('Crédito Disponible:', 'Available Credit:')}</span>
+                                        <span className="font-black text-slate-800">${availableCredit.toFixed(2)}</span>
+                                    </div>
+
+                                    {exceedsCreditLimit && (
+                                        <div className="p-2.5 mt-2 bg-red-100/90 text-red-800 rounded-xl font-bold flex items-start gap-2 border border-red-200">
+                                            <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
+                                            <p className="leading-tight">
+                                                {lbl(
+                                                    `🚫 Límite de crédito excedido. Esta orden ($${finalTotal.toFixed(2)}) supera tu crédito disponible. Comunícate con gerencia para autorizar un sobregiro.`,
+                                                    `🚫 Credit limit exceeded. This order ($${finalTotal.toFixed(2)}) exceeds your available credit. Contact management to authorize an overdraft.`
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {isCreditAccount && (usedCredit + finalTotal > creditLimit) && hasCreditOverride && (
+                                        <div className="p-2.5 mt-2 bg-amber-100/90 text-amber-800 rounded-xl font-bold flex items-start gap-2 border border-amber-200">
+                                            <Check size={16} className="shrink-0 mt-0.5 text-amber-700" />
+                                            <p className="leading-tight">
+                                                {lbl(
+                                                    '⚠️ Autorización de sobregiro activa: Cuentas con permiso administrativo para procesar esta orden por encima de tu límite.',
+                                                    '⚠️ Overdraft override active: You have administrative permission to process this order above your standard limit.'
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex items-start gap-3 p-4 bg-white/60 rounded-2xl border border-border/80 my-4 shadow-sm">
+                                <input
+                                    id="terms_agree_checkout"
+                                    type="checkbox"
+                                    checked={termsAccepted}
+                                    onChange={e => setTermsAccepted(e.target.checked)}
+                                    className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                                />
+                                <label htmlFor="terms_agree_checkout" className="text-xs text-foreground/80 font-medium leading-relaxed cursor-pointer select-none">
+                                    {locale === 'en' ? (
+                                        <>I have read and agree to the <a href="/terms" target="_blank" className="text-primary font-bold underline hover:text-black">Commercial Terms and Conditions</a> of Jhoanes Wholesale.</>
+                                    ) : (
+                                        <>He leído y acepto los <a href="/terms" target="_blank" className="text-primary font-bold underline hover:text-black">Términos y Condiciones Comerciales</a> de Jhoanes Wholesale.</>
+                                    )}
+                                </label>
+                            </div>
+
                             <button
                                 onClick={handleSubmit}
-                                disabled={isLoading || cart.length === 0}
+                                disabled={isLoading || cart.length === 0 || !termsAccepted || exceedsCreditLimit}
                                 className="w-full py-4 bg-[#111] hover:bg-[#222] text-white rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
@@ -853,6 +991,21 @@ export default function CheckoutPage() {
                 locale={locale} 
                 minOrderAmount={minOrderAmount}
             />
+
+            {stripePaymentData && (
+                <StripePaymentModal
+                    clientSecret={stripePaymentData.clientSecret}
+                    amount={stripePaymentData.amount}
+                    orderId={stripePaymentData.orderId}
+                    onSuccess={handleStripePaymentSuccess}
+                    onCancel={() => {
+                        setStripePaymentData(null);
+                        clearCart();
+                        window.location.href = `/orders/${stripePaymentData.orderId}`;
+                    }}
+                    locale={locale}
+                />
+            )}
         </div>
     );
 }

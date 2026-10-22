@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { 
     Bell, Save, Loader2, CheckCircle2, AlertCircle, 
-    Clock, Zap, Calendar, Globe, DollarSign
+    Clock, Zap, Calendar, Globe, DollarSign, FileText
 } from 'lucide-react';
 import { useLanguage, type Locale } from '@/context/LanguageContext';
 import { api } from '@/lib/api';
@@ -22,12 +22,16 @@ export default function AdminSettingsPage() {
     });
     const [selectedDefault, setSelectedDefault] = useState<Locale>(defaultLocale);
     const [minOrderAmount, setMinOrderAmount] = useState<number>(500);
+    const [cutoffHour, setCutoffHour] = useState<number>(12);
+    const [termsEs, setTermsEs] = useState<string>('');
+    const [termsEn, setTermsEn] = useState<string>('');
+    const [termsTab, setTermsTab] = useState<'es' | 'en'>('es');
 
     useEffect(() => {
         const saved = localStorage.getItem('admin_notification_settings');
         if (saved) setSettings(JSON.parse(saved));
 
-        // Fetch min order amount configuration
+        // Fetch configs
         api.get('/configs/min_order_amount')
             .then((res: any) => {
                 if (res && res.value) {
@@ -35,6 +39,26 @@ export default function AdminSettingsPage() {
                 }
             })
             .catch(err => console.error('Error fetching min order amount:', err));
+
+        api.get('/configs/cutoff_hour')
+            .then((res: any) => {
+                if (res && res.value) {
+                    setCutoffHour(Number(res.value) || 12);
+                }
+            })
+            .catch(() => {});
+
+        api.get('/configs/terms_and_conditions_es')
+            .then((res: any) => {
+                if (res && res.value) setTermsEs(res.value);
+            })
+            .catch(() => {});
+
+        api.get('/configs/terms_and_conditions_en')
+            .then((res: any) => {
+                if (res && res.value) setTermsEn(res.value);
+            })
+            .catch(() => {});
     }, []);
 
     // Keep selectedDefault in sync if defaultLocale changes externally
@@ -54,8 +78,11 @@ export default function AdminSettingsPage() {
             // Apply the chosen default language for all users
             setDefaultLocale(selectedDefault);
             
-            // Save the min order amount config
+            // Save the configs
             await api.patch('/configs/min_order_amount', { value: String(minOrderAmount) });
+            await api.patch('/configs/cutoff_hour', { value: String(cutoffHour) });
+            if (termsEs) await api.patch('/configs/terms_and_conditions_es', { value: termsEs });
+            if (termsEn) await api.patch('/configs/terms_and_conditions_en', { value: termsEn });
 
             await new Promise(r => setTimeout(r, 600));
             showToast(t.adminSettings.savedOk);
@@ -121,20 +148,24 @@ export default function AdminSettingsPage() {
                         </div>
                     </section>
 
-                    {/* ── Order Config Section ────────────────────────────────── */}
+                    {/* ── Order & Logistics Config Section ────────────────── */}
                     <section className="bg-white rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
                         <div className="p-8 border-b border-border bg-slate-50/50 flex items-center gap-4">
                             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
                                 <DollarSign size={24} />
                             </div>
                             <div>
-                                <h2 className="font-black text-slate-800 text-xl leading-none mb-1">{t.adminSettings.minOrderAmount}</h2>
-                                <p className="text-sm text-muted-foreground">{t.adminSettings.minOrderAmountDesc}</p>
+                                <h2 className="font-black text-slate-800 text-xl leading-none mb-1">
+                                    {selectedDefault === 'en' ? 'Order Minimum & Cutoff Logistics' : 'Mínimo de Compra y Logística de Corte'}
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    {selectedDefault === 'en' ? 'Manage minimum order requirement and daily production cutoff hour' : 'Configura el monto mínimo de orden y la hora límite diaria de producción'}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="p-10 space-y-6">
-                            <div className="flex flex-col gap-2 max-w-xs">
+                        <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="flex flex-col gap-2">
                                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                                     {t.adminSettings.minOrderAmount} ($)
                                 </label>
@@ -146,7 +177,108 @@ export default function AdminSettingsPage() {
                                     onChange={e => setMinOrderAmount(Number(e.target.value) || 0)}
                                     className="bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg font-black text-slate-800 outline-none focus:border-primary transition-all"
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    {selectedDefault === 'en' ? 'Minimum cart subtotal required to proceed to checkout' : 'Subtotal mínimo requerido en el carrito para procesar el pedido'}
+                                </p>
                             </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                    {selectedDefault === 'en' ? 'Cutoff Hour (24h format, e.g. 12 = 12:00 PM)' : 'Hora de Corte (Formato 24h, ej: 12 = 12:00 PM)'}
+                                </label>
+                                <input 
+                                    type="number" 
+                                    min="0"
+                                    max="23"
+                                    step="1"
+                                    value={cutoffHour}
+                                    onChange={e => setCutoffHour(Number(e.target.value) || 12)}
+                                    className="bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 text-lg font-black text-slate-800 outline-none focus:border-primary transition-all"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {selectedDefault === 'en' ? 'Orders placed after this hour receive +1 additional day of lead time.' : 'Pedidos recibidos después de esta hora añaden +1 día de anticipación a la entrega.'}
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── Terms & Conditions Editor ───────────────────────────── */}
+                    <section className="bg-white rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
+                        <div className="p-8 border-b border-border bg-slate-50/50 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
+                                    <FileText size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="font-black text-slate-800 text-xl leading-none mb-1">
+                                        {selectedDefault === 'en' ? 'Terms & Conditions' : 'Términos y Condiciones Comerciales'}
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        {selectedDefault === 'en' ? 'Dynamic legal terms displayed on /terms, registration and checkout' : 'Texto legal dinámico visible en /terms, registro de clientes y checkout'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <a 
+                                href="/terms" 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-xs font-black text-primary hover:underline flex items-center gap-1 uppercase tracking-widest bg-primary/10 px-4 py-2 rounded-xl"
+                            >
+                                {selectedDefault === 'en' ? 'View Public /terms ↗' : 'Ver /terms Público ↗'}
+                            </a>
+                        </div>
+
+                        <div className="p-10 space-y-6">
+                            {/* Language tab selector */}
+                            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl max-w-xs">
+                                <button
+                                    type="button"
+                                    onClick={() => setTermsTab('es')}
+                                    className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${
+                                        termsTab === 'es' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                >
+                                    🇪🇸 Español
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTermsTab('en')}
+                                    className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${
+                                        termsTab === 'en' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                >
+                                    🇺🇸 English
+                                </button>
+                            </div>
+
+                            {termsTab === 'es' ? (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                        Contenido en Español (Markdown o Texto Plano)
+                                    </label>
+                                    <textarea
+                                        rows={12}
+                                        value={termsEs}
+                                        onChange={e => setTermsEs(e.target.value)}
+                                        placeholder="Redacta los términos y condiciones en español..."
+                                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-6 text-sm font-mono text-slate-800 outline-none focus:border-primary focus:bg-white transition-all leading-relaxed"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                        Content in English (Markdown or Plain Text)
+                                    </label>
+                                    <textarea
+                                        rows={12}
+                                        value={termsEn}
+                                        onChange={e => setTermsEn(e.target.value)}
+                                        placeholder="Write terms and conditions in English..."
+                                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-6 text-sm font-mono text-slate-800 outline-none focus:border-primary focus:bg-white transition-all leading-relaxed"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </section>
 

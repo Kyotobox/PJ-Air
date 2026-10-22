@@ -3,99 +3,109 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "COMPLETED",
-  "current_sprint": "S24",
-  "current_task": "TASK-24-04",
+  "current_sprint": "S28",
+  "current_task": "TASK-28-04",
   "sprints": [
     {
-      "id": "S22",
-      "name": "Sprint 22: Remediación y Estabilización de QA",
+      "id": "S26",
+      "name": "Sprint 26: Motor de Crédito B2B, Límites y Gestión Centralizada de Clientes",
       "status": "COMPLETED",
-      "start_date": "2026-11-02",
-      "goal": "Reparar suites defectuosas, aumentar cobertura transaccional y fijar smoke tests.",
+      "start_date": "2026-11-06",
+      "goal": "Implementar cuentas de contado vs crédito, límite de crédito, balance vivo, conmutador de sobregiro y panel administrativo unificado.",
       "tasks": [
         {
-          "id": "TASK-22-01",
-          "label": "QA/TECH",
-          "desc": "Crear auth helper de testing y reactivar suites E2E roles-guard y resource-ownership con aserciones 403 deterministas.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-22-02",
-          "label": "QA/E2E",
-          "desc": "Erradicar falsos positivos en admin-fulfillment y crear suite E2E completa para reportes de órdenes y exportación Excel.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-22-03",
-          "label": "QA/FRONTEND",
-          "desc": "Añadir script test:e2e en frontend/package.json e implementar suite Vitest para CartContext (flujo de compra y cálculo).",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S23",
-      "name": "Sprint 23: Auditoría de Infraestructura y Scripts VPS",
-      "status": "COMPLETED",
-      "start_date": "2026-11-03",
-      "goal": "Inspeccionar Docker, Nginx, PM2 y scripts de backup y despliegue a producción.",
-      "tasks": [
-        {
-          "id": "TASK-23-01",
-          "label": "INFRA/AUDIT",
-          "desc": "Auditar Dockerfiles, configuraciones Nginx y perfiles de ejecución PM2.",
+          "id": "TASK-26-01",
+          "label": "DOMAIN/DB",
+          "desc": "Extensión de entidad User con account_type, credit_limit, credit_override y migración de esquemas SQLite.",
           "status": "DONE"
         },
         {
-          "id": "TASK-23-02",
-          "label": "INFRA/AUDIT",
-          "desc": "Evaluar scripts de backup, sincronización y despliegue remoto en backend/scripts.",
+          "id": "TASK-26-02",
+          "label": "UI/ADMIN",
+          "desc": "Panel de control financiero en /admin/clients con gestión de límites, saldo vivo, override y cobros.",
           "status": "DONE"
         },
         {
-          "id": "TASK-23-03",
-          "label": "INFRA/AUDIT",
-          "desc": "Evaluar riesgo de sobreingeniería, fragilidad operativa y recuperación ante desastres.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S24",
-      "name": "Sprint 24: Consolidación DevOps y Pipeline de Release",
-      "status": "IN_PROGRESS",
-      "start_date": "2026-11-04",
-      "goal": "Modernizar scripts de release, asegurar idempotencia de backups y documentar procedimientos.",
-      "tasks": [
-        {
-          "id": "TASK-24-01",
-          "label": "INFRA/TECH",
-          "desc": "Crear .dockerignore en raíz, frontend y backend; limpiar variables de Supabase en frontend/Dockerfile.",
+          "id": "TASK-26-03",
+          "label": "LOGIC/GATE",
+          "desc": "Compuerta de validación de crédito en checkout, bloqueo por sobregiro y alerta en tiempo real.",
           "status": "DONE"
         },
         {
-          "id": "TASK-24-02",
-          "label": "INFRA/TECH",
-          "desc": "Refactorizar scripts de backup remoto a sqlite3 .backup atómico y pm2 reload con validación de código de salida.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-24-03",
-          "label": "INFRA/DOC",
-          "desc": "Elaborar la Guía Operativa de Recuperación y Manual de Despliegue en vault/intel/OPERATIONS_DISASTER_RECOVERY.md.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-24-04",
+          "id": "TASK-26-04",
           "label": "GOV/BASELINE",
-          "desc": "Ejecutar logix audit, sincronizar backlog y re-sellar el ADN del satélite con logix baseline -f.",
+          "desc": "Pruebas unitarias de motor de crédito, auditoría logix audit y re-sellado de ADN baseline.",
+          "status": "DONE"
+        }
+      ]
+    },
+    {
+      "id": "S27",
+      "name": "Sprint 27: Pasarela de Pagos Stripe, Webhooks y Servicio Transaccional de Correo",
+      "status": "COMPLETED",
+      "start_date": "2026-11-07",
+      "goal": "Integrar pagos con Stripe para clientes de contado, conciliación vía webhooks y servicio de correo transaccional.",
+      "tasks": [
+        {
+          "id": "TASK-27-01",
+          "label": "PAYMENTS/TECH",
+          "desc": "Módulo Payments en NestJS con Stripe SDK, endpoints de PaymentIntent y Webhook de conciliación.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-27-02",
+          "label": "CHECKOUT/UI",
+          "desc": "Integración de Stripe Elements en el checkout para cobro instantáneo de clientes contado.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-27-03",
+          "label": "MAIL/SERVICE",
+          "desc": "Servicio de correo transaccional para recibos de compra, confirmación de pedidos y avisos de crédito.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-27-04",
+          "label": "GOV/BASELINE",
+          "desc": "Pruebas unitarias de pasarela y correo, auditoría de integridad logix audit y re-sellado baseline.",
+          "status": "DONE"
+        }
+      ]
+    },
+    {
+      "id": "S28",
+      "name": "Sprint 28: Panel Ejecutivo, Torre Operativa y Pipeline de Despliegue Staging",
+      "status": "COMPLETED",
+      "start_date": "2026-11-08",
+      "goal": "Construir panel ejecutivo integral, torre de control interactiva y pipeline de despliegue remoto a entorno staging aislado.",
+      "tasks": [
+        {
+          "id": "TASK-28-01",
+          "label": "UI/ADMIN",
+          "desc": "Rediseño de Executive Control Panel en /admin con KPIs financieros, torre operativa y alertas.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-28-02",
+          "label": "REPORTS/OPS",
+          "desc": "Reportes interactivos de producción con reprogramación de fechas y excepciones post-corte.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-28-03",
+          "label": "INFRA/DEPLOY",
+          "desc": "Pipeline y script de despliegue remoto seguro a staging aislando estrictamente producción.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-28-04",
+          "label": "GOV/BASELINE",
+          "desc": "Pruebas de suite completa, auditoría de integridad logix audit y re-sellado baseline.",
           "status": "DONE"
         }
       ]
     }
   ],
-  "archived_sprints_count": 21,
+  "archived_sprints_count": 25,
   "archive_file": "vault/runtime/backlog_archive.json"
 }

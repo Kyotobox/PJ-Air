@@ -66,5 +66,6 @@ export const config = {
     '/produccion/:path*',
     '/orders/:path*',
     '/profile/:path*',
+    '/checkout/:path*',
   ],
 };

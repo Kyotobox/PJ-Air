@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useLanguage } from '@/context/LanguageContext';
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectParam = searchParams.get('redirect');
     const { updateLocalSession } = useAuth();
     const { t } = useLanguage();
     const [error, setError] = useState('');
@@ -36,7 +38,7 @@ export default function LoginPage() {
                 if (role === 'admin') router.push('/admin');
                 else if (role === 'produccion') router.push('/produccion');
                 else if (role === 'delivery') router.push('/delivery');
-                else router.push('/');
+                else router.push(redirectParam || '/');
             }
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión');
@@ -69,13 +71,15 @@ export default function LoginPage() {
                     isLoading={isLoading}
                     error={error}
                 />
-
-                <div className="mt-12 pt-8 border-t border-border/40 text-center">
-                    <p className="text-sm text-muted-foreground font-medium">
-                        {t.login.noAccount} <Link href="/auth/register" className="text-primary font-bold hover:underline ml-1">{t.login.registerNow}</Link>
-                    </p>
-                </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">...</div>}>
+            <LoginContent />
+        </Suspense>
     );
 }

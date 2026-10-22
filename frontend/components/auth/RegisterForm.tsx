@@ -141,6 +141,22 @@ export const RegisterForm = ({
                 </div>
             </div>
 
+            <div className="flex items-start gap-3 p-4 bg-muted/40 rounded-2xl border border-border/60">
+                <input
+                    required
+                    id="terms_agree"
+                    type="checkbox"
+                    className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                />
+                <label htmlFor="terms_agree" className="text-xs text-foreground/80 font-medium leading-relaxed cursor-pointer">
+                    {locale === 'en' ? (
+                        <>I have read and agree to the <a href="/terms" target="_blank" className="text-primary font-bold underline hover:text-black">Commercial Terms and Conditions</a> of Jhoanes Wholesale.</>
+                    ) : (
+                        <>He leído y acepto los <a href="/terms" target="_blank" className="text-primary font-bold underline hover:text-black">Términos y Condiciones Comerciales</a> de Jhoanes Wholesale.</>
+                    )}
+                </label>
+            </div>
+
             <div className="pt-4">
                 <button
                     disabled={isLoading}

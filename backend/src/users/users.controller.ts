@@ -102,6 +102,21 @@ export class UsersController {
     return this.usersService.updateDeliveryFee(id, body.fee);
   }
 
+  @Patch(':id/credit')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async updateCredit(
+    @Param('id') id: string,
+    @Body() body: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean },
+  ) {
+    return this.usersService.updateCreditSettings(id, body);
+  }
+
+  @Get(':id/credit-summary')
+  async getCreditSummary(@Param('id') id: string) {
+    return this.usersService.getUserCreditSummary(id);
+  }
+
   @Get(':id/product-discounts')
   async getProductDiscounts(@Param('id') id: string) {
     return this.usersService.getProductDiscounts(id);

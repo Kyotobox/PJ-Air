@@ -128,6 +128,122 @@ describe('OrdersService', () => {
     await expect(service.updateStatus('order-123', 'pending')).rejects.toThrow(BadRequestException);
   });
 
+  it('should include delivery fee in total and persist delivery_fee_charged when delivery_type is delivery', async () => {
+    const orderData = {
+      items: [{ productId: 1, quantity: 2 }],
+      delivery_type: 'delivery',
+    };
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-123',
+      delivery_fee: 15,
+      productDiscounts: [],
+    });
+
+    productRepository.find.mockResolvedValue([
+      { id: 1, price: 50 },
+    ]);
+
+    const expectedTotal = 115; // 50 * 2 + 15
+    const createdOrder = { id: 'order-123', total: expectedTotal, delivery_fee_charged: 15 };
+    mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+    mockManager.save.mockResolvedValue(createdOrder);
+    service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+    const result = await service.create('user-123', orderData);
+    expect(result.total).toBe(expectedTotal);
+    expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+      total: expectedTotal,
+      delivery_fee_charged: 15,
+      payment_status: 'pending',
+    }));
+  });
+
+  it('should set delivery_fee_charged to 0 when delivery_type is pickup even if user has a delivery fee', async () => {
+    const orderData = {
+      items: [{ productId: 1, quantity: 2 }],
+      delivery_type: 'pickup',
+    };
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-123',
+      delivery_fee: 25,
+      productDiscounts: [],
+    });
+
+    productRepository.find.mockResolvedValue([
+      { id: 1, price: 50 },
+    ]);
+
+    const expectedTotal = 100; // 50 * 2 + 0
+    const createdOrder = { id: 'order-123', total: expectedTotal, delivery_fee_charged: 0 };
+    mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+    mockManager.save.mockResolvedValue(createdOrder);
+    service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+    const result = await service.create('user-123', orderData);
+    expect(result.total).toBe(expectedTotal);
+    expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+      total: expectedTotal,
+      delivery_fee_charged: 0,
+      payment_status: 'pending',
+    }));
+  });
+
+  it('should reject order if user has credit account and order total exceeds available credit without override', async () => {
+    const orderData = {
+      items: [{ productId: 1, quantity: 2 }],
+      delivery_type: 'pickup',
+    };
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-credit-1',
+      account_type: 'credit',
+      credit_limit: 500,
+      credit_override: false,
+      orders: [
+        { id: 'o-prev', total: 450, payment_status: 'pending', status: 'En Producción' },
+      ],
+      productDiscounts: [],
+    });
+
+    productRepository.find.mockResolvedValue([
+      { id: 1, price: 50 }, // 50 * 2 = 100. Used: 450 + 100 = 550 > 500
+    ]);
+
+    await expect(service.create('user-credit-1', orderData)).rejects.toThrow(BadRequestException);
+  });
+
+  it('should allow order exceeding credit limit when credit_override is true', async () => {
+    const orderData = {
+      items: [{ productId: 1, quantity: 2 }],
+      delivery_type: 'pickup',
+    };
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-credit-2',
+      account_type: 'credit',
+      credit_limit: 500,
+      credit_override: true, // Emergency exception authorized
+      orders: [
+        { id: 'o-prev', total: 450, payment_status: 'pending', status: 'En Producción' },
+      ],
+      productDiscounts: [],
+    });
+
+    productRepository.find.mockResolvedValue([
+      { id: 1, price: 50 },
+    ]);
+
+    const createdOrder = { id: 'order-approved', total: 100 };
+    mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+    mockManager.save.mockResolvedValue(createdOrder);
+    service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+    const result = await service.create('user-credit-2', orderData);
+    expect(result.id).toBe('order-approved');
+  });
+
   it('should allow invalid order status transitions (e.g., Delivered -> Pending) if user is admin', async () => {
     const existingOrder = { id: 'order-123', status: 'delivered' };
     service.findOne = jest.fn().mockResolvedValue(existingOrder);

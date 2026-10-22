@@ -11,6 +11,8 @@ import { DevtoolsModule } from './devtools/devtools.module';
 import { AuthModule } from './auth/auth.module';
 import { SystemConfigsModule } from './system-configs/system-configs.module';
 import { AdminActionsModule } from './admin-actions/admin-actions.module';
+import { PaymentsModule } from './payments/payments.module';
+import { MailModule } from './mail/mail.module';
 
 // Entities
 import { Product } from './products/product.entity';
@@ -40,6 +42,8 @@ import { SystemConfig } from './system-configs/system-config.entity';
     AuthModule,
     SystemConfigsModule,
     AdminActionsModule,
+    PaymentsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

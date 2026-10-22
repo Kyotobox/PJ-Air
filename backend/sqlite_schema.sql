@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS "users" (
   "role" VARCHAR NOT NULL DEFAULT ('client'),
   "general_discount" DECIMAL(5,2) NOT NULL DEFAULT (0),
   "delivery_fee" DECIMAL(10,2) NOT NULL DEFAULT (0),
+  "account_type" VARCHAR NOT NULL DEFAULT ('cash'),
+  "credit_limit" DECIMAL(10,2) NOT NULL DEFAULT (0),
+  "credit_override" BOOLEAN NOT NULL DEFAULT (0),
   CONSTRAINT "UQ_users_email" UNIQUE ("email")
 );
 
@@ -103,6 +106,8 @@ CREATE TABLE IF NOT EXISTS "orders" (
   "delivery_type" VARCHAR DEFAULT ('saved'),
   "delivery_address_text" TEXT,
   "created_at" DATETIME NOT NULL DEFAULT (datetime('now')),
+  "delivery_fee_charged" DECIMAL(10,2) NOT NULL DEFAULT (0),
+  "payment_status" VARCHAR NOT NULL DEFAULT ('pending'),
   CONSTRAINT "FK_orders_delivery_user_id" FOREIGN KEY ("delivery_user_id") 
     REFERENCES "users" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT "FK_orders_user_id" FOREIGN KEY ("user_id") 

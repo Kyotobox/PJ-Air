@@ -5,7 +5,7 @@ import AdminSidebar from '@/components/layout/AdminSidebar';
 import {
     Users, Search, Loader2, AlertCircle, User, Mail, Phone,
     CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Clock, Edit, Trash2,
-    ChevronLeft, ListFilter, Percent, Tag, DollarSign
+    ChevronLeft, ListFilter, Percent, Tag, DollarSign, CreditCard, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
@@ -17,9 +17,21 @@ interface OrderItem {
     price_at_time: number; 
     product?: { name: string; description?: string; };
 }
-interface Order { id: string; total: number; status: string; created_at: string; delivery_date?: string; items?: OrderItem[]; }
+interface Order { 
+    id: string; 
+    total: number; 
+    status: string; 
+    created_at: string; 
+    delivery_date?: string; 
+    payment_status?: string;
+    delivery_fee_charged?: number;
+    items?: OrderItem[]; 
+}
 interface UserRecord {
     id: string; email: string; role: string; general_discount?: number; delivery_fee?: number;
+    account_type?: 'cash' | 'credit';
+    credit_limit?: number;
+    credit_override?: boolean;
     profile?: { full_name?: string; username?: string; phone?: string; avatar_url?: string; nickname?: string; };
     addresses?: Address[];
     orders?: Order[];
@@ -58,6 +70,13 @@ export default function AdminClientsPage() {
     const [isSavingDiscount, setIsSavingDiscount] = useState(false);
     const [deliveryFee, setDeliveryFee] = useState<number>(0);
     const [isSavingFee, setIsSavingFee] = useState(false);
+
+    // Credit states
+    const [accountType, setAccountType] = useState<'cash' | 'credit'>('cash');
+    const [creditLimit, setCreditLimit] = useState<number>(0);
+    const [creditOverride, setCreditOverride] = useState<boolean>(false);
+    const [isSavingCredit, setIsSavingCredit] = useState(false);
+    const [creditSummary, setCreditSummary] = useState<any>(null);
 
     // Nickname states
     const [nickname, setNickname] = useState<string>('');
@@ -119,6 +138,9 @@ export default function AdminClientsPage() {
         setGeneralDiscount(Number(user.general_discount) || 0);
         setDeliveryFee(Number(user.delivery_fee) || 0);
         setNickname(user.profile?.nickname || '');
+        setAccountType(user.account_type || 'cash');
+        setCreditLimit(Number(user.credit_limit) || 0);
+        setCreditOverride(Boolean(user.credit_override));
         
         try {
             setLoadingDetail(true);
@@ -127,14 +149,73 @@ export default function AdminClientsPage() {
             setGeneralDiscount(Number(detail.general_discount) || 0);
             setDeliveryFee(Number(detail.delivery_fee) || 0);
             setNickname(detail.profile?.nickname || '');
+            setAccountType(detail.account_type || 'cash');
+            setCreditLimit(Number(detail.credit_limit) || 0);
+            setCreditOverride(Boolean(detail.credit_override));
             
             // Get product discounts
             const discounts = await api.get(`/users/${detail.id}/product-discounts`) as any[];
             setProductDiscounts(discounts || []);
+
+            // Get live credit summary
+            try {
+                const summary = await api.get(`/users/${detail.id}/credit-summary`);
+                setCreditSummary(summary);
+            } catch {
+                setCreditSummary(null);
+            }
         } catch (err) {
             console.error("Error loading user details", err);
         } finally {
             setLoadingDetail(false);
+        }
+    };
+
+    const handleUpdateCredit = async () => {
+        if (!selectedUser) return;
+        setIsSavingCredit(true);
+        try {
+            await api.patch(`/users/${selectedUser.id}/credit`, {
+                account_type: accountType,
+                credit_limit: creditLimit,
+                credit_override: creditOverride,
+            });
+            showToast('✅ Configuración de crédito actualizada');
+            setUsers(prev => prev.map(u => u.id === selectedUser.id ? {
+                ...u,
+                account_type: accountType,
+                credit_limit: creditLimit,
+                credit_override: creditOverride,
+            } : u));
+            setSelectedUser(prev => prev ? {
+                ...prev,
+                account_type: accountType,
+                credit_limit: creditLimit,
+                credit_override: creditOverride,
+            } : null);
+
+            // Refresh credit summary
+            const summary = await api.get(`/users/${selectedUser.id}/credit-summary`);
+            setCreditSummary(summary);
+        } catch (err: any) {
+            showToast(`❌ ${err.message}`);
+        } finally {
+            setIsSavingCredit(false);
+        }
+    };
+
+    const handleMarkOrderPaid = async (orderId: string) => {
+        if (!selectedUser) return;
+        try {
+            await api.patch(`/orders/${orderId}/payment-status`, { payment_status: 'paid' });
+            showToast('✅ Orden marcada como pagada');
+            // Refresh user and credit summary
+            const detail = await api.get(`/users/${selectedUser.id}`) as any;
+            setSelectedUser(detail);
+            const summary = await api.get(`/users/${selectedUser.id}/credit-summary`);
+            setCreditSummary(summary);
+        } catch (err: any) {
+            showToast(`❌ ${err.message}`);
         }
     };
 
@@ -280,15 +361,16 @@ export default function AdminClientsPage() {
                             <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
                                 <th className="px-8 py-5">Nombre / Usuario</th>
                                 <th className="px-8 py-5">Contacto</th>
+                                <th className="px-6 py-5">Cuenta / Crédito</th>
                                 <th className="px-8 py-5 text-center">Info</th>
                                 <th className="px-8 py-5 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
+                                <tr><td colSpan={5} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
                             ) : paginatedUsers.length === 0 ? (
-                                <tr><td colSpan={4} className="py-20 text-center text-slate-500 font-medium italic">No se encontraron clientes</td></tr>
+                                <tr><td colSpan={5} className="py-20 text-center text-slate-500 font-medium italic">No se encontraron clientes</td></tr>
                             ) : paginatedUsers.map(u => (
                                 <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-8 py-6">
@@ -306,6 +388,24 @@ export default function AdminClientsPage() {
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-600"><Mail size={14} className="text-slate-300" />{u.email}</div>
                                             {u.profile?.phone && <div className="flex items-center gap-2 text-xs font-medium text-slate-400"><Phone size={14} className="text-slate-300" />{u.profile.phone}</div>}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <div className="flex flex-col gap-1 items-start">
+                                            {u.account_type === 'credit' ? (
+                                                <>
+                                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">
+                                                        Crédito
+                                                    </span>
+                                                    <span className="text-xs font-black text-slate-700">
+                                                        ${Number(u.credit_limit || 0).toLocaleString()}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">
+                                                    Contado
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-center">
@@ -458,6 +558,169 @@ export default function AdminClientsPage() {
                                             </div>
                                         </div>
                                     )) || <p className="text-sm font-medium text-slate-400 italic">No hay direcciones guardadas</p>}
+                                </div>
+                            </section>
+
+                            {/* Section: B2B Credit & Financial Governance */}
+                            <section className="pt-8 border-t border-slate-100">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                                        <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">
+                                            Crédito B2B y Condiciones Financieras
+                                        </h3>
+                                    </div>
+                                    {accountType === 'credit' && creditSummary && (
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                            creditSummary.is_overdraft && !creditSummary.credit_override
+                                                ? 'bg-red-100 text-red-700'
+                                                : creditSummary.is_overdraft && creditSummary.credit_override
+                                                ? 'bg-amber-100 text-amber-700'
+                                                : 'bg-green-100 text-green-700'
+                                        }`}>
+                                            {creditSummary.is_overdraft && !creditSummary.credit_override
+                                                ? '🚫 Límite Excedido (Bloqueado)'
+                                                : creditSummary.is_overdraft && creditSummary.credit_override
+                                                ? '⚠️ Sobregiro Autorizado'
+                                                : '✅ Crédito al Día'}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="bg-slate-50/80 rounded-[2.5rem] p-8 border border-slate-200 space-y-6">
+                                    {/* Account Type Selector */}
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase mb-3 block">
+                                            Modalidad de Pago Comercial
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setAccountType('cash')}
+                                                className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition-all ${
+                                                    accountType === 'cash'
+                                                        ? 'bg-white border-slate-900 shadow-md text-slate-900'
+                                                        : 'bg-transparent border-slate-200 text-slate-400 hover:border-slate-300'
+                                                }`}
+                                            >
+                                                <DollarSign size={20} className={accountType === 'cash' ? 'text-primary' : ''} />
+                                                <div className="text-left">
+                                                    <p className="font-black text-xs uppercase">Contado / Cash</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">Pago con Stripe</p>
+                                                </div>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setAccountType('credit')}
+                                                className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition-all ${
+                                                    accountType === 'credit'
+                                                        ? 'bg-white border-blue-600 shadow-md text-blue-900'
+                                                        : 'bg-transparent border-slate-200 text-slate-400 hover:border-slate-300'
+                                                }`}
+                                            >
+                                                <CreditCard size={20} className={accountType === 'credit' ? 'text-blue-600' : ''} />
+                                                <div className="text-left">
+                                                    <p className="font-black text-xs uppercase">Línea de Crédito</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">Facturación periódica</p>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Credit Fields (only if account_type === 'credit') */}
+                                    {accountType === 'credit' && (
+                                        <div className="space-y-6 pt-4 border-t border-slate-200">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                                                        Límite de Crédito Autorizado ($)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="50"
+                                                        value={creditLimit}
+                                                        onChange={e => setCreditLimit(Number(e.target.value) || 0)}
+                                                        className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-base font-black text-slate-800 outline-none focus:ring-2 focus:ring-blue-300 transition-all shadow-inner"
+                                                    />
+                                                </div>
+
+                                                <div className="flex flex-col justify-center">
+                                                    <label className="flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-200 cursor-pointer hover:border-blue-400 transition-all">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={creditOverride}
+                                                            onChange={e => setCreditOverride(e.target.checked)}
+                                                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer"
+                                                        />
+                                                        <div>
+                                                            <p className="text-xs font-black text-slate-800">Sobregiro Excepcional</p>
+                                                            <p className="text-[10px] text-slate-400 font-medium">Permite ordenar aunque supere el límite</p>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            {/* Live Credit Health Balance */}
+                                            {creditSummary && (
+                                                <div className="grid grid-cols-3 gap-3 p-5 bg-white rounded-2xl border border-slate-200 text-center">
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">Límite</p>
+                                                        <p className="text-base font-black text-slate-800">${Number(creditSummary.credit_limit || 0).toFixed(2)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase tracking-wider text-amber-600 mb-0.5">Utilizado</p>
+                                                        <p className="text-base font-black text-amber-600">${Number(creditSummary.used_credit || 0).toFixed(2)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase tracking-wider text-green-600 mb-0.5">Disponible</p>
+                                                        <p className="text-base font-black text-green-600">${Number(creditSummary.available_credit || 0).toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleUpdateCredit}
+                                            disabled={isSavingCredit}
+                                            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-blue-200 transition-all disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                            {isSavingCredit ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                                            {isSavingCredit ? 'Guardando...' : 'Guardar Parámetros de Crédito'}
+                                        </button>
+                                    </div>
+
+                                    {/* Unpaid orders reconciliation */}
+                                    {selectedUser.orders && selectedUser.orders.filter(o => o.payment_status !== 'paid' && o.status !== 'cancelled').length > 0 && (
+                                        <div className="pt-4 border-t border-slate-200 space-y-3">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                Órdenes con Saldo Pendiente ({selectedUser.orders.filter(o => o.payment_status !== 'paid' && o.status !== 'cancelled').length})
+                                            </p>
+                                            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                                {selectedUser.orders
+                                                    .filter(o => o.payment_status !== 'paid' && o.status !== 'cancelled')
+                                                    .map(order => (
+                                                        <div key={order.id} className="p-3.5 bg-white rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
+                                                            <div>
+                                                                <p className="font-black text-slate-800">#{order.id.slice(0, 8)} • ${Number(order.total).toFixed(2)}</p>
+                                                                <p className="text-[10px] text-slate-400">{order.delivery_date ? `Entrega: ${order.delivery_date}` : new Date(order.created_at).toLocaleDateString()}</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleMarkOrderPaid(order.id)}
+                                                                className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white rounded-xl font-black uppercase text-[10px] tracking-wider transition-all border border-green-200"
+                                                            >
+                                                                Marcar Pagado ✓
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 

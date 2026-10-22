@@ -110,6 +110,13 @@ export class OrdersController {
     return this.ordersService.updateStatus(id, status, role);
   }
 
+  @Patch(':id/payment-status')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async updatePaymentStatus(@Param('id') id: string, @Body('payment_status') paymentStatus: string) {
+    return this.ordersService.update(id, { payment_status: paymentStatus }, 'admin');
+  }
+
   @Patch(':id/assign')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'produccion')
@@ -122,7 +129,7 @@ export class OrdersController {
   async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
     const order = await this.ordersService.findOne(id);
     const role = req.user?.role;
-    if (role !== 'admin' && order.user_id !== req.user.id) {
+    if (role !== 'admin' && role !== 'produccion' && order.user_id !== req.user.id) {
       throw new ForbiddenException('Cannot modify this order');
     }
     return this.ordersService.update(id, body, role);

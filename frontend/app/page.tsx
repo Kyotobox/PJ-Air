@@ -11,15 +11,15 @@ import {
     Search, ArrowRight, Tag, Sparkles,
     ShoppingCart, Check, Plus, Minus, Info,
     ChevronLeft, ChevronRight,
-    LogIn, UserPlus, Lock, User as UserIcon, Loader2, Eye, EyeOff,
+    LogIn, UserPlus, Lock, User as UserIcon, Loader2, Eye, EyeOff, X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { API_URL } from '@/lib/config';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Login Modal — shown when user is not authenticated
+// Login Modal — shown when user requests authentication
 // ─────────────────────────────────────────────────────────────────────────────
-function LoginModal({ onSuccess }: { onSuccess: () => void }) {
+function LoginModal({ onSuccess, onClose }: { onSuccess: () => void; onClose?: () => void }) {
     const { t, locale } = useLanguage();
     const { updateLocalSession } = useAuth();
     const router = useRouter();
@@ -60,6 +60,16 @@ function LoginModal({ onSuccess }: { onSuccess: () => void }) {
              style={{ background: 'rgba(15,10,5,0.65)', backdropFilter: 'blur(8px)' }}>
 
             <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-fade-in">
+
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="absolute right-5 top-5 p-2 text-muted-foreground hover:text-foreground z-20 rounded-full hover:bg-muted transition-colors"
+                        aria-label="Close"
+                    >
+                        <X size={20} />
+                    </button>
+                )}
 
                 {/* Top gradient band */}
                 <div className="h-2 w-full" style={{ background: 'linear-gradient(90deg,#6B0D0D,#b45309)' }} />
@@ -426,12 +436,8 @@ export default function Home() {
     const { t, locale } = useLanguage();
     const { user, profile, isLoading: authLoading } = useAuth();
 
-    // Show login modal when auth is resolved and user is NOT logged in
+    // Login modal controlled by user action
     const [showLoginModal, setShowLoginModal] = useState(false);
-    useEffect(() => {
-        if (!authLoading && !user) setShowLoginModal(true);
-        if (user) setShowLoginModal(false);
-    }, [user, authLoading]);
 
     const [products, setProducts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -546,17 +552,45 @@ export default function Home() {
     // ── Render ─────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen" style={{ background: 'linear-gradient(180deg,#fdfcfb 0%,#f9f6f0 100%)' }}>
-            {/* Login modal — visible when not authenticated */}
+            {/* Login modal — visible when requested */}
             {showLoginModal && (
-                <LoginModal onSuccess={() => setShowLoginModal(false)} />
+                <LoginModal 
+                    onSuccess={() => setShowLoginModal(false)} 
+                    onClose={() => setShowLoginModal(false)}
+                />
             )}
 
             <Navbar />
 
             <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-14 py-10">
 
+                {/* ── Wholesale Welcome Hero Banner ─── */}
+                <div className="mb-12 bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 sm:p-12 border border-border/60 shadow-sm relative overflow-hidden">
+                    <div className="max-w-3xl">
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-4">
+                            <Sparkles size={14} /> {locale === 'en' ? 'Artisanal Wholesale Bakery' : 'Distribución Mayorista Artesanal'}
+                        </div>
+                        <h1 className="text-3xl sm:text-5xl font-black font-serif text-foreground tracking-tight mb-4 leading-tight">
+                            {locale === 'en' ? 'Fresh Daily B2B Distribution' : 'Catálogo Mayorista de Panadería y Pastelería'}
+                        </h1>
+                        <p className="text-sm sm:text-base text-muted-foreground font-medium leading-relaxed mb-8">
+                            {locale === 'en' 
+                                ? 'Orders placed before 12:00 PM are prepared fresh for next-cycle delivery. Transparent wholesale pricing, automated delivery fees, and flexible payment terms for restaurants, cafes, and supermarkets.'
+                                : 'Pedidos recibidos antes de las 12:00 p. m. preparados frescos para entrega en el siguiente ciclo. Precios mayoristas transparentes, cálculo logístico de delivery y facilidades de pago para cafeterías y restaurantes.'}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <a href="#catalogo" className="px-6 py-3 rounded-full bg-primary text-white text-xs font-black uppercase tracking-widest shadow-md hover:bg-black transition-all">
+                                {locale === 'en' ? 'Browse Catalog' : 'Ver Productos'}
+                            </a>
+                            <Link href="/terms" className="px-6 py-3 rounded-full bg-white border border-border text-foreground text-xs font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm">
+                                {locale === 'en' ? 'Commercial Policies' : 'Términos y Horarios'}
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
                 {/* ── Category pills + Search — right-aligned flex row ─── */}
-                <div className="mb-10 flex flex-wrap items-center justify-end gap-2">
+                <div id="catalogo" className="mb-10 flex flex-wrap items-center justify-end gap-2">
 
                     {/* "All" pill — first */}
                     <a

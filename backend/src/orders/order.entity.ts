@@ -17,6 +17,12 @@ export class Order {
   @Column({ default: 'pending' })
   status: string;
 
+  @Column({ default: 'pending' })
+  payment_status: string;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  delivery_fee_charged: number;
+
   @Column({ nullable: true })
   address_id: string;
 

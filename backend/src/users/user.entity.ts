@@ -33,6 +33,15 @@ export class User {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   delivery_fee: number;
 
+  @Column({ default: 'cash' })
+  account_type: 'cash' | 'credit';
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  credit_limit: number;
+
+  @Column({ default: false })
+  credit_override: boolean;
+
   @OneToMany(() => ProductDiscount, (pd) => pd.user)
   productDiscounts: ProductDiscount[];
 }

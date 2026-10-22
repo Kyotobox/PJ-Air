@@ -84,6 +84,48 @@ describe('UsersService', () => {
       expect(foundUser.general_discount).toBe(10);
       expect(foundUser.productDiscounts[0].discount_percentage).toBe(20);
     });
+
+    it('should correctly calculate credit summary and detect overdraft when used credit exceeds credit limit', async () => {
+      const user = {
+        id: 'user-credit-1',
+        account_type: 'credit',
+        credit_limit: 1000,
+        credit_override: false,
+        orders: [
+          { id: 'o-1', total: 600, payment_status: 'pending', status: 'En Producción' },
+          { id: 'o-2', total: 500, payment_status: 'pending', status: 'En Delivery' },
+          { id: 'o-3', total: 400, payment_status: 'paid', status: 'Entregado' },
+        ],
+      } as any;
+
+      mockUserRepository.findOne.mockResolvedValue(user);
+
+      const summary = await service.getUserCreditSummary('user-credit-1');
+      expect(summary.account_type).toBe('credit');
+      expect(summary.credit_limit).toBe(1000);
+      expect(summary.used_credit).toBe(1100);
+      expect(summary.available_credit).toBe(0);
+      expect(summary.is_overdraft).toBe(true);
+      expect(summary.can_order).toBe(false);
+    });
+
+    it('should allow ordering when overdraft exists but credit_override is true', async () => {
+      const user = {
+        id: 'user-credit-2',
+        account_type: 'credit',
+        credit_limit: 1000,
+        credit_override: true,
+        orders: [
+          { id: 'o-1', total: 1200, payment_status: 'pending', status: 'En Producción' },
+        ],
+      } as any;
+
+      mockUserRepository.findOne.mockResolvedValue(user);
+
+      const summary = await service.getUserCreditSummary('user-credit-2');
+      expect(summary.is_overdraft).toBe(true);
+      expect(summary.can_order).toBe(true);
+    });
   });
 
   describe('Integration Tests', () => {
