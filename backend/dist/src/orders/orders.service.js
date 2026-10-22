@@ -25,11 +25,13 @@ let OrdersService = class OrdersService {
     orderItemRepository;
     userRepository;
     productRepository;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository) {
+    dataSource;
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.dataSource = dataSource;
     }
     validateStatusTransition(currentStatus, newStatus, userRole) {
         if (userRole === 'admin')
@@ -57,11 +59,18 @@ let OrdersService = class OrdersService {
         });
         if (!user)
             throw new common_1.NotFoundException('User not found');
+        const productIds = Array.from(new Set(items
+            .map(item => Number(item.productId || item.product_id))
+            .filter(id => !isNaN(id) && id > 0)));
+        const products = productIds.length > 0
+            ? await this.productRepository.find({ where: { id: (0, typeorm_2.In)(productIds) } })
+            : [];
+        const productMap = new Map(products.map(p => [p.id, p]));
         let calculatedTotal = 0;
         const validatedItems = [];
         for (const item of items) {
-            const productId = item.productId || item.product_id;
-            const product = await this.productRepository.findOne({ where: { id: Number(productId) } });
+            const productId = Number(item.productId || item.product_id);
+            const product = productMap.get(productId);
             if (!product) {
                 throw new common_1.NotFoundException(`Product with ID ${productId} not found`);
             }
@@ -176,28 +185,31 @@ let OrdersService = class OrdersService {
             validatedItems = result.validatedItems;
             finalTotal = result.total;
         }
-        const orderToCreate = this.orderRepository.create({
-            ...otherData,
-            delivery_date: deliveryDate,
-            payment_due_date: paymentDueDate,
-            address_id: addressId || null,
-            delivery_type: deliveryType || 'saved',
-            delivery_address_text: deliveryAddressText || null,
-            user_id: userId,
-            total: finalTotal,
+        const savedOrderId = await this.dataSource.transaction(async (manager) => {
+            const orderToCreate = manager.create(order_entity_1.Order, {
+                ...otherData,
+                delivery_date: deliveryDate,
+                payment_due_date: paymentDueDate,
+                address_id: addressId || null,
+                delivery_type: deliveryType || 'saved',
+                delivery_address_text: deliveryAddressText || null,
+                user_id: userId,
+                total: finalTotal,
+            });
+            const savedResult = await manager.save(order_entity_1.Order, orderToCreate);
+            const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
+            if (validatedItems.length > 0) {
+                const orderItems = validatedItems.map((item) => manager.create(order_item_entity_1.OrderItem, {
+                    product_id: item.product_id,
+                    price_at_time: item.price_at_time,
+                    quantity: item.quantity,
+                    order_id: savedOrder.id,
+                }));
+                await manager.save(order_item_entity_1.OrderItem, orderItems);
+            }
+            return savedOrder.id;
         });
-        const savedResult = await this.orderRepository.save(orderToCreate);
-        const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
-        if (validatedItems.length > 0) {
-            const orderItems = validatedItems.map((item) => ({
-                product_id: item.product_id,
-                price_at_time: item.price_at_time,
-                quantity: item.quantity,
-                order_id: savedOrder.id,
-            }));
-            await this.orderItemRepository.save(orderItems);
-        }
-        return this.findOne(savedOrder.id);
+        return this.findOne(savedOrderId);
     }
     async updateStatus(id, status, userRole) {
         const order = await this.findOne(id);
@@ -256,6 +268,7 @@ exports.OrdersService = OrdersService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

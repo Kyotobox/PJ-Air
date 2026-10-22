@@ -1,0 +1,9 @@
+node_modules
+dist
+.env*
+*.log
+*.bak*
+*.sqlite*
+test
+coverage
+uploads/products/*

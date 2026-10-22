@@ -65,7 +65,8 @@ describe('OrdersController', () => {
 
       mockOrdersService.create.mockResolvedValue('mock-order');
 
-      const result = await controller.create(body);
+      const req = { user: { id: 'user-123', role: 'client' } };
+      const result = await controller.create(body, req as any);
 
       expect(service.create).toHaveBeenCalledWith('user-123', expectedOrderData);
       expect(result).toBe('mock-order');
@@ -74,9 +75,10 @@ describe('OrdersController', () => {
 
   describe('updateStatus', () => {
     it('should extract id and status and call service.updateStatus with userRole', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'order-123', user_id: 'user-123' });
       mockOrdersService.updateStatus.mockResolvedValue('mock-updated-order');
 
-      const req = { user: { role: 'admin' } };
+      const req = { user: { id: 'user-123', role: 'admin' } };
       const result = await controller.updateStatus('order-123', 'shipped', req as any);
 
       expect(service.updateStatus).toHaveBeenCalledWith('order-123', 'shipped', 'admin');
@@ -86,9 +88,10 @@ describe('OrdersController', () => {
 
   describe('update', () => {
     it('should call service.update with body and userRole', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'order-123', user_id: 'user-123' });
       mockOrdersService.update.mockResolvedValue('mock-updated-order');
 
-      const req = { user: { role: 'client' } };
+      const req = { user: { id: 'user-123', role: 'client' } };
       const body = { status: 'cancelled' };
       const result = await controller.update('order-123', body, req as any);
 

@@ -2,377 +2,43 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "4.0.0",
-  "status": "IN_PROGRESS",
-  "current_sprint": "S12",
-  "current_task": "TASK-12-01",
+  "status": "COMPLETED",
+  "current_sprint": "S24",
+  "current_task": "TASK-24-04",
   "sprints": [
-    {
-      "id": "S10",
-      "name": "Sprint 10: Reintegración de Pasarelas de Pago y Xero (Deuda Técnica)",
-      "status": "PAUSED",
-      "start_date": "2026-07-10",
-      "goal": "Reintegrar y probar los archivos exiliados en purgatory para Stripe, PayPal y Xero.",
-      "tasks": [
-        {
-          "id": "TASK-10-01",
-          "label": "TECH/INFRA",
-          "desc": "Recrear tabla 'payments' y campos de pago en 'orders' en SQLite.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-10-02",
-          "label": "TECH/DOMAIN",
-          "desc": "Reintegrar módulos de pagos backend y procesadores Xero exiliados.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-10-03",
-          "label": "TECH/UI",
-          "desc": "Reintegrar formularios de Stripe y botones de PayPal en el frontend.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S11",
-      "name": "Sprint 11: Auditoría Integral de Gobernanza e Identidad",
-      "status": "COMPLETED",
-      "start_date": "2026-10-22",
-      "goal": "Evaluar coherencia de identidad, versión Kernel, árbol de hashes, ganchos y odómetro.",
-      "tasks": [
-        {
-          "id": "TASK-11-01",
-          "label": "GOV/AUDIT",
-          "desc": "Diagnosticar desincronización de versión Kernel (4.0.0 vs 2.2.11) en GEMINI, VISION y backlog.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-11-02",
-          "label": "GOV/AUDIT",
-          "desc": "Auditar estado de llaves RSA, hashes de ADN (kernel.hashes / self.hashes) y ganchos git.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-11-03",
-          "label": "GOV/AUDIT",
-          "desc": "Evaluar archivos zombies, purgatorio, leaks de tracking y odómetro telemétrico.",
-          "status": "DONE",
-          "veracity_hash": null
-        }
-      ]
-    },
-    {
-      "id": "S12",
-      "name": "Sprint 12: Remediación y Blindaje de Gobernanza",
-      "status": "IN_PROGRESS",
-      "start_date": "2026-10-23",
-      "goal": "Aplicar correcciones de gobernanza, alinear versiones, re-sellar ADN e higienizar metadatos.",
-      "tasks": [
-        {
-          "id": "TASK-12-01",
-          "label": "GOV/FIX",
-          "desc": "Sincronizar SSSoT de versión a 4.0.0 en GEMINI.md, VISION.md, backlog.json y bunker_profile.json.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-12-02",
-          "label": "GOV/FIX",
-          "desc": "Corregir lógica multiplataforma en .git/hooks para command -v logix en Linux y symlink bin/logix.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-12-03",
-          "label": "GOV/FIX",
-          "desc": "Desindexar vault/runtime/logix.db y artefactos de odómetro volátiles de git, agregando package.json al índice.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-12-04",
-          "label": "GOV/SECURITY",
-          "desc": "Sanear oracle_anchor.json, re-sellar ADN (logix baseline -f) y solicitar firma RSA física del PO.",
-          "status": "IN_PROGRESS"
-        }
-      ]
-    },
-    {
-      "id": "S13",
-      "name": "Sprint 13: Auditoría Forense de Esquema y Datos SQLite",
-      "status": "TODO",
-      "start_date": "2026-10-24",
-      "goal": "Inspeccionar paridad entre schema.sql, database.sqlite y backups remotos, y evaluar eficiencia.",
-      "tasks": [
-        {
-          "id": "TASK-13-01",
-          "label": "DATA/AUDIT",
-          "desc": "Comparar schema.sql, database.sqlite y copias de seguridad de producción (.bak).",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-13-02",
-          "label": "DATA/AUDIT",
-          "desc": "Auditar integridad referencial, índices y consistencia de tablas principales.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-13-03",
-          "label": "DATA/AUDIT",
-          "desc": "Evaluar sobreingeniería vs eficiencia en consultas y estructura de precios dinámicos.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S14",
-      "name": "Sprint 14: Remediación y Estabilización de Datos",
-      "status": "TODO",
-      "start_date": "2026-10-25",
-      "goal": "Optimizar consultas e índices y normalizar fixtures sin violar la congelación de esquema.",
-      "tasks": [
-        {
-          "id": "TASK-14-01",
-          "label": "DATA/TECH",
-          "desc": "Consolidar índices y optimizaciones de consulta sin alterar esquema core (VISION §4).",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-14-02",
-          "label": "DATA/TECH",
-          "desc": "Normalizar fixtures de prueba y rutinas de backup local/remoto.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-14-03",
-          "label": "DATA/DOC",
-          "desc": "Generar diccionario de datos certificado y mapa de compatibilidad con producción.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S15",
-      "name": "Sprint 15: Auditoría de Arquitectura NestJS y Servicios",
-      "status": "TODO",
-      "start_date": "2026-10-26",
-      "goal": "Auditar modularidad, controladores, servicios, inyección de dependencias y deuda técnica.",
-      "tasks": [
-        {
-          "id": "TASK-15-01",
-          "label": "BACKEND/AUDIT",
-          "desc": "Auditar desacoplamiento, inyección de dependencias y modularidad de NestJS.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-15-02",
-          "label": "BACKEND/AUDIT",
-          "desc": "Evaluar endpoints REST, DTOs, validaciones e interceptores (manejo de errores/401).",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-15-03",
-          "label": "BACKEND/AUDIT",
-          "desc": "Analizar sobreingeniería en lógica de negocio y diagnosticar módulos exiliados (pagos/Xero).",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S16",
-      "name": "Sprint 16: Remediación y Optimización de Backend",
-      "status": "TODO",
-      "start_date": "2026-10-27",
-      "goal": "Resolver gaps de validación, manejo de errores y rendimiento en servicios backend.",
-      "tasks": [
-        {
-          "id": "TASK-16-01",
-          "label": "BACKEND/TECH",
-          "desc": "Corregir gaps en validaciones DTO y estandarizar respuestas de error de API.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-16-02",
-          "label": "BACKEND/TECH",
-          "desc": "Optimizar servicios de pedidos y precios para eliminar cuellos de botella de CPU/I/O.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-16-03",
-          "label": "BACKEND/TECH",
-          "desc": "Limpiar código muerto o sobrecomplejo respetando la inviolabilidad del Core.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S17",
-      "name": "Sprint 17: Auditoría de Frontend Next.js y Experiencia UI",
-      "status": "TODO",
-      "start_date": "2026-10-28",
-      "goal": "Evaluar App Router, Server/Client components, contexts globales y UX transaccional.",
-      "tasks": [
-        {
-          "id": "TASK-17-01",
-          "label": "UI/AUDIT",
-          "desc": "Evaluar estructura de rutas en App Router, Server vs Client components y contexts globales.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-17-02",
-          "label": "UI/AUDIT",
-          "desc": "Auditar flujos clave de usuario: Catálogo, Carrito, Checkout, Seguimiento y Dashboard Admin.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-17-03",
-          "label": "UI/AUDIT",
-          "desc": "Evaluar rendimiento de renderizado, peso de bundles y sobreingeniería en estado reactivo.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S18",
-      "name": "Sprint 18: Remediación UI/UX y Eficiencia de Flujo",
-      "status": "TODO",
-      "start_date": "2026-10-29",
-      "goal": "Implementar mejoras de navegación, simplificar estado y optimizar rendimiento de frontend.",
-      "tasks": [
-        {
-          "id": "TASK-18-01",
-          "label": "UI/TECH",
-          "desc": "Corregir gaps de interacción y feedback visual en catálogo y checkout.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-18-02",
-          "label": "UI/TECH",
-          "desc": "Optimizar manejo de estado, caché de peticiones y prevención de bucles de redirección.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-18-03",
-          "label": "UI/CLEAN",
-          "desc": "Simplificar componentes sobrecargados y unificar estilos visuales con Tailwind.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S19",
-      "name": "Sprint 19: Auditoría de Seguridad, Control de Acceso y Fugas",
-      "status": "TODO",
-      "start_date": "2026-10-30",
-      "goal": "Escanear secretos, variables de entorno, robustez de guards RBAC y vectores de riesgo.",
-      "tasks": [
-        {
-          "id": "TASK-19-01",
-          "label": "SEC/AUDIT",
-          "desc": "Escaneo de secretos (Regla 11.3), variables de entorno (.env vs .env.example) y scripts.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-19-02",
-          "label": "SEC/AUDIT",
-          "desc": "Auditar robustez de Guards (RolesGuard, ResourceOwnership) y ciclo de vida de JWT.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-19-03",
-          "label": "SEC/AUDIT",
-          "desc": "Evaluar sanitización de entradas y vectores de inyección en endpoints y consultas SQL.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S20",
-      "name": "Sprint 20: Hardening y Remediación de Seguridad",
-      "status": "TODO",
-      "start_date": "2026-10-31",
-      "goal": "Cerrar brechas de permisos, aislar secretos y robustecer protección de endpoints.",
-      "tasks": [
-        {
-          "id": "TASK-20-01",
-          "label": "SEC/TECH",
-          "desc": "Aislamiento estricto de secretos, eliminación de credenciales residuales y saneamiento de logs.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-20-02",
-          "label": "SEC/TECH",
-          "desc": "Fortalecer middleware de autenticación, expiración de tokens y protección de rutas admin.",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-20-03",
-          "label": "SEC/DOC",
-          "desc": "Documentar matriz de permisos RBAC y checklist de seguridad de producción.",
-          "status": "TODO"
-        }
-      ]
-    },
-    {
-      "id": "S21",
-      "name": "Sprint 21: Auditoría de Suites de Pruebas y Cobertura",
-      "status": "TODO",
-      "start_date": "2026-11-01",
-      "goal": "Diagnosticar estabilidad y cobertura de tests E2E y unitarios en Backend y Frontend.",
-      "tasks": [
-        {
-          "id": "TASK-21-01",
-          "label": "QA/AUDIT",
-          "desc": "Evaluar cobertura y estabilidad de pruebas E2E en backend (Jest).",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-21-02",
-          "label": "QA/AUDIT",
-          "desc": "Auditar pruebas de integración y E2E en frontend (Playwright / Vitest).",
-          "status": "TODO"
-        },
-        {
-          "id": "TASK-21-03",
-          "label": "QA/AUDIT",
-          "desc": "Detectar pruebas flaky, falsos positivos y áreas críticas desprotegidas.",
-          "status": "TODO"
-        }
-      ]
-    },
     {
       "id": "S22",
       "name": "Sprint 22: Remediación y Estabilización de QA",
-      "status": "TODO",
+      "status": "COMPLETED",
       "start_date": "2026-11-02",
       "goal": "Reparar suites defectuosas, aumentar cobertura transaccional y fijar smoke tests.",
       "tasks": [
         {
           "id": "TASK-22-01",
           "label": "QA/TECH",
-          "desc": "Reparar pruebas rotas y armonizar entornos de testing local y CI.",
-          "status": "TODO"
+          "desc": "Crear auth helper de testing y reactivar suites E2E roles-guard y resource-ownership con aserciones 403 deterministas.",
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-22-02",
-          "label": "QA/TECH",
-          "desc": "Implementar smoke tests automatizados para el ciclo de compra y exportaciones de reportes.",
-          "status": "TODO"
+          "label": "QA/E2E",
+          "desc": "Erradicar falsos positivos en admin-fulfillment y crear suite E2E completa para reportes de órdenes y exportación Excel.",
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-22-03",
-          "label": "QA/TECH",
-          "desc": "Establecer umbrales de regresión y verificación automática previa a despliegues.",
-          "status": "TODO"
+          "label": "QA/FRONTEND",
+          "desc": "Añadir script test:e2e en frontend/package.json e implementar suite Vitest para CartContext (flujo de compra y cálculo).",
+          "status": "DONE"
         }
       ]
     },
     {
       "id": "S23",
       "name": "Sprint 23: Auditoría de Infraestructura y Scripts VPS",
-      "status": "TODO",
+      "status": "COMPLETED",
       "start_date": "2026-11-03",
       "goal": "Inspeccionar Docker, Nginx, PM2 y scripts de backup y despliegue a producción.",
       "tasks": [
@@ -380,50 +46,56 @@
           "id": "TASK-23-01",
           "label": "INFRA/AUDIT",
           "desc": "Auditar Dockerfiles, configuraciones Nginx y perfiles de ejecución PM2.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-23-02",
           "label": "INFRA/AUDIT",
           "desc": "Evaluar scripts de backup, sincronización y despliegue remoto en backend/scripts.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-23-03",
           "label": "INFRA/AUDIT",
           "desc": "Evaluar riesgo de sobreingeniería, fragilidad operativa y recuperación ante desastres.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     },
     {
       "id": "S24",
       "name": "Sprint 24: Consolidación DevOps y Pipeline de Release",
-      "status": "TODO",
+      "status": "IN_PROGRESS",
       "start_date": "2026-11-04",
       "goal": "Modernizar scripts de release, asegurar idempotencia de backups y documentar procedimientos.",
       "tasks": [
         {
           "id": "TASK-24-01",
           "label": "INFRA/TECH",
-          "desc": "Refactorizar scripts de despliegue haciéndolos idempotentes y seguros contra fallos de red.",
-          "status": "TODO"
+          "desc": "Crear .dockerignore en raíz, frontend y backend; limpiar variables de Supabase en frontend/Dockerfile.",
+          "status": "DONE"
         },
         {
           "id": "TASK-24-02",
           "label": "INFRA/TECH",
-          "desc": "Estandarizar rutinas automatizadas de backup previo a despliegues (.bak rotativo).",
-          "status": "TODO"
+          "desc": "Refactorizar scripts de backup remoto a sqlite3 .backup atómico y pm2 reload con validación de código de salida.",
+          "status": "DONE"
         },
         {
           "id": "TASK-24-03",
           "label": "INFRA/DOC",
-          "desc": "Elaborar Guía Operativa de Recuperación y Manual de Despliegue Certificado.",
-          "status": "TODO"
+          "desc": "Elaborar la Guía Operativa de Recuperación y Manual de Despliegue en vault/intel/OPERATIONS_DISASTER_RECOVERY.md.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-24-04",
+          "label": "GOV/BASELINE",
+          "desc": "Ejecutar logix audit, sincronizar backlog y re-sellar el ADN del satélite con logix baseline -f.",
+          "status": "DONE"
         }
       ]
     }
   ],
-  "archived_sprints_count": 9,
+  "archived_sprints_count": 21,
   "archive_file": "vault/runtime/backlog_archive.json"
 }

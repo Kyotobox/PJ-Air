@@ -19,6 +19,7 @@ export const UPLOAD_PATH = process.env.UPLOAD_PATH || 'uploads';
 
 // Simple Exports
 export const DATABASE_PATH = process.env.DATABASE_PATH;
+export const JWT_SECRET = process.env.JWT_SECRET;
 export const SUPABASE_KEY = process.env.SUPABASE_KEY;
 export const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_KEY;
 export const NODE_ENV = process.env.NODE_ENV;
@@ -32,6 +33,10 @@ export const SMTP_PASS = process.env.SMTP_PASS;
 export function initialize() {
     if (!DATABASE_PATH) {
         throw new Error('❌ CRITICAL ERROR: DATABASE_PATH is missing. The backend cannot start.');
+    }
+
+    if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+        throw new Error('❌ CRITICAL ERROR: JWT_SECRET is missing in production environment.');
     }
 
     if (!SUPABASE_KEY) {

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
+import { DevtoolsService } from '../src/devtools/devtools.service';
 
 describe('Customer Checkout Flow (e2e)', () => {
   let app: INestApplication;
@@ -99,7 +100,7 @@ describe('Customer Checkout Flow (e2e)', () => {
     // In reality, this might require intercepting the recovery token.
   }, 15000);
 
-  it.skip('should ensure users can only fetch and modify their own addresses (isolation)', async () => {
+  it('should ensure users can only fetch and modify their own addresses (isolation)', async () => {
     // 1. Setup a second user
     const secondUser = { email: `another_user_${Date.now()}@example.com`, password: 'Password123!', full_name: 'Another User', username: `another_${Date.now()}` };
     await request(app.getHttpServer()).post('/auth/signup').send(secondUser);
@@ -134,9 +135,22 @@ describe('Customer Checkout Flow (e2e)', () => {
     // For this test, we have already registered, logged in, and added an address above.
     // We will just complete the remaining steps to verify the full flow logic contextually.
 
-    // 0. Create a test product to satisfy foreign key constraints
-    const productRes = await request(app.getHttpServer())
-      .post('/products')
+    // 0. Seed admin and login to get admin credentials for creating product
+    const devtoolsService = app.get<DevtoolsService>(DevtoolsService);
+    await devtoolsService.seedAdmin();
+
+    const adminLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'admin@test.com', password: '123123' });
+    const adminToken = adminLogin.body?.session?.access_token;
+
+    const productReq = request(app.getHttpServer())
+      .post('/products');
+    if (adminToken) {
+      productReq.set('Authorization', `Bearer ${adminToken}`);
+    }
+
+    const productRes = await productReq
       .send({
         name: 'E2E Checkout Product',
         name_en: 'E2E Checkout Product EN',

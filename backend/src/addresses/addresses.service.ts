@@ -20,6 +20,12 @@ export class AddressesService {
     });
   }
 
+  async findOne(id: string) {
+    const address = await this.addressRepository.findOne({ where: { id } });
+    if (!address) throw new NotFoundException('Address not found');
+    return address;
+  }
+
   async create(userId: string, addressData: any) {
     const address = this.addressRepository.create({
       ...addressData,

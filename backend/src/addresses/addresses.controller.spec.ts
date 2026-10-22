@@ -9,6 +9,7 @@ describe('AddressesController', () => {
   const mockAddressesService = {
     create: jest.fn(),
     findByUser: jest.fn(),
+    findOne: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   };
@@ -28,6 +29,10 @@ describe('AddressesController', () => {
     service = module.get<AddressesService>(AddressesService);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
@@ -38,29 +43,35 @@ describe('AddressesController', () => {
       const body = { userId: '1', ...addressData };
       mockAddressesService.create.mockResolvedValue({ id: '10', ...body });
 
-      const result = await controller.create(body);
+      const req = { user: { id: '1', role: 'client' } };
+      const result = await controller.create(body, req as any);
       expect(service.create).toHaveBeenCalledWith('1', addressData);
       expect(result).toEqual({ id: '10', userId: '1', street: 'Main St' });
     });
 
     it('should fetch addresses by user', async () => {
       mockAddressesService.findByUser.mockResolvedValue([{ id: '10' }]);
-      const result = await controller.findByUser('1');
+      const req = { user: { id: '1', role: 'client' } };
+      const result = await controller.findByUser('1', req as any);
       expect(service.findByUser).toHaveBeenCalledWith('1');
       expect(result).toEqual([{ id: '10' }]);
     });
 
     it('should edit an address', async () => {
       const body = { street: 'Second St' };
+      mockAddressesService.findOne.mockResolvedValue({ id: '10', user_id: '1' });
       mockAddressesService.update.mockResolvedValue({ id: '10', ...body });
-      const result = await controller.update('10', body);
+      const req = { user: { id: '1', role: 'client' } };
+      const result = await controller.update('10', body, req as any);
       expect(service.update).toHaveBeenCalledWith('10', body);
       expect(result).toEqual({ id: '10', street: 'Second St' });
     });
 
     it('should delete an address', async () => {
+      mockAddressesService.findOne.mockResolvedValue({ id: '10', user_id: '1' });
       mockAddressesService.delete.mockResolvedValue({ id: '10' });
-      const result = await controller.delete('10');
+      const req = { user: { id: '1', role: 'client' } };
+      const result = await controller.delete('10', req as any);
       expect(service.delete).toHaveBeenCalledWith('10');
       expect(result).toEqual({ id: '10' });
     });

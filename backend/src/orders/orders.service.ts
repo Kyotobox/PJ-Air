@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In, DataSource } from 'typeorm';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/user.entity';
@@ -17,6 +17,7 @@ export class OrdersService {
     private userRepository: Repository<User>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    private dataSource: DataSource,
   ) {}
 
   private validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string) {
@@ -48,12 +49,25 @@ export class OrdersService {
     });
     if (!user) throw new NotFoundException('User not found');
 
+    const productIds = Array.from(
+      new Set(
+        items
+          .map(item => Number(item.productId || item.product_id))
+          .filter(id => !isNaN(id) && id > 0)
+      )
+    );
+
+    const products = productIds.length > 0
+      ? await this.productRepository.find({ where: { id: In(productIds) } })
+      : [];
+    const productMap = new Map<number, Product>(products.map(p => [p.id, p]));
+
     let calculatedTotal = 0;
     const validatedItems: any[] = [];
 
     for (const item of items) {
-      const productId = item.productId || item.product_id;
-      const product = await this.productRepository.findOne({ where: { id: Number(productId) } });
+      const productId = Number(item.productId || item.product_id);
+      const product = productMap.get(productId);
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found`);
       }
@@ -190,31 +204,35 @@ export class OrdersService {
       finalTotal = result.total;
     }
 
-    const orderToCreate = this.orderRepository.create({
-      ...otherData,
-      delivery_date: deliveryDate,
-      payment_due_date: paymentDueDate,
-      address_id: addressId || null,
-      delivery_type: deliveryType || 'saved',
-      delivery_address_text: deliveryAddressText || null,
-      user_id: userId,
-      total: finalTotal,
+    const savedOrderId = await this.dataSource.transaction(async (manager) => {
+      const orderToCreate = manager.create(Order, {
+        ...otherData,
+        delivery_date: deliveryDate,
+        payment_due_date: paymentDueDate,
+        address_id: addressId || null,
+        delivery_type: deliveryType || 'saved',
+        delivery_address_text: deliveryAddressText || null,
+        user_id: userId,
+        total: finalTotal,
+      });
+
+      const savedResult = await manager.save(Order, orderToCreate);
+      const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
+
+      if (validatedItems.length > 0) {
+        const orderItems = validatedItems.map((item: any) => manager.create(OrderItem, {
+          product_id: item.product_id,
+          price_at_time: item.price_at_time,
+          quantity: item.quantity,
+          order_id: savedOrder.id,
+        }));
+        await manager.save(OrderItem, orderItems);
+      }
+
+      return savedOrder.id;
     });
-    
-    const savedResult = await this.orderRepository.save(orderToCreate);
-    const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
 
-    if (validatedItems.length > 0) {
-      const orderItems = validatedItems.map((item: any) => ({
-        product_id: item.product_id,
-        price_at_time: item.price_at_time,
-        quantity: item.quantity,
-        order_id: savedOrder.id,
-      }));
-      await this.orderItemRepository.save(orderItems);
-    }
-
-    return this.findOne(savedOrder.id);
+    return this.findOne(savedOrderId);
   }
 
   async updateStatus(id: string, status: string, userRole?: string): Promise<Order> {

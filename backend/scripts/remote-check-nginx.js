@@ -1,10 +1,15 @@
 const { Client } = require('ssh2');
 
+if (!process.env.REMOTE_SSH_PASSWORD) {
+    console.error('ERROR: REMOTE_SSH_PASSWORD environment variable is required.');
+    process.exit(1);
+}
+
 const config = {
-    host: '187.124.67.53',
-    port: 22,
-    username: 'root',
-    password: 'o7BR&vX+F2;wqYye'
+    host: process.env.REMOTE_SSH_HOST || '187.124.67.53',
+    port: parseInt(process.env.REMOTE_SSH_PORT || '22', 10),
+    username: process.env.REMOTE_SSH_USER || 'root',
+    password: process.env.REMOTE_SSH_PASSWORD
 };
 
 const conn = new Client();

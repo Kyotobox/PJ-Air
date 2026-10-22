@@ -24,9 +24,45 @@ interface CartContextType {
     getRawSubtotal: () => number;
     getDiscountedSubtotal: () => number;
     getFinalTotal: () => number;
+    getItemPrice: (item: CartItem) => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export function calculateItemPrice(item: { id: number; price: number; originalPrice?: number }, profile: any): number {
+    const basePrice = Number(item.originalPrice || item.price || 0);
+    let finalPrice = basePrice;
+
+    const pd = profile?.productDiscounts?.find((d: any) => Number(d.product_id) === Number(item.id));
+    if (pd) {
+        if (pd.special_price !== null && pd.special_price !== undefined && Number(pd.special_price) > 0) {
+            finalPrice = Number(pd.special_price);
+        } else if (pd.discount_percentage !== null && pd.discount_percentage !== undefined && Number(pd.discount_percentage) > 0) {
+            finalPrice = basePrice * (1 - Number(pd.discount_percentage) / 100);
+        }
+    } else if (profile?.general_discount !== null && profile?.general_discount !== undefined && Number(profile.general_discount) > 0) {
+        finalPrice = basePrice * (1 - Number(profile.general_discount) / 100);
+    }
+
+    return Math.round((finalPrice + Number.EPSILON) * 100) / 100;
+}
+
+export function calculateCartTotals(cart: CartItem[], profile: any) {
+    const rawSubtotal = Math.round((cart.reduce((total, item) => {
+        const itemPrice = Number(item.originalPrice || item.price || 0);
+        return total + (itemPrice * item.quantity);
+    }, 0) + Number.EPSILON) * 100) / 100;
+
+    const discountedSubtotal = Math.round((cart.reduce((acc, item) => {
+        const unitPrice = calculateItemPrice(item, profile);
+        return acc + (unitPrice * item.quantity);
+    }, 0) + Number.EPSILON) * 100) / 100;
+
+    const fee = Number(profile?.delivery_fee) || 0;
+    const finalTotal = Math.round((discountedSubtotal + fee + Number.EPSILON) * 100) / 100;
+
+    return { rawSubtotal, discountedSubtotal, finalTotal };
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
     const { profile } = useAuth();
@@ -100,40 +136,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setCart([]);
     };
 
+    const getItemPrice = (item: CartItem): number => {
+        return calculateItemPrice(item, profile);
+    };
+
     const getRawSubtotal = () => {
-        return cart.reduce((total, item) => {
-            let itemPrice = item.originalPrice || item.price;
-            
-            // Apply product-specific discount (Step 1)
-            if (profile?.productDiscounts) {
-                const pd = profile.productDiscounts.find((d: any) => Number(d.product_id) === Number(item.id));
-                if (pd) {
-                    if (pd.special_price) {
-                        itemPrice = Number(pd.special_price);
-                    } else if (pd.discount_percentage) {
-                        itemPrice = itemPrice * (1 - Number(pd.discount_percentage) / 100);
-                    }
-                }
-            }
-            
+        const raw = cart.reduce((total, item) => {
+            const itemPrice = Number(item.originalPrice || item.price || 0);
             return total + (itemPrice * item.quantity);
         }, 0);
+        return Math.round((raw + Number.EPSILON) * 100) / 100;
     };
-
-    const getCartTotal = () => getRawSubtotal();
 
     const getDiscountedSubtotal = () => {
-        const sub = getRawSubtotal();
-        // Applying general discount (Step 2)
-        const genDisc = profile?.general_discount || 0;
-        return sub * (1 - Number(genDisc) / 100);
+        const total = cart.reduce((acc, item) => {
+            const unitPrice = getItemPrice(item);
+            return acc + (unitPrice * item.quantity);
+        }, 0);
+        return Math.round((total + Number.EPSILON) * 100) / 100;
     };
+
+    const getCartTotal = () => getDiscountedSubtotal();
 
     const getFinalTotal = () => {
         const afterDisc = getDiscountedSubtotal();
-        // Adding delivery fee (Step 3)
-        const fee = profile?.delivery_fee || 0;
-        return afterDisc + Number(fee);
+        const fee = Number(profile?.delivery_fee) || 0;
+        return Math.round((afterDisc + fee + Number.EPSILON) * 100) / 100;
     };
 
     const getCartCount = () => {
@@ -151,7 +179,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             getCartCount,
             getRawSubtotal,
             getDiscountedSubtotal,
-            getFinalTotal
+            getFinalTotal,
+            getItemPrice
         }}>
             {children}
         </CartContext.Provider>

@@ -15,6 +15,8 @@ async function handleResponse(response: Response) {
   if (response.status === 401 && !response.url.includes('/auth/login')) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('local_session');
+      document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
+      document.cookie = 'session_role=; path=/; max-age=0; SameSite=Lax';
       const currentPath = window.location.pathname;
       if (currentPath !== '/auth/login' && currentPath !== '/auth/register') {
         window.location.href = '/auth/login';

@@ -83,7 +83,7 @@ describe('Admin Catalog Flow (e2e)', () => {
     }
   });
 
-  it.skip('Test restricted (Admin-only) endpoints for creating, updating, and deleting products. Ensure standard users get 403 Forbidden.', async () => {
+  it('Test restricted (Admin-only) endpoints for creating, updating, and deleting products. Ensure standard users get 403 Forbidden.', async () => {
     // 1. Setup standard user
     const standardUser = {
       email: `standard_user_${Date.now()}@example.com`,

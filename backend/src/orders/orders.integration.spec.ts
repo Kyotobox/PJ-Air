@@ -84,20 +84,29 @@ describe('Orders Integration Tests', () => {
     const items = await dataSource.getRepository(OrderItem).find({ where: { order_id: order.id } });
     expect(items.length).toBe(2);
 
-    // To test rollback, we could mock the repository to throw an error during item creation
-    // and assert that the order is not present in the database.
-    // However, currently orders.service.ts doesn't use queryRunner for transactions.
-    // This test documents the expected behavior per the plan.
+    // To test rollback, we simulate an error during item creation within the transaction
+    // and assert that the order is rolled back and not present in the database.
+    const originalTransaction = dataSource.transaction.bind(dataSource);
     try {
-      jest.spyOn(dataSource.getRepository(OrderItem), 'save').mockRejectedValueOnce(new Error('Simulated DB Error'));
+      jest.spyOn(dataSource, 'transaction').mockImplementationOnce(async (cb: any) => {
+        return originalTransaction(async (manager: any) => {
+          const originalSave = manager.save.bind(manager);
+          jest.spyOn(manager, 'save').mockImplementation(async (target: any, entity: any) => {
+            if (target === OrderItem) {
+              throw new Error('Simulated DB Error');
+            }
+            return originalSave(target, entity);
+          });
+          return cb(manager);
+        });
+      });
       await service.create('user-2', orderData);
     } catch (e) {
       // Expecting failure
     }
 
     const failedOrder = await dataSource.getRepository(Order).find({ where: { user_id: 'user-2' } });
-    // In an ideal transactional implementation, failedOrder length would be 0
-    // expect(failedOrder.length).toBe(0);
+    expect(failedOrder.length).toBe(0);
   });
 
   it('should automatically generate an audit log note when an order transitions states (e.g., Pending to Shipped)', async () => {

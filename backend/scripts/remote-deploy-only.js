@@ -1,10 +1,15 @@
 const { Client } = require('ssh2');
 
+if (!process.env.REMOTE_SSH_PASSWORD) {
+    console.error('ERROR: REMOTE_SSH_PASSWORD environment variable is required.');
+    process.exit(1);
+}
+
 const config = {
-    host: '187.124.67.53',
-    port: 22,
-    username: 'root',
-    password: 'o7BR&vX+F2;wqYye'
+    host: process.env.REMOTE_SSH_HOST || '187.124.67.53',
+    port: parseInt(process.env.REMOTE_SSH_PORT || '22', 10),
+    username: process.env.REMOTE_SSH_USER || 'root',
+    password: process.env.REMOTE_SSH_PASSWORD
 };
 
 const conn = new Client();
@@ -36,19 +41,21 @@ function executeCommand(conn, cmd) {
 conn.on('ready', async () => {
     console.log('SSH Connection Established.');
     try {
-        console.log('Starting remote code pull, build and restart...');
+        console.log('Starting remote code pull, build and zero-downtime reload...');
+        const targetBranch = process.env.REMOTE_GIT_BRANCH || 'master';
         const deployCmd = [
             'cd /var/www/pj-air',
-            'git checkout master',
-            'git pull origin master',
+            `git checkout ${targetBranch}`,
+            `git pull origin ${targetBranch}`,
             'cd backend',
             'npm install',
             'npm run build',
+            'node scripts/apply-indexes.js',
             'cd ../frontend',
             'npm install',
             'npm run build',
             'cd ..',
-            'pm2 restart 6 7'
+            'pm2 reload pj-air-backend pj-air-frontend || pm2 restart pj-air-backend pj-air-frontend'
         ].join(' && ');
 
         await executeCommand(conn, deployCmd);

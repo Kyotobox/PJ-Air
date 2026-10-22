@@ -49,3 +49,7 @@ dist/
 out/
 *.xlsx
 /.meta/
+.env
+**/.env*
+.env.local
+.env.*.local

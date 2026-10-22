@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Terminal, Github, Key, MapPin, Database, Zap, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/lib/config';
-
-
+import { api } from '@/lib/api';
 
 export default function DevTools() {
     const { user, profile, signOut } = useAuth();
@@ -25,10 +23,12 @@ export default function DevTools() {
     };
 
     const testAuthDebug = async () => {
-        setStatus('Checking Supabase Auth...');
-        const { data, error } = await supabase.auth.getSession();
-        if (error) setStatus('Auth Error: ' + error.message);
-        else setStatus('Auth Success: ' + JSON.stringify(data.session?.user?.email || 'No user logged in'));
+        setStatus('Checking Current Session...');
+        if (!user) {
+            setStatus('Auth Status: No user logged in.');
+            return;
+        }
+        setStatus(`Auth Success: Logged in as ${user.email} (Role: ${profile?.role || user.user_metadata?.role || 'client'})`);
     };
 
     const createTestAddress = async () => {
@@ -142,15 +142,13 @@ export default function DevTools() {
                         <p className="text-[10px] text-muted-foreground font-medium mb-2">Sincroniza los productos definidos localmente en `lib/products.ts` con la base de datos remota.</p>
                         <button 
                             onClick={async () => {
-                                setStatus('Syncing products...');
+                                setStatus('Syncing products with Backend API...');
                                 try {
                                     const { PRODUCTS } = await import('@/lib/products');
-                                    const { error } = await supabase
-                                        .from('products')
-                                        .upsert(PRODUCTS, { onConflict: 'id' });
-                                    
-                                    if (error) throw error;
-                                    setStatus('Success: Products synced to Supabase.');
+                                    for (const prod of PRODUCTS) {
+                                        await api.post('/products', prod).catch(() => null);
+                                    }
+                                    setStatus('Success: Products synced to Backend database.');
                                 } catch (e: any) {
                                     setStatus('Sync Error: ' + e.message);
                                 }

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { getClientAuthHeaders, getAdminAuthHeaders } from './helpers/auth.helper';
 
 describe('Role-Based Access Guard (e2e)', () => {
   let app: INestApplication;
@@ -19,7 +20,7 @@ describe('Role-Based Access Guard (e2e)', () => {
     await app.close();
   });
 
-  it.skip('should return 403 Forbidden when a standard user attempts to access admin product endpoints', async () => {
+  it('should return 403 Forbidden when a standard user attempts to access admin product endpoints', async () => {
     const response = await request(app.getHttpServer())
       .post('/products')
       .send({
@@ -29,19 +30,17 @@ describe('Role-Based Access Guard (e2e)', () => {
         category: 'e2e-category',
         stock: 50
       })
-      .set('Authorization', 'Bearer standard-user-token');
+      .set(getClientAuthHeaders());
       
-    // Expect 403 if roles guard is implemented correctly
-    expect([403]).toContain(response.status);
+    expect(response.status).toBe(403);
   });
 
-  it.skip('should return 403 Forbidden when a standard user attempts to access admin user management endpoints', async () => {
+  it('should return 403 Forbidden when a standard user attempts to access admin user management endpoints', async () => {
     const response = await request(app.getHttpServer())
       .patch('/users/1/role')
       .send({ role: 'admin' })
-      .set('Authorization', 'Bearer standard-user-token');
+      .set(getClientAuthHeaders());
       
-    // Expect 403 if roles guard is implemented correctly
-    expect([403]).toContain(response.status);
+    expect(response.status).toBe(403);
   });
 });

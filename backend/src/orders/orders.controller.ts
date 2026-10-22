@@ -1,7 +1,10 @@
-import { Controller, Post, Get, Body, Param, Patch, Query, Res, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Patch, Query, Res, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { ExcelService } from './excel.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { ResourceOwnershipGuard } from '../auth/resource-ownership.guard';
 
 @Controller('orders')
 export class OrdersController {
@@ -11,22 +14,36 @@ export class OrdersController {
   ) {}
 
   @Post()
-  async create(@Body() body: any) {
+  @UseGuards(AuthGuard)
+  async create(@Body() body: any, @Req() req: any) {
+    const targetUserId = (req.user?.role === 'admin' && body.userId) ? body.userId : req.user.id;
     const { userId, ...orderData } = body;
-    return this.ordersService.create(userId, orderData);
+    return this.ordersService.create(targetUserId, orderData);
   }
 
   @Get()
-  async findAll() {
-    return this.ordersService.findAll();
+  @UseGuards(AuthGuard)
+  async findAll(@Req() req: any) {
+    const role = req.user?.role;
+    if (role === 'admin' || role === 'delivery' || role === 'produccion') {
+      return this.ordersService.findAll();
+    }
+    return this.ordersService.findByUser(req.user.id);
   }
 
   @Get('user/:userId')
-  async findByUser(@Param('userId') userId: string) {
+  @UseGuards(AuthGuard, ResourceOwnershipGuard)
+  async findByUser(@Param('userId') userId: string, @Req() req: any) {
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && req.user.id !== userId) {
+      throw new ForbiddenException('Cannot access other user orders');
+    }
     return this.ordersService.findByUser(userId);
   }
 
   @Get('reports/export-individual')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   async exportIndividual(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
@@ -43,6 +60,8 @@ export class OrdersController {
   }
 
   @Get('reports/export-consolidated')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   async exportConsolidated(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
@@ -59,6 +78,8 @@ export class OrdersController {
   }
 
   @Get('reports/range')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   async findInRange(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
@@ -68,18 +89,30 @@ export class OrdersController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(id);
+  @UseGuards(AuthGuard)
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const order = await this.ordersService.findOne(id);
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+      throw new ForbiddenException('Cannot access this order');
+    }
+    return order;
   }
 
   @Patch(':id/status')
   @UseGuards(AuthGuard)
   async updateStatus(@Param('id') id: string, @Body('status') status: string, @Req() req: any) {
-    const userRole = req.user?.role;
-    return this.ordersService.updateStatus(id, status, userRole);
+    const order = await this.ordersService.findOne(id);
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+      throw new ForbiddenException('Cannot modify this order status');
+    }
+    return this.ordersService.updateStatus(id, status, role);
   }
 
   @Patch(':id/assign')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin', 'produccion')
   async assignDelivery(@Param('id') id: string, @Body('deliveryUserId') deliveryUserId: string) {
     return this.ordersService.assignDelivery(id, deliveryUserId);
   }
@@ -87,7 +120,11 @@ export class OrdersController {
   @Patch(':id')
   @UseGuards(AuthGuard)
   async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
-    const userRole = req.user?.role;
-    return this.ordersService.update(id, body, userRole);
+    const order = await this.ordersService.findOne(id);
+    const role = req.user?.role;
+    if (role !== 'admin' && order.user_id !== req.user.id) {
+      throw new ForbiddenException('Cannot modify this order');
+    }
+    return this.ordersService.update(id, body, role);
   }
 }

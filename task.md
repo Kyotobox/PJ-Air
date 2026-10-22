@@ -1,8 +1,8 @@
-# SPRINT S12 - Sprint 12: Remediación y Blindaje de Gobernanza
-**Objetivo**: Aplicar correcciones de gobernanza, alinear versiones, re-sellar ADN e higienizar metadatos.
+# SPRINT S24 - Sprint 24: Consolidación DevOps y Pipeline de Release
+**Objetivo**: Modernizar scripts de release, asegurar idempotencia de backups y documentar procedimientos.
 **Fecha**: 2026-10-22
 
-- [x] **TASK-12-01** [GOV/FIX] Sincronizar SSSoT de versión a 4.0.0 en GEMINI.md, VISION.md, backlog.json y bunker_profile.json.
-- [x] **TASK-12-02** [GOV/FIX] Corregir lógica multiplataforma en .git/hooks para command -v logix en Linux y symlink bin/logix.
-- [x] **TASK-12-03** [GOV/FIX] Desindexar vault/runtime/logix.db y artefactos de odómetro volátiles de git, agregando package.json al índice.
-- [/] **TASK-12-04** [GOV/SECURITY] Sanear oracle_anchor.json, re-sellar ADN (logix baseline -f) y solicitar firma RSA física del PO.
+- [x] **TASK-24-01** [INFRA/TECH] Crear .dockerignore en raíz, frontend y backend; limpiar variables de Supabase en frontend/Dockerfile.
+- [x] **TASK-24-02** [INFRA/TECH] Refactorizar scripts de backup remoto a sqlite3 .backup atómico y pm2 reload con validación de código de salida.
+- [x] **TASK-24-03** [INFRA/DOC] Elaborar la Guía Operativa de Recuperación y Manual de Despliegue en vault/intel/OPERATIONS_DISASTER_RECOVERY.md.
+- [x] **TASK-24-04** [GOV/BASELINE] Ejecutar logix audit, sincronizar backlog y re-sellar el ADN del satélite con logix baseline -f.

@@ -17,10 +17,23 @@ let RolesGuard = class RolesGuard {
     constructor(reflector) {
         this.reflector = reflector;
     }
-    async canActivate(context) {
-        const roles = this.reflector.get('roles', context.getHandler());
-        if (!roles)
+    canActivate(context) {
+        const handler = context.getHandler();
+        const targetClass = typeof context.getClass === 'function' ? context.getClass() : null;
+        let roles;
+        if (targetClass && typeof this.reflector.getAllAndOverride === 'function') {
+            roles = this.reflector.getAllAndOverride('roles', [handler, targetClass]);
+        }
+        if (!roles) {
+            roles = this.reflector.get('roles', handler);
+        }
+        if (!roles || roles.length === 0)
             return true;
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+        if (!user || !user.role || !roles.includes(user.role)) {
+            throw new common_1.ForbiddenException('Access denied: insufficient permissions');
+        }
         return true;
     }
 };

@@ -1,10 +1,13 @@
-import { Controller, Post, Get, Body, Param, Patch, Delete, UseInterceptors, UploadedFiles, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Patch, Delete, UseInterceptors, UploadedFiles, UploadedFile, BadRequestException, UseGuards } from '@nestjs/common';
 import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, resolve } from 'path';
 import * as fs from 'fs';
 import { ProductsService } from './products.service';
 import { UPLOAD_PATH } from '../config';
+import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('products')
 export class ProductsController {
@@ -30,12 +33,16 @@ export class ProductsController {
     }
 
     @Post()
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('admin')
     async create(@Body() body: any) {
         return this.productsService.create(body);
     }
 
     /** Batch-update a category's settings (name, EN name, min quantity) across all its products */
     @Patch('rename-category')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('admin')
     async updateCategory(@Body() body: { oldName: string; newName: string; newNameEn: string; minQty?: number }) {
         return this.productsService.updateCategory(body.oldName, { 
             newName: body.newName, 
@@ -45,6 +52,8 @@ export class ProductsController {
     }
 
     @Patch(':id')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('admin')
     async update(@Param('id') id: string, @Body() body: any) {
         const parsedId = parseInt(id);
         if (isNaN(parsedId)) {
@@ -54,6 +63,8 @@ export class ProductsController {
     }
 
     @Delete(':id')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('admin')
     async delete(@Param('id') id: string) {
         const parsedId = parseInt(id);
         if (isNaN(parsedId)) {
@@ -63,6 +74,8 @@ export class ProductsController {
     }
 
     @Post('upload-image')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('admin')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
             destination: (req, file, cb) => {
@@ -99,6 +112,8 @@ export class ProductsController {
     }
 
     @Post('upload')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('admin')
     @UseInterceptors(FilesInterceptor('files', 10, {
         limits: {
             fileSize: 2 * 1024 * 1024, // 2MB

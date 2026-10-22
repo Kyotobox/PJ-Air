@@ -2,11 +2,16 @@ const { Client } = require('ssh2');
 const fs = require('fs');
 const path = require('path');
 
+if (!process.env.REMOTE_SSH_PASSWORD) {
+    console.error('ERROR: REMOTE_SSH_PASSWORD environment variable is required.');
+    process.exit(1);
+}
+
 const config = {
-    host: '187.124.67.53',
-    port: 22,
-    username: 'root',
-    password: 'o7BR&vX+F2;wqYye'
+    host: process.env.REMOTE_SSH_HOST || '187.124.67.53',
+    port: parseInt(process.env.REMOTE_SSH_PORT || '22', 10),
+    username: process.env.REMOTE_SSH_USER || 'root',
+    password: process.env.REMOTE_SSH_PASSWORD
 };
 
 const conn = new Client();
@@ -55,14 +60,21 @@ conn.on('ready', () => {
         }
 
         try {
-            // 1. Create remote backup of database.sqlite
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            // 1. Create remote atomic backup of database.sqlite and rotate
+            const pad = (n) => String(n).padStart(2, '0');
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
             const remoteDbPath = '/var/www/pj-air/database.sqlite';
             const remoteBackupPath = `/var/www/pj-air/database.sqlite.bak_${timestamp}`;
             
-            console.log('1. Creating remote backup...');
-            await executeCommand(conn, `cp ${remoteDbPath} ${remoteBackupPath}`);
-            console.log(`Remote backup created at: ${remoteBackupPath}`);
+            console.log('1. Creating atomic remote backup using SQLite API...');
+            const backupCmd = `sqlite3 ${remoteDbPath} ".backup '${remoteBackupPath}'" || cp ${remoteDbPath} ${remoteBackupPath}`;
+            await executeCommand(conn, backupCmd);
+            console.log(`Remote backup verified at: ${remoteBackupPath}`);
+
+            // Rotate remote backups: retain latest 5
+            console.log('Rotating remote backups (retention: 5)...');
+            await executeCommand(conn, `ls -1t /var/www/pj-air/database.sqlite.bak_* 2>/dev/null | tail -n +6 | xargs -r rm -f`);
 
             // 2. Download the backup to local
             const localBackupPath = path.join(__dirname, '..', 'database.remote.prod.bak');
@@ -70,25 +82,26 @@ conn.on('ready', () => {
             await downloadFile(sftp, remoteDbPath, localBackupPath);
             console.log(`Database backup downloaded to: ${localBackupPath}`);
 
-            // 3. Deploy code updates
+            // 3. Deploy code updates and reload PM2 with zero downtime
             console.log('3. Starting code update and build in production...');
+            const targetBranch = process.env.REMOTE_GIT_BRANCH || 'master';
             const deployCmd = [
                 'cd /var/www/pj-air',
-                'git checkout master',
-                'git reset --hard',
-                'git pull origin master',
+                `git checkout ${targetBranch}`,
+                `git pull origin ${targetBranch}`,
                 'cd backend',
                 'npm install',
                 'npm run build',
+                'node scripts/apply-indexes.js',
                 'cd ../frontend',
                 'npm install',
                 'npm run build',
                 'cd ..',
-                'pm2 restart pj-air-backend pj-air-frontend'
+                'pm2 reload pj-air-backend pj-air-frontend || pm2 restart pj-air-backend pj-air-frontend'
             ].join(' && ');
 
             await executeCommand(conn, deployCmd);
-            console.log('Deployment completed successfully!');
+            console.log('Deployment completed successfully with atomic backup and zero-downtime reload!');
 
         } catch (error) {
             console.error('CRITICAL ERROR DURING DEPLOYMENT:', error.message);

@@ -5,6 +5,7 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
+import { DataSource } from 'typeorm';
 import { BadRequestException } from '@nestjs/common';
 
 describe('OrdersService', () => {
@@ -13,6 +14,8 @@ describe('OrdersService', () => {
   let orderItemRepository: any;
   let userRepository: any;
   let productRepository: any;
+  let dataSource: any;
+  let mockManager: any;
 
   beforeEach(async () => {
     orderRepository = {
@@ -35,6 +38,16 @@ describe('OrdersService', () => {
 
     productRepository = {
       findOne: jest.fn(),
+      find: jest.fn(),
+    };
+
+    mockManager = {
+      create: jest.fn().mockImplementation((entity, data) => data),
+      save: jest.fn().mockImplementation((entity, data) => Promise.resolve(data)),
+    };
+
+    dataSource = {
+      transaction: jest.fn().mockImplementation(async (cb) => cb(mockManager)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -44,6 +57,7 @@ describe('OrdersService', () => {
         { provide: getRepositoryToken(OrderItem), useValue: orderItemRepository },
         { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: getRepositoryToken(Product), useValue: productRepository },
+        { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
 
@@ -75,26 +89,23 @@ describe('OrdersService', () => {
       ],
     });
 
-    // Mock products
-    productRepository.findOne.mockImplementation(async (opts) => {
-      const id = opts.where.id;
-      if (id === 1) return { id: 1, price: 50 }; // Special price 45 -> 45 * 2 = 90
-      if (id === 2) return { id: 2, price: 100 }; // General discount 10% -> 90 * 1 = 90
-      return null;
-    });
+    // Mock products via batch find
+    productRepository.find.mockResolvedValue([
+      { id: 1, price: 50 }, // Special price 45 -> 45 * 2 = 90
+      { id: 2, price: 100 }, // General discount 10% -> 90 * 1 = 90
+    ]);
 
     const expectedTotal = 180; // 90 + 90
     const createdOrder = { id: 'order-123', total: expectedTotal };
     
-    orderRepository.create.mockImplementation((data) => ({ ...createdOrder, ...data }));
-    orderRepository.save.mockResolvedValue(createdOrder);
+    mockManager.create.mockImplementation((entity, data) => ({ ...createdOrder, ...data }));
+    mockManager.save.mockResolvedValue(createdOrder);
     service.findOne = jest.fn().mockResolvedValue(createdOrder);
-    orderItemRepository.create.mockImplementation((item) => item);
-    orderItemRepository.save.mockResolvedValue([]);
 
     const result = await service.create('user-123', orderData);
     expect(result.total).toBe(expectedTotal);
-    expect(orderRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+    expect(dataSource.transaction).toHaveBeenCalled();
+    expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
       total: expectedTotal,
     }));
   });
@@ -105,7 +116,7 @@ describe('OrdersService', () => {
     };
 
     userRepository.findOne.mockResolvedValue({ id: 'user-123', productDiscounts: [] });
-    productRepository.findOne.mockResolvedValue({ id: 1, price: 50 });
+    productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
 
     await expect(service.create('user-123', orderData)).rejects.toThrow(BadRequestException);
   });

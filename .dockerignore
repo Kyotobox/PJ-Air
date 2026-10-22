@@ -1,0 +1,13 @@
+node_modules
+.git
+.github
+.env*
+*.log
+*.bak*
+*.sqlite*
+vault
+dist
+build
+.next
+coverage
+test-results

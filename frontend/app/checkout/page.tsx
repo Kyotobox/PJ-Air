@@ -286,7 +286,7 @@ function InlineAddressForm({
 // Main checkout page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
-    const { cart, clearCart, updateQuantity, getRawSubtotal, getDiscountedSubtotal, getFinalTotal } = useCart();
+    const { cart, clearCart, updateQuantity, getRawSubtotal, getDiscountedSubtotal, getFinalTotal, getItemPrice } = useCart();
     const { user, profile } = useAuth();
     const { locale } = useLanguage();
     const router = useRouter();
@@ -347,9 +347,9 @@ export default function CheckoutPage() {
     // ── Calculation logic ─────────────────────────────────────────────────────
     const rawSubtotal = getRawSubtotal();
     const discountedSubtotal = getDiscountedSubtotal();
-    const finalTotal = getFinalTotal();
-    const totalDiscount = rawSubtotal - discountedSubtotal;
-    const deliveryFee = profile?.delivery_fee || 0;
+    const deliveryFee = deliveryType === 'pickup' ? 0 : (Number(profile?.delivery_fee) || 0);
+    const finalTotal = Math.round((discountedSubtotal + deliveryFee + Number.EPSILON) * 100) / 100;
+    const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + Number.EPSILON) * 100) / 100;
     const subtotal = rawSubtotal;
 
     // ── Delivery date (NY timezone) ───────────────────────────────────────────
@@ -423,27 +423,11 @@ export default function CheckoutPage() {
                 status: 'Pedido Enviado',
                 deliveryDate,
                 paymentDueDate: paymentDate,
-                items: cart.map(item => {
-                    let unitPrice = item.originalPrice || item.price;
-                    
-                    // 1. Product-specific
-                    const pd = profile?.productDiscounts?.find((d: any) => Number(d.product_id) === Number(item.id));
-                    if (pd) {
-                        if (pd.special_price) unitPrice = Number(pd.special_price);
-                        else if (pd.discount_percentage) unitPrice = unitPrice * (1 - Number(pd.discount_percentage) / 100);
-                    }
-                    
-                    // 2. General discount
-                    if (profile?.general_discount > 0) {
-                        unitPrice = unitPrice * (1 - Number(profile.general_discount) / 100);
-                    }
-
-                    return {
-                        productId: item.id,
-                        quantity: item.quantity,
-                        price: Number(unitPrice.toFixed(2)),
-                    };
-                }),
+                items: cart.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity,
+                    price: getItemPrice(item),
+                })),
             }) as any;
             clearCart();
             window.location.href = `/orders/${order.id}`;
@@ -702,14 +686,9 @@ export default function CheckoutPage() {
 
                             <div className="space-y-4 mb-8">
                                 {cart.map(item => {
-                                    let unitPrice = item.originalPrice || item.price;
-                                    let hasPd = false;
-                                    const pd = profile?.productDiscounts?.find((d: any) => Number(d.product_id) === Number(item.id));
-                                    if (pd) {
-                                        hasPd = true;
-                                        if (pd.special_price) unitPrice = Number(pd.special_price);
-                                        else if (pd.discount_percentage) unitPrice = unitPrice * (1 - Number(pd.discount_percentage) / 100);
-                                    }
+                                    const unitPrice = getItemPrice(item);
+                                    const basePrice = Number(item.originalPrice || item.price || 0);
+                                    const hasDiscount = unitPrice < basePrice;
 
                                     return (
                                         <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-2xl border border-border/40 gap-4">
@@ -717,8 +696,8 @@ export default function CheckoutPage() {
                                                 <span className="text-xs font-bold text-foreground truncate">{item.name}</span>
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[9px] text-primary font-black uppercase tracking-widest">${unitPrice.toFixed(2)} c/u</span>
-                                                    {hasPd && (
-                                                        <span className="text-[8px] text-muted-foreground line-through">${(item.originalPrice || item.price).toFixed(2)}</span>
+                                                    {hasDiscount && (
+                                                        <span className="text-[8px] text-muted-foreground line-through">${basePrice.toFixed(2)}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -781,8 +760,12 @@ export default function CheckoutPage() {
                                     {totalDiscount > 0 && (
                                         <div className="flex justify-between items-center text-xs mb-3 text-green-600 bg-green-50/50 p-2 rounded-xl border border-green-100/50">
                                             <div className="flex flex-col">
-                                                <span className="font-black uppercase tracking-widest text-[9px]">{lbl('Descuento General', 'General Discount')}</span>
-                                                <span className="text-[8px] italic">{lbl(`-${profile?.general_discount}% aplicado al subtotal`, `-${profile?.general_discount}% applied to subtotal`)}</span>
+                                                <span className="font-black uppercase tracking-widest text-[9px]">{lbl('Descuentos Aplicados', 'Discounts Applied')}</span>
+                                                <span className="text-[8px] italic">
+                                                    {profile?.general_discount > 0 && !profile?.productDiscounts?.length
+                                                        ? lbl(`-${profile.general_discount}% aplicado`, `-${profile.general_discount}% applied`)
+                                                        : lbl('Descuentos exclusivos aplicados', 'Exclusive discounts applied')}
+                                                </span>
                                             </div>
                                             <span className="font-bold">-${totalDiscount.toFixed(2)}</span>
                                         </div>
