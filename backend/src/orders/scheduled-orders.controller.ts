@@ -4,7 +4,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
-@Controller('orders/scheduled')
+@Controller(['orders/scheduled', 'scheduled-orders'])
 export class ScheduledOrdersController {
   constructor(private readonly scheduledService: ScheduledOrdersService) {}
 

@@ -18,7 +18,7 @@ import { MailModule } from '../mail/mail.module';
     MailModule,
   ],
   providers: [OrdersService, ScheduledOrdersService, ExcelService],
-  controllers: [OrdersController, ScheduledOrdersController],
+  controllers: [ScheduledOrdersController, OrdersController],
   exports: [OrdersService, ScheduledOrdersService, ExcelService],
 })
 export class OrdersModule {}

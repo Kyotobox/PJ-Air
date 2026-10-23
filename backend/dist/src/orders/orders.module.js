@@ -30,7 +30,7 @@ exports.OrdersModule = OrdersModule = __decorate([
             mail_module_1.MailModule,
         ],
         providers: [orders_service_1.OrdersService, scheduled_orders_service_1.ScheduledOrdersService, excel_service_1.ExcelService],
-        controllers: [orders_controller_1.OrdersController, scheduled_orders_controller_1.ScheduledOrdersController],
+        controllers: [scheduled_orders_controller_1.ScheduledOrdersController, orders_controller_1.OrdersController],
         exports: [orders_service_1.OrdersService, scheduled_orders_service_1.ScheduledOrdersService, excel_service_1.ExcelService],
     })
 ], OrdersModule);
