@@ -1,12 +1,5 @@
 | Timestamp | Role | SessionID | PrevHash | Type | Task | Detail |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-07-05 19:17 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | 8528c01 | TRACE | SYNC-CONTEXT | Ejecución administrativa detectada: logix sync-context |
-| 2026-07-05 19:17 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | b345272 | TRACE | HANDOVER | Ejecución administrativa detectada: logix handover |
-| 2026-07-05 19:17 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | b5f703f | TRACE | SYNC-CONTEXT | Ejecución administrativa detectada: logix sync-context |
-| 2026-07-05 19:18 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | 8d86cd3 | TRACE | HANDOVER | Ejecución administrativa detectada: logix handover |
-| 2026-07-05 19:18 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | 9f5f21a | TRACE | SYNC-CONTEXT | Ejecución administrativa detectada: logix sync-context |
-| 2026-07-05 19:18 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | 35104e1 | TRACE | HANDOVER | Ejecución administrativa detectada: logix handover |
-| 2026-07-05 19:22 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | e3ed7f7 | TRACE | UNKNOWN | Ejecución administrativa detectada: logix unknown |
 | 2026-07-05 19:24 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | 3b0f035 | TRACE | SYNC-CONTEXT | Ejecución administrativa detectada: logix sync-context |
 | 2026-07-05 19:28 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | 79b21b0 | TRACE | HANDOVER | Ejecución administrativa detectada: logix handover |
 | 2026-07-05 19:29 | GENERAL | aa506f91880ef1d5ec9fd870ab5a0aff | 7289772 | TRACE | SYNC-CONTEXT | Ejecución administrativa detectada: logix sync-context |
@@ -200,3 +193,10 @@
   - TASK-32-02: TODO -> DONE
   - TASK-32-03: TODO -> DONE
   - TASK-32-04: TODO -> IN_PROGRESS |
+| 2026-10-23 10:32 | AI | BACKLOG_SYNC | 82db666 | STATE_MUTATION | SYNC | Mutations applied:
+  - TASK-36-01: TODO -> IN_PROGRESS |
+| 2026-10-23 10:36 | AI | BACKLOG_SYNC | 56c49c4 | STATE_MUTATION | SYNC | Mutations applied:
+  - TASK-36-01: IN_PROGRESS -> DONE
+  - TASK-36-02: TODO -> DONE
+  - TASK-36-03: TODO -> DONE
+  - TASK-36-04: TODO -> DONE |
