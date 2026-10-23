@@ -51,6 +51,7 @@ export default function AdminClientsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
+    const [commercialFilter, setCommercialFilter] = useState<'all' | 'credit' | 'cash' | 'overdraft'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [toast, setToast] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
@@ -305,13 +306,34 @@ export default function AdminClientsPage() {
         } catch (err: any) { showToast(`❌ ${err.message}`); }
     };
 
+    const isUserOverdraft = (u: UserRecord) => {
+        if (u.account_type !== 'credit') return false;
+        const unpaid = (u.orders || []).filter(o => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado');
+        const used = unpaid.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+        const limit = Number(u.credit_limit || 0);
+        return used > limit;
+    };
+
+    const countAll = users.length;
+    const countCredit = users.filter(u => u.account_type === 'credit').length;
+    const countCash = users.filter(u => u.account_type === 'cash' || !u.account_type).length;
+    const countOverdraft = users.filter(isUserOverdraft).length;
+
     const filtered = users.filter(u => {
+        // Commercial tab filter
+        if (commercialFilter === 'credit' && u.account_type !== 'credit') return false;
+        if (commercialFilter === 'cash' && u.account_type === 'credit') return false;
+        if (commercialFilter === 'overdraft' && !isUserOverdraft(u)) return false;
+
+        // Search text filter
         if (!search) return true;
         const s = search.toLowerCase();
         return (
             u.email?.toLowerCase().includes(s) ||
             u.profile?.full_name?.toLowerCase().includes(s) ||
-            u.profile?.username?.toLowerCase().includes(s)
+            u.profile?.username?.toLowerCase().includes(s) ||
+            u.profile?.nickname?.toLowerCase().includes(s) ||
+            u.id?.toLowerCase().includes(s)
         );
     }).sort((a, b) => {
         const nameA = a.profile?.full_name || a.email || '';
@@ -336,6 +358,80 @@ export default function AdminClientsPage() {
                     </div>
                 </div>
 
+                {/* Commercial Filters Bar */}
+                <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1" data-testid="commercial-filter-bar">
+                    <button
+                        type="button"
+                        onClick={() => { setCommercialFilter('all'); setCurrentPage(1); }}
+                        className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                            commercialFilter === 'all'
+                                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20'
+                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        <span>Todos</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            commercialFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                            ({countAll})
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => { setCommercialFilter('credit'); setCurrentPage(1); }}
+                        className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                            commercialFilter === 'credit'
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        <span>Solo Crédito</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            commercialFilter === 'credit' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'
+                        }`}>
+                            ({countCredit})
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => { setCommercialFilter('cash'); setCurrentPage(1); }}
+                        className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                            commercialFilter === 'cash'
+                                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        <span>Solo Contado</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            commercialFilter === 'cash' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700'
+                        }`}>
+                            ({countCash})
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => { setCommercialFilter('overdraft'); setCurrentPage(1); }}
+                        className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                            commercialFilter === 'overdraft'
+                                ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
+                                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <ShieldAlert size={14} className={commercialFilter === 'overdraft' ? 'text-white' : 'text-red-500'} />
+                            Con Sobregiro
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            commercialFilter === 'overdraft' ? 'bg-white/20 text-white' : 'bg-red-50 text-red-700'
+                        }`}>
+                            ({countOverdraft})
+                        </span>
+                    </button>
+                </div>
+
                 {/* Filter Bar */}
                 <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
                     <div className="relative flex-1 w-full">
@@ -350,7 +446,7 @@ export default function AdminClientsPage() {
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl text-slate-500 text-sm font-bold border border-slate-100">
                         <ListFilter size={16} />
-                        Filtro: Clientes
+                        Filtro: {commercialFilter === 'all' ? 'Todos los Clientes' : commercialFilter === 'credit' ? 'Solo Crédito' : commercialFilter === 'cash' ? 'Solo Contado' : 'Con Sobregiro'}
                     </div>
                 </div>
 
@@ -394,9 +490,16 @@ export default function AdminClientsPage() {
                                         <div className="flex flex-col gap-1 items-start">
                                             {u.account_type === 'credit' ? (
                                                 <>
-                                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">
-                                                        Crédito
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">
+                                                            Crédito
+                                                        </span>
+                                                        {isUserOverdraft(u) && (
+                                                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-red-100 text-red-700 border border-red-200 flex items-center gap-0.5" title="Excede límite de crédito">
+                                                                <ShieldAlert size={10} /> Sobregiro
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <span className="text-xs font-black text-slate-700">
                                                         ${Number(u.credit_limit || 0).toLocaleString()}
                                                     </span>

@@ -6,7 +6,7 @@ import {
     Calendar, MapPin, CreditCard, ChevronRight, ShoppingBag,
     Loader2, Plus, Clock, Minus, Store, Truck, Home,
     ChevronDown, Check, AlertCircle, BookmarkPlus, Bookmark,
-    Map as MapIcon, RotateCcw, Search
+    Map as MapIcon, RotateCcw, Search, X
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -322,6 +322,22 @@ export default function CheckoutPage() {
     const [userDiscounts, setUserDiscounts] = useState<any>(null);
     const [creditSummary, setCreditSummary] = useState<any>(null);
     const [stripePaymentData, setStripePaymentData] = useState<{ clientSecret: string; amount: number; orderId: string } | null>(null);
+    const [notification, setNotification] = useState<{
+        message: string;
+        type: 'error' | 'warning' | 'info';
+    } | null>(null);
+
+    const showNotification = (message: string, type: 'error' | 'warning' | 'info' = 'warning') => {
+        setNotification({ message, type });
+    };
+
+    useEffect(() => {
+        if (!notification) return;
+        const timer = setTimeout(() => {
+            setNotification(null);
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [notification]);
 
     const handleStripePaymentSuccess = async () => {
         if (!stripePaymentData) return;
@@ -411,15 +427,15 @@ export default function CheckoutPage() {
         if (!user || cart.length === 0) return;
 
         if (!termsAccepted) {
-            alert(lbl('Por favor acepta los Términos y Condiciones para continuar.', 'Please accept the Terms and Conditions to proceed.'));
+            showNotification(lbl('Por favor acepta los Términos y Condiciones para continuar.', 'Please accept the Terms and Conditions to proceed.'), 'warning');
             return;
         }
 
         if (exceedsCreditLimit) {
-            alert(lbl(
+            showNotification(lbl(
                 `Tu pedido excede tu línea de crédito disponible ($${availableCredit.toFixed(2)}). Comunícate con administración.`,
                 `Your order exceeds your available credit line ($${availableCredit.toFixed(2)}). Please contact administration.`
-            ));
+            ), 'error');
             return;
         }
 
@@ -434,13 +450,13 @@ export default function CheckoutPage() {
 
         if (deliveryType === 'saved') {
             if (!selectedAddressId) {
-                alert(lbl('Por favor selecciona una dirección guardada.', 'Please select a saved address.'));
+                showNotification(lbl('Por favor selecciona una dirección guardada.', 'Please select a saved address.'), 'warning');
                 return;
             }
             finalAddressId = selectedAddressId;
         } else if (deliveryType === 'other') {
             if (!otherAddrData.alias.trim() || !otherAddrData.address.trim()) {
-                alert(lbl('Por favor completa el nombre y la dirección.', 'Please fill in name and address.'));
+                showNotification(lbl('Por favor completa el nombre y la dirección.', 'Please fill in name and address.'), 'warning');
                 return;
             }
             // Create address record (temporary or permanent)
@@ -459,7 +475,7 @@ export default function CheckoutPage() {
                 finalAddressId = newAddr.id;
                 deliveryAddressText = otherAddrData.address;
             } catch (e) {
-                alert(lbl('Error guardando la dirección. Intenta de nuevo.', 'Error saving address. Please try again.'));
+                showNotification(lbl('Error guardando la dirección. Intenta de nuevo.', 'Error saving address. Please try again.'), 'error');
                 return;
             }
         }
@@ -511,10 +527,10 @@ export default function CheckoutPage() {
             }
         } catch (error) {
             console.error('Error placing order:', error);
-            alert(lbl(
+            showNotification(lbl(
                 'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.',
                 'There was an error processing your order. Please try again.'
-            ));
+            ), 'error');
         } finally {
             setIsLoading(false);
         }
@@ -546,6 +562,48 @@ export default function CheckoutPage() {
     return (
         <div className="min-h-screen bg-[#fafafa]">
             <Navbar />
+
+            {/* Floating Notification Toast */}
+            {notification && (
+                <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="fixed top-6 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[calc(100%-2rem)] px-2 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto"
+                >
+                    <div className={`flex items-start gap-3 p-4 rounded-2xl shadow-2xl border backdrop-blur-md transition-all ${
+                        notification.type === 'error'
+                            ? 'bg-red-50/95 border-red-200 text-red-900 shadow-red-500/15'
+                            : notification.type === 'warning'
+                            ? 'bg-amber-50/95 border-amber-200 text-amber-900 shadow-amber-500/15'
+                            : 'bg-emerald-50/95 border-emerald-200 text-emerald-900 shadow-emerald-500/15'
+                    }`}>
+                        {notification.type === 'error' ? (
+                            <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600">
+                                <AlertCircle size={18} />
+                            </div>
+                        ) : notification.type === 'warning' ? (
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-600">
+                                <AlertCircle size={18} />
+                            </div>
+                        ) : (
+                            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
+                                <Check size={18} />
+                            </div>
+                        )}
+                        <div className="flex-1 pt-1 text-sm font-semibold leading-relaxed">
+                            {notification.message}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setNotification(null)}
+                            className="p-1.5 rounded-xl hover:bg-black/5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                            aria-label={lbl('Cerrar notificación', 'Close notification')}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <main className="max-w-7xl mx-auto px-4 py-12">
                 <div className="flex flex-col lg:flex-row gap-12">

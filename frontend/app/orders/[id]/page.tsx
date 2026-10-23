@@ -134,6 +134,23 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                         <span>Total</span>
                                         <span className="text-lg font-black text-primary">${(Number(order.total) || 0).toFixed(2)}</span>
                                     </div>
+
+                                    {/* Commercial Financial Status Badge */}
+                                    {order.payment_status === 'paid' ? (
+                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-sm">
+                                            <span className="text-sm">✅</span>
+                                            <span>{locale === 'en' ? 'Paid via Card (Stripe)' : 'Pagado con Tarjeta (Stripe)'}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">
+                                            <span className="text-sm">⏳</span>
+                                            <span>
+                                                {locale === 'en'
+                                                    ? `B2B Credit Purchase • Due: ${order.payment_due_date || 'Pending'}`
+                                                    : `Compra a Crédito B2B • Fecha Límite de Pago: ${order.payment_due_date || 'Pendiente'}`}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

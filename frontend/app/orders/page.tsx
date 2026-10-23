@@ -85,7 +85,7 @@ export default function ClientOrdersPage() {
                                             {getStatusIcon(order.status)}
                                         </div>
                                         <div>
-                                            <div className="flex items-center gap-2 mb-1">
+                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                 <h3 className="text-xl font-bold">{t.orders.orderNumber} #{order.id.slice(0, 8)}</h3>
                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
                                                     (order.status || '').toLowerCase().includes('recibido') || (order.status || '').toLowerCase().includes('entregado')
@@ -94,19 +94,49 @@ export default function ClientOrdersPage() {
                                                 }`}>
                                                     {order.status === 'Pedido Recibido' ? t.orders.delivered : (order.status === 'Pedido Enviado' ? t.orders.shipping : order.status)}
                                                 </span>
+                                                {/* Payment Status Badge */}
+                                                {order.payment_status === 'paid' ? (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                        <span>✅</span> {locale === 'en' ? 'Paid' : 'Pagado'}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                                        <span>⏳</span> {locale === 'en' ? 'Pending' : 'Pendiente'}
+                                                        {order.payment_due_date ? ` (${order.payment_due_date})` : ''}
+                                                    </span>
+                                                )}
                                             </div>
                                             <p className="text-sm text-muted-foreground font-medium">{t.orders.orderedOn} {new Date(order.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 md:flex items-center gap-8 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0">
+                                    <div className="grid grid-cols-3 md:flex items-center gap-6 md:gap-8 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0">
                                         <div>
                                             <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Total</p>
                                             <p className="text-lg font-black">${(Number(order.total) || 0).toFixed(2)}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Entrega</p>
-                                            <p className="text-sm font-bold text-foreground">{order.delivery_date || 'Pendiente'}</p>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">{locale === 'en' ? 'Payment' : 'Pago'}</p>
+                                            {order.payment_status === 'paid' ? (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                    ✅ {locale === 'en' ? 'Paid' : 'Pagado'}
+                                                </span>
+                                            ) : (
+                                                <div className="flex flex-col">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                        ⏳ {locale === 'en' ? 'Pending' : 'Pendiente'}
+                                                    </span>
+                                                    {order.payment_due_date && (
+                                                        <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                                                            {locale === 'en' ? `Due: ${order.payment_due_date}` : `Vence: ${order.payment_due_date}`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">{locale === 'en' ? 'Delivery' : 'Entrega'}</p>
+                                            <p className="text-sm font-bold text-foreground">{order.delivery_date || (locale === 'en' ? 'Pending' : 'Pendiente')}</p>
                                         </div>
                                     </div>
 
