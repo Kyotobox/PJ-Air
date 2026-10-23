@@ -42,7 +42,10 @@ export class ScheduledOrdersService implements OnModuleInit, OnModuleDestroy {
   }
 
   async create(userId: string, data: Partial<ScheduledOrder>): Promise<ScheduledOrder> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
     if (!user) throw new NotFoundException('User not found');
 
     const id = `sched_${Date.now()}_${randomUUID().slice(0, 8)}`;
@@ -74,6 +77,19 @@ export class ScheduledOrdersService implements OnModuleInit, OnModuleDestroy {
 
     const saved = (await this.scheduledRepo.save(scheduled)) as ScheduledOrder;
     this.logger.log(`Created ScheduledOrder ${saved.id} for user ${userId}`);
+
+    // TASK-37-03: Confirmación al cliente de su suscripción semanal fija
+    if (this.mailService && user?.email) {
+      const clientName = user.profile?.full_name || user.email;
+      this.mailService.sendStandingOrderConfirmation(
+        saved,
+        user.email,
+        clientName,
+      ).catch(err => {
+        this.logger.warn(`Error sending standing order confirmation email: ${err?.message || err}`);
+      });
+    }
+
     return saved;
   }
 

@@ -12,12 +12,13 @@ const payments_controller_1 = require("./payments.controller");
 const payments_service_1 = require("./payments.service");
 const orders_module_1 = require("../orders/orders.module");
 const users_module_1 = require("../users/users.module");
+const mail_module_1 = require("../mail/mail.module");
 let PaymentsModule = class PaymentsModule {
 };
 exports.PaymentsModule = PaymentsModule;
 exports.PaymentsModule = PaymentsModule = __decorate([
     (0, common_1.Module)({
-        imports: [orders_module_1.OrdersModule, users_module_1.UsersModule],
+        imports: [orders_module_1.OrdersModule, users_module_1.UsersModule, mail_module_1.MailModule],
         controllers: [payments_controller_1.PaymentsController],
         providers: [payments_service_1.PaymentsService],
         exports: [payments_service_1.PaymentsService],

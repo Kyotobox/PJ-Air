@@ -1,11 +1,13 @@
 import { OrdersService } from '../orders/orders.service';
 import { UsersService } from '../users/users.service';
+import { MailService } from '../mail/mail.service';
 export declare class PaymentsService {
     private readonly ordersService;
     private readonly usersService;
+    private readonly mailService?;
     private stripe;
     private readonly logger;
-    constructor(ordersService: OrdersService, usersService: UsersService);
+    constructor(ordersService: OrdersService, usersService: UsersService, mailService?: MailService | undefined);
     getOrCreateCustomer(userId: string): Promise<{
         id: string;
         email: string;

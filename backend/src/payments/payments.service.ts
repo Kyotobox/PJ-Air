@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger, Optional } from '@nestjs/common';
 import Stripe from 'stripe';
 import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '../config';
 import { OrdersService } from '../orders/orders.service';
 import { UsersService } from '../users/users.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class PaymentsService {
@@ -12,6 +13,8 @@ export class PaymentsService {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly usersService: UsersService,
+    @Optional()
+    private readonly mailService?: MailService,
   ) {
     if (STRIPE_SECRET_KEY) {
       this.stripe = new Stripe(STRIPE_SECRET_KEY, {
@@ -570,6 +573,31 @@ export class PaymentsService {
 
     this.logger.log(`Order ${order.id} refunded by $${refundAmount}. New status: ${newPaymentStatus}`);
 
+    // TASK-37-03: Disparar comprobante de reembolso al cliente de forma asíncrona no bloqueante
+    const mailSvc = this.mailService;
+    if (mailSvc) {
+      (async () => {
+        try {
+          let customerEmail = order.user?.email;
+          if (!customerEmail && order.user_id) {
+            const u = await this.usersService.findOne(order.user_id);
+            customerEmail = u?.email;
+          }
+          if (customerEmail) {
+            await mailSvc.sendRefundReceipt(order, customerEmail, {
+              refundedAmount: refundAmount,
+              totalRefunded: newTotalRefunded,
+              reason: auditReason,
+            });
+          }
+        } catch (err: any) {
+          this.logger.warn(`Error dispatching refund receipt email: ${err?.message || err}`);
+        }
+      })().catch(err => {
+        this.logger.warn(`Unhandled error in refund receipt email dispatch: ${err?.message || err}`);
+      });
+    }
+
     return {
       success: true,
       orderId: order.id,
@@ -605,6 +633,24 @@ export class PaymentsService {
           payment_status: 'paid',
           stripe_payment_id: paymentIntent.id,
         }, 'admin');
+
+        // TASK-37-01: Disparar recibo de compra tras conciliar webhook payment_intent.succeeded
+        const mailSvc = this.mailService;
+        if (mailSvc) {
+          (async () => {
+            try {
+              const fullOrder = await this.ordersService.findOne(orderId);
+              const customerEmail = fullOrder.user?.email || paymentIntent.receipt_email || paymentIntent.metadata?.customerEmail;
+              if (customerEmail) {
+                await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+              }
+            } catch (err: any) {
+              this.logger.warn(`Error sending order receipt from payment_intent.succeeded webhook: ${err?.message || err}`);
+            }
+          })().catch(err => {
+            this.logger.warn(`Unhandled error in webhook order receipt dispatch: ${err?.message || err}`);
+          });
+        }
       }
     } else if (event.type === 'checkout.session.completed') {
       const session = event.data?.object as Stripe.Checkout.Session;
@@ -613,12 +659,28 @@ export class PaymentsService {
         ? session.payment_intent
         : session.payment_intent?.id;
 
+      const mailSvc = this.mailService;
+
       if (orderId && session.metadata?.type === 'settlement') {
         this.logger.log(`Checkout session completed for settlement of order ${orderId}`);
         await this.ordersService.update(orderId, {
           payment_status: 'paid',
           stripe_payment_id: paymentIntentId,
         }, 'admin');
+
+        if (mailSvc) {
+          (async () => {
+            try {
+              const fullOrder = await this.ordersService.findOne(orderId);
+              const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
+              if (customerEmail) {
+                await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+              }
+            } catch (err: any) {
+              this.logger.warn(`Error sending settlement receipt: ${err?.message || err}`);
+            }
+          })().catch(() => {});
+        }
       } else if (session.metadata?.type === 'account_settlement' && session.metadata?.orderIds) {
         const orderIds = session.metadata.orderIds.split(',').filter(Boolean);
         for (const oId of orderIds) {
@@ -627,9 +689,41 @@ export class PaymentsService {
               payment_status: 'paid',
               stripe_payment_id: paymentIntentId,
             }, 'admin');
+
+            if (mailSvc) {
+              (async () => {
+                try {
+                  const fullOrder = await this.ordersService.findOne(oId);
+                  const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
+                  if (customerEmail) {
+                    await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+                  }
+                } catch (_) {}
+              })().catch(() => {});
+            }
           } catch (e: any) {
             this.logger.warn(`Failed reconciling batch settlement for order ${oId}: ${e.message}`);
           }
+        }
+      } else if (orderId) {
+        this.logger.log(`Checkout session completed for order ${orderId}`);
+        await this.ordersService.update(orderId, {
+          payment_status: 'paid',
+          stripe_payment_id: paymentIntentId,
+        }, 'admin');
+
+        if (mailSvc) {
+          (async () => {
+            try {
+              const fullOrder = await this.ordersService.findOne(orderId);
+              const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
+              if (customerEmail) {
+                await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+              }
+            } catch (err: any) {
+              this.logger.warn(`Error sending checkout session order receipt: ${err?.message || err}`);
+            }
+          })().catch(() => {});
         }
       }
     } else if (event.type === 'charge.refunded') {

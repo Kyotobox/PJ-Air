@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -19,14 +22,17 @@ const stripe_1 = __importDefault(require("stripe"));
 const config_1 = require("../config");
 const orders_service_1 = require("../orders/orders.service");
 const users_service_1 = require("../users/users.service");
+const mail_service_1 = require("../mail/mail.service");
 let PaymentsService = PaymentsService_1 = class PaymentsService {
     ordersService;
     usersService;
+    mailService;
     stripe = null;
     logger = new common_1.Logger(PaymentsService_1.name);
-    constructor(ordersService, usersService) {
+    constructor(ordersService, usersService, mailService) {
         this.ordersService = ordersService;
         this.usersService = usersService;
+        this.mailService = mailService;
         if (config_1.STRIPE_SECRET_KEY) {
             this.stripe = new stripe_1.default(config_1.STRIPE_SECRET_KEY, {
                 apiVersion: '2024-06-20',
@@ -490,6 +496,30 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             refund_reason: auditReason,
         }, 'admin');
         this.logger.log(`Order ${order.id} refunded by $${refundAmount}. New status: ${newPaymentStatus}`);
+        const mailSvc = this.mailService;
+        if (mailSvc) {
+            (async () => {
+                try {
+                    let customerEmail = order.user?.email;
+                    if (!customerEmail && order.user_id) {
+                        const u = await this.usersService.findOne(order.user_id);
+                        customerEmail = u?.email;
+                    }
+                    if (customerEmail) {
+                        await mailSvc.sendRefundReceipt(order, customerEmail, {
+                            refundedAmount: refundAmount,
+                            totalRefunded: newTotalRefunded,
+                            reason: auditReason,
+                        });
+                    }
+                }
+                catch (err) {
+                    this.logger.warn(`Error dispatching refund receipt email: ${err?.message || err}`);
+                }
+            })().catch(err => {
+                this.logger.warn(`Unhandled error in refund receipt email dispatch: ${err?.message || err}`);
+            });
+        }
         return {
             success: true,
             orderId: order.id,
@@ -523,6 +553,23 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     payment_status: 'paid',
                     stripe_payment_id: paymentIntent.id,
                 }, 'admin');
+                const mailSvc = this.mailService;
+                if (mailSvc) {
+                    (async () => {
+                        try {
+                            const fullOrder = await this.ordersService.findOne(orderId);
+                            const customerEmail = fullOrder.user?.email || paymentIntent.receipt_email || paymentIntent.metadata?.customerEmail;
+                            if (customerEmail) {
+                                await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+                            }
+                        }
+                        catch (err) {
+                            this.logger.warn(`Error sending order receipt from payment_intent.succeeded webhook: ${err?.message || err}`);
+                        }
+                    })().catch(err => {
+                        this.logger.warn(`Unhandled error in webhook order receipt dispatch: ${err?.message || err}`);
+                    });
+                }
             }
         }
         else if (event.type === 'checkout.session.completed') {
@@ -531,12 +578,27 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             const paymentIntentId = typeof session.payment_intent === 'string'
                 ? session.payment_intent
                 : session.payment_intent?.id;
+            const mailSvc = this.mailService;
             if (orderId && session.metadata?.type === 'settlement') {
                 this.logger.log(`Checkout session completed for settlement of order ${orderId}`);
                 await this.ordersService.update(orderId, {
                     payment_status: 'paid',
                     stripe_payment_id: paymentIntentId,
                 }, 'admin');
+                if (mailSvc) {
+                    (async () => {
+                        try {
+                            const fullOrder = await this.ordersService.findOne(orderId);
+                            const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
+                            if (customerEmail) {
+                                await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+                            }
+                        }
+                        catch (err) {
+                            this.logger.warn(`Error sending settlement receipt: ${err?.message || err}`);
+                        }
+                    })().catch(() => { });
+                }
             }
             else if (session.metadata?.type === 'account_settlement' && session.metadata?.orderIds) {
                 const orderIds = session.metadata.orderIds.split(',').filter(Boolean);
@@ -546,10 +608,43 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                             payment_status: 'paid',
                             stripe_payment_id: paymentIntentId,
                         }, 'admin');
+                        if (mailSvc) {
+                            (async () => {
+                                try {
+                                    const fullOrder = await this.ordersService.findOne(oId);
+                                    const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
+                                    if (customerEmail) {
+                                        await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+                                    }
+                                }
+                                catch (_) { }
+                            })().catch(() => { });
+                        }
                     }
                     catch (e) {
                         this.logger.warn(`Failed reconciling batch settlement for order ${oId}: ${e.message}`);
                     }
+                }
+            }
+            else if (orderId) {
+                this.logger.log(`Checkout session completed for order ${orderId}`);
+                await this.ordersService.update(orderId, {
+                    payment_status: 'paid',
+                    stripe_payment_id: paymentIntentId,
+                }, 'admin');
+                if (mailSvc) {
+                    (async () => {
+                        try {
+                            const fullOrder = await this.ordersService.findOne(orderId);
+                            const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
+                            if (customerEmail) {
+                                await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+                            }
+                        }
+                        catch (err) {
+                            this.logger.warn(`Error sending checkout session order receipt: ${err?.message || err}`);
+                        }
+                    })().catch(() => { });
                 }
             }
         }
@@ -581,7 +676,9 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
 exports.PaymentsService = PaymentsService;
 exports.PaymentsService = PaymentsService = PaymentsService_1 = __decorate([
     (0, common_1.Injectable)(),
+    __param(2, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [orders_service_1.OrdersService,
-        users_service_1.UsersService])
+        users_service_1.UsersService,
+        mail_service_1.MailService])
 ], PaymentsService);
 //# sourceMappingURL=payments.service.js.map

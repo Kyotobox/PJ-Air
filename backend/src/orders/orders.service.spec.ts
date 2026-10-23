@@ -55,6 +55,7 @@ describe('OrdersService', () => {
     mockMailService = {
       sendCreditAlert: jest.fn().mockResolvedValue(true),
       sendOrderReceipt: jest.fn().mockResolvedValue(true),
+      sendAdminNewOrderAlert: jest.fn().mockResolvedValue(true),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -331,6 +332,40 @@ describe('OrdersService', () => {
     const result = await service.create('user-credit-4', orderData);
     expect(result.id).toBe('order-low-total');
     expect(mockMailService.sendCreditAlert).not.toHaveBeenCalled();
+  });
+
+  it('should trigger sendOrderReceipt and sendAdminNewOrderAlert on successful order creation', async () => {
+    const orderData = {
+      items: [{ productId: 1, quantity: 2 }],
+      deliveryType: 'saved',
+    };
+
+    userRepository.findOne.mockResolvedValue({
+      id: 'user-b2b',
+      email: 'b2b-client@example.com',
+      account_type: 'credit',
+      credit_limit: 1000,
+      delivery_fee: 10,
+      profile: { full_name: 'Supermercado Central' },
+      orders: [],
+    });
+
+    productRepository.find.mockResolvedValue([
+      { id: 1, name: 'Pan Campesino', price: 20 },
+    ]);
+
+    const createdOrder = {
+      id: 'order-mail-test-456',
+      total: 50,
+      user_id: 'user-b2b',
+      payment_status: 'pending',
+    };
+    service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+    await service.create('user-b2b', orderData);
+
+    expect(mockMailService.sendOrderReceipt).toHaveBeenCalledWith(createdOrder, 'b2b-client@example.com');
+    expect(mockMailService.sendAdminNewOrderAlert).toHaveBeenCalledWith(createdOrder, 'b2b-client@example.com', 'Supermercado Central');
   });
 
   it('should allow invalid order status transitions (e.g., Delivered -> Pending) if user is admin', async () => {

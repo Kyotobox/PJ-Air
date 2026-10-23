@@ -286,6 +286,21 @@ export class OrdersService {
 
     const createdOrder = await this.findOne(savedOrderId);
 
+    // TASK-37-01: Disparar recibo de compra al cliente de forma asíncrona no bloqueante
+    if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function' && user?.email) {
+      this.mailService.sendOrderReceipt(createdOrder, user.email).catch(err => {
+        console.error('[OrdersService] Error sending order receipt email:', err?.message || err);
+      });
+    }
+
+    // TASK-37-02: Disparar alerta a producción y operaciones de forma asíncrona no bloqueante
+    if (this.mailService && typeof this.mailService.sendAdminNewOrderAlert === 'function') {
+      const clientName = user?.profile?.full_name || 'Cliente Mayorista';
+      this.mailService.sendAdminNewOrderAlert(createdOrder, user?.email, clientName).catch(err => {
+        console.error('[OrdersService] Error sending admin new order alert email:', err?.message || err);
+      });
+    }
+
     if (shouldSendCreditAlert && this.mailService && user?.email) {
       const clientName = user.profile?.full_name || 'Cliente B2B';
       this.mailService.sendCreditAlert(
