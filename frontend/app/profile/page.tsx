@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { User, MapPin, Mail, Phone, BadgeCheck, Loader2, Save, Plus, Trash2 } from 'lucide-react';
+import { User, MapPin, Mail, Phone, BadgeCheck, Loader2, Save, Plus, Trash2, CreditCard, Building2, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -32,6 +32,23 @@ export default function ProfilePage() {
     const [isChangingPassword, setIsChangingPassword] = useState(false);
 
     const [isUploading, setIsUploading] = useState(false);
+    const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+    const [isFetchingMethods, setIsFetchingMethods] = useState(true);
+    const [isOpeningPortal, setIsOpeningPortal] = useState(false);
+    const [deletingMethodId, setDeletingMethodId] = useState<string | null>(null);
+    const [isAddingMethod, setIsAddingMethod] = useState(false);
+
+    const fetchPaymentMethods = async () => {
+        try {
+            setIsFetchingMethods(true);
+            const methods = await api.get('/payments/payment-methods') as any[];
+            setPaymentMethods(Array.isArray(methods) ? methods : []);
+        } catch (err) {
+            console.warn('Error fetching payment methods:', err);
+        } finally {
+            setIsFetchingMethods(false);
+        }
+    };
 
     useEffect(() => {
         if (isAuthLoading) return;
@@ -59,7 +76,70 @@ export default function ProfilePage() {
         };
 
         fetchUserData();
+        fetchPaymentMethods();
     }, [user, isAuthLoading, router]);
+
+    const handleDeletePaymentMethod = async (id: string) => {
+        if (!confirm(locale === 'en' ? 'Remove this payment method?' : '¿Eliminar este método de pago?')) return;
+        try {
+            setDeletingMethodId(id);
+            await api.delete(`/payments/payment-methods/${id}`);
+            setPaymentMethods(prev => prev.filter(m => m.id !== id));
+            setMessage({
+                type: 'success',
+                text: locale === 'en' ? 'Payment method removed successfully.' : 'Método de pago eliminado con éxito.'
+            });
+        } catch (err: any) {
+            setMessage({
+                type: 'error',
+                text: err.message || (locale === 'en' ? 'Failed to remove payment method' : 'Error al eliminar método de pago')
+            });
+        } finally {
+            setDeletingMethodId(null);
+        }
+    };
+
+    const handleOpenCustomerPortal = async () => {
+        try {
+            setIsOpeningPortal(true);
+            const res = await api.post('/payments/customer-portal', {}) as { url: string };
+            if (res?.url) {
+                window.open(res.url, '_blank');
+            }
+        } catch (err: any) {
+            setMessage({
+                type: 'error',
+                text: err.message || (locale === 'en' ? 'Could not open billing portal' : 'No se pudo abrir el portal de facturación')
+            });
+        } finally {
+            setIsOpeningPortal(false);
+        }
+    };
+
+    const handleAddNewPaymentMethod = async () => {
+        try {
+            setIsAddingMethod(true);
+            const res = await api.post('/payments/setup-intent', {}) as { clientSecret: string };
+            if (res?.clientSecret) {
+                const portalRes = await api.post('/payments/customer-portal', {}).catch(() => null) as any;
+                if (portalRes?.url) {
+                    window.open(portalRes.url, '_blank');
+                } else {
+                    setMessage({
+                        type: 'success',
+                        text: locale === 'en' ? 'SetupIntent initialized. Use checkout or portal to register cards.' : 'SetupIntent iniciado. Puedes guardar tu tarjeta en checkout o portal.'
+                    });
+                }
+            }
+        } catch (err: any) {
+            setMessage({
+                type: 'error',
+                text: err.message || (locale === 'en' ? 'Error setting up payment method' : 'Error al configurar método')
+            });
+        } finally {
+            setIsAddingMethod(false);
+        }
+    };
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -318,6 +398,109 @@ export default function ProfilePage() {
                                         <p className="text-sm text-muted-foreground">{t.profile.noAddresses}</p>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* B2B Payment Methods & Stripe Customer Portal */}
+                        <div className="bg-card rounded-[32px] border border-border p-8 shadow-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                                <div>
+                                    <h3 className="text-xl font-bold font-serif flex items-center gap-2">
+                                        <CreditCard className="text-primary" size={24} /> 
+                                        {locale === 'en' ? 'Payment Methods & Billing' : 'Métodos de Pago y Facturación'}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {locale === 'en'
+                                            ? 'Manage saved cards, ACH direct debits, and access the Stripe Corporate Portal.'
+                                            : 'Administra tus tarjetas guardadas, débitos ACH y accede al portal corporativo de facturación.'}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleOpenCustomerPortal}
+                                    disabled={isOpeningPortal}
+                                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shrink-0 disabled:opacity-50"
+                                >
+                                    {isOpeningPortal ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
+                                    {locale === 'en' ? 'Stripe Billing Portal' : 'Portal de Facturación'}
+                                </button>
+                            </div>
+
+                            {/* Payment methods list */}
+                            {isFetchingMethods ? (
+                                <div className="py-8 flex items-center justify-center gap-2 text-muted-foreground text-xs font-medium">
+                                    <Loader2 size={16} className="animate-spin" />
+                                    {locale === 'en' ? 'Loading payment methods...' : 'Cargando métodos de pago...'}
+                                </div>
+                            ) : paymentMethods.length > 0 ? (
+                                <div className="space-y-3">
+                                    {paymentMethods.map((pm) => {
+                                        const isCard = pm.type === 'card' || !!pm.card;
+                                        return (
+                                            <div key={pm.id} className="p-5 bg-white border border-border rounded-2xl flex items-center justify-between hover:border-primary/30 transition-all">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-800">
+                                                        {isCard ? <CreditCard size={20} /> : <Building2 size={20} />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-black text-sm uppercase tracking-tight">
+                                                                {isCard ? (pm.card?.brand || 'Tarjeta') : (pm.us_bank_account?.bank_name || 'Cuenta Bancaria')}
+                                                            </span>
+                                                            <span className="font-mono text-xs font-bold text-muted-foreground">
+                                                                •••• {isCard ? pm.card?.last4 : pm.us_bank_account?.last4}
+                                                            </span>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
+                                                                {isCard ? '1-Click' : 'ACH'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                                            {isCard
+                                                                ? `${locale === 'en' ? 'Expires' : 'Vence'}: ${pm.card?.exp_month}/${pm.card?.exp_year}`
+                                                                : `${locale === 'en' ? 'Direct Debit Bank' : 'Débito Directo Bancario'}`}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeletePaymentMethod(pm.id)}
+                                                    disabled={deletingMethodId === pm.id}
+                                                    className="p-2.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50"
+                                                    title={locale === 'en' ? 'Delete payment method' : 'Eliminar método de pago'}
+                                                >
+                                                    {deletingMethodId === pm.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="py-8 text-center bg-muted/20 rounded-2xl border border-dashed border-border/40 space-y-2">
+                                    <p className="text-xs text-muted-foreground">
+                                        {locale === 'en' ? 'No saved payment methods yet.' : 'Aún no tienes métodos de pago guardados.'}
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground/70">
+                                        {locale === 'en' ? 'You can save a card during checkout for faster 1-click purchases.' : 'Puedes guardar tu tarjeta durante el checkout para compras en 1 clic.'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Add payment method button / SetupIntent notice */}
+                            <div className="mt-6 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1.5 font-medium">
+                                    <ShieldCheck size={16} className="text-green-600" />
+                                    {locale === 'en' ? 'Protected with PCI-DSS 256-bit encryption' : 'Protegido con encriptación bancaria PCI-DSS'}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={handleAddNewPaymentMethod}
+                                    disabled={isAddingMethod}
+                                    className="w-full sm:w-auto px-4 py-2 border border-border hover:border-primary/50 text-foreground font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                    {isAddingMethod ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                                    {locale === 'en' ? 'Add Payment Method' : 'Agregar Método de Pago'}
+                                </button>
                             </div>
                         </div>
 

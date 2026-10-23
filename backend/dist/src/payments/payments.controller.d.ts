@@ -8,10 +8,27 @@ export declare class PaymentsController {
         orderId?: string;
         customerEmail?: string;
         description?: string;
-    }): Promise<{
+        customerId?: string;
+        paymentMethodId?: string;
+        saveCard?: boolean;
+        paymentMethodType?: string;
+    }, req: any): Promise<{
         clientSecret: string;
         paymentIntentId: string;
         amount: number;
+        status?: string;
+    }>;
+    createSetupIntent(req: any): Promise<{
+        clientSecret: string;
+        customerId: string;
+    }>;
+    getPaymentMethods(req: any): Promise<any[]>;
+    deletePaymentMethod(id: string, req: any): Promise<{
+        success: boolean;
+        id: string;
+    }>;
+    createCustomerPortal(req: any): Promise<{
+        url: string;
     }>;
     createSettlementLink(body: {
         orderId?: string;

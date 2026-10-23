@@ -6,16 +6,37 @@ export declare class PaymentsService {
     private stripe;
     private readonly logger;
     constructor(ordersService: OrdersService, usersService: UsersService);
+    getOrCreateCustomer(userId: string): Promise<{
+        id: string;
+        email: string;
+    }>;
+    createSetupIntent(userId: string): Promise<{
+        clientSecret: string;
+        customerId: string;
+    }>;
+    getPaymentMethods(userId: string): Promise<any[]>;
+    deletePaymentMethod(userId: string, paymentMethodId: string): Promise<{
+        success: boolean;
+        id: string;
+    }>;
+    createCustomerPortalSession(userId: string): Promise<{
+        url: string;
+    }>;
     createPaymentIntent(data: {
         amount: number;
         currency?: string;
         orderId?: string;
         customerEmail?: string;
         description?: string;
+        customerId?: string;
+        paymentMethodId?: string;
+        saveCard?: boolean;
+        paymentMethodType?: string;
     }): Promise<{
         clientSecret: string;
         paymentIntentId: string;
         amount: number;
+        status?: string;
     }>;
     createSettlementLink(data: {
         orderId?: string;

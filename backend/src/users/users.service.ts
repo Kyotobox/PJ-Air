@@ -111,6 +111,10 @@ export class UsersService {
     await this.userRepository.update(userId, { delivery_fee: fee });
   }
 
+  async updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void> {
+    await this.userRepository.update(userId, { stripe_customer_id: stripeCustomerId });
+  }
+
   async updateCreditSettings(
     userId: string, 
     data: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean }

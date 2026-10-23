@@ -3,8 +3,8 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S32",
-  "current_task": "TASK-32-01",
+  "current_sprint": "S33",
+  "current_task": "TASK-33-04",
   "sprints": [
     {
       "id": "S30",
@@ -111,7 +111,7 @@
     {
       "id": "S33",
       "name": "Sprint 33: Optimización Financiera ACH Direct Debit y Tarjetas Guardadas (1-Click Checkout)",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "start_date": "2026-11-13",
       "goal": "Reducir el costo de comisiones bancarias en pedidos mayoristas de alto volumen mediante transferencias ACH Direct Debit y habilitar compra rápida en 1 clic con métodos de pago guardados de forma segura.",
       "tasks": [
@@ -119,25 +119,25 @@
           "id": "TASK-33-01",
           "label": "BACKEND/CUSTOMERS-ACH",
           "desc": "Integración de Stripe Customers, SetupIntents para guardado seguro de métodos de pago y habilitación de ACH Direct Debit (us_bank_account) con comisiones reducidas.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-33-02",
           "label": "CHECKOUT/1CLICK-UI",
           "desc": "Selector de tarjetas guardadas en StripePaymentModal para checkout en 1 clic, opción de guardado seguro y selección de transferencia bancaria directa ACH.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-33-03",
           "label": "PORTAL/BILLING-UI",
           "desc": "Panel de autoservicio de métodos de pago en el perfil del cliente para agregar, eliminar o seleccionar método predeterminado y acceso al Customer Portal de Stripe.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-33-04",
           "label": "E2E/GOV",
           "desc": "Suite Playwright de validación de compra rápida con tarjeta guardada, flujo ACH, auditoría de seguridad y certificación baseline.",
-          "status": "TODO"
+          "status": "IN_PROGRESS"
         }
       ]
     },

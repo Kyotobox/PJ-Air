@@ -51,7 +51,7 @@ function getHeaders(extraHeaders?: Record<string, string>): Record<string, strin
 }
 
 export const api = {
-  async post(path: string, body: any) {
+  async post(path: string, body: any = {}) {
     const response = await fetch(`${API_URL}${path}`, {
       method: 'POST',
       headers: getHeaders(),
@@ -60,7 +60,7 @@ export const api = {
     return handleResponse(response);
   },
 
-  async patch(path: string, body: any) {
+  async patch(path: string, body: any = {}) {
     const response = await fetch(`${API_URL}${path}`, {
       method: 'PATCH',
       headers: getHeaders(),

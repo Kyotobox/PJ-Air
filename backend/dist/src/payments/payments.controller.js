@@ -23,8 +23,29 @@ let PaymentsController = class PaymentsController {
     constructor(paymentsService) {
         this.paymentsService = paymentsService;
     }
-    async createIntent(body) {
-        return this.paymentsService.createPaymentIntent(body);
+    async createIntent(body, req) {
+        let customerId = body.customerId;
+        if (!customerId && req.user?.id) {
+            const customer = await this.paymentsService.getOrCreateCustomer(req.user.id);
+            customerId = customer.id;
+        }
+        return this.paymentsService.createPaymentIntent({
+            ...body,
+            customerId,
+            customerEmail: body.customerEmail || req.user?.email,
+        });
+    }
+    async createSetupIntent(req) {
+        return this.paymentsService.createSetupIntent(req.user.id);
+    }
+    async getPaymentMethods(req) {
+        return this.paymentsService.getPaymentMethods(req.user.id);
+    }
+    async deletePaymentMethod(id, req) {
+        return this.paymentsService.deletePaymentMethod(req.user.id, id);
+    }
+    async createCustomerPortal(req) {
+        return this.paymentsService.createCustomerPortalSession(req.user.id);
     }
     async createSettlementLink(body, req) {
         if (req.user?.role !== 'admin' && body.clientId && body.clientId !== req.user.id) {
@@ -44,10 +65,44 @@ exports.PaymentsController = PaymentsController;
 __decorate([
     (0, common_1.Post)('create-intent'),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "createIntent", null);
+__decorate([
+    (0, common_1.Post)('setup-intent'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], PaymentsController.prototype, "createIntent", null);
+], PaymentsController.prototype, "createSetupIntent", null);
+__decorate([
+    (0, common_1.Get)('payment-methods'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "getPaymentMethods", null);
+__decorate([
+    (0, common_1.Delete)('payment-methods/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "deletePaymentMethod", null);
+__decorate([
+    (0, common_1.Post)('customer-portal'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "createCustomerPortal", null);
 __decorate([
     (0, common_1.Post)('create-settlement-link'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),

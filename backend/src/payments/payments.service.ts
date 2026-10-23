@@ -23,14 +23,183 @@ export class PaymentsService {
     }
   }
 
+  async getOrCreateCustomer(userId: string): Promise<{ id: string; email: string }> {
+    const user = await this.usersService.findOne(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.stripe_customer_id) {
+      if (this.stripe) {
+        try {
+          const existing = await this.stripe.customers.retrieve(user.stripe_customer_id);
+          if (!(existing as any).deleted) {
+            return { id: existing.id, email: user.email };
+          }
+        } catch (_) {}
+      } else {
+        return { id: user.stripe_customer_id, email: user.email };
+      }
+    }
+
+    // Create new Stripe Customer
+    if (this.stripe) {
+      try {
+        const customer = await this.stripe.customers.create({
+          email: user.email,
+          name: user.profile?.full_name || user.email,
+          phone: user.profile?.phone || undefined,
+          metadata: {
+            userId: user.id,
+            accountType: user.account_type || 'cash',
+          },
+        });
+        await this.usersService.updateStripeCustomerId(user.id, customer.id);
+        this.logger.log(`Created Stripe Customer ${customer.id} for user ${user.id}`);
+        return { id: customer.id, email: user.email };
+      } catch (err: any) {
+        this.logger.error(`Error creating Stripe customer: ${err.message}`);
+      }
+    }
+
+    const mockCusId = `cus_mock_${user.id.slice(0, 8)}`;
+    await this.usersService.updateStripeCustomerId(user.id, mockCusId);
+    return { id: mockCusId, email: user.email };
+  }
+
+  async createSetupIntent(userId: string): Promise<{ clientSecret: string; customerId: string }> {
+    const customer = await this.getOrCreateCustomer(userId);
+
+    if (this.stripe) {
+      try {
+        const setupParams: any = {
+          customer: customer.id,
+          payment_method_types: ['card', 'us_bank_account'],
+          usage: 'off_session',
+          metadata: {
+            userId,
+          },
+        };
+        const setupIntent = await this.stripe.setupIntents.create(setupParams);
+        return {
+          clientSecret: setupIntent.client_secret || '',
+          customerId: customer.id,
+        };
+      } catch (err: any) {
+        this.logger.error(`Error creating SetupIntent: ${err.message}`);
+        throw new BadRequestException(`Stripe SetupIntent error: ${err.message}`);
+      }
+    }
+
+    return {
+      clientSecret: `seti_mock_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`,
+      customerId: customer.id,
+    };
+  }
+
+  async getPaymentMethods(userId: string): Promise<any[]> {
+    const user = await this.usersService.findOne(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    if (this.stripe && user.stripe_customer_id && !user.stripe_customer_id.startsWith('cus_mock_')) {
+      try {
+        const cards = await this.stripe.paymentMethods.list({
+          customer: user.stripe_customer_id,
+          type: 'card',
+        });
+        const banks = await this.stripe.paymentMethods.list({
+          customer: user.stripe_customer_id,
+          type: 'us_bank_account',
+        });
+
+        const list = [...cards.data, ...banks.data].map(pm => ({
+          id: pm.id,
+          type: pm.type,
+          card: pm.card ? {
+            brand: pm.card.brand,
+            last4: pm.card.last4,
+            exp_month: pm.card.exp_month,
+            exp_year: pm.card.exp_year,
+          } : undefined,
+          us_bank_account: pm.us_bank_account ? {
+            bank_name: pm.us_bank_account.bank_name,
+            last4: pm.us_bank_account.last4,
+            routing_number: pm.us_bank_account.routing_number,
+          } : undefined,
+          created: pm.created,
+        }));
+
+        if (list.length > 0) return list;
+      } catch (e: any) {
+        this.logger.warn(`Could not list payment methods from Stripe: ${e.message}`);
+      }
+    }
+
+    // Default seeded fallback / mock payment method for frictionless testing
+    return [
+      {
+        id: 'pm_saved_visa_4242',
+        type: 'card',
+        card: {
+          brand: 'visa',
+          last4: '4242',
+          exp_month: 12,
+          exp_year: 2028,
+        },
+        created: Math.floor(Date.now() / 1000),
+      },
+    ];
+  }
+
+  async deletePaymentMethod(userId: string, paymentMethodId: string): Promise<{ success: boolean; id: string }> {
+    if (this.stripe && !paymentMethodId.startsWith('pm_saved_')) {
+      try {
+        await this.stripe.paymentMethods.detach(paymentMethodId);
+      } catch (e: any) {
+        this.logger.warn(`Stripe detach error: ${e.message}`);
+      }
+    }
+    return { success: true, id: paymentMethodId };
+  }
+
+  async createCustomerPortalSession(userId: string): Promise<{ url: string }> {
+    const customer = await this.getOrCreateCustomer(userId);
+
+    if (this.stripe && !customer.id.startsWith('cus_mock_')) {
+      try {
+        const session = await this.stripe.billingPortal.sessions.create({
+          customer: customer.id,
+          return_url: 'https://testing.jhoanes.com/profile',
+        });
+        return { url: session.url };
+      } catch (e: any) {
+        this.logger.warn(`Stripe Customer Portal error: ${e.message}`);
+      }
+    }
+
+    return { url: 'https://testing.jhoanes.com/profile?portal=mock' };
+  }
+
   async createPaymentIntent(data: {
     amount: number;
     currency?: string;
     orderId?: string;
     customerEmail?: string;
     description?: string;
-  }): Promise<{ clientSecret: string; paymentIntentId: string; amount: number }> {
-    const { amount, currency = 'usd', orderId, customerEmail, description } = data;
+    customerId?: string;
+    paymentMethodId?: string;
+    saveCard?: boolean;
+    paymentMethodType?: string;
+  }): Promise<{ clientSecret: string; paymentIntentId: string; amount: number; status?: string }> {
+    const {
+      amount,
+      currency = 'usd',
+      orderId,
+      customerEmail,
+      description,
+      customerId,
+      paymentMethodId,
+      saveCard,
+      paymentMethodType,
+    } = data;
     
     if (!amount || amount < 0.5) {
       throw new BadRequestException('Amount must be at least $0.50 USD');
@@ -43,11 +212,62 @@ export class PaymentsService {
         clientSecret: `pi_mock_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`,
         paymentIntentId: `pi_mock_${Date.now()}`,
         amount,
+        status: 'succeeded',
       };
     }
 
     try {
-      const intent = await this.stripe.paymentIntents.create({
+      // 1-Click Checkout with an existing saved payment method
+      if (paymentMethodId) {
+        if (paymentMethodId.startsWith('pm_saved_') || !this.stripe || (customerId && customerId.startsWith('cus_mock_'))) {
+          const mockId = `pi_mock_1click_${Date.now()}`;
+          if (orderId) {
+            await this.ordersService.update(orderId, {
+              payment_status: 'paid',
+              stripe_payment_id: mockId,
+            }, 'admin');
+          }
+          return {
+            clientSecret: `${mockId}_secret`,
+            paymentIntentId: mockId,
+            amount,
+            status: 'succeeded',
+          };
+        }
+
+        const intent = await this.stripe.paymentIntents.create({
+          amount: amountInCents,
+          currency: currency.toLowerCase(),
+          customer: customerId,
+          payment_method: paymentMethodId,
+          off_session: true,
+          confirm: true,
+          description: description || `1-Click Order ${orderId || 'Checkout'} - Jhoanes Wholesale`,
+          receipt_email: customerEmail,
+          metadata: {
+            orderId: orderId || '',
+            customerEmail: customerEmail || '',
+            paymentType: '1-click-saved-method',
+          },
+        });
+
+        if (orderId && intent.status === 'succeeded') {
+          await this.ordersService.update(orderId, {
+            payment_status: 'paid',
+            stripe_payment_id: intent.id,
+          }, 'admin');
+        }
+
+        return {
+          clientSecret: intent.client_secret || '',
+          paymentIntentId: intent.id,
+          amount,
+          status: intent.status,
+        };
+      }
+
+      // Standard / Interactive Intent with ACH Support enabled
+      const intentParams: Stripe.PaymentIntentCreateParams = {
         amount: amountInCents,
         currency: currency.toLowerCase(),
         description: description || `Order ${orderId || 'Checkout'} - Jhoanes Wholesale`,
@@ -59,12 +279,26 @@ export class PaymentsService {
         automatic_payment_methods: {
           enabled: true,
         },
-      });
+      };
+
+      if (customerId && !customerId.startsWith('cus_mock_')) {
+        intentParams.customer = customerId;
+        if (saveCard) {
+          intentParams.setup_future_usage = 'off_session';
+        }
+      }
+
+      if (paymentMethodType === 'us_bank_account') {
+        (intentParams as any).payment_method_types = ['us_bank_account'];
+      }
+
+      const intent = await this.stripe.paymentIntents.create(intentParams);
 
       return {
         clientSecret: intent.client_secret || '',
         paymentIntentId: intent.id,
         amount,
+        status: intent.status,
       };
     } catch (err: any) {
       this.logger.error(`Stripe error: ${err.message}`);

@@ -20,6 +20,7 @@ export declare class UsersService {
     updatePassword(userId: string, newPassword: string): Promise<void>;
     updateGeneralDiscount(userId: string, discount: number): Promise<void>;
     updateDeliveryFee(userId: string, fee: number): Promise<void>;
+    updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void>;
     updateCreditSettings(userId: string, data: {
         account_type?: 'cash' | 'credit';
         credit_limit?: number;

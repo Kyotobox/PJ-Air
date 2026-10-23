@@ -107,6 +107,9 @@ let UsersService = class UsersService {
     async updateDeliveryFee(userId, fee) {
         await this.userRepository.update(userId, { delivery_fee: fee });
     }
+    async updateStripeCustomerId(userId, stripeCustomerId) {
+        await this.userRepository.update(userId, { stripe_customer_id: stripeCustomerId });
+    }
     async updateCreditSettings(userId, data) {
         const user = await this.findOne(userId);
         if (data.account_type !== undefined)
