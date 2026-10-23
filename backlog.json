@@ -2,76 +2,10 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "4.0.0",
-  "status": "COMPLETED",
-  "current_sprint": "S36",
-  "current_task": "TASK-36-04",
+  "status": "IN_PROGRESS",
+  "current_sprint": "S37",
+  "current_task": "TASK-37-01",
   "sprints": [
-    {
-      "id": "S33",
-      "name": "Sprint 33: Optimización Financiera ACH Direct Debit y Tarjetas Guardadas (1-Click Checkout)",
-      "status": "COMPLETED",
-      "start_date": "2026-11-13",
-      "goal": "Reducir el costo de comisiones bancarias en pedidos mayoristas de alto volumen mediante transferencias ACH Direct Debit y habilitar compra rápida en 1 clic con métodos de pago guardados de forma segura.",
-      "tasks": [
-        {
-          "id": "TASK-33-01",
-          "label": "BACKEND/CUSTOMERS-ACH",
-          "desc": "Integración de Stripe Customers, SetupIntents para guardado seguro de métodos de pago y habilitación de ACH Direct Debit (us_bank_account) con comisiones reducidas.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-33-02",
-          "label": "CHECKOUT/1CLICK-UI",
-          "desc": "Selector de tarjetas guardadas en StripePaymentModal para checkout en 1 clic, opción de guardado seguro y selección de transferencia bancaria directa ACH.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-33-03",
-          "label": "PORTAL/BILLING-UI",
-          "desc": "Panel de autoservicio de métodos de pago en el perfil del cliente para agregar, eliminar o seleccionar método predeterminado y acceso al Customer Portal de Stripe.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-33-04",
-          "label": "E2E/GOV",
-          "desc": "Suite Playwright de validación de compra rápida con tarjeta guardada, flujo ACH, auditoría de seguridad y certificación baseline.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S34",
-      "name": "Sprint 34: Pedidos Recurrentes Programados (Standing Orders B2B) y Suscripciones Mayoristas",
-      "status": "COMPLETED",
-      "start_date": "2026-11-14",
-      "goal": "Automatizar la compra periódica de panadería fresca para restaurantes y hoteles mediante pedidos programados semanales con generación de órdenes y cobro automático recurrente.",
-      "tasks": [
-        {
-          "id": "TASK-34-01",
-          "label": "BACKEND/SUBSCRIPTIONS",
-          "desc": "Modelo de datos ScheduledOrder, cron nocturno en NestJS para generación automática de pedidos periódicos y cobro off-session o cargo a línea de crédito.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-34-02",
-          "label": "CLIENT/SCHEDULED-UI",
-          "desc": "Interfaz en cliente para convertir carrito en pedido fijo semanal, selección de días de entrega (Lunes, Miércoles, etc.) y gestión de pedidos programados (pausar/editar).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-34-03",
-          "label": "ADMIN/CALENDAR-UI",
-          "desc": "Calendario administrativo de proyección semanal de producción para horneados en base a pedidos recurrentes y bitácora de ejecuciones del cron.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-34-04",
-          "label": "E2E/GOV",
-          "desc": "Suite E2E Playwright de ciclo de vida de pedidos programados, simulación de despacho automático, auditoría de integridad y sellado final.",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S35",
       "name": "Sprint 35: Suite de Pruebas de Borde Financieras, Tarjetas Rechazadas y Resiliencia del Cron",
@@ -141,8 +75,41 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S37",
+      "name": "Sprint 37: Ecosistema Integral de Correos Transaccionales B2B, Notificaciones Administrativas y Plantillas de Reembolso",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-17",
+      "goal": "Conectar y blindar el ciclo completo de notificaciones por correo: recibos automáticos al cliente por compras de contado y crédito, alertas operativas de nuevos pedidos para producción y ventas, comprobantes de reembolso contable y confirmaciones de suscripciones semanales, con tolerancia a fallos cuando las credenciales SMTP estén en espera.",
+      "tasks": [
+        {
+          "id": "TASK-37-01",
+          "label": "MAIL/ORDER-RECEIPTS",
+          "desc": "Conectar sendOrderReceipt en OrdersService.create (crédito) y en PaymentsService.handleWebhook (Stripe), garantizando despacho asíncrono no bloqueante tolerante a fallos de SMTP.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-37-02",
+          "label": "MAIL/ADMIN-ALERTS",
+          "desc": "Implementar sendAdminNewOrderAlert en MailService y dispararlo ante cada nuevo pedido (directo o del cron) para notificar al equipo de panadería sobre producción y horneados requeridos.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-37-03",
+          "label": "MAIL/REFUND-AND-SUBSCRIPTIONS",
+          "desc": "Implementar plantillas y métodos sendRefundReceipt (comprobante de devolución en createRefund) y sendStandingOrderConfirmation (resumen de suscripción semanal en ScheduledOrdersService).",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-37-04",
+          "label": "E2E/RESILIENCE-BASELINE",
+          "desc": "Suite de pruebas unitarias y de integración de correos en mail.service.spec.ts, verificación de resiliencia con fallback a Ethereal, logix sync-tasks y auditoría logix audit.",
+          "status": "TODO"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 32,
+  "archived_sprints_count": 34,
   "archive_file": "vault/runtime/backlog_archive.json"
 }
