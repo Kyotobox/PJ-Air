@@ -3,8 +3,8 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S33",
-  "current_task": "TASK-33-04",
+  "current_sprint": "S34",
+  "current_task": "TASK-34-01",
   "sprints": [
     {
       "id": "S30",
@@ -111,7 +111,7 @@
     {
       "id": "S33",
       "name": "Sprint 33: Optimización Financiera ACH Direct Debit y Tarjetas Guardadas (1-Click Checkout)",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-13",
       "goal": "Reducir el costo de comisiones bancarias en pedidos mayoristas de alto volumen mediante transferencias ACH Direct Debit y habilitar compra rápida en 1 clic con métodos de pago guardados de forma segura.",
       "tasks": [
@@ -137,14 +137,14 @@
           "id": "TASK-33-04",
           "label": "E2E/GOV",
           "desc": "Suite Playwright de validación de compra rápida con tarjeta guardada, flujo ACH, auditoría de seguridad y certificación baseline.",
-          "status": "IN_PROGRESS"
+          "status": "DONE"
         }
       ]
     },
     {
       "id": "S34",
       "name": "Sprint 34: Pedidos Recurrentes Programados (Standing Orders B2B) y Suscripciones Mayoristas",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "start_date": "2026-11-14",
       "goal": "Automatizar la compra periódica de panadería fresca para restaurantes y hoteles mediante pedidos programados semanales con generación de órdenes y cobro automático recurrente.",
       "tasks": [
