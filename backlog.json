@@ -7,42 +7,6 @@
   "current_task": "TASK-35-01",
   "sprints": [
     {
-      "id": "S32",
-      "name": "Sprint 32: Cobranza Digital de Cartera B2B, Enlaces de Liquidación y Reembolsos en Stripe",
-      "status": "COMPLETED",
-      "start_date": "2026-11-12",
-      "goal": "Acelerar el flujo de caja mayorista permitiendo el cobro y liquidación digital de órdenes a crédito mediante enlaces y facturas de Stripe, y dotar al panel administrativo de emisión de reembolsos totales y parciales en 1 clic.",
-      "tasks": [
-        {
-          "id": "TASK-32-01",
-          "label": "BACKEND/SETTLEMENT-REFUNDS",
-          "desc": "Endpoints en PaymentsService para liquidación de cartera a crédito (createSettlementLink) y emisión de reembolsos totales/parciales en Stripe (createRefund) con webhooks.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-32-02",
-          "label": "ADMIN/REFUNDS-UI",
-          "desc": "Módulo de gestión de reembolsos en /admin/orders/[id] con modal interactivo de monto total/parcial, motivo de ajuste comercial y actualización del badge financiero.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-32-03",
-          "label": "CLIENT/SETTLEMENT-UI",
-          "desc": "Botón de \"Pagar Factura en Línea\" en /orders/[id] para órdenes a crédito pendientes y acción \"Enviar Enlace de Cobro\" en /admin/clients con liberación inmediata de cupo al conciliar.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-32-04",
-          "label": "E2E/GOV",
-          "desc": "Suite automatizada Playwright en testing del flujo de liquidación de crédito, emisión de reembolso parcial/total, verificación bilingüe y auditoría logix audit.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
       "id": "S33",
       "name": "Sprint 33: Optimización Financiera ACH Direct Debit y Tarjetas Guardadas (1-Click Checkout)",
       "status": "COMPLETED",
@@ -78,7 +42,7 @@
     {
       "id": "S34",
       "name": "Sprint 34: Pedidos Recurrentes Programados (Standing Orders B2B) y Suscripciones Mayoristas",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-14",
       "goal": "Automatizar la compra periódica de panadería fresca para restaurantes y hoteles mediante pedidos programados semanales con generación de órdenes y cobro automático recurrente.",
       "tasks": [
@@ -119,25 +83,25 @@
           "id": "TASK-35-01",
           "label": "EDGE/STRIPE-FAILURES",
           "desc": "Prueba de borde de rechazo de pago en 1-Click Checkout (tarjetas de test Stripe pm_card_chargeDeclinedInsufficientFunds y pm_card_threeDSecure2Required), verificando captura elegante del error en UI sin romper el carrito.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-35-02",
           "label": "EDGE/CRON-RESILIENCE",
           "desc": "Prueba de borde de cobros automáticos fallidos en el cron nocturno: aislamiento de fallos (una tarjeta rechazada marca payment_failed sin detener el lote), envío de alerta por correo y manejo de productos desactivados.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-35-03",
           "label": "EDGE/B2B-CONCILIATION",
           "desc": "Prueba de borde de liquidación parcial y desbordamiento de crédito B2B: verificación de recálculo exacto del saldo neto deudor tras reembolsos parciales y actualización del odómetro de balance en /admin/clients.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-35-04",
           "label": "E2E/PLAYWRIGHT",
           "desc": "Suite automatizada Playwright ejecutando los 3 casos de borde contra https://testing.jhoanes.com con capturas de pantalla de error controlado y certificación logix audit.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     },
@@ -175,6 +139,6 @@
       ]
     }
   ],
-  "archived_sprints_count": 31,
+  "archived_sprints_count": 32,
   "archive_file": "vault/runtime/backlog_archive.json"
 }
