@@ -1,21 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from './payments.service';
 import { OrdersService } from '../orders/orders.service';
+import { UsersService } from '../users/users.service';
 import { BadRequestException } from '@nestjs/common';
 
 describe('PaymentsService', () => {
   let service: PaymentsService;
   let ordersService: any;
+  let usersService: any;
 
   beforeEach(async () => {
     ordersService = {
       update: jest.fn().mockResolvedValue({ id: 'order-1', payment_status: 'paid' }),
+      findOne: jest.fn().mockResolvedValue({ id: 'order-1', payment_status: 'pending', total: 100 }),
+    };
+
+    usersService = {
+      findById: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
+      updateStripeCustomerId: jest.fn().mockResolvedValue({ id: 'user-1', stripe_customer_id: 'cus_123' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
         { provide: OrdersService, useValue: ordersService },
+        { provide: UsersService, useValue: usersService },
       ],
     }).compile();
 
@@ -56,6 +65,6 @@ describe('PaymentsService', () => {
 
     const result = await service.handleWebhook(webhookEvent);
     expect(result.received).toBe(true);
-    expect(ordersService.update).toHaveBeenCalledWith('order-reconciled-789', { payment_status: 'paid' }, 'admin');
+    expect(ordersService.update).toHaveBeenCalledWith('order-reconciled-789', { payment_status: 'paid', stripe_payment_id: 'pi_test_123' }, 'admin');
   });
 });
