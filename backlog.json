@@ -104,7 +104,7 @@
           "id": "TASK-32-04",
           "label": "E2E/GOV",
           "desc": "Suite automatizada Playwright en testing del flujo de liquidación de crédito, emisión de reembolso parcial/total, verificación bilingüe y auditoría logix audit.",
-          "status": "IN_PROGRESS"
+          "status": "DONE"
         }
       ]
     },

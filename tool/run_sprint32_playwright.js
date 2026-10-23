@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const BASE_URL = 'https://testing.jhoanes.com';
 const ADMIN_EMAIL = 'eleuterioc@gmail.com';
@@ -8,6 +9,19 @@ const ADMIN_PASS = 'jhoanes';
 
 const CLIENT_EMAIL = 'stripetest@jhoanes.com';
 const CLIENT_PASS = 'Password123!';
+
+const SSH_KEY = path.resolve(process.env.HOME, '.ssh/id_ed25519_ruben');
+const SSH_CMD = `ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no root@187.124.67.53`;
+const REMOTE_DB = '/var/www/pj-air-testing/database-testing.sqlite';
+
+function runRemoteSql(sql) {
+  try {
+    const escaped = sql.replace(/"/g, '\\"');
+    execSync(`${SSH_CMD} "sqlite3 ${REMOTE_DB} \\"${escaped}\\""`);
+  } catch (e) {
+    console.warn('runRemoteSql warning:', e.message);
+  }
+}
 
 const SCREENSHOTS_ROOT = path.resolve(__dirname, '../ui_screenshots');
 const SCREENSHOTS_VAULT = path.resolve(__dirname, '../vault/runtime/ui_screenshots');
@@ -61,6 +75,13 @@ async function authenticateSession(context, page, token, user, role) {
 async function run() {
   console.log('=== Starting Sprint 32 E2E Playwright Suite ===');
 
+  // Prime test orders state in remote database for idempotency
+  runRemoteSql(`
+    UPDATE orders SET payment_status = 'paid', refunded_amount = 0, refund_reason = NULL WHERE id = 'ord-credit-test-paid';
+    UPDATE orders SET payment_status = 'pending', refunded_amount = 0, refund_reason = NULL WHERE id = 'ord-credit-test-pending';
+    UPDATE users SET account_type = 'credit', credit_limit = 1000 WHERE email = 'stripetest@jhoanes.com';
+  `);
+
   const adminAuth = await loginApi(ADMIN_EMAIL, ADMIN_PASS);
   const adminToken = adminAuth.session.access_token;
   const adminUser = adminAuth.user;
@@ -82,7 +103,7 @@ async function run() {
     const adminPage = await adminContext.newPage();
     await authenticateSession(adminContext, adminPage, adminToken, adminUser, 'admin');
 
-    await adminPage.goto(`${BASE_URL}/admin/orders/ord-credit-test-paid`, { waitUntil: 'networkidle' });
+    await adminPage.goto(`${BASE_URL}/admin/orders/ord-credit-test-paid`, { waitUntil: 'domcontentloaded' });
     await adminPage.waitForSelector('text=Orden #ord-cred', { timeout: 15000 });
     await adminPage.waitForTimeout(1000);
 
@@ -125,11 +146,16 @@ async function run() {
     // TEST 2: Admin Clients B2B Debt & Settlement Link (/admin/clients)
     // ─────────────────────────────────────────────────────────────────────────
     console.log('\n--- 2. Testing Admin Clients B2B Debt & Settlement Link ---');
-    await adminPage.goto(`${BASE_URL}/admin/clients`, { waitUntil: 'networkidle' });
+    await adminPage.goto(`${BASE_URL}/admin/clients`, { waitUntil: 'domcontentloaded' });
     await adminPage.waitForSelector('text=Clientes', { timeout: 15000 });
     await adminPage.waitForTimeout(1500);
 
-    // Open detail for stripetest@jhoanes.com
+    // Search and open detail for stripetest@jhoanes.com
+    console.log('Searching stripetest@jhoanes.com in clients...');
+    const searchInput = adminPage.locator('input[placeholder*="Buscar"]');
+    await searchInput.fill('stripetest');
+    await adminPage.waitForTimeout(1500);
+
     console.log('Opening client drawer for stripetest@jhoanes.com...');
     const clientRow = adminPage.locator('tr:has-text("stripetest@jhoanes.com")');
     await clientRow.locator('button:has-text("Editar")').click();
@@ -148,8 +174,9 @@ async function run() {
     // TEST 3: Admin Orders Table with Financial Badges (/admin/orders)
     // ─────────────────────────────────────────────────────────────────────────
     console.log('\n--- 3. Testing Admin Orders Table with Financial Badges ---');
-    await adminPage.goto(`${BASE_URL}/admin/orders`, { waitUntil: 'networkidle' });
-    await adminPage.waitForSelector('text=Gestión de Órdenes', { timeout: 15000 });
+    await adminPage.goto(`${BASE_URL}/admin/orders`, { waitUntil: 'domcontentloaded' });
+    await adminPage.waitForSelector('text=Panel de Pedidos', { timeout: 15000 });
+    await adminPage.waitForSelector('table', { timeout: 10000 });
     await adminPage.waitForTimeout(2000);
 
     await saveDualScreenshot(adminPage, 'sprint32_admin_orders_financial_badges.png');
@@ -164,7 +191,7 @@ async function run() {
     const clientPage = await clientContext.newPage();
     await authenticateSession(clientContext, clientPage, clientToken, clientUser, 'client');
 
-    await clientPage.goto(`${BASE_URL}/orders/ord-credit-test-pending`, { waitUntil: 'networkidle' });
+    await clientPage.goto(`${BASE_URL}/orders/ord-credit-test-pending`, { waitUntil: 'domcontentloaded' });
     await clientPage.waitForSelector('[data-testid="order-credit-badge"]', { timeout: 15000 });
     await clientPage.waitForTimeout(1000);
 
