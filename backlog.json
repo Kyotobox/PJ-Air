@@ -2,103 +2,10 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "4.0.0",
-  "status": "COMPLETED",
-  "current_sprint": "S31",
-  "current_task": "TASK-31-01",
+  "status": "IN_PROGRESS",
+  "current_sprint": "S32",
+  "current_task": "TASK-32-01",
   "sprints": [
-    {
-      "id": "S27",
-      "name": "Sprint 27: Pasarela de Pagos Stripe, Webhooks y Servicio Transaccional de Correo",
-      "status": "COMPLETED",
-      "start_date": "2026-11-07",
-      "goal": "Integrar pagos con Stripe para clientes de contado, conciliación vía webhooks y servicio de correo transaccional.",
-      "tasks": [
-        {
-          "id": "TASK-27-01",
-          "label": "PAYMENTS/TECH",
-          "desc": "Módulo Payments en NestJS con Stripe SDK, endpoints de PaymentIntent y Webhook de conciliación.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-27-02",
-          "label": "CHECKOUT/UI",
-          "desc": "Integración de Stripe Elements en el checkout para cobro instantáneo de clientes contado.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-27-03",
-          "label": "MAIL/SERVICE",
-          "desc": "Servicio de correo transaccional para recibos de compra, confirmación de pedidos y avisos de crédito.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-27-04",
-          "label": "GOV/BASELINE",
-          "desc": "Pruebas unitarias de pasarela y correo, auditoría de integridad logix audit y re-sellado baseline.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S28",
-      "name": "Sprint 28: Panel Ejecutivo, Torre Operativa y Pipeline de Despliegue Staging",
-      "status": "COMPLETED",
-      "start_date": "2026-11-08",
-      "goal": "Construir panel ejecutivo integral, torre de control interactiva y pipeline de despliegue remoto a entorno staging aislado.",
-      "tasks": [
-        {
-          "id": "TASK-28-01",
-          "label": "UI/ADMIN",
-          "desc": "Rediseño de Executive Control Panel en /admin con KPIs financieros, torre operativa y alertas.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-28-02",
-          "label": "REPORTS/OPS",
-          "desc": "Reportes interactivos de producción con reprogramación de fechas y excepciones post-corte.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-28-03",
-          "label": "INFRA/DEPLOY",
-          "desc": "Pipeline y script de despliegue remoto seguro a staging aislando estrictamente producción.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-28-04",
-          "label": "GOV/BASELINE",
-          "desc": "Pruebas de suite completa, auditoría de integridad logix audit y re-sellado baseline.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S29",
-      "name": "Sprint 29: Pruebas E2E UI/UX con Capturas y Despliegue a Servidor de Testing (Staging)",
-      "status": "COMPLETED",
-      "start_date": "2026-11-09",
-      "goal": "Ejecutar suite automatizada Playwright con capturas de pantalla de flujos UI/UX y certificar despliegue seguro al entorno de testing en VPS.",
-      "tasks": [
-        {
-          "id": "TASK-29-01",
-          "label": "UI/UX-TESTS",
-          "desc": "Suite automatizada Playwright con capturas de pantalla de catálogo, checkout, admin y reportes.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-29-02",
-          "label": "STAGING/VERIFY",
-          "desc": "Verificación y preparación de despliegue a testing en VPS (aislamiento y pipeline).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-29-03",
-          "label": "GOV/BASELINE",
-          "desc": "Auditoría de integridad logix audit y re-sellado baseline.",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S30",
       "name": "Sprint 30: Auditoría Transversal del Sistema de Crédito B2B, Notificaciones y Límite Forense",
@@ -164,8 +71,107 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S32",
+      "name": "Sprint 32: Cobranza Digital de Cartera B2B, Enlaces de Liquidación y Reembolsos en Stripe",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-12",
+      "goal": "Acelerar el flujo de caja mayorista permitiendo el cobro y liquidación digital de órdenes a crédito mediante enlaces y facturas de Stripe, y dotar al panel administrativo de emisión de reembolsos totales y parciales en 1 clic.",
+      "tasks": [
+        {
+          "id": "TASK-32-01",
+          "label": "BACKEND/SETTLEMENT-REFUNDS",
+          "desc": "Endpoints en PaymentsService para liquidación de cartera a crédito (createSettlementLink) y emisión de reembolsos totales/parciales en Stripe (createRefund) con webhooks.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-32-02",
+          "label": "ADMIN/REFUNDS-UI",
+          "desc": "Módulo de gestión de reembolsos en /admin/orders/[id] con modal interactivo de monto total/parcial, motivo de ajuste comercial y actualización del badge financiero.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-32-03",
+          "label": "CLIENT/SETTLEMENT-UI",
+          "desc": "Botón de \"Pagar Factura en Línea\" en /orders/[id] para órdenes a crédito pendientes y acción \"Enviar Enlace de Cobro\" en /admin/clients con liberación inmediata de cupo al conciliar.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-32-04",
+          "label": "E2E/GOV",
+          "desc": "Suite automatizada Playwright en testing del flujo de liquidación de crédito, emisión de reembolso parcial/total, verificación bilingüe y auditoría logix audit.",
+          "status": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "S33",
+      "name": "Sprint 33: Optimización Financiera ACH Direct Debit y Tarjetas Guardadas (1-Click Checkout)",
+      "status": "PLANNED",
+      "start_date": "2026-11-13",
+      "goal": "Reducir el costo de comisiones bancarias en pedidos mayoristas de alto volumen mediante transferencias ACH Direct Debit y habilitar compra rápida en 1 clic con métodos de pago guardados de forma segura.",
+      "tasks": [
+        {
+          "id": "TASK-33-01",
+          "label": "BACKEND/CUSTOMERS-ACH",
+          "desc": "Integración de Stripe Customers, SetupIntents para guardado seguro de métodos de pago y habilitación de ACH Direct Debit (us_bank_account) con comisiones reducidas.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-33-02",
+          "label": "CHECKOUT/1CLICK-UI",
+          "desc": "Selector de tarjetas guardadas en StripePaymentModal para checkout en 1 clic, opción de guardado seguro y selección de transferencia bancaria directa ACH.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-33-03",
+          "label": "PORTAL/BILLING-UI",
+          "desc": "Panel de autoservicio de métodos de pago en el perfil del cliente para agregar, eliminar o seleccionar método predeterminado y acceso al Customer Portal de Stripe.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-33-04",
+          "label": "E2E/GOV",
+          "desc": "Suite Playwright de validación de compra rápida con tarjeta guardada, flujo ACH, auditoría de seguridad y certificación baseline.",
+          "status": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "S34",
+      "name": "Sprint 34: Pedidos Recurrentes Programados (Standing Orders B2B) y Suscripciones Mayoristas",
+      "status": "PLANNED",
+      "start_date": "2026-11-14",
+      "goal": "Automatizar la compra periódica de panadería fresca para restaurantes y hoteles mediante pedidos programados semanales con generación de órdenes y cobro automático recurrente.",
+      "tasks": [
+        {
+          "id": "TASK-34-01",
+          "label": "BACKEND/SUBSCRIPTIONS",
+          "desc": "Modelo de datos ScheduledOrder, cron nocturno en NestJS para generación automática de pedidos periódicos y cobro off-session o cargo a línea de crédito.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-34-02",
+          "label": "CLIENT/SCHEDULED-UI",
+          "desc": "Interfaz en cliente para convertir carrito en pedido fijo semanal, selección de días de entrega (Lunes, Miércoles, etc.) y gestión de pedidos programados (pausar/editar).",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-34-03",
+          "label": "ADMIN/CALENDAR-UI",
+          "desc": "Calendario administrativo de proyección semanal de producción para horneados en base a pedidos recurrentes y bitácora de ejecuciones del cron.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-34-04",
+          "label": "E2E/GOV",
+          "desc": "Suite E2E Playwright de ciclo de vida de pedidos programados, simulación de despacho automático, auditoría de integridad y sellado final.",
+          "status": "TODO"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 26,
+  "archived_sprints_count": 29,
   "archive_file": "vault/runtime/backlog_archive.json"
 }
