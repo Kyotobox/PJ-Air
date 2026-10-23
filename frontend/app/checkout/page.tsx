@@ -1011,7 +1011,7 @@ export default function CheckoutPage() {
 
                             <button
                                 onClick={handleSubmit}
-                                disabled={isLoading || cart.length === 0 || !termsAccepted || exceedsCreditLimit}
+                                disabled={isLoading || cart.length === 0 || exceedsCreditLimit}
                                 className="w-full py-4 bg-[#111] hover:bg-[#222] text-white rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
