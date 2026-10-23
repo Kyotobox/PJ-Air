@@ -170,7 +170,7 @@
           "id": "TASK-34-04",
           "label": "E2E/GOV",
           "desc": "Suite E2E Playwright de ciclo de vida de pedidos programados, simulación de despacho automático, auditoría de integridad y sellado final.",
-          "status": "IN_PROGRESS"
+          "status": "DONE"
         }
       ]
     }
