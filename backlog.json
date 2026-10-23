@@ -87,25 +87,25 @@
           "id": "TASK-37-01",
           "label": "MAIL/ORDER-RECEIPTS",
           "desc": "Conectar sendOrderReceipt en OrdersService.create (crédito) y en PaymentsService.handleWebhook (Stripe), garantizando despacho asíncrono no bloqueante tolerante a fallos de SMTP.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-37-02",
           "label": "MAIL/ADMIN-ALERTS",
           "desc": "Implementar sendAdminNewOrderAlert en MailService y dispararlo ante cada nuevo pedido (directo o del cron) para notificar al equipo de panadería sobre producción y horneados requeridos.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-37-03",
           "label": "MAIL/REFUND-AND-SUBSCRIPTIONS",
           "desc": "Implementar plantillas y métodos sendRefundReceipt (comprobante de devolución en createRefund) y sendStandingOrderConfirmation (resumen de suscripción semanal en ScheduledOrdersService).",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-37-04",
           "label": "E2E/RESILIENCE-BASELINE",
           "desc": "Suite de pruebas unitarias y de integración de correos en mail.service.spec.ts, verificación de resiliencia con fallback a Ethereal, logix sync-tasks y auditoría logix audit.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     }
