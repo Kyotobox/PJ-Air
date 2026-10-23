@@ -4,7 +4,7 @@
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S34",
-  "current_task": "TASK-34-01",
+  "current_task": "TASK-34-04",
   "sprints": [
     {
       "id": "S30",
@@ -152,25 +152,25 @@
           "id": "TASK-34-01",
           "label": "BACKEND/SUBSCRIPTIONS",
           "desc": "Modelo de datos ScheduledOrder, cron nocturno en NestJS para generación automática de pedidos periódicos y cobro off-session o cargo a línea de crédito.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-34-02",
           "label": "CLIENT/SCHEDULED-UI",
           "desc": "Interfaz en cliente para convertir carrito en pedido fijo semanal, selección de días de entrega (Lunes, Miércoles, etc.) y gestión de pedidos programados (pausar/editar).",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-34-03",
           "label": "ADMIN/CALENDAR-UI",
           "desc": "Calendario administrativo de proyección semanal de producción para horneados en base a pedidos recurrentes y bitácora de ejecuciones del cron.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-34-04",
           "label": "E2E/GOV",
           "desc": "Suite E2E Playwright de ciclo de vida de pedidos programados, simulación de despacho automático, auditoría de integridad y sellado final.",
-          "status": "TODO"
+          "status": "IN_PROGRESS"
         }
       ]
     }

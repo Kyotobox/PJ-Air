@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -11,7 +11,7 @@ export default function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { signOut, user, profile, isLoading } = useAuth();
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [collapsed, setCollapsed] = useState(false);
 
     useEffect(() => {
@@ -29,6 +29,7 @@ export default function AdminSidebar() {
         { name: t.adminSidebar.dashboard,   icon: LayoutDashboard, href: '/admin' },
         { name: t.adminSidebar.reports,     icon: BarChart3,        href: '/admin/reports' },
         { name: t.adminSidebar.orders,      icon: ShoppingBag,      href: '/admin/orders' },
+        { name: locale === 'en' ? 'Standing Orders' : 'Horneados Recurrentes', icon: CalendarDays, href: '/admin/standing-orders' },
         { name: t.adminSidebar.products,    icon: ShoppingBag,     href: '/admin/products' },
         { name: t.adminSidebar.categories,  icon: Layers,           href: '/admin/categories' },
         { name: t.adminSidebar.users,       icon: Users,            href: '/admin/users' },

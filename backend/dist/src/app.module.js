@@ -34,6 +34,7 @@ const profile_entity_1 = require("./users/profile.entity");
 const address_entity_1 = require("./addresses/address.entity");
 const order_entity_1 = require("./orders/order.entity");
 const order_item_entity_1 = require("./orders/order-item.entity");
+const scheduled_order_entity_1 = require("./orders/scheduled-order.entity");
 const product_discount_entity_1 = require("./users/product-discount.entity");
 const system_config_entity_1 = require("./system-configs/system-config.entity");
 let AppModule = AppModule_1 = class AppModule {
@@ -66,6 +67,7 @@ let AppModule = AppModule_1 = class AppModule {
         CREATE TABLE IF NOT EXISTS scheduled_orders (
           id VARCHAR PRIMARY KEY NOT NULL,
           user_id VARCHAR NOT NULL,
+          title VARCHAR DEFAULT 'Pedido Recurrente Semanal',
           items_json TEXT NOT NULL,
           delivery_days_json TEXT NOT NULL,
           delivery_time VARCHAR DEFAULT '08:00',
@@ -73,10 +75,19 @@ let AppModule = AppModule_1 = class AppModule {
           address_id VARCHAR,
           payment_method VARCHAR DEFAULT 'credit',
           active BOOLEAN DEFAULT 1,
+          total DECIMAL(10,2) DEFAULT 0,
           last_run DATETIME,
           created_at DATETIME DEFAULT (datetime('now'))
         );
       `);
+            const schedCols = await qr.query(`PRAGMA table_info(scheduled_orders);`);
+            const schedColNames = schedCols.map((c) => c.name);
+            if (!schedColNames.includes('title')) {
+                await qr.query(`ALTER TABLE scheduled_orders ADD COLUMN title VARCHAR DEFAULT 'Pedido Recurrente Semanal';`);
+            }
+            if (!schedColNames.includes('total')) {
+                await qr.query(`ALTER TABLE scheduled_orders ADD COLUMN total DECIMAL(10,2) DEFAULT 0;`);
+            }
             await qr.release();
             this.logger.log('Schema verification completed successfully.');
         }
@@ -92,7 +103,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'sqlite',
                 database: config_1.DATABASE_PATH,
-                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig],
+                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, scheduled_order_entity_1.ScheduledOrder, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig],
                 synchronize: config_1.NODE_ENV !== 'production',
                 logging: false,
             }),

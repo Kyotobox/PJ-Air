@@ -404,6 +404,13 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         <h1 className="text-3xl font-black mb-1 animate-fade-in text-slate-800">Panel de Pedidos</h1>
                         <p className="text-muted-foreground font-medium">Supervisión y control de ventas en tiempo real</p>
                     </div>
+                    <Link
+                        href="/admin/standing-orders"
+                        className="px-5 py-3 bg-slate-900 hover:bg-amber-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center gap-2 shrink-0"
+                    >
+                        <RefreshCcw size={16} className="text-amber-400" />
+                        <span>Proyección Horneados (Standing Orders)</span>
+                    </Link>
                 </header>
 
                 <div className="bg-white p-6 rounded-3xl border border-border shadow-sm mb-8 flex flex-col gap-4">

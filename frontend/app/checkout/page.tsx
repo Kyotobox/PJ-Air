@@ -6,7 +6,7 @@ import {
     Calendar, MapPin, CreditCard, ChevronRight, ShoppingBag,
     Loader2, Plus, Clock, Minus, Store, Truck, Home,
     ChevronDown, Check, AlertCircle, BookmarkPlus, Bookmark,
-    Map as MapIcon, RotateCcw, Search, X
+    Map as MapIcon, RotateCcw, Search, X, RefreshCw
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -300,6 +300,7 @@ export default function CheckoutPage() {
     const [minOrderAmount, setMinOrderAmount] = useState<number>(500);
     const [cutoffHour, setCutoffHour] = useState<number>(12);
     const [termsAccepted, setTermsAccepted] = useState(false);
+    const [isStandingOrder, setIsStandingOrder] = useState(false);
 
     const [addresses, setAddresses] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -498,6 +499,23 @@ export default function CheckoutPage() {
                     price: getItemPrice(item),
                 })),
             }) as any;
+
+            if (isStandingOrder) {
+                api.post('/orders/scheduled', {
+                    title: `Suscripción Semanal #${order.id.slice(0, 8)}`,
+                    items_json: JSON.stringify(cart.map(item => ({
+                        productId: item.id,
+                        productName: item.name,
+                        quantity: item.quantity,
+                        price: getItemPrice(item),
+                    }))),
+                    delivery_days_json: JSON.stringify(['mon', 'wed', 'fri']),
+                    delivery_type: deliveryType,
+                    address_id: finalAddressId,
+                    total: finalTotal,
+                    active: true,
+                }).catch(() => {});
+            }
 
             if (isCreditAccount) {
                 clearCart();
@@ -991,6 +1009,37 @@ export default function CheckoutPage() {
                                     )}
                                 </div>
                             )}
+
+                            {/* Convert to Standing Order toggle */}
+                            <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-200/80 my-3 space-y-2">
+                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsStandingOrder(!isStandingOrder)}>
+                                    <input
+                                        id="make_standing_order"
+                                        type="checkbox"
+                                        checked={isStandingOrder}
+                                        onChange={(e) => setIsStandingOrder(e.target.checked)}
+                                        className="w-4 h-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                    />
+                                    <label htmlFor="make_standing_order" className="text-xs font-bold text-amber-950 cursor-pointer select-none flex items-center gap-1.5">
+                                        <RefreshCw size={14} className="text-amber-600" />
+                                        {lbl('Convertir en Pedido Recurrente Semanal (Standing Order)', 'Convert into Weekly Standing Order')}
+                                    </label>
+                                </div>
+                                {isStandingOrder && (
+                                    <div className="pt-2 border-t border-amber-200/60 space-y-1.5 animate-in fade-in duration-200">
+                                        <p className="text-[11px] text-amber-800 font-medium">
+                                            {lbl('Se programará para entrega automática recurrente en:', 'Will be scheduled for recurring delivery on:')}
+                                        </p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {['mon', 'wed', 'fri'].map(d => (
+                                                <span key={d} className="px-2 py-0.5 bg-amber-200/80 text-amber-900 rounded-lg text-[10px] font-black uppercase">
+                                                    {d === 'mon' ? 'Lunes' : d === 'wed' ? 'Miércoles' : 'Viernes'}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="flex items-start gap-3 p-4 bg-white/60 rounded-2xl border border-border/80 my-4 shadow-sm">
                                 <input
