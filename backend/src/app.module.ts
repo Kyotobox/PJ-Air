@@ -59,6 +59,15 @@ export class AppModule implements OnModuleInit {
     this.logger.log('Application initialized. Running schema verification...');
     try {
       const qr = this.dataSource.createQueryRunner();
+      // Enable WAL mode & busy timeout for high-concurrency SQLite operations
+      try {
+        await qr.query(`PRAGMA journal_mode = WAL;`);
+        await qr.query(`PRAGMA busy_timeout = 10000;`);
+        await qr.query(`PRAGMA synchronous = NORMAL;`);
+      } catch (e: any) {
+        this.logger.warn(`Could not set SQLite pragmas: ${e.message}`);
+      }
+
       const orderCols = await qr.query(`PRAGMA table_info(orders);`);
       const orderColNames = orderCols.map((c: any) => c.name);
 

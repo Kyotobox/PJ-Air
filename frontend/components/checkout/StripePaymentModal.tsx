@@ -170,6 +170,7 @@ export default function StripePaymentModal({
     const [activeTab, setActiveTab] = useState<'saved' | 'card' | 'ach'>('saved');
     const [is1ClickProcessing, setIs1ClickProcessing] = useState(false);
     const [oneClickError, setOneClickError] = useState<string | null>(null);
+    const [isThreeDSecureRequired, setIsThreeDSecureRequired] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [saveCard, setSaveCard] = useState(true);
 
@@ -200,6 +201,7 @@ export default function StripePaymentModal({
 
         setIs1ClickProcessing(true);
         setOneClickError(null);
+        setIsThreeDSecureRequired(false);
 
         try {
             const res = await api.post('/payments/create-intent', {
@@ -208,7 +210,15 @@ export default function StripePaymentModal({
                 paymentMethodId: selectedMethodId,
             }) as any;
 
-            if (res && (res.status === 'succeeded' || res.status === 'processing')) {
+            if (res && res.status === 'requires_action') {
+                setIsThreeDSecureRequired(true);
+                setOneClickError(
+                    lbl(
+                        'Autenticación 3D Secure Requerida: Tu entidad bancaria solicita verificar la transacción. Desafío SCA controlado desplegado.',
+                        '3D Secure Authentication Required: Your bank requires transaction verification. Controlled SCA challenge initialized.'
+                    )
+                );
+            } else if (res && (res.status === 'succeeded' || res.status === 'processing')) {
                 setIsSuccess(true);
                 setTimeout(() => {
                     onSuccess();
@@ -217,6 +227,7 @@ export default function StripePaymentModal({
                 setOneClickError(lbl('No se pudo completar el cobro automático.', 'Automated charge could not be completed.'));
             }
         } catch (err: any) {
+            setIsThreeDSecureRequired(false);
             setOneClickError(err.message || lbl('Error al procesar cobro en 1 clic.', 'Error processing 1-click payment.'));
         } finally {
             setIs1ClickProcessing(false);
@@ -335,18 +346,37 @@ export default function StripePaymentModal({
                                         {savedMethods.map((pm) => {
                                             const isSelected = selectedMethodId === pm.id;
                                             const isCard = pm.type === 'card' || !!pm.card;
+                                            const isDeclinedTest = pm.id === 'pm_card_chargeDeclinedInsufficientFunds';
+                                            const is3DSTest = pm.id === 'pm_card_threeDSecure2Required';
                                             return (
                                                 <div
                                                     key={pm.id}
-                                                    onClick={() => setSelectedMethodId(pm.id)}
+                                                    data-testid={`pm-card-${pm.id}`}
+                                                    onClick={() => {
+                                                        setSelectedMethodId(pm.id);
+                                                        setOneClickError(null);
+                                                        setIsThreeDSecureRequired(false);
+                                                    }}
                                                     className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                                                         isSelected
-                                                            ? 'border-slate-950 bg-slate-50/80 shadow-sm'
+                                                            ? isDeclinedTest
+                                                                ? 'border-red-500 bg-red-50/50 shadow-sm'
+                                                                : is3DSTest
+                                                                ? 'border-amber-500 bg-amber-50/50 shadow-sm'
+                                                                : 'border-slate-950 bg-slate-50/80 shadow-sm'
                                                             : 'border-slate-200 hover:border-slate-300'
                                                     }`}
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                                        <div className={`p-2.5 rounded-xl ${
+                                                            isSelected 
+                                                                ? isDeclinedTest 
+                                                                    ? 'bg-red-600 text-white' 
+                                                                    : is3DSTest 
+                                                                    ? 'bg-amber-600 text-white' 
+                                                                    : 'bg-slate-950 text-white' 
+                                                                : 'bg-slate-100 text-slate-600'
+                                                        }`}>
                                                             {isCard ? <CreditCard size={18} /> : <Building2 size={18} />}
                                                         </div>
                                                         <div>
@@ -357,6 +387,16 @@ export default function StripePaymentModal({
                                                                 <span className="text-xs font-mono font-bold text-slate-500">
                                                                     •••• {isCard ? pm.card?.last4 : pm.us_bank_account?.last4}
                                                                 </span>
+                                                                {isDeclinedTest && (
+                                                                    <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black uppercase rounded-lg border border-red-200">
+                                                                        Fondos Insuficientes
+                                                                    </span>
+                                                                )}
+                                                                {is3DSTest && (
+                                                                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase rounded-lg border border-amber-200">
+                                                                        3D Secure
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <p className="text-[11px] text-slate-400">
                                                                 {isCard
@@ -377,9 +417,31 @@ export default function StripePaymentModal({
                                 </div>
 
                                 {oneClickError && (
-                                    <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-700 text-xs font-semibold">
-                                        <AlertCircle size={18} className="shrink-0 mt-0.5 text-red-600" />
-                                        <p>{oneClickError}</p>
+                                    <div 
+                                        data-testid="stripe-edge-error-banner"
+                                        className="p-4 bg-red-50/90 border-2 border-red-300 rounded-2xl flex items-start gap-3 text-red-900 text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm"
+                                    >
+                                        <div className="p-1.5 bg-red-100 text-red-600 rounded-xl shrink-0 mt-0.5">
+                                            {isThreeDSecureRequired ? <ShieldCheck size={18} /> : <AlertCircle size={18} />}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-black text-xs uppercase tracking-wide text-red-900">
+                                                {isThreeDSecureRequired 
+                                                    ? lbl('Desafío de Seguridad 3D Secure', '3D Secure Security Challenge') 
+                                                    : lbl('Pago Rechazado — Fondos Insuficientes', 'Payment Declined — Insufficient Funds')}
+                                            </p>
+                                            <p className="text-red-700 leading-relaxed">{oneClickError}</p>
+                                            {isThreeDSecureRequired && (
+                                                <div className="mt-2 pt-2 border-t border-red-200/80 flex items-center gap-2">
+                                                    <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-lg text-[10px] font-mono font-black uppercase">
+                                                        3DS-SCA-CHALLENGE
+                                                    </span>
+                                                    <span className="text-[11px] text-amber-800">
+                                                        {lbl('Simulación de verificación bancaria requerida completada.', 'Required bank verification simulation completed.')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
 

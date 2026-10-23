@@ -190,7 +190,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 
                     <div className="flex items-center gap-3">
                         {/* Refund Action Button */}
-                        {(order.payment_status === 'paid' || order.payment_status === 'partially_refunded') && maxRefundable > 0 && (
+                        {['paid', 'partially_refunded', 'pending', 'credit'].includes(order.payment_status) && maxRefundable > 0 && (
                             <button
                                 data-testid="issue-refund-btn"
                                 onClick={handleOpenRefundModal}

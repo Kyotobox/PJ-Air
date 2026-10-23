@@ -47,6 +47,14 @@ let AppModule = AppModule_1 = class AppModule {
         this.logger.log('Application initialized. Running schema verification...');
         try {
             const qr = this.dataSource.createQueryRunner();
+            try {
+                await qr.query(`PRAGMA journal_mode = WAL;`);
+                await qr.query(`PRAGMA busy_timeout = 10000;`);
+                await qr.query(`PRAGMA synchronous = NORMAL;`);
+            }
+            catch (e) {
+                this.logger.warn(`Could not set SQLite pragmas: ${e.message}`);
+            }
             const orderCols = await qr.query(`PRAGMA table_info(orders);`);
             const orderColNames = orderCols.map((c) => c.name);
             if (!orderColNames.includes('stripe_payment_id')) {

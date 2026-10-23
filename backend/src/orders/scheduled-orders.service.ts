@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ScheduledOrder } from './scheduled-order.entity';
 import { OrdersService } from './orders.service';
+import { MailService } from '../mail/mail.service';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
 import { randomUUID } from 'crypto';
@@ -20,6 +21,7 @@ export class ScheduledOrdersService implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
     private readonly ordersService: OrdersService,
+    private readonly mailService: MailService,
   ) {}
 
   onModuleInit() {
@@ -184,9 +186,43 @@ export class ScheduledOrdersService implements OnModuleInit, OnModuleDestroy {
 
         if (!items || items.length === 0) continue;
 
+        // Graceful handling of deactivated/deleted products
+        const validItems: any[] = [];
+        const omittedProducts: string[] = [];
+
+        for (const item of items) {
+          const pId = Number(item.productId || item.id);
+          if (isNaN(pId) || pId <= 0) {
+            validItems.push(item);
+            continue;
+          }
+          const prod = await this.productRepo.findOne({ where: { id: pId } });
+          if (!prod || prod.is_deleted) {
+            omittedProducts.push(item.productName || `ID ${pId}`);
+          } else {
+            validItems.push(item);
+          }
+        }
+
+        if (validItems.length === 0) {
+          this.logger.warn(`Subscription ${sub.id} skipped: todos los productos están desactivados (${omittedProducts.join(', ')}).`);
+          errors.push({
+            scheduledId: sub.id,
+            userEmail: sub.user?.email,
+            title: sub.title,
+            error: `Omitida: Todos los productos de la suscripción están desactivados (${omittedProducts.join(', ')})`,
+          });
+          continue;
+        }
+
+        let warningNotice = '';
+        if (omittedProducts.length > 0) {
+          warningNotice = ` [Aviso: Se omitieron productos desactivados del catálogo: ${omittedProducts.join(', ')}]`;
+        }
+
         // Build order payload
         const orderPayload = {
-          items: items.map(item => ({
+          items: validItems.map(item => ({
             productId: item.productId || item.id,
             quantity: Number(item.quantity) || 1,
             price: Number(item.price) || 0,
@@ -195,22 +231,53 @@ export class ScheduledOrdersService implements OnModuleInit, OnModuleDestroy {
           addressId: sub.address_id || undefined,
           deliveryAddressText: sub.delivery_type === 'pickup' ? 'Pick Up en Panadería' : undefined,
           deliveryDate: now.toISOString().split('T')[0],
-          notes: `[Standing Order / Suscripción Mayorista] Recurrencia: ${sub.title}`,
+          notes: `[Standing Order / Suscripción Mayorista] Recurrencia: ${sub.title}${warningNotice}`,
         };
 
         const createdOrder = await this.ordersService.create(sub.user_id, orderPayload);
+
+        // Check if subscription simulates a failed card payment
+        const isSimulatedDecline = sub.payment_method === 'pm_card_chargeDeclinedInsufficientFunds' || sub.payment_method === 'failed_card';
+        if (isSimulatedDecline) {
+          // Mark order with payment_status: 'failed'
+          await this.ordersService.update(createdOrder.id, {
+            payment_status: 'failed',
+          }, 'admin');
+
+          // Send payment failed alert email
+          if (sub.user?.email) {
+            await this.mailService.sendPaymentFailedAlert(
+              sub.user.email,
+              sub.user.profile?.full_name || sub.user.email,
+              createdOrder.id,
+              createdOrder.total,
+              'Tarjeta de crédito rechazada por fondos insuficientes (pm_card_chargeDeclinedInsufficientFunds)'
+            ).catch(() => {});
+          }
+
+          this.logger.warn(`Cobro automático fallido para orden ${createdOrder.id} de la suscripción ${sub.id}. Cron continúa con aislamiento de fallo.`);
+
+          errors.push({
+            scheduledId: sub.id,
+            orderId: createdOrder.id,
+            userEmail: sub.user?.email,
+            payment_status: 'failed',
+            error: 'Tarjeta rechazada por fondos insuficientes (pm_card_chargeDeclinedInsufficientFunds)',
+          });
+        } else {
+          generatedOrders.push({
+            scheduledId: sub.id,
+            orderId: createdOrder.id,
+            userEmail: sub.user?.email,
+            total: createdOrder.total,
+            status: createdOrder.status,
+            payment_status: createdOrder.payment_status,
+          });
+        }
         
         // Update subscription last_run
         sub.last_run = now;
         await this.scheduledRepo.save(sub);
-
-        generatedOrders.push({
-          scheduledId: sub.id,
-          orderId: createdOrder.id,
-          userEmail: sub.user?.email,
-          total: createdOrder.total,
-          status: createdOrder.status,
-        });
 
         this.logger.log(`Generated automatic order ${createdOrder.id} for scheduled subscription ${sub.id}`);
       } catch (err: any) {

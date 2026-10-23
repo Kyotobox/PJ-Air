@@ -155,6 +155,28 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 },
                 created: Math.floor(Date.now() / 1000),
             },
+            {
+                id: 'pm_card_chargeDeclinedInsufficientFunds',
+                type: 'card',
+                card: {
+                    brand: 'mastercard',
+                    last4: '9995',
+                    exp_month: 10,
+                    exp_year: 2029,
+                },
+                created: Math.floor(Date.now() / 1000),
+            },
+            {
+                id: 'pm_card_threeDSecure2Required',
+                type: 'card',
+                card: {
+                    brand: 'visa',
+                    last4: '3155',
+                    exp_month: 11,
+                    exp_year: 2027,
+                },
+                created: Math.floor(Date.now() / 1000),
+            },
         ];
     }
     async deletePaymentMethod(userId, paymentMethodId) {
@@ -200,6 +222,17 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         }
         try {
             if (paymentMethodId) {
+                if (paymentMethodId === 'pm_card_chargeDeclinedInsufficientFunds') {
+                    throw new common_1.BadRequestException('Tu tarjeta fue rechazada: Fondos insuficientes para completar la transacción. (pm_card_chargeDeclinedInsufficientFunds)');
+                }
+                if (paymentMethodId === 'pm_card_threeDSecure2Required') {
+                    return {
+                        clientSecret: `pi_mock_3ds_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`,
+                        paymentIntentId: `pi_mock_3ds_${Date.now()}`,
+                        amount,
+                        status: 'requires_action',
+                    };
+                }
                 if (paymentMethodId.startsWith('pm_saved_') || !this.stripe || (customerId && customerId.startsWith('cus_mock_'))) {
                     const mockId = `pi_mock_1click_${Date.now()}`;
                     if (orderId) {
@@ -421,8 +454,11 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         if (maxRefundable <= 0) {
             throw new common_1.BadRequestException(`Order ${orderId} has already been fully refunded`);
         }
+        if (amount !== undefined && Number(amount) > maxRefundable) {
+            throw new common_1.BadRequestException(`El monto a reembolsar ($${Number(amount).toFixed(2)}) supera el saldo remanente reembolsable de $${maxRefundable.toFixed(2)} (maxRefundable)`);
+        }
         const refundAmount = (amount !== undefined && amount > 0)
-            ? Math.min(Math.round(Number(amount) * 100) / 100, maxRefundable)
+            ? Math.round(Number(amount) * 100) / 100
             : maxRefundable;
         if (this.stripe && order.stripe_payment_id) {
             try {

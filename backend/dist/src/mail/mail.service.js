@@ -184,6 +184,38 @@ let MailService = MailService_1 = class MailService {
             return false;
         }
     }
+    async sendPaymentFailedAlert(userEmail, clientName, orderId, amount, reason) {
+        this.logger.warn(`[ALERTA DE COBRO FALLIDO] Orden #${orderId} ($${amount.toFixed(2)}) rechazada para ${userEmail}. Motivo: ${reason}`);
+        if (!this.transporter || !userEmail)
+            return false;
+        try {
+            const subject = `⚠️ Cobro Automático Fallido — Pedido Programado #${orderId.slice(0, 8)}`;
+            const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #dc2626;">Cobro Automático No Procesado</h2>
+          <p>Estimado(a) <strong>${clientName}</strong>,</p>
+          <p>Le notificamos que el cobro automático de su pedido recurrente no pudo completarse con éxito:</p>
+          <ul>
+            <li><strong>Orden:</strong> #${orderId.slice(0, 8)}</li>
+            <li><strong>Monto:</strong> $${amount.toFixed(2)}</li>
+            <li><strong>Motivo de rechazo:</strong> ${reason}</li>
+          </ul>
+          <p>Su pedido se encuentra en estado <strong>Pendiente de Pago</strong>. Por favor acceda a su portal de cliente para actualizar su método de pago o liquidar la factura pendiente.</p>
+        </div>
+      `;
+            await this.transporter.sendMail({
+                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                to: userEmail,
+                subject,
+                html,
+            });
+            return true;
+        }
+        catch (err) {
+            this.logger.error(`Error sending payment failed alert: ${err.message}`);
+            return false;
+        }
+    }
 };
 exports.MailService = MailService;
 exports.MailService = MailService = MailService_1 = __decorate([

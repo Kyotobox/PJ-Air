@@ -148,6 +148,86 @@ export default function AdminStandingOrdersPage() {
                     </div>
                 )}
 
+                {cronResult && (
+                    <div 
+                        data-testid="cron-execution-report"
+                        className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-sm mb-8 space-y-4 animate-in fade-in duration-300"
+                    >
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-slate-900 text-white rounded-2xl">
+                                    <Zap size={18} className="text-amber-400 fill-amber-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                                        Reporte de Ejecución de Cron Nocturno (Aislamiento de Lote)
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        Procesamiento batch con resiliencia ante fallos financieros y control de catálogo
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-black">
+                                    {cronResult.processed || 0} Exitosos
+                                </span>
+                                {cronResult.errors && cronResult.errors.length > 0 && (
+                                    <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-black">
+                                        {cronResult.errors.length} Aislados / Fallidos
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Successful list */}
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                                    Órdenes Generadas ({cronResult.generatedOrders?.length || 0})
+                                </p>
+                                {cronResult.generatedOrders && cronResult.generatedOrders.length > 0 ? (
+                                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                                        {cronResult.generatedOrders.map((o: any) => (
+                                            <div key={o.orderId} className="flex justify-between items-center text-xs p-2 bg-white rounded-xl border border-slate-100">
+                                                <span className="font-bold text-slate-700">#{o.orderId.slice(0, 8)} • {o.userEmail}</span>
+                                                <span className="font-mono font-black text-green-600">${Number(o.total).toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-400 italic">No hubo pedidos exitosos en este ciclo.</p>
+                                )}
+                            </div>
+
+                            {/* Isolated errors / declines */}
+                            <div className="bg-red-50/50 p-4 rounded-2xl border border-red-200/60 space-y-2">
+                                <p className="text-[10px] font-black uppercase text-red-600 tracking-wider flex items-center gap-1">
+                                    <AlertCircle size={12} /> Excepciones Aisladas ({cronResult.errors?.length || 0})
+                                </p>
+                                {cronResult.errors && cronResult.errors.length > 0 ? (
+                                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                                        {cronResult.errors.map((err: any, i: number) => (
+                                            <div key={i} className="text-xs p-2.5 bg-white rounded-xl border border-red-200 space-y-1">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-black text-red-700">Suscripción: {err.scheduledId.slice(0, 10)}...</span>
+                                                    {err.payment_status && (
+                                                        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-md font-mono text-[10px] font-black">
+                                                            {err.payment_status}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[11px] text-slate-600">{err.error}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-400 italic">Cero errores. Todos los cobros se ejecutaron limpios.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Summary Metrics */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex items-center gap-4">
