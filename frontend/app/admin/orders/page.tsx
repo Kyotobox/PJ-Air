@@ -6,8 +6,9 @@ import {
     ShoppingBag, Search, Filter, Edit, Truck, Clock, 
     CheckCircle2, X, User, ChevronRight, Loader2, Save,
     AlertCircle, MapPin, Phone, MessageSquare, History,
-    Plus, Minus, Trash2, CalendarDays, Printer
+    Plus, Minus, Trash2, CalendarDays, Printer, RefreshCcw, ExternalLink
 } from 'lucide-react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 
@@ -23,6 +24,10 @@ interface Order {
     id: string;
     total: number;
     status: string;
+    payment_status?: string;
+    refunded_amount?: number;
+    refund_reason?: string;
+    stripe_payment_id?: string;
     created_at: string;
     delivery_date?: string;
     notes?: string;
@@ -71,6 +76,78 @@ export default function AdminOrdersPage() {
     const [motivo, setMotivo] = useState('');
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+    // Refund Modal State
+    const [refundModalOpen, setRefundModalOpen] = useState(false);
+    const [refundType, setRefundType] = useState<'full' | 'partial'>('full');
+    const [refundAmount, setRefundAmount] = useState<string>('');
+    const [refundReason, setRefundReason] = useState<string>('requested_by_customer');
+    const [refundCustomNotes, setRefundCustomNotes] = useState<string>('');
+    const [isProcessingRefund, setIsProcessingRefund] = useState(false);
+
+    const maxRefundable = selectedOrder
+        ? Math.max(0, (Number(selectedOrder.total) || 0) - (Number(selectedOrder.refunded_amount) || 0))
+        : 0;
+
+    const handleOpenRefundModal = () => {
+        setRefundType('full');
+        setRefundAmount(maxRefundable.toFixed(2));
+        setRefundReason('requested_by_customer');
+        setRefundCustomNotes('');
+        setRefundModalOpen(true);
+    };
+
+    const handleSubmitRefund = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedOrder) return;
+
+        const amountToRefund = refundType === 'full' ? maxRefundable : parseFloat(refundAmount);
+        if (isNaN(amountToRefund) || amountToRefund <= 0) {
+            showToast('El monto a reembolsar debe ser mayor a 0', 'error');
+            return;
+        }
+        if (amountToRefund > maxRefundable) {
+            showToast(`El monto no puede superar $${maxRefundable.toFixed(2)}`, 'error');
+            return;
+        }
+
+        setIsProcessingRefund(true);
+        try {
+            const reasonText = refundCustomNotes.trim()
+                ? `${refundReason}: ${refundCustomNotes.trim()}`
+                : refundReason;
+
+            const res = await api.post('/payments/refund', {
+                orderId: selectedOrder.id,
+                amount: amountToRefund,
+                reason: reasonText,
+            }) as any;
+
+            showToast(`✅ Reembolso de $${amountToRefund.toFixed(2)} emitido con éxito`);
+            setRefundModalOpen(false);
+
+            const newRefunded = res.totalRefunded !== undefined ? res.totalRefunded : ((Number(selectedOrder.refunded_amount) || 0) + amountToRefund);
+            const newStatus = res.paymentStatus || (amountToRefund >= maxRefundable ? 'refunded' : 'partially_refunded');
+
+            setSelectedOrder(prev => prev ? {
+                ...prev,
+                payment_status: newStatus,
+                refunded_amount: newRefunded,
+                refund_reason: reasonText,
+            } : null);
+
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
+                ...o,
+                payment_status: newStatus,
+                refunded_amount: newRefunded,
+                refund_reason: reasonText,
+            } : o));
+        } catch (err: any) {
+            showToast(err.message || 'Error al emitir el reembolso', 'error');
+        } finally {
+            setIsProcessingRefund(false);
+        }
+    };
 
     useEffect(() => {
         fetchOrders();
@@ -417,9 +494,31 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                             <p className="text-xs text-muted-foreground font-medium truncate max-w-[180px]">{order.user?.email}</p>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border shadow-sm transition-all group-hover:scale-105 inline-block ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}>
-                                                {order.status}
-                                            </span>
+                                            <div className="flex flex-col gap-1 items-start">
+                                                <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase border shadow-sm transition-all inline-block ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}>
+                                                    {order.status}
+                                                </span>
+                                                {order.payment_status === 'paid' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200">
+                                                        ✓ Pagado
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'partially_refunded' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 text-[9px] font-bold border border-orange-200">
+                                                        ↩ Reemb. Parcial
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'refunded' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[9px] font-bold border border-rose-200">
+                                                        ↩ Reembolsado
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'pending' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">
+                                                        ⏳ Crédito Pend.
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-8 py-5">
                                             {order.delivery_user ? (
@@ -440,6 +539,13 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </td>
                                         <td className="px-8 py-5 text-right" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-2">
+                                                <Link
+                                                    href={`/admin/orders/${order.id}`}
+                                                    className="p-2 bg-slate-100 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+                                                    title="Abrir página completa"
+                                                >
+                                                    <ExternalLink size={16} />
+                                                </Link>
                                                 <button 
                                                     onClick={() => openOrderDetail(order)}
                                                     className="p-2 bg-slate-100 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
@@ -489,6 +595,20 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 <p className="font-mono text-xs text-slate-400 font-bold tracking-widest">TRANSMISIÓN: #{selectedOrder.id}</p>
                             </div>
                             <div className="flex items-center gap-3">
+                                {(selectedOrder.payment_status === 'paid' || selectedOrder.payment_status === 'partially_refunded') && maxRefundable > 0 && (
+                                    <button
+                                        onClick={handleOpenRefundModal}
+                                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all active:scale-95"
+                                    >
+                                        <RefreshCcw size={14} /> Emitir Reembolso
+                                    </button>
+                                )}
+                                <Link
+                                    href={`/admin/orders/${selectedOrder.id}`}
+                                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                                >
+                                    <ExternalLink size={14} /> Detalle
+                                </Link>
                                 <button onClick={() => handlePrintOrder(selectedOrder)} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center gap-2">
                                     <Printer size={14} /> Imprimir
                                 </button>
@@ -704,6 +824,127 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 </section>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Refund Modal */}
+            {refundModalOpen && selectedOrder && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="relative bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 font-serif">Emitir Reembolso</h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    Orden #{selectedOrder.id.slice(0, 8)} • Saldo reembolsable: ${maxRefundable.toFixed(2)}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setRefundModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-black"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmitRefund} className="space-y-5">
+                            <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 rounded-2xl">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setRefundType('full');
+                                        setRefundAmount(maxRefundable.toFixed(2));
+                                    }}
+                                    className={`py-2.5 rounded-xl text-xs font-black uppercase transition-all ${
+                                        refundType === 'full' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                    Total (${maxRefundable.toFixed(2)})
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRefundType('partial')}
+                                    className={`py-2.5 rounded-xl text-xs font-black uppercase transition-all ${
+                                        refundType === 'partial' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                    Parcial
+                                </button>
+                            </div>
+
+                            {refundType === 'partial' && (
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                        Monto a Devolver ($ USD)
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            max={maxRefundable}
+                                            min="0.01"
+                                            value={refundAmount}
+                                            onChange={(e) => setRefundAmount(e.target.value)}
+                                            placeholder="0.00"
+                                            className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-base font-black text-slate-800 outline-none focus:border-amber-500"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-medium">
+                                        Compensa mermas o roturas de panadería sin cancelar todo el pedido.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    Motivo del Ajuste
+                                </label>
+                                <select
+                                    value={refundReason}
+                                    onChange={(e) => setRefundReason(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 outline-none focus:border-amber-500"
+                                >
+                                    <option value="requested_by_customer">Solicitud del Cliente (Cancelación)</option>
+                                    <option value="merma_panaderia">Merma o Rotura de Panadería en Tránsito</option>
+                                    <option value="calidad_producto">Ajuste por Calidad de Horneado</option>
+                                    <option value="duplicate">Cobro Duplicado o Error Administrativo</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    Observaciones Comerciales
+                                </label>
+                                <textarea
+                                    value={refundCustomNotes}
+                                    onChange={(e) => setRefundCustomNotes(e.target.value)}
+                                    rows={2}
+                                    placeholder="Detalles para conciliación contable..."
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 outline-none focus:border-amber-500 resize-none"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setRefundModalOpen(false)}
+                                    disabled={isProcessingRefund}
+                                    className="flex-1 py-3.5 text-xs font-black uppercase tracking-wider rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isProcessingRefund}
+                                    className="flex-[2] py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-amber-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isProcessingRefund ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+                                    {isProcessingRefund ? 'Procesando...' : 'Confirmar Reembolso'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

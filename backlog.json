@@ -83,25 +83,28 @@
           "id": "TASK-32-01",
           "label": "BACKEND/SETTLEMENT-REFUNDS",
           "desc": "Endpoints en PaymentsService para liquidación de cartera a crédito (createSettlementLink) y emisión de reembolsos totales/parciales en Stripe (createRefund) con webhooks.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-32-02",
           "label": "ADMIN/REFUNDS-UI",
           "desc": "Módulo de gestión de reembolsos en /admin/orders/[id] con modal interactivo de monto total/parcial, motivo de ajuste comercial y actualización del badge financiero.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-32-03",
           "label": "CLIENT/SETTLEMENT-UI",
           "desc": "Botón de \"Pagar Factura en Línea\" en /orders/[id] para órdenes a crédito pendientes y acción \"Enviar Enlace de Cobro\" en /admin/clients con liberación inmediata de cupo al conciliar.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-32-04",
           "label": "E2E/GOV",
           "desc": "Suite automatizada Playwright en testing del flujo de liquidación de crédito, emisión de reembolso parcial/total, verificación bilingüe y auditoría logix audit.",
-          "status": "TODO"
+          "status": "IN_PROGRESS"
         }
       ]
     },

@@ -24,6 +24,15 @@ export class Order {
   delivery_fee_charged: number;
 
   @Column({ nullable: true })
+  stripe_payment_id: string;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  refunded_amount: number;
+
+  @Column({ nullable: true })
+  refund_reason: string;
+
+  @Column({ nullable: true })
   address_id: string;
 
   @Column({ nullable: true })

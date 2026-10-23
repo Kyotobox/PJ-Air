@@ -135,9 +135,12 @@ export class UsersService {
   }> {
     const user = await this.findOne(userId);
     const unpaidOrders = (user.orders || []).filter(
-      (o: any) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado'
+      (o: any) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado'
     );
-    const used_credit = unpaidOrders.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
+    const used_credit = unpaidOrders.reduce((acc: number, o: any) => {
+      const netDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
+      return acc + netDebt;
+    }, 0);
     const credit_limit = Number(user.credit_limit || 0);
     const available_credit = Math.max(0, credit_limit - used_credit);
     const is_overdraft = used_credit > credit_limit;

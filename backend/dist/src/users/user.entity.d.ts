@@ -15,5 +15,6 @@ export declare class User {
     account_type: 'cash' | 'credit';
     credit_limit: number;
     credit_override: boolean;
+    stripe_customer_id: string;
     productDiscounts: ProductDiscount[];
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { Package, Truck, CheckCircle2, AlertCircle, Clock, Eye, Loader2, ShoppingBag, ChevronDown } from 'lucide-react';
+import { Package, Truck, CheckCircle2, AlertCircle, Clock, Eye, Loader2, ShoppingBag, ChevronDown, CreditCard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -155,6 +155,16 @@ export default function ClientOrdersPage() {
                                                 </select>
                                                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
                                             </div>
+                                        )}
+
+                                        {order.payment_status === 'pending' && (
+                                            <button
+                                                onClick={() => router.push(`/orders/${order.id}`)}
+                                                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all"
+                                            >
+                                                <CreditCard size={14} />
+                                                {locale === 'en' ? 'Pay' : 'Pagar'}
+                                            </button>
                                         )}
 
                                         <button

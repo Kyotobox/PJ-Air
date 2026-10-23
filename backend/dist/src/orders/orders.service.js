@@ -205,8 +205,11 @@ let OrdersService = class OrdersService {
         let prospectiveCreditTotal = 0;
         let clientCreditLimit = 0;
         if (user?.account_type === 'credit') {
-            const unpaidOrders = (user.orders || []).filter((o) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado');
-            const usedCredit = unpaidOrders.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+            const unpaidOrders = (user.orders || []).filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado');
+            const usedCredit = unpaidOrders.reduce((acc, o) => {
+                const netOrderDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
+                return acc + netOrderDebt;
+            }, 0);
             clientCreditLimit = Number(user.credit_limit || 0);
             prospectiveCreditTotal = Math.round((usedCredit + finalTotal + Number.EPSILON) * 100) / 100;
             const isOverride = Boolean(user.credit_override);
@@ -277,6 +280,15 @@ let OrdersService = class OrdersService {
         }
         if (payment_status !== undefined || paymentStatus !== undefined) {
             order.payment_status = payment_status || paymentStatus;
+        }
+        if (updateData.stripe_payment_id !== undefined) {
+            order.stripe_payment_id = updateData.stripe_payment_id;
+        }
+        if (updateData.refunded_amount !== undefined) {
+            order.refunded_amount = Number(updateData.refunded_amount);
+        }
+        if (updateData.refund_reason !== undefined) {
+            order.refund_reason = updateData.refund_reason;
         }
         if (motivo) {
             const originalLines = (order.items || []).map(item => `${item.quantity} Unidades de ${item.product?.name || 'Producto'}, precio unitario: ${item.price_at_time}, subtotal: ${(item.quantity * item.price_at_time).toFixed(2)}`).join('; ');

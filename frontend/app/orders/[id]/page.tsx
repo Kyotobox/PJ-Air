@@ -2,10 +2,15 @@
 
 import React, { useState, useEffect, use } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { CheckCircle2, Package, Calendar, Clock, MapPin, ChevronRight, ShoppingBag, Receipt, Loader2 } from 'lucide-react';
+import {
+    CheckCircle2, Package, Calendar, Clock, MapPin,
+    ChevronRight, ShoppingBag, Receipt, Loader2, CreditCard,
+    RefreshCcw, AlertCircle
+} from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
+import StripePaymentModal from '@/components/checkout/StripePaymentModal';
 
 export default function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: orderId } = use(params);
@@ -13,6 +18,13 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
     const [order, setOrder] = useState<any>(null);
     const [items, setItems] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Online settlement payment states
+    const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
+    const [settlementModalOpen, setSettlementModalOpen] = useState(false);
+    const [settlementClientSecret, setSettlementClientSecret] = useState<string | null>(null);
+    const [settlementAmount, setSettlementAmount] = useState<number>(0);
+    const [paymentToast, setPaymentToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
         const fetchOrderDetails = async () => {
@@ -29,6 +41,45 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
         };
         fetchOrderDetails();
     }, [orderId]);
+
+    const handlePayOnline = async () => {
+        setIsInitiatingPayment(true);
+        try {
+            const res = await api.post('/payments/create-settlement-link', { orderId }) as any;
+            if (res.clientSecret) {
+                setSettlementClientSecret(res.clientSecret);
+                setSettlementAmount(res.amount || Number(order?.total) || 0);
+                setSettlementModalOpen(true);
+            } else if (res.url && res.url.startsWith('http') && !res.url.includes(orderId)) {
+                window.location.href = res.url;
+            }
+        } catch (err: any) {
+            setPaymentToast({
+                msg: err.message || (locale === 'en' ? 'Error connecting to payment gateway' : 'Error al conectar con la pasarela de pagos'),
+                type: 'error'
+            });
+            setTimeout(() => setPaymentToast(null), 4000);
+        } finally {
+            setIsInitiatingPayment(false);
+        }
+    };
+
+    const handlePaymentSuccess = async () => {
+        setSettlementModalOpen(false);
+        try {
+            // Also update order status on server to confirm reconciliation
+            await api.patch(`/orders/${orderId}/payment-status`, { payment_status: 'paid' }).catch(() => {});
+        } catch (_) {}
+
+        setOrder((prev: any) => prev ? { ...prev, payment_status: 'paid' } : null);
+        setPaymentToast({
+            msg: locale === 'en'
+                ? 'Payment confirmed! Credit balance and availability updated.'
+                : '¡Pago confirmado con éxito! Cupo de crédito liberado inmediatamente.',
+            type: 'success'
+        });
+        setTimeout(() => setPaymentToast(null), 5000);
+    };
 
     const steps = [
         { key: 'Pedido Enviado', ...t.orders.steps.pending },
@@ -129,26 +180,57 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                     </div>
                                 ))}
 
-                                <div className="pt-6 border-t border-border space-y-3">
+                                <div className="pt-6 border-t border-border space-y-4">
                                     <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
                                         <span>Total</span>
                                         <span className="text-lg font-black text-primary">${(Number(order.total) || 0).toFixed(2)}</span>
                                     </div>
 
-                                    {/* Commercial Financial Status Badge */}
-                                    {order.payment_status === 'paid' ? (
-                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-sm">
+                                    {/* Financial Status Badges & Settlement Action */}
+                                    {order.payment_status === 'paid' && (
+                                        <div data-testid="order-paid-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-sm">
                                             <span className="text-sm">✅</span>
                                             <span>{locale === 'en' ? 'Paid via Card (Stripe)' : 'Pagado con Tarjeta (Stripe)'}</span>
                                         </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">
-                                            <span className="text-sm">⏳</span>
-                                            <span>
-                                                {locale === 'en'
-                                                    ? `B2B Credit Purchase • Due: ${order.payment_due_date || 'Pending'}`
-                                                    : `Compra a Crédito B2B • Fecha Límite de Pago: ${order.payment_due_date || 'Pendiente'}`}
-                                            </span>
+                                    )}
+
+                                    {order.payment_status === 'partially_refunded' && (
+                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold shadow-sm">
+                                            <span className="text-sm">↩️</span>
+                                            <span>{locale === 'en' ? `Partially Refunded ($${Number(order.refunded_amount || 0).toFixed(2)})` : `Reembolso Parcial ($${Number(order.refunded_amount || 0).toFixed(2)} devuelto)`}</span>
+                                        </div>
+                                    )}
+
+                                    {order.payment_status === 'refunded' && (
+                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold shadow-sm">
+                                            <span className="text-sm">↩️</span>
+                                            <span>{locale === 'en' ? 'Fully Refunded' : 'Reembolsado Totalmente'}</span>
+                                        </div>
+                                    )}
+
+                                    {order.payment_status !== 'paid' && order.payment_status !== 'refunded' && (
+                                        <div className="space-y-3 pt-1">
+                                            <div data-testid="order-credit-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">
+                                                <span className="text-sm">⏳</span>
+                                                <span>
+                                                    {locale === 'en'
+                                                        ? `B2B Credit Purchase • Due: ${order.payment_due_date || 'Pending'}`
+                                                        : `Compra a Crédito B2B • Fecha Límite: ${order.payment_due_date || 'Pendiente'}`}
+                                                </span>
+                                            </div>
+
+                                            {/* Button to Pay Online */}
+                                            <button
+                                                data-testid="pay-invoice-online-btn"
+                                                onClick={handlePayOnline}
+                                                disabled={isInitiatingPayment}
+                                                className="w-full flex items-center justify-center gap-2 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-xl shadow-emerald-600/25 transition-all active:scale-95 disabled:opacity-50"
+                                            >
+                                                {isInitiatingPayment ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
+                                                {isInitiatingPayment
+                                                    ? (locale === 'en' ? 'Preparing Gateway...' : 'Conectando Pasarela...')
+                                                    : (locale === 'en' ? 'Pay Invoice Online' : 'Pagar Factura en Línea')}
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -175,24 +257,34 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                 </Link>
                             </div>
                         </div>
-
-                        {/* Promotions Section */}
-                        <div className="mt-8 bg-card rounded-[32px] border border-border p-8 shadow-sm">
-                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 font-serif"><CheckCircle2 className="text-green-500" size={18} /> {t.orders.promotions}</h3>
-                            <div className="space-y-3">
-                                <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                                    <p className="text-sm font-bold text-primary">2x1 en Cookies Artesanales</p>
-                                    <p className="text-xs text-muted-foreground">Válido los días martes y jueves.</p>
-                                </div>
-                                <div className="p-4 bg-muted/50 rounded-2xl border border-border">
-                                    <p className="text-sm font-bold text-foreground">Envío Gratis en tu primera compra</p>
-                                    <p className="text-xs text-muted-foreground">Usa el código: BIEVENIDO_JHOANES</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </main>
+
+            {/* In-App Stripe Settlement Modal */}
+            {settlementModalOpen && settlementClientSecret && (
+                <StripePaymentModal
+                    clientSecret={settlementClientSecret}
+                    amount={settlementAmount}
+                    orderId={order.id}
+                    onSuccess={handlePaymentSuccess}
+                    onCancel={() => setSettlementModalOpen(false)}
+                    locale={locale}
+                />
+            )}
+
+            {/* Floating Toast Notification */}
+            {paymentToast && (
+                <div
+                    role="alert"
+                    className={`fixed bottom-8 right-8 z-[140] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-white font-black text-xs animate-in slide-in-from-bottom duration-300 ${
+                        paymentToast.type === 'error' ? 'bg-rose-600 shadow-rose-600/30' : 'bg-emerald-600 shadow-emerald-600/30'
+                    }`}
+                >
+                    {paymentToast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                    {paymentToast.msg}
+                </div>
+            )}
         </div>
     );
 }

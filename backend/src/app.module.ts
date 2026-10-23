@@ -1,5 +1,6 @@
 import { Module, OnModuleInit, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { DATABASE_PATH, NODE_ENV } from './config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -51,7 +52,50 @@ import { SystemConfig } from './system-configs/system-config.entity';
 export class AppModule implements OnModuleInit {
   private readonly logger = new Logger(AppModule.name);
 
-  onModuleInit() {
-    this.logger.log('Application initialized');
+  constructor(private readonly dataSource: DataSource) {}
+
+  async onModuleInit() {
+    this.logger.log('Application initialized. Running schema verification...');
+    try {
+      const qr = this.dataSource.createQueryRunner();
+      const orderCols = await qr.query(`PRAGMA table_info(orders);`);
+      const orderColNames = orderCols.map((c: any) => c.name);
+
+      if (!orderColNames.includes('stripe_payment_id')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN stripe_payment_id VARCHAR;`);
+      }
+      if (!orderColNames.includes('refunded_amount')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN refunded_amount DECIMAL(10,2) DEFAULT 0;`);
+      }
+      if (!orderColNames.includes('refund_reason')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN refund_reason VARCHAR;`);
+      }
+
+      const userCols = await qr.query(`PRAGMA table_info(users);`);
+      const userColNames = userCols.map((c: any) => c.name);
+      if (!userColNames.includes('stripe_customer_id')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR;`);
+      }
+
+      await qr.query(`
+        CREATE TABLE IF NOT EXISTS scheduled_orders (
+          id VARCHAR PRIMARY KEY NOT NULL,
+          user_id VARCHAR NOT NULL,
+          items_json TEXT NOT NULL,
+          delivery_days_json TEXT NOT NULL,
+          delivery_time VARCHAR DEFAULT '08:00',
+          delivery_type VARCHAR DEFAULT 'saved',
+          address_id VARCHAR,
+          payment_method VARCHAR DEFAULT 'credit',
+          active BOOLEAN DEFAULT 1,
+          last_run DATETIME,
+          created_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
+      await qr.release();
+      this.logger.log('Schema verification completed successfully.');
+    } catch (e: any) {
+      this.logger.warn(`Schema verification warning: ${e.message}`);
+    }
   }
 }

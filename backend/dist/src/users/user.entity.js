@@ -28,6 +28,7 @@ let User = class User {
     account_type;
     credit_limit;
     credit_override;
+    stripe_customer_id;
     productDiscounts;
 };
 exports.User = User;
@@ -79,6 +80,10 @@ __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "credit_override", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "stripe_customer_id", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

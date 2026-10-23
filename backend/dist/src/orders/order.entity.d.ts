@@ -8,6 +8,9 @@ export declare class Order {
     status: string;
     payment_status: string;
     delivery_fee_charged: number;
+    stripe_payment_id: string;
+    refunded_amount: number;
+    refund_reason: string;
     address_id: string;
     delivery_date: string;
     payment_due_date: string;
