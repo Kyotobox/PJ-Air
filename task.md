@@ -1,8 +1,8 @@
-# SPRINT S35 - Sprint 35: Suite de Pruebas de Borde Financieras, Tarjetas Rechazadas y Resiliencia del Cron
-**Objetivo**: Evaluar y blindar el comportamiento del sistema ante escenarios extremos: tarjetas rechazadas o sin fondos en 1-Click checkout, fallos aislados en cobros nocturnos del cron, productos desactivados en suscripciones y ajustes de deuda por reembolsos.
+# SPRINT S36 - Sprint 36: Concurrencia Masiva SQLite, Migración Idempotente y Regresión Global
+**Objetivo**: Garantizar la robustez bajo alta carga mediante pruebas de concurrencia masiva sin bloqueos de base de datos, validar el script SQL de migración idempotente para producción y certificar la suite de regresión completa.
 **Fecha**: 2026-10-23
 
-- [x] **TASK-35-01** [EDGE/STRIPE-FAILURES] Prueba de borde de rechazo de pago en 1-Click Checkout (tarjetas de test Stripe pm_card_chargeDeclinedInsufficientFunds y pm_card_threeDSecure2Required), verificando captura elegante del error en UI sin romper el carrito.
-- [x] **TASK-35-02** [EDGE/CRON-RESILIENCE] Prueba de borde de cobros automáticos fallidos en el cron nocturno: aislamiento de fallos (una tarjeta rechazada marca payment_failed sin detener el lote), envío de alerta por correo y manejo de productos desactivados.
-- [x] **TASK-35-03** [EDGE/B2B-CONCILIATION] Prueba de borde de liquidación parcial y desbordamiento de crédito B2B: verificación de recálculo exacto del saldo neto deudor tras reembolsos parciales y actualización del odómetro de balance en /admin/clients.
-- [x] **TASK-35-04** [E2E/PLAYWRIGHT] Suite automatizada Playwright ejecutando los 3 casos de borde contra https://testing.jhoanes.com con capturas de pantalla de error controlado y certificación logix audit.
+- [x] **TASK-36-01** [CONCURRENCY/SQLITE-STRESS] Script de prueba de concurrencia masiva: disparo simultáneo de 25 transacciones paralelas (creación de órdenes recurrentes + webhooks entrantes de Stripe) para certificar cero bloqueos SQLITE_BUSY y atomicidad en SQLite.
+- [x] **TASK-36-02** [MIGRATION/SCHEMA-AUDIT] Generación y prueba del script SQL de migración idempotente (tool/migrate_production_schema.sql) para agregar columnas y tablas nuevas en /root/database.sqlite con cero riesgo de pérdida de datos.
+- [x] **TASK-36-03** [REGRESSION/FULL-SUITE] Suite automatizada de regresión completa Playwright cubriendo todos los flujos integrados (Catálogo -> Carrito -> 1-Click / Crédito -> Suscripción -> Reembolso Admin -> Reportes).
+- [x] **TASK-36-04** [GOV/FINAL-CERTIFICATION] Auditoría final de arquitectura logix audit, certificación baseline de release y verificación de aislamiento absoluto de producción.

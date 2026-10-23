@@ -2,9 +2,9 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "4.0.0",
-  "status": "IN_PROGRESS",
-  "current_sprint": "S35",
-  "current_task": "TASK-35-01",
+  "status": "COMPLETED",
+  "current_sprint": "S36",
+  "current_task": "TASK-36-04",
   "sprints": [
     {
       "id": "S33",
@@ -75,7 +75,7 @@
     {
       "id": "S35",
       "name": "Sprint 35: Suite de Pruebas de Borde Financieras, Tarjetas Rechazadas y Resiliencia del Cron",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-15",
       "goal": "Evaluar y blindar el comportamiento del sistema ante escenarios extremos: tarjetas rechazadas o sin fondos en 1-Click checkout, fallos aislados en cobros nocturnos del cron, productos desactivados en suscripciones y ajustes de deuda por reembolsos.",
       "tasks": [
@@ -108,7 +108,7 @@
     {
       "id": "S36",
       "name": "Sprint 36: Concurrencia Masiva SQLite, Migración Idempotente y Regresión Global",
-      "status": "PLANNED",
+      "status": "COMPLETED",
       "start_date": "2026-11-16",
       "goal": "Garantizar la robustez bajo alta carga mediante pruebas de concurrencia masiva sin bloqueos de base de datos, validar el script SQL de migración idempotente para producción y certificar la suite de regresión completa.",
       "tasks": [
@@ -116,25 +116,29 @@
           "id": "TASK-36-01",
           "label": "CONCURRENCY/SQLITE-STRESS",
           "desc": "Script de prueba de concurrencia masiva: disparo simultáneo de 25 transacciones paralelas (creación de órdenes recurrentes + webhooks entrantes de Stripe) para certificar cero bloqueos SQLITE_BUSY y atomicidad en SQLite.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-36-02",
           "label": "MIGRATION/SCHEMA-AUDIT",
           "desc": "Generación y prueba del script SQL de migración idempotente (tool/migrate_production_schema.sql) para agregar columnas y tablas nuevas en /root/database.sqlite con cero riesgo de pérdida de datos.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-36-03",
           "label": "REGRESSION/FULL-SUITE",
           "desc": "Suite automatizada de regresión completa Playwright cubriendo todos los flujos integrados (Catálogo -> Carrito -> 1-Click / Crédito -> Suscripción -> Reembolso Admin -> Reportes).",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-36-04",
           "label": "GOV/FINAL-CERTIFICATION",
           "desc": "Auditoría final de arquitectura logix audit, certificación baseline de release y verificación de aislamiento absoluto de producción.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         }
       ]
     }
