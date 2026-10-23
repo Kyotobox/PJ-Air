@@ -135,7 +135,7 @@
     {
       "id": "S31",
       "name": "Sprint 31: Pulido de Interfaces Comerciales B2B, Badges Financieros y Filtros Administrativos",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-11",
       "goal": "Elevar la experiencia de usuario B2B reemplazando alertas nativas por banners elegantes en checkout, incorporando badges de estado de pago en confirmación e historial de pedidos, e implementando filtros rápidos comerciales (Todos, Solo Crédito, Solo Contado, Con Sobregiro) en el panel administrativo.",
       "tasks": [
@@ -161,7 +161,7 @@
           "id": "TASK-31-04",
           "label": "E2E/GOV",
           "desc": "Suite automatizada Playwright con capturas de pantalla de los 4 filtros, verificación de paridad bilingüe (ES/EN), auditoría logix audit y certificación baseline.",
-          "status": "IN_PROGRESS"
+          "status": "DONE"
         }
       ]
     }
