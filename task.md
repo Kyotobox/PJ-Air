@@ -1,8 +1,8 @@
-# SPRINT S30 - Sprint 30: Auditoría Transversal del Sistema de Crédito B2B, Notificaciones y Límite Forense
-**Objetivo**: Implementar disparadores automáticos de alertas de crédito y certificar mediante suite E2E Playwright el ciclo de vida de crédito, bloqueo por límite, sobregiros autorizados y liberación de cupos en testing.
-**Fecha**: 2026-11-10
+# SPRINT S31 - Sprint 31: Pulido de Interfaces Comerciales B2B, Badges Financieros y Filtros Administrativos
+**Objetivo**: Elevar la experiencia de usuario B2B reemplazando alertas nativas por banners elegantes en checkout, incorporando badges de estado de pago en confirmación e historial de pedidos, e implementando filtros rápidos comerciales (Todos, Solo Crédito, Solo Contado, Con Sobregiro) en el panel administrativo.
+**Fecha**: 2026-11-11
 
-- [x] **TASK-30-01** [NOTIFICATIONS/TECH] Conexión del disparador automático sendCreditAlert en OrdersService ante pedidos en sobregiro y umbrales de cupo.
-- [x] **TASK-30-02** [CREDIT/E2E] Suite E2E Playwright del ciclo de checkout a crédito (flujo feliz sin Stripe, bloqueo 400 por cupo insuficiente y sobregiro administrativo con override).
-- [x] **TASK-30-03** [ADMIN/RECONCILIATION] Auditoría interactiva de liberación y restauración de cupos desde /admin (marcado de órdenes pagadas y cancelaciones).
-- [x] **TASK-30-04** [GOV/BASELINE] Validación de regresión completa, auditoría de integridad logix audit y certificación baseline.
+- [ ] **TASK-31-01** [CHECKOUT/UI] Reemplazo de popups nativos alert() en checkout por notificaciones estilizadas integradas en el diseño (banners animados/toasts Tailwind).
+- [ ] **TASK-31-02** [ORDERS/UI] Integración de badges de estado financiero (Pagado con Stripe vs Compra a Crédito con fecha de vencimiento) en /orders/[id] y en el historial de pedidos /orders.
+- [ ] **TASK-31-03** [ADMIN/CLIENTS] Implementación de barra de filtros rápidos comerciales en /admin/clients: Todos, Solo Crédito, Solo Contado y Con Sobregiro con conteos dinámicos.
+- [ ] **TASK-31-04** [E2E/GOV] Suite automatizada Playwright con capturas de pantalla de los 4 filtros, verificación de paridad bilingüe (ES/EN), auditoría logix audit y certificación baseline.

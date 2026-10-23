@@ -3,8 +3,8 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "COMPLETED",
-  "current_sprint": "S30",
-  "current_task": "TASK-30-04",
+  "current_sprint": "S31",
+  "current_task": "TASK-31-01",
   "sprints": [
     {
       "id": "S27",
@@ -129,6 +129,39 @@
           "label": "GOV/BASELINE",
           "desc": "Validación de regresión completa, auditoría de integridad logix audit y certificación baseline.",
           "status": "DONE"
+        }
+      ]
+    },
+    {
+      "id": "S31",
+      "name": "Sprint 31: Pulido de Interfaces Comerciales B2B, Badges Financieros y Filtros Administrativos",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-11",
+      "goal": "Elevar la experiencia de usuario B2B reemplazando alertas nativas por banners elegantes en checkout, incorporando badges de estado de pago en confirmación e historial de pedidos, e implementando filtros rápidos comerciales (Todos, Solo Crédito, Solo Contado, Con Sobregiro) en el panel administrativo.",
+      "tasks": [
+        {
+          "id": "TASK-31-01",
+          "label": "CHECKOUT/UI",
+          "desc": "Reemplazo de popups nativos alert() en checkout por notificaciones estilizadas integradas en el diseño (banners animados/toasts Tailwind).",
+          "status": "PLANNED"
+        },
+        {
+          "id": "TASK-31-02",
+          "label": "ORDERS/UI",
+          "desc": "Integración de badges de estado financiero (Pagado con Stripe vs Compra a Crédito con fecha de vencimiento) en /orders/[id] y en el historial de pedidos /orders.",
+          "status": "PLANNED"
+        },
+        {
+          "id": "TASK-31-03",
+          "label": "ADMIN/CLIENTS",
+          "desc": "Implementación de barra de filtros rápidos comerciales en /admin/clients: Todos, Solo Crédito, Solo Contado y Con Sobregiro con conteos dinámicos.",
+          "status": "PLANNED"
+        },
+        {
+          "id": "TASK-31-04",
+          "label": "E2E/GOV",
+          "desc": "Suite automatizada Playwright con capturas de pantalla de los 4 filtros, verificación de paridad bilingüe (ES/EN), auditoría logix audit y certificación baseline.",
+          "status": "PLANNED"
         }
       ]
     }
