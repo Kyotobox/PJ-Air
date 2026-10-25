@@ -61,7 +61,7 @@ const testingDeployCommands = [
 
     // 3. Git synchronization
     `echo "=== 3. Sincronizando código desde origen (${targetBranch}) ==="`,
-    `if [ ! -d ".git" ]; then git clone -b ${targetBranch} https://github.com/jhpanes/pj-air.git . ; else git fetch origin && git checkout ${targetBranch} && git pull origin ${targetBranch}; fi`,
+    `if [ ! -d ".git" ]; then git clone -b ${targetBranch} https://github.com/jhpanes/pj-air.git . ; else git fetch origin && git checkout ${targetBranch} && git reset --hard origin/${targetBranch}; fi`,
 
     // 4. Backend build
     `echo "=== 4. Construyendo Backend Testing ==="`,
