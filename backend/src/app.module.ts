@@ -135,6 +135,20 @@ export class AppModule implements OnModuleInit {
           updated_at DATETIME DEFAULT (datetime('now'))
         );
       `);
+
+      const zoneCountRows = await qr.query(`SELECT COUNT(*) as count FROM delivery_zones;`);
+      const zoneCount = zoneCountRows && zoneCountRows[0] ? Number(zoneCountRows[0].count ?? zoneCountRows[0]['COUNT(*)'] ?? 0) : 0;
+      if (zoneCount === 0) {
+        await qr.query(`
+          INSERT INTO delivery_zones (id, name, zip_codes, base_fee, min_free_delivery_amount, is_active)
+          VALUES 
+          ('zone-astoria-lic', 'Zona 1: Local Inmediata (Astoria & LIC)', '11101, 11102, 11103, 11104, 11105, 11106, 11109, 11377', 5.00, 60.00, 1),
+          ('zone-queens-mid', 'Zona 2: Queens Centro & Norte', '11354, 11355, 11356, 11368, 11369, 11370, 11372, 11373, 11374, 11375, 11378, 11379, 11385', 12.00, 120.00, 1),
+          ('zone-bk-east-mnh', 'Zona 3: North Brooklyn & East Manhattan', '10044, 10016, 10017, 10021, 10022, 10028, 10065, 10075, 11206, 11211, 11222, 11237, 11249', 18.00, 180.00, 1),
+          ('zone-mnh-south-bk', 'Zona 4: Manhattan Central/Sur & Downtown Brooklyn', '10001, 10002, 10003, 10004, 10005, 10006, 10007, 10009, 10010, 10011, 10012, 10013, 10014, 10018, 10019, 10023, 10024, 10025, 10036, 10038, 11201, 11205, 11215, 11217, 11231, 11238', 25.00, 250.00, 1),
+          ('zone-outer-bx', 'Zona 5: Queens Exterior & South Bronx', '10451, 10454, 10455, 11357, 11360, 11361, 11364, 11415, 11418, 11421, 11432, 11435', 35.00, 350.00, 1);
+        `);
+      }
       await qr.release();
       this.logger.log('Schema verification completed successfully.');
     } catch (e: any) {
