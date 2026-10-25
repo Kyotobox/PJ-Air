@@ -3,46 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S38",
-  "current_task": "TASK-38-01",
+  "current_sprint": "S39",
+  "current_task": "TASK-39-01",
   "sprints": [
-    {
-      "id": "S36",
-      "name": "Sprint 36: Concurrencia Masiva SQLite, Migración Idempotente y Regresión Global",
-      "status": "COMPLETED",
-      "start_date": "2026-11-16",
-      "goal": "Garantizar la robustez bajo alta carga mediante pruebas de concurrencia masiva sin bloqueos de base de datos, validar el script SQL de migración idempotente para producción y certificar la suite de regresión completa.",
-      "tasks": [
-        {
-          "id": "TASK-36-01",
-          "label": "CONCURRENCY/SQLITE-STRESS",
-          "desc": "Script de prueba de concurrencia masiva: disparo simultáneo de 25 transacciones paralelas (creación de órdenes recurrentes + webhooks entrantes de Stripe) para certificar cero bloqueos SQLITE_BUSY y atomicidad en SQLite.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-36-02",
-          "label": "MIGRATION/SCHEMA-AUDIT",
-          "desc": "Generación y prueba del script SQL de migración idempotente (tool/migrate_production_schema.sql) para agregar columnas y tablas nuevas en /root/database.sqlite con cero riesgo de pérdida de datos.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-36-03",
-          "label": "REGRESSION/FULL-SUITE",
-          "desc": "Suite automatizada de regresión completa Playwright cubriendo todos los flujos integrados (Catálogo -> Carrito -> 1-Click / Crédito -> Suscripción -> Reembolso Admin -> Reportes).",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-36-04",
-          "label": "GOV/FINAL-CERTIFICATION",
-          "desc": "Auditoría final de arquitectura logix audit, certificación baseline de release y verificación de aislamiento absoluto de producción.",
-          "status": "DONE",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S37",
       "name": "Sprint 37: Ecosistema Integral de Correos Transaccionales B2B, Notificaciones Administrativas y Plantillas de Reembolso",
@@ -79,7 +42,7 @@
     {
       "id": "S38",
       "name": "Sprint 38: Pulido de Registro B2B, Simplificación de Direcciones y Blindaje de Cancelación de Pagos Stripe",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-10-25",
       "goal": "Implementar feedback audiovisual del cliente: eliminación del campo alias en registro de direcciones, obligatoriedad del nombre de compañía B2B en el registro, y corrección integral del flujo de cancelación del modal de pagos Stripe para preservar el carrito y evitar falsas confirmaciones de orden.",
       "tasks": [
@@ -112,39 +75,84 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S39",
+      "name": "Sprint 39: Integración de Zelle B2B, Esquema Packaging & Handling con Bonificación y Blindaje de Corte de Producción",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-10-25",
+      "goal": "Incorporar Zelle como método de pago B2B con captura y auditoría de referencia, implementar el esquema de Packaging & Handling Fee con bonificación por pago directo para proteger márgenes mayoristas, y blindar el corte de producción de las 12:00 PM en el calendario del frontend.",
+      "tasks": [
+        {
+          "id": "TASK-39-01",
+          "label": "DOMAIN/ZELLE-CORE",
+          "desc": "Extensión de Order con payment_method ('stripe'|'zelle'|'credit'), zelle_reference, packaging_fee y packaging_discount. Endpoints de registro y conciliación de Zelle.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-39-02",
+          "label": "UI/CHECKOUT-ZELLE-FEES",
+          "desc": "Selector de Zelle en /checkout con datos bancarios, input de referencia y desglose dinámico: cargo de empaque (3.5%) vs bonificación automática por Zelle (-3.5%).",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-39-03",
+          "label": "ADMIN/ZELLE-AUDIT-APPROVAL",
+          "desc": "Panel en /admin/orders para auditar y conciliar transferencias Zelle: contrastar referencia y botón de aprobación manual para habilitar orden en torre de producción.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-39-04",
+          "label": "UI/CUTOFF-CALENDAR-GUARD",
+          "desc": "Inhabilitar dinámicamente en el calendario de checkout la fecha de entrega del día siguiente cuando la hora en America/New_York supere las 12:00 PM.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-39-05",
+          "label": "E2E/SAD-PATHS-REGRESSION",
+          "desc": "Suite de pruebas unitarias y e2e cubriendo sad paths (referencias duplicadas, evasión de corte, cancelaciones) y certificación con logix audit.",
+          "status": "TODO"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 35,
+  "archived_sprints_count": 36,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S38",
-    "name": "Sprint 38: Pulido de Registro B2B, Simplificación de Direcciones y Blindaje de Cancelación de Pagos Stripe",
+    "id": "S39",
+    "name": "Sprint 39: Integración de Zelle B2B, Esquema Packaging & Handling con Bonificación y Blindaje de Corte de Producción",
     "status": "IN_PROGRESS",
     "start_date": "2026-10-25",
-    "goal": "Implementar feedback audiovisual del cliente: eliminación del campo alias en registro de direcciones, obligatoriedad del nombre de compañía B2B en el registro, y corrección integral del flujo de cancelación del modal de pagos Stripe para preservar el carrito y evitar falsas confirmaciones de orden.",
+    "goal": "Incorporar Zelle como método de pago B2B con captura y auditoría de referencia, implementar el esquema de Packaging & Handling Fee con bonificación por pago directo para proteger márgenes mayoristas, y blindar el corte de producción de las 12:00 PM en el calendario del frontend.",
     "tasks": [
       {
-        "id": "TASK-38-01",
-        "label": "UI/ADDRESSES",
-        "desc": "Suprimir campo de entrada alias en la UI de creación de direcciones (/profile/addresses/new y /checkout), asignando internamente Principal o Entrega para preservar la integridad del modelo.",
+        "id": "TASK-39-01",
+        "label": "DOMAIN/ZELLE-CORE",
+        "desc": "Extensión de Order con payment_method ('stripe'|'zelle'|'credit'), zelle_reference, packaging_fee y packaging_discount. Endpoints de registro y conciliación de Zelle.",
         "status": "TODO"
       },
       {
-        "id": "TASK-38-02",
-        "label": "DOMAIN/B2B-AUTH",
-        "desc": "Establecer company_name como obligatorio en el registro de usuarios (RegisterForm y auth.service.signup), eliminando etiqueta Optional y adaptando payloads de pruebas existentes.",
+        "id": "TASK-39-02",
+        "label": "UI/CHECKOUT-ZELLE-FEES",
+        "desc": "Selector de Zelle en /checkout con datos bancarios, input de referencia y desglose dinámico: cargo de empaque (3.5%) vs bonificación automática por Zelle (-3.5%).",
         "status": "TODO"
       },
       {
-        "id": "TASK-38-03",
-        "label": "CHECKOUT/STRIPE-CANCEL",
-        "desc": "Blindar cancelación de Stripe en checkout (onCancel sin vaciar carrito ni redirigir a orden confirmada) y condicionar vista /orders/[id] para reflejar Pago Pendiente cuando no esté pagado ni tenga crédito.",
+        "id": "TASK-39-03",
+        "label": "ADMIN/ZELLE-AUDIT-APPROVAL",
+        "desc": "Panel en /admin/orders para auditar y conciliar transferencias Zelle: contrastar referencia y botón de aprobación manual para habilitar orden en torre de producción.",
         "status": "TODO"
       },
       {
-        "id": "TASK-38-04",
-        "label": "E2E/REGRESSION-BASELINE",
-        "desc": "Verificación empírica con suite Playwright y tests unitarios de backend, certificación con logix audit y commit atómico.",
+        "id": "TASK-39-04",
+        "label": "UI/CUTOFF-CALENDAR-GUARD",
+        "desc": "Inhabilitar dinámicamente en el calendario de checkout la fecha de entrega del día siguiente cuando la hora en America/New_York supere las 12:00 PM.",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-39-05",
+        "label": "E2E/SAD-PATHS-REGRESSION",
+        "desc": "Suite de pruebas unitarias y e2e cubriendo sad paths (referencias duplicadas, evasión de corte, cancelaciones) y certificación con logix audit.",
         "status": "TODO"
       }
     ]

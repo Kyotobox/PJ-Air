@@ -1,8 +1,9 @@
-# SPRINT S38 - Sprint 38: Pulido de Registro B2B, Simplificación de Direcciones y Blindaje de Cancelación de Pagos Stripe
-**Objetivo**: Implementar feedback audiovisual del cliente: eliminación del campo alias en registro de direcciones, obligatoriedad del nombre de compañía B2B en el registro, y corrección integral del flujo de cancelación del modal de pagos Stripe para preservar el carrito y evitar falsas confirmaciones de orden.
+# SPRINT S39 - Sprint 39: Integración de Zelle B2B, Esquema Packaging & Handling con Bonificación y Blindaje de Corte de Producción
+**Objetivo**: Incorporar Zelle como método de pago B2B con captura y auditoría de referencia, implementar el esquema de Packaging & Handling Fee con bonificación por pago directo para proteger márgenes mayoristas, y blindar el corte de producción de las 12:00 PM en el calendario del frontend.
 **Fecha**: 2026-10-25
 
-- [x] **TASK-38-01** [UI/ADDRESSES] Suprimir campo de entrada alias en la UI de creación de direcciones (/profile/addresses/new y /checkout), asignando internamente Principal o Entrega para preservar la integridad del modelo.
-- [x] **TASK-38-02** [DOMAIN/B2B-AUTH] Establecer company_name como obligatorio en el registro de usuarios (RegisterForm y auth.service.signup), eliminando etiqueta Optional y adaptando payloads de pruebas existentes.
-- [x] **TASK-38-03** [CHECKOUT/STRIPE-CANCEL] Blindar cancelación de Stripe en checkout (onCancel sin vaciar carrito ni redirigir a orden confirmada) y condicionar vista /orders/[id] para reflejar Pago Pendiente cuando no esté pagado ni tenga crédito.
-- [x] **TASK-38-04** [E2E/REGRESSION-BASELINE] Verificación empírica con suite Playwright y tests unitarios de backend, certificación con logix audit y commit atómico.
+- [ ] **TASK-39-01** [DOMAIN/ZELLE-CORE] Extensión de Order con payment_method ('stripe'|'zelle'|'credit'), zelle_reference, packaging_fee y packaging_discount. Endpoints de registro y conciliación de Zelle.
+- [ ] **TASK-39-02** [UI/CHECKOUT-ZELLE-FEES] Selector de Zelle en /checkout con datos bancarios, input de referencia y desglose dinámico: cargo de empaque (3.5%) vs bonificación automática por Zelle (-3.5%).
+- [ ] **TASK-39-03** [ADMIN/ZELLE-AUDIT-APPROVAL] Panel en /admin/orders para auditar y conciliar transferencias Zelle: contrastar referencia y botón de aprobación manual para habilitar orden en torre de producción.
+- [ ] **TASK-39-04** [UI/CUTOFF-CALENDAR-GUARD] Inhabilitar dinámicamente en el calendario de checkout la fecha de entrega del día siguiente cuando la hora en America/New_York supere las 12:00 PM.
+- [ ] **TASK-39-05** [E2E/SAD-PATHS-REGRESSION] Suite de pruebas unitarias y e2e cubriendo sad paths (referencias duplicadas, evasión de corte, cancelaciones) y certificación con logix audit.
