@@ -52,13 +52,13 @@ flowchart LR
 
 ---
 
-## 3. ¿Qué Opciones Adicionales Podrían Sumarse a Futuro?
+## 3. Propuestas de Expansión Estratégica (Roadmap para Decisión del Cliente)
 
-Estas herramientas están disponibles en la arquitectura y pueden activarse cuando la escala del negocio lo requiera:
+Para continuar profesionalizando la operación comercial sin aumentar la carga de trabajo del equipo, se proponen las siguientes 4 capacidades modulares listas para activar cuando el negocio lo requiera:
 
-1. **Auto-Débito de Crédito Vencido**:
-   * Si un cliente a crédito no liquida su factura en 15 días, debitar automáticamente de su tarjeta o cuenta ACH registrada.
-2. **Sincronización Contable (QuickBooks / Xero)**:
-   * Conectar los pagos de Stripe directamente con el sistema contable de la panadería para declarar impuestos y balances en automático.
-3. **Pre-autorización y Captura (Hold de Fondos)**:
-   * Congelar el dinero al pedir y cobrar el valor exacto tras pesar el despacho final (útil si hay productos con peso variable).
+| Propuesta | ¿Qué problema resuelve? | ¿Cómo funciona? | Beneficio Directo para Jhoanes |
+| :--- | :--- | :--- | :--- |
+| **1. Auto-Débito Net-15/30** | Cobranzas manuales y retrasos en clientes a crédito. | Si el cliente no paga su factura antes del día 15, se debita automáticamente de su tarjeta o ACH guardado. | **Cero morosidad** y flujo de caja puntual garantizado. |
+| **2. Pre-Autorización (Hold)** | Ajustes por peso variable de masa o mermas de último minuto. | Se congelan los fondos al ordenar y solo se captura el monto exacto una vez pesado y empacado el pedido. | Elimina micro-reembolsos y cobros extra posteriores. |
+| **3. Conexión QuickBooks / Xero** | Doble digitación manual de facturas para contabilidad e impuestos. | Cada venta y pago en la web se refleja en tiempo real en el software contable de la panadería. | **Ahorro de horas administrativas** y cierre mensual automático. |
+| **4. Anticipos para Catering / Eventos** | Riesgo de cancelación en pedidos gigantes con materias primas costosas. | Cobro automático de un anticipo (30% - 50%) al reservar y el resto 24 horas antes del despacho. | **Blindaje total contra cancelaciones** de lotes grandes. |

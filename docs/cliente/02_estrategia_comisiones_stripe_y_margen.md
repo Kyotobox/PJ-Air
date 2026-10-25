@@ -115,3 +115,39 @@ Comparativa de ingresos netos para Jhoanes según el método de pago elegido:
    * A cadenas y cafeterías con pedidos superiores a \$1,500 semanales, habilitar el débito en cuenta bancaria ACH para automatizar sus cobros con costo plano de \$5.
 3. **Auditoría Diaria de Zelle**:
    * Establecer una rutina a las 11:30 AM (antes del corte de producción de las 12:00 PM) para que administración revise las transferencias en su cuenta bancaria y marque como *"Aprobado"* los pedidos en `/admin/orders`.
+
+---
+
+## 6. Propuestas de Expansión Estratégica (Roadmap Financiero)
+
+A partir de la infraestructura actual, se proponen las siguientes optimizaciones modulares para decisión del cliente:
+
+```mermaid
+flowchart TD
+    subgraph Propuestas["Propuestas de Expansión Modular"]
+        P1["Propuesta 1: Auto-Débito Net-15/30<br>Cero morosidad en cartera"]
+        P2["Propuesta 2: Pre-Autorización (Auth & Capture)<br>Cobro exacto según peso/empaque"]
+        P3["Propuesta 3: Sincronización QuickBooks/Xero<br>Contabilidad y conciliación automática"]
+        P4["Propuesta 4: Depósito Parcial para Eventos/Catering<br>Anticipos del 30%-50% asegurados"]
+    end
+```
+
+### Propuesta 1: Auto-Débito Programado de Facturas a Crédito (`Net-15 / Net-30`)
+* **Necesidad**: Evitar retrasos en los pagos de clientes que compran a crédito semanal.
+* **Mecánica**: Al autorizar una línea de crédito, el cliente registra una tarjeta de respaldo o cuenta ACH. Si la factura no es saldada manualmente antes del día de vencimiento, el sistema procesa el débito automático del saldo pendiente.
+* **Beneficio**: Garantiza flujo de caja predecible y reduce a cero las horas dedicadas a cobranzas manuales.
+
+### Propuesta 2: Pre-Autorización y Captura Posterior (`Auth & Capture`)
+* **Necesidad**: En panadería mayorista, ocasionalmente el peso final de piezas especiales o ajustes de inventario de última hora modifican el total.
+* **Mecánica**: Al colocar el pedido, se retienen (congelan) los fondos en la tarjeta del cliente; tras el empaque y validación final en despacho, se captura únicamente el importe exacto despachado.
+* **Beneficio**: Elimina la necesidad de emitir micro-reembolsos o emitir cobros complementarios por diferencias mínimas de producto.
+
+### Propuesta 3: Sincronización Contable Automatizada (QuickBooks / Xero)
+* **Necesidad**: Alinear la facturación digital con los libros fiscales de la empresa sin doble digitación.
+* **Mecánica**: Conexión vía API con QuickBooks Online o Xero para que cada orden pagada en la plataforma cree automáticamente la factura fiscal, asiente el ingreso en la cuenta contable y registre el impuesto sobre ventas (*sales tax*).
+* **Beneficio**: Cierre contable mensual instantáneo y eliminación de errores humanos en la declaración tributaria.
+
+### Propuesta 4: Depósitos y Anticipos para Pedidos de Catering y Grandes Lotes
+* **Necesidad**: Pedidos masivos para eventos o nuevos restaurantes que demandan compras extraordinarias de materia prima.
+* **Mecánica**: Cobro automático de un anticipo del 30% al 50% al reservar la fecha de horneado, con débito programado del saldo restante 24 horas antes de la entrega.
+* **Beneficio**: Protección financiera total contra cancelaciones de pedidos a gran escala.
