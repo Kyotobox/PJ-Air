@@ -153,6 +153,45 @@
           "status": "TODO"
         }
       ]
+    },
+    {
+      "id": "S41",
+      "name": "Sprint 41: Verificación Telefónica SMS OTP con Firebase en Registro B2B y Modificación de Perfil",
+      "status": "PLANNED",
+      "start_date": "2026-10-27",
+      "goal": "Implementar la verificación de identidad telefónica mediante SMS OTP de 6 dígitos con Firebase Authentication (Free Tier) tanto en el registro B2B inicial como en la edición de número de teléfono en /profile, con soporte para números de prueba y preservación de cuenta ante cancelaciones.",
+      "tasks": [
+        {
+          "id": "TASK-41-01",
+          "label": "DOMAIN/PHONE-AUTH-CORE",
+          "desc": "Integración de Firebase Admin en backend NestJS, columna phone_verified en Profile y endpoint POST /api/auth/verify-phone-token para certificar el token emitido por Firebase.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-41-02",
+          "label": "UI/FIREBASE-PHONE-CLIENT",
+          "desc": "Configuración del cliente Firebase Web SDK en frontend/lib/firebase.ts con reCAPTCHA invisible y fallback graceful si faltan credenciales en .env.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-41-03",
+          "label": "UI/REGISTER-SMS-OTP",
+          "desc": "Modal emergente de verificación SMS OTP en /auth/register: envío de código de 6 dígitos al teléfono ingresado, verificación atómica y feedback visual de confirmación.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-41-04",
+          "label": "UI/PROFILE-PHONE-CHANGE-GUARD",
+          "desc": "Guardarraíl en /profile: detección de mutación en el campo de teléfono, despliegue de modal OTP para el nuevo número y persistencia en backend solo tras verificación exitosa.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-41-05",
+          "label": "E2E/PHONE-AUTH-REGRESSION",
+          "desc": "Suite de pruebas unitarias y Playwright con números de prueba de Firebase (+1 305 555 0100 -> 123456), sad paths (código incorrecto, reintento expirado, cancelación de modal) y certificación logix audit.",
+          "status": "TODO"
+        }
+      ]
     }
   ],
   "archived_sprints_count": 36,
