@@ -16,6 +16,8 @@ describe('OrdersController', () => {
     findOne: jest.fn(),
     assignDelivery: jest.fn(),
     update: jest.fn(),
+    approveZellePayment: jest.fn(),
+    rejectZellePayment: jest.fn(),
   };
 
   const mockExcelService = {
@@ -97,6 +99,22 @@ describe('OrdersController', () => {
 
       expect(service.update).toHaveBeenCalledWith('order-123', body, 'client');
       expect(result).toBe('mock-updated-order');
+    });
+  });
+
+  describe('Zelle Endpoints', () => {
+    it('should call service.approveZellePayment when approveZelle is invoked', async () => {
+      mockOrdersService.approveZellePayment.mockResolvedValue({ id: 'order-123', payment_status: 'paid' });
+      const result = await controller.approveZelle('order-123');
+      expect(service.approveZellePayment).toHaveBeenCalledWith('order-123');
+      expect(result).toEqual({ id: 'order-123', payment_status: 'paid' });
+    });
+
+    it('should call service.rejectZellePayment when rejectZelle is invoked', async () => {
+      mockOrdersService.rejectZellePayment.mockResolvedValue({ id: 'order-123', payment_status: 'unpaid', status: 'Cancelado' });
+      const result = await controller.rejectZelle('order-123', 'Monto incorrecto');
+      expect(service.rejectZellePayment).toHaveBeenCalledWith('order-123', 'Monto incorrecto');
+      expect(result).toEqual({ id: 'order-123', payment_status: 'unpaid', status: 'Cancelado' });
     });
   });
 });

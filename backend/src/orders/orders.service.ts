@@ -23,6 +23,54 @@ export class OrdersService {
     private mailService?: MailService,
   ) {}
 
+  validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour = 12): void {
+    if (!deliveryDateStr) return;
+
+    const now = referenceDate || new Date();
+    const nyDateFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const nyTimeFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    });
+
+    const nyDateStr = nyDateFormatter.format(now); // YYYY-MM-DD
+    const nyTimeStr = nyTimeFormatter.format(now);
+    const nyHour = parseInt(nyTimeStr.split(':')[0], 10);
+
+    const [todayY, todayM, todayD] = nyDateStr.split('-').map(Number);
+    const todayNY = new Date(Date.UTC(todayY, todayM - 1, todayD));
+    const tomorrowNY = new Date(todayNY);
+    tomorrowNY.setUTCDate(tomorrowNY.getUTCDate() + 1);
+
+    const yrT = tomorrowNY.getUTCFullYear();
+    const moT = String(tomorrowNY.getUTCMonth() + 1).padStart(2, '0');
+    const daT = String(tomorrowNY.getUTCDate()).padStart(2, '0');
+    const tomorrowStr = `${yrT}-${moT}-${daT}`;
+
+    const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
+
+    if (targetDate < nyDateStr) {
+      throw new BadRequestException('La fecha de entrega no puede ser en el pasado.');
+    }
+    if (targetDate === nyDateStr) {
+      throw new BadRequestException('No se permiten entregas para el mismo día de la orden.');
+    }
+
+    if (nyHour >= cutoffHour && targetDate <= tomorrowStr) {
+      throw new BadRequestException(
+        `Corte de producción superado (${cutoffHour}:00 PM ET). No se permiten pedidos para entrega el día siguiente (${tomorrowStr}). Próxima entrega disponible a partir de 2 días hábiles.`
+      );
+    }
+  }
+
   private validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string) {
     if (userRole === 'admin') return;
 
@@ -135,7 +183,9 @@ export class OrdersService {
       .leftJoinAndSelect('delivery_user.profile', 'delivery_profile')
       .leftJoinAndSelect('order.address', 'address')
       .where('order.created_at >= :start', { start: queryStart })
-      .andWhere('order.created_at <= :end', { end: queryEnd });
+      .andWhere('order.created_at <= :end', { end: queryEnd })
+      .andWhere('order.payment_status != :pzStatus', { pzStatus: 'pending_zelle_verification' })
+      .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] });
 
     if (userId) {
       qb.andWhere('order.user_id = :userId', { userId });
@@ -216,10 +266,44 @@ export class OrdersService {
     const appliedPaymentDueDate = paymentDueDate || (rest as any).payment_due_date;
     const appliedAddressId = addressId || (rest as any).address_id || null;
     const appliedDeliveryAddressText = deliveryAddressText || (rest as any).delivery_address_text || null;
-    const appliedPaymentStatus = paymentStatus || (rest as any).payment_status || 'pending';
+    let appliedPaymentStatus = paymentStatus || (rest as any).payment_status || 'pending';
+
+    const appliedPaymentMethod = (rest as any).payment_method || (orderData as any).payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
+    const rawZelleRef = (rest as any).zelle_reference || (orderData as any).zelle_reference;
+    const appliedZelleReference = rawZelleRef ? String(rawZelleRef).trim() : null;
+
+    // Validate 12:00 PM cutoff time for next-day deliveries
+    this.validateCutoffTime(appliedDeliveryDate);
+
+    // Packaging & Handling Fee (3.5%) & Direct Payment Bonus
+    const packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
+    let packagingDiscount = 0;
+
+    if (appliedPaymentMethod === 'zelle') {
+      if (!appliedZelleReference) {
+        throw new BadRequestException('El número de referencia o confirmación de Zelle es obligatorio para pagos con Zelle.');
+      }
+
+      // Check for duplicate reference in active orders
+      const existingZelle = await this.orderRepository.createQueryBuilder('order')
+        .where('LOWER(TRIM(order.zelle_reference)) = LOWER(:ref)', { ref: appliedZelleReference })
+        .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] })
+        .getOne();
+
+      if (existingZelle) {
+        throw new BadRequestException(`El número de referencia Zelle "${appliedZelleReference}" ya ha sido registrado en otra orden activa.`);
+      }
+
+      appliedPaymentStatus = 'pending_zelle_verification';
+      packagingDiscount = packagingFee; // Direct payment discount completely offsets fee
+    } else if (appliedPaymentMethod === 'stripe') {
+      packagingDiscount = 0; // Gateway fee protection
+    } else if (appliedPaymentMethod === 'credit') {
+      packagingDiscount = packagingFee; // Credit orders do not pay gateway surcharge
+    }
 
     const deliveryFee = appliedDeliveryType === 'pickup' ? 0 : Number(user?.delivery_fee || 0);
-    const finalTotal = Math.round((itemsTotal + deliveryFee + Number.EPSILON) * 100) / 100;
+    const finalTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
 
     let shouldSendCreditAlert = false;
     let isOverdraftAlert = false;
@@ -264,6 +348,10 @@ export class OrdersService {
         delivery_address_text: appliedDeliveryAddressText,
         user_id: userId,
         total: finalTotal,
+        payment_method: appliedPaymentMethod,
+        zelle_reference: appliedZelleReference,
+        packaging_fee: packagingFee,
+        packaging_discount: packagingDiscount,
         delivery_fee_charged: deliveryFee,
         payment_status: appliedPaymentStatus,
       });
@@ -387,5 +475,38 @@ export class OrdersService {
     
     await this.orderRepository.save(order);
     return this.findOne(id);
+  }
+
+  async approveZellePayment(orderId: string): Promise<Order> {
+    const order = await this.findOne(orderId);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    order.payment_status = 'paid';
+    const saved = await this.orderRepository.save(order);
+
+    if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function') {
+      const user = await this.userRepository.findOne({ where: { id: order.user_id } });
+      if (user?.email) {
+        this.mailService.sendOrderReceipt(saved, user.email).catch(err => {
+          console.error('[OrdersService] Error sending zelle approved receipt email:', err?.message || err);
+        });
+      }
+    }
+
+    return saved;
+  }
+
+  async rejectZellePayment(orderId: string, reason?: string): Promise<Order> {
+    const order = await this.findOne(orderId);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    order.payment_status = 'unpaid';
+    order.status = 'Cancelado';
+    if (reason) {
+      order.notes = `[Rechazo Zelle]: ${reason}\n${order.notes || ''}`;
+    }
+    return this.orderRepository.save(order);
   }
 }

@@ -88,6 +88,12 @@ let OrdersController = class OrdersController {
     async updatePaymentStatus(id, paymentStatus) {
         return this.ordersService.update(id, { payment_status: paymentStatus }, 'admin');
     }
+    async approveZelle(id) {
+        return this.ordersService.approveZellePayment(id);
+    }
+    async rejectZelle(id, reason) {
+        return this.ordersService.rejectZellePayment(id, reason);
+    }
     async assignDelivery(id, deliveryUserId) {
         return this.ordersService.assignDelivery(id, deliveryUserId);
     }
@@ -189,6 +195,25 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "updatePaymentStatus", null);
+__decorate([
+    (0, common_1.Patch)(':id/approve-zelle'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "approveZelle", null);
+__decorate([
+    (0, common_1.Patch)(':id/reject-zelle'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('reason')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "rejectZelle", null);
 __decorate([
     (0, common_1.Patch)(':id/assign'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),

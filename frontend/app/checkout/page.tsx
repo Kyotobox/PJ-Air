@@ -281,11 +281,18 @@ export default function CheckoutPage() {
     const [paymentDate, setPaymentDate] = useState('');
     const [rawDeliveryDate, setRawDeliveryDate] = useState('');
     const [isBeforeCutoff, setIsBeforeCutoff] = useState(true);
+    const [isPastCutoff, setIsPastCutoff] = useState(false);
+    const [minSelectableDate, setMinSelectableDate] = useState('');
+    const [nextAvailableDateFormatted, setNextAvailableDateFormatted] = useState('');
     const [showMinAmountModal, setShowMinAmountModal] = useState(false);
     const [minOrderAmount, setMinOrderAmount] = useState<number>(500);
     const [cutoffHour, setCutoffHour] = useState<number>(12);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [isStandingOrder, setIsStandingOrder] = useState(false);
+
+    // Payment method state
+    const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'zelle' | 'credit'>('stripe');
+    const [zelleReference, setZelleReference] = useState('');
 
     const [addresses, setAddresses] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -351,6 +358,9 @@ export default function CheckoutPage() {
             if (addrData?.length > 0) setSelectedAddressId(addrData[0].id);
             setUserDiscounts(userData);
             setCreditSummary(creditData);
+            if ((creditData as any)?.account_type === 'credit') {
+                setPaymentMethod('credit');
+            }
         }).finally(() => setIsFetchingAddresses(false));
     }, [user]);
 
@@ -377,7 +387,12 @@ export default function CheckoutPage() {
     const rawSubtotal = getRawSubtotal();
     const discountedSubtotal = getDiscountedSubtotal();
     const deliveryFee = deliveryType === 'pickup' ? 0 : (Number(profile?.delivery_fee) || 0);
-    const finalTotal = Math.round((discountedSubtotal + deliveryFee + Number.EPSILON) * 100) / 100;
+
+    // Packaging & Handling Fee (3.5%) & Direct Payment (Zelle) / Credit Bonus
+    const packagingFee = Math.round(discountedSubtotal * 0.035 * 100) / 100;
+    const packagingDiscount = (paymentMethod === 'zelle' || paymentMethod === 'credit') ? packagingFee : 0;
+
+    const finalTotal = Math.round((discountedSubtotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
     const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + Number.EPSILON) * 100) / 100;
     const subtotal = rawSubtotal;
 
@@ -386,27 +401,63 @@ export default function CheckoutPage() {
     const usedCredit = Number(creditSummary?.used_credit || 0);
     const availableCredit = Number(creditSummary?.available_credit || 0);
     const hasCreditOverride = Boolean(creditSummary?.credit_override);
-    const exceedsCreditLimit = isCreditAccount && (usedCredit + finalTotal > creditLimit) && !hasCreditOverride;
+    const exceedsCreditLimit = isCreditAccount && paymentMethod === 'credit' && (usedCredit + finalTotal > creditLimit) && !hasCreditOverride;
 
-    // ── Delivery date (NY timezone) ───────────────────────────────────────────
+    // ── Delivery date (NY timezone & 12:00 PM cutoff guard) ───────────────────
     useEffect(() => {
         const nowNY = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const before = nowNY.getHours() < cutoffHour;
-        const daysToAdd = before ? 2 : 3;
-        const delDate = new Date(nowNY);
-        delDate.setDate(nowNY.getDate() + daysToAdd);
-        const payDate = new Date(delDate);
-        payDate.setDate(delDate.getDate() + 6);
-        setIsBeforeCutoff(before);
+        const currentHour = nowNY.getHours();
+        const pastCutoff = currentHour >= cutoffHour;
+        setIsPastCutoff(pastCutoff);
+        setIsBeforeCutoff(!pastCutoff);
 
-        const yyyy = delDate.getFullYear();
-        const mm = String(delDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(delDate.getDate()).padStart(2, '0');
-        setRawDeliveryDate(`${yyyy}-${mm}-${dd}`);
+        // If past cutoff (12:00 PM), next day delivery is prohibited -> min is T+2 days. Before 12 PM -> T+1 day.
+        const daysToAdd = pastCutoff ? 2 : 1;
+        const minDate = new Date(nowNY);
+        minDate.setDate(nowNY.getDate() + daysToAdd);
 
-        setDeliveryDate(delDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
+        const yyyy = minDate.getFullYear();
+        const mm = String(minDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(minDate.getDate()).padStart(2, '0');
+        const minStr = `${yyyy}-${mm}-${dd}`;
+        setMinSelectableDate(minStr);
+
+        const formattedNext = minDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+        setNextAvailableDateFormatted(formattedNext);
+
+        setRawDeliveryDate(minStr);
+        setDeliveryDate(minDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
+
+        const payDate = new Date(minDate);
+        payDate.setDate(minDate.getDate() + 6);
         setPaymentDate(payDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
     }, [cutoffHour, locale]);
+
+    const handleDeliveryDateChange = (newDateStr: string) => {
+        if (!newDateStr) return;
+        if (minSelectableDate && newDateStr < minSelectableDate) {
+            showNotification(
+                lbl(
+                    `Corte de producción a las 12:00 PM superado. Próxima entrega disponible a partir de ${nextAvailableDateFormatted}.`,
+                    `12:00 PM production cutoff exceeded. Next delivery available starting from ${nextAvailableDateFormatted}.`
+                ),
+                'warning'
+            );
+            return;
+        }
+        setRawDeliveryDate(newDateStr);
+        const [y, m, d] = newDateStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        setDeliveryDate(dateObj.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
+        const payDate = new Date(dateObj);
+        payDate.setDate(dateObj.getDate() + 6);
+        setPaymentDate(payDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
+    };
 
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
@@ -415,6 +466,19 @@ export default function CheckoutPage() {
         if (!termsAccepted) {
             showNotification(lbl('Por favor acepta los Términos y Condiciones para continuar.', 'Please accept the Terms and Conditions to proceed.'), 'warning');
             return;
+        }
+
+        if (paymentMethod === 'zelle') {
+            if (!zelleReference.trim()) {
+                showNotification(
+                    lbl(
+                        'Por favor ingresa el Número de Confirmación / Referencia de tu transferencia Zelle.',
+                        'Please enter the Confirmation Number / Reference of your Zelle transfer.'
+                    ),
+                    'warning'
+                );
+                return;
+            }
         }
 
         if (exceedsCreditLimit) {
@@ -478,6 +542,8 @@ export default function CheckoutPage() {
                 status: 'Pedido Enviado',
                 deliveryDate: rawDeliveryDate || deliveryDate,
                 paymentDueDate: paymentDate,
+                payment_method: paymentMethod,
+                zelle_reference: paymentMethod === 'zelle' ? zelleReference.trim() : null,
                 items: cart.map(item => ({
                     productId: item.id,
                     quantity: item.quantity,
@@ -502,7 +568,10 @@ export default function CheckoutPage() {
                 }).catch(() => {});
             }
 
-            if (isCreditAccount) {
+            if (paymentMethod === 'zelle') {
+                clearCart();
+                window.location.href = `/orders/${order.id}`;
+            } else if (paymentMethod === 'credit' || (isCreditAccount && paymentMethod !== 'stripe')) {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
             } else {
@@ -741,58 +810,225 @@ export default function CheckoutPage() {
                             )}
                         </section>
 
-                        {/* ── Delivery date ────────────────────────────────── */}
-                        {deliveryType !== 'pickup' && (
-                            <section className="bg-[#0f0f0f] rounded-3xl border border-[#222] p-8">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 bg-white/10 text-white rounded-2xl shadow-md shrink-0">
-                                        <Calendar size={24} />
+                        {/* ── Delivery date & Cutoff Guard ────────────────── */}
+                        <section className="bg-[#0f0f0f] rounded-3xl border border-[#222] p-8 shadow-xl">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-white/10 text-white rounded-2xl shadow-md shrink-0">
+                                    <Calendar size={24} />
+                                </div>
+                                <div className="w-full">
+                                    <h3 className="text-xl font-bold text-white mb-2">
+                                        {deliveryType === 'pickup' 
+                                            ? lbl('Fecha de Disponibilidad para Pick Up', 'Pick Up Ready Date')
+                                            : lbl('Fecha de Entrega Programada', 'Scheduled Delivery Date')}
+                                    </h3>
+
+                                    {/* Cutoff Status Badge */}
+                                    <div className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-4 ${
+                                        isPastCutoff
+                                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    }`}>
+                                        <Clock size={12} />
+                                        {isPastCutoff
+                                            ? lbl('Corte de producción a las 12:00 PM superado', '12:00 PM production cutoff exceeded')
+                                            : lbl('Recepción activa antes de las 12:00 PM', 'Order reception active before 12:00 PM')}
                                     </div>
-                                    <div className="w-full">
-                                        <h3 className="text-xl font-bold text-white mb-3">
-                                            {lbl('Fecha de Entrega Estimada', 'Estimated Delivery Date')}
-                                        </h3>
-                                        <div className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-3 ${
-                                            isBeforeCutoff
-                                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                        }`}>
-                                            <Clock size={12} />
-                                            {isBeforeCutoff
-                                                ? lbl('Pedido antes de la 1:00 PM hora NY → entrega en 2 días', 'Order before 1:00 PM NY → delivery in 2 days')
-                                                : lbl('Pedido después de la 1:00 PM hora NY → entrega en 3 días', 'Order after 1:00 PM NY → delivery in 3 days')}
+
+                                    {/* Notice when past 12:00 PM cutoff */}
+                                    {isPastCutoff && (
+                                        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl mb-4 text-amber-300 text-xs flex items-start gap-3">
+                                            <AlertCircle size={18} className="shrink-0 text-amber-400 mt-0.5" />
+                                            <div>
+                                                <p className="font-bold">
+                                                    {lbl(
+                                                        `Corte de producción a las 12:00 PM superado. Próxima entrega disponible a partir de ${nextAvailableDateFormatted}.`,
+                                                        `12:00 PM production cutoff exceeded. Next delivery available starting from ${nextAvailableDateFormatted}.`
+                                                    )}
+                                                </p>
+                                                <p className="text-[11px] text-amber-400/80 mt-1">
+                                                    {lbl(
+                                                        'Los pedidos recibidos a partir de las 12:00 PM (hora de NY) se preparan en el siguiente ciclo de horneado.',
+                                                        'Orders placed after 12:00 PM (NY time) are baked in the next available production cycle.'
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="text-3xl font-black text-white capitalize">{deliveryDate}</p>
-                                        <p className="text-xs text-white/40 mt-3 leading-relaxed">
+                                    )}
+
+                                    {/* Date Selector input with min limit */}
+                                    <div className="mt-2 space-y-2">
+                                        <label className="text-xs font-bold text-white/70 block uppercase tracking-wider">
+                                            {lbl('Selecciona o confirma la fecha:', 'Select or confirm date:')}
+                                        </label>
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                            <input
+                                                type="date"
+                                                min={minSelectableDate}
+                                                value={rawDeliveryDate}
+                                                onChange={e => handleDeliveryDateChange(e.target.value)}
+                                                className="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-primary text-sm w-full sm:w-auto"
+                                            />
+                                            <p className="text-2xl font-black text-white capitalize">{deliveryDate}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* ── Payment Method Section ─────────────────────── */}
+                        <section className="bg-white rounded-3xl border border-border p-8 shadow-sm">
+                            <h3 className="text-xl font-bold text-slate-800 mb-1 flex items-center gap-2">
+                                <CreditCard size={22} className="text-primary" />
+                                {lbl('Método de Pago', 'Payment Method')}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mb-6">
+                                {lbl('Selecciona tu método de pago preferido para completar la orden.', 'Choose your preferred payment method to complete the order.')}
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                {/* Stripe option */}
+                                <div 
+                                    onClick={() => setPaymentMethod('stripe')}
+                                    className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        paymentMethod === 'stripe'
+                                            ? 'border-primary bg-primary/5 shadow-sm'
+                                            : 'border-border/70 hover:border-border bg-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center font-bold">
+                                                <CreditCard size={18} />
+                                            </div>
+                                            <span className="font-bold text-sm text-slate-800">
+                                                {lbl('Tarjeta de Crédito / Débito', 'Credit / Debit Card')}
+                                            </span>
+                                        </div>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                            paymentMethod === 'stripe' ? 'border-primary' : 'border-slate-300'
+                                        }`}>
+                                            {paymentMethod === 'stripe' && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        {lbl('Pasarela Stripe instantánea (+3.5% Cargo de empaque y logística).', 'Instant Stripe gateway (+3.5% Packaging & logistics fee).')}
+                                    </p>
+                                </div>
+
+                                {/* Zelle option */}
+                                <div 
+                                    onClick={() => setPaymentMethod('zelle')}
+                                    className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        paymentMethod === 'zelle'
+                                            ? 'border-green-600 bg-green-50/50 shadow-sm'
+                                            : 'border-border/70 hover:border-border bg-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-black text-xs">
+                                                Zelle
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-sm text-slate-800">
+                                                    {lbl('Transferencia Zelle B2B', 'Zelle B2B Transfer')}
+                                                </span>
+                                                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-[9px] font-black uppercase rounded-full">
+                                                    -3.5% Bonificación
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                            paymentMethod === 'zelle' ? 'border-green-600' : 'border-slate-300'
+                                        }`}>
+                                            {paymentMethod === 'zelle' && <div className="w-2.5 h-2.5 rounded-full bg-green-600" />}
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        {lbl('Pago directo interbancario con bonificación del 3.5% (Cero recargo).', 'Direct bank transfer with 3.5% bonus (Zero surcharge).')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Credit Account option if eligible */}
+                            {isCreditAccount && (
+                                <div 
+                                    onClick={() => setPaymentMethod('credit')}
+                                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all mb-6 ${
+                                        paymentMethod === 'credit'
+                                            ? 'border-blue-600 bg-blue-50/50 shadow-sm'
+                                            : 'border-border/70 hover:border-border bg-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                                                <Store size={16} />
+                                            </div>
+                                            <span className="font-bold text-sm text-slate-800">
+                                                {lbl('Línea de Crédito Comercial B2B (Sin recargo)', 'Commercial B2B Credit Line (No surcharge)')}
+                                            </span>
+                                        </div>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                            paymentMethod === 'credit' ? 'border-blue-600' : 'border-slate-300'
+                                        }`}>
+                                            {paymentMethod === 'credit' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Zelle Instructions Box & Reference Input */}
+                            {paymentMethod === 'zelle' && (
+                                <div className="p-6 bg-purple-50/80 rounded-2xl border border-purple-200/90 space-y-4 animate-in fade-in duration-200">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 font-black text-xs">
+                                            Z
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-purple-950">
+                                                {lbl('Datos de Transferencia Zelle B2B', 'Zelle B2B Transfer Details')}
+                                            </h4>
+                                            <p className="text-xs text-purple-800 mt-0.5">
+                                                {lbl('Envía el pago desde la app de tu banco a los siguientes datos:', 'Send payment from your banking app to:')}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-xl border border-purple-200 space-y-1.5 text-xs">
+                                        <div className="flex justify-between items-center py-1 border-b border-purple-100">
+                                            <span className="text-purple-700 font-medium">{lbl('Correo Zelle:', 'Zelle Email:')}</span>
+                                            <span className="font-black text-purple-950 select-all">pedidos@jhoanes.com</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-1">
+                                            <span className="text-purple-700 font-medium">{lbl('Beneficiario / Razón:', 'Payee / Business Name:')}</span>
+                                            <span className="font-black text-purple-950">Pedidos Jhoanes LLC</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5 pt-2">
+                                        <label className="text-xs font-bold text-purple-950 block">
+                                            {lbl('Número de Confirmación / Referencia Zelle *', 'Zelle Confirmation / Reference Number *')}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder={lbl('Ej: Ref: 98765432 o ID de transacción', 'E.g. Ref: 98765432 or transaction ID')}
+                                            value={zelleReference}
+                                            onChange={e => setZelleReference(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white border border-purple-300 rounded-xl font-bold text-slate-800 placeholder:text-purple-300 outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                                        />
+                                        <p className="text-[10px] text-purple-700 italic">
                                             {lbl(
-                                                'Pedidos recibidos antes de la 1:00 PM (hora Nueva York) se entregan en 2 días. Pedidos recibidos a partir de la 1:00 PM se entregan en 3 días.',
-                                                'Orders received before 1:00 PM (New York time) are delivered in 2 days. Orders received from 1:00 PM are delivered in 3 days.'
+                                                'Este número será contrastado por administración para conciliar tu pago y habilitar el pedido en producción.',
+                                                'This reference will be verified by administration to reconcile your payment and authorize production.'
                                             )}
                                         </p>
                                     </div>
                                 </div>
-                            </section>
-                        )}
-
-                        {/* Pickup date info */}
-                        {deliveryType === 'pickup' && (
-                            <section className="bg-[#0f0f0f] rounded-3xl border border-[#222] p-8">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 bg-white/10 text-white rounded-2xl shadow-md shrink-0">
-                                        <Calendar size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white mb-1">
-                                            {lbl('Fecha de Disponibilidad Estimada', 'Estimated Ready Date')}
-                                        </h3>
-                                        <p className="text-3xl font-black text-white capitalize">{deliveryDate}</p>
-                                        <p className="text-xs text-white/40 mt-2">
-                                            {lbl('Tu pedido estará listo para recoger en tienda.', 'Your order will be ready for pickup at our store.')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </section>
-                        )}
+                            )}
+                        </section>
 
                         {/* ── Payment note ─────────────────────────────────── */}
                         <section className="bg-accent/5 rounded-3xl border border-accent/20 p-8 text-black">
@@ -895,6 +1131,34 @@ export default function CheckoutPage() {
                                         <div className="flex justify-between items-center text-xs mb-1">
                                             <span className="text-muted-foreground">{lbl('Cargo por Delivery', 'Delivery Fee')}</span>
                                             <span className="font-bold text-amber-600">+${deliveryFee.toFixed(2)}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Packaging & Handling Fee (3.5%) */}
+                                    {packagingFee > 0 && (
+                                        <div className="flex justify-between items-center text-xs mb-1">
+                                            <span className="text-muted-foreground">{lbl('Cargo de Empaque y Logística (3.5%)', 'Packaging & Handling Fee (3.5%)')}</span>
+                                            <span className="font-bold text-slate-700">+${packagingFee.toFixed(2)}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Direct Payment (Zelle) Bonus */}
+                                    {paymentMethod === 'zelle' && packagingDiscount > 0 && (
+                                        <div className="flex justify-between items-center text-xs mb-1 text-green-700 bg-green-50 p-2 rounded-xl border border-green-200">
+                                            <span className="font-black uppercase tracking-widest text-[9px]">
+                                                {lbl('Bonificación Pago Directo Zelle (-3.5%)', 'Zelle Direct Payment Bonus (-3.5%)')}
+                                            </span>
+                                            <span className="font-black">-${packagingDiscount.toFixed(2)}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Commercial Credit Exemption */}
+                                    {paymentMethod === 'credit' && packagingDiscount > 0 && (
+                                        <div className="flex justify-between items-center text-xs mb-1 text-blue-700 bg-blue-50 p-2 rounded-xl border border-blue-200">
+                                            <span className="font-black uppercase tracking-widest text-[9px]">
+                                                {lbl('Exención Línea de Crédito (-3.5%)', 'Credit Line Exemption (-3.5%)')}
+                                            </span>
+                                            <span className="font-black">-${packagingDiscount.toFixed(2)}</span>
                                         </div>
                                     )}
 

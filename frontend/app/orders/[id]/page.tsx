@@ -133,6 +133,20 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                             {locale === 'en' ? 'This order was cancelled or payment was not completed.' : 'Esta orden fue cancelada o el pago no fue completado.'}
                         </p>
                     </div>
+                ) : order.payment_status === 'pending_zelle_verification' ? (
+                    <div className="text-center mb-16">
+                        <div className="w-24 h-24 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-100/50">
+                            <Clock size={56} />
+                        </div>
+                        <h1 className="text-4xl font-bold font-serif text-foreground mb-4">
+                            {locale === 'en' ? 'Verifying Zelle Payment' : 'Verificando Transferencia Zelle'}
+                        </h1>
+                        <p className="text-lg text-muted-foreground font-medium">
+                            {locale === 'en' 
+                                ? `Reference: ${order.zelle_reference || 'Recorded'}. Our admin team is verifying your transfer to authorize production.`
+                                : `Referencia: ${order.zelle_reference || 'Registrada'}. El equipo de administración está conciliando tu pago para autorizar la producción.`}
+                        </p>
+                    </div>
                 ) : order.payment_status !== 'paid' && order.payment_terms !== 'credit_net_15' ? (
                     <div className="text-center mb-16">
                         <div className="w-24 h-24 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-100/50">
@@ -217,7 +231,22 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                     {order.payment_status === 'paid' && (
                                         <div data-testid="order-paid-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shadow-sm">
                                             <span className="text-sm">✅</span>
-                                            <span>{locale === 'en' ? 'Paid via Card (Stripe)' : 'Pagado con Tarjeta (Stripe)'}</span>
+                                            <span>
+                                                {order.payment_method === 'zelle'
+                                                    ? (locale === 'en' ? `Paid via Zelle (Ref: ${order.zelle_reference || 'Confirmed'})` : `Pagado con Zelle (Ref: ${order.zelle_reference || 'Confirmado'})`)
+                                                    : (locale === 'en' ? 'Paid via Card (Stripe)' : 'Pagado con Tarjeta (Stripe)')}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {order.payment_status === 'pending_zelle_verification' && (
+                                        <div data-testid="order-zelle-pending-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-50 text-purple-900 border border-purple-200 text-xs font-bold shadow-sm">
+                                            <span className="text-sm">🟣</span>
+                                            <span>
+                                                {locale === 'en'
+                                                    ? `Zelle Pending Verification • Ref: ${order.zelle_reference || 'Registered'}`
+                                                    : `Zelle en Verificación • Ref: ${order.zelle_reference || 'Registrada'}`}
+                                            </span>
                                         </div>
                                     )}
 
@@ -235,7 +264,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                         </div>
                                     )}
 
-                                    {order.payment_status !== 'paid' && order.payment_status !== 'refunded' && (
+                                    {order.payment_status !== 'paid' && order.payment_status !== 'refunded' && order.payment_status !== 'pending_zelle_verification' && (
                                         <div className="space-y-3 pt-1">
                                             {order.payment_terms === 'credit_net_15' ? (
                                                 <div data-testid="order-credit-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">

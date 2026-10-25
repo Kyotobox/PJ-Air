@@ -23,6 +23,10 @@ interface OrderDetail {
     total: number;
     status: string;
     payment_status: string;
+    payment_method?: string;
+    zelle_reference?: string;
+    packaging_fee?: number;
+    packaging_discount?: number;
     created_at: string;
     delivery_date?: string;
     payment_due_date?: string;
@@ -131,6 +135,30 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         }
     };
 
+    const handleApproveZelle = async () => {
+        if (!order) return;
+        try {
+            const updated = await api.patch(`/orders/${order.id}/approve-zelle`, {}) as any;
+            setOrder(prev => prev ? { ...prev, ...updated, payment_status: 'paid' } : null);
+            showToast('✅ Pago Zelle aprobado y habilitado para producción');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al aprobar pago Zelle', 'error');
+        }
+    };
+
+    const handleRejectZelle = async () => {
+        if (!order) return;
+        const reason = window.prompt('Indica el motivo del rechazo de la referencia Zelle:', 'Referencia no encontrada o monto no recibido');
+        if (reason === null) return;
+        try {
+            const updated = await api.patch(`/orders/${order.id}/reject-zelle`, { reason }) as any;
+            setOrder(prev => prev ? { ...prev, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : null);
+            showToast('⚠️ Referencia Zelle rechazada y pedido cancelado');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al rechazar pago Zelle', 'error');
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex bg-[#fcfbf9] min-h-screen">
@@ -212,7 +240,15 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                             <div className="flex items-center gap-3">
                                 {order.payment_status === 'paid' && (
                                     <span data-testid="financial-badge-paid" className="px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-emerald-200">
-                                        <CheckCircle2 size={14} className="text-emerald-600" /> Pagado con Tarjeta (Stripe)
+                                        <CheckCircle2 size={14} className="text-emerald-600" />
+                                        {order.payment_method === 'zelle'
+                                            ? `Pagado vía Zelle (Ref: ${order.zelle_reference || 'Aprobado'})`
+                                            : 'Pagado con Tarjeta (Stripe)'}
+                                    </span>
+                                )}
+                                {order.payment_status === 'pending_zelle_verification' && (
+                                    <span data-testid="financial-badge-zelle-pending" className="px-4 py-1.5 rounded-full bg-purple-100 text-purple-900 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-purple-300 animate-pulse">
+                                        🟣 Zelle en Verificación (Ref: {order.zelle_reference || 'Registrada'})
                                     </span>
                                 )}
                                 {order.payment_status === 'partially_refunded' && (
@@ -258,6 +294,53 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                         </div>
                     )}
                 </section>
+
+                {/* Zelle Audit & Reconciliation Card */}
+                {order.payment_method === 'zelle' && (
+                    <section className="bg-purple-50/70 rounded-[2rem] p-6 lg:p-8 border-2 border-purple-200 shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-purple-600/30">
+                                    Z
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-purple-950 uppercase tracking-wider">
+                                        Auditoría y Conciliación de Transferencia Zelle B2B
+                                    </h3>
+                                    <p className="text-xs text-purple-700 font-medium">
+                                        Referencia Bancaria: <span className="font-mono font-black text-purple-950 px-2.5 py-1 bg-white rounded-lg border border-purple-300">{order.zelle_reference || 'Sin Referencia'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <span className={`text-[10px] font-black px-4 py-1.5 rounded-full border shadow-sm ${
+                                order.payment_status === 'paid'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : order.payment_status === 'pending_zelle_verification'
+                                    ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+                                    : 'bg-rose-100 text-rose-800 border-rose-300'
+                            }`}>
+                                {order.payment_status === 'paid' ? '✓ Pago Aprobado' : order.payment_status === 'pending_zelle_verification' ? '⚠️ Verificación Pendiente' : 'No Pagado / Cancelado'}
+                            </span>
+                        </div>
+
+                        {order.payment_status === 'pending_zelle_verification' && (
+                            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                <button
+                                    onClick={handleApproveZelle}
+                                    className="w-full sm:flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <CheckCircle2 size={18} /> Aprobar Pago Zelle
+                                </button>
+                                <button
+                                    onClick={handleRejectZelle}
+                                    className="w-full sm:flex-1 py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <AlertCircle size={18} /> Rechazar Referencia
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                )}
 
                 {/* Details Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

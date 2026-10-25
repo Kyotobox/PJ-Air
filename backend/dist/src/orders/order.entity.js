@@ -20,6 +20,10 @@ let Order = class Order {
     total;
     status;
     payment_status;
+    payment_method;
+    zelle_reference;
+    packaging_fee;
+    packaging_discount;
     delivery_fee_charged;
     stripe_payment_id;
     refunded_amount;
@@ -58,6 +62,22 @@ __decorate([
     (0, typeorm_1.Column)({ default: 'pending' }),
     __metadata("design:type", String)
 ], Order.prototype, "payment_status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 'stripe' }),
+    __metadata("design:type", String)
+], Order.prototype, "payment_method", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Order.prototype, "zelle_reference", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "packaging_fee", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "packaging_discount", void 0);
 __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)

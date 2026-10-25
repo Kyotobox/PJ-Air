@@ -58,9 +58,10 @@ export default function ProduccionPage() {
         try {
             setLoading(true);
             const data = await api.get('/orders');
-            // Show orders relevant to production monitoring
+            // Show orders relevant to production monitoring (exclude orders pending Zelle verification)
             const filtered = Array.isArray(data) ? data.filter(o => 
-                ['pending', 'Pedido', 'En Producción', 'Finalizado', 'En camino', 'En Entrega'].includes(o.status)
+                ['pending', 'Pedido', 'En Producción', 'Finalizado', 'En camino', 'En Entrega'].includes(o.status) &&
+                o.payment_status !== 'pending_zelle_verification'
             ) : [];
             setOrders(filtered);
         } catch (err) {

@@ -20,12 +20,21 @@ describe('OrdersService', () => {
   let mockMailService: any;
 
   beforeEach(async () => {
+    const mockQueryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
+
     orderRepository = {
       create: jest.fn(),
       save: jest.fn(),
       findOne: jest.fn(),
       find: jest.fn(),
-      createQueryBuilder: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
     };
 
     orderItemRepository = {
@@ -104,7 +113,7 @@ describe('OrdersService', () => {
       { id: 2, price: 100 }, // General discount 10% -> 90 * 1 = 90
     ]);
 
-    const expectedTotal = 180; // 90 + 90
+    const expectedTotal = 186.30; // 90 + 90 = 180 + 3.5% packaging fee (6.30)
     const createdOrder = { id: 'order-123', total: expectedTotal };
     
     mockManager.create.mockImplementation((entity, data) => ({ ...createdOrder, ...data }));
@@ -153,7 +162,7 @@ describe('OrdersService', () => {
       { id: 1, price: 50 },
     ]);
 
-    const expectedTotal = 115; // 50 * 2 + 15
+    const expectedTotal = 118.50; // 50 * 2 + 15 + 3.5% packaging fee (3.50)
     const createdOrder = { id: 'order-123', total: expectedTotal, delivery_fee_charged: 15 };
     mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
     mockManager.save.mockResolvedValue(createdOrder);
@@ -184,7 +193,7 @@ describe('OrdersService', () => {
       { id: 1, price: 50 },
     ]);
 
-    const expectedTotal = 100; // 50 * 2 + 0
+    const expectedTotal = 103.50; // 50 * 2 + 0 + 3.5% packaging fee (3.50)
     const createdOrder = { id: 'order-123', total: expectedTotal, delivery_fee_charged: 0 };
     mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
     mockManager.save.mockResolvedValue(createdOrder);
@@ -375,6 +384,150 @@ describe('OrdersService', () => {
     
     const result = await service.updateStatus('order-123', 'pending', 'admin');
     expect(result.status).toBe('pending');
+  });
+
+  describe('Sprint 39: Zelle B2B & Packaging/Cutoff Guards', () => {
+    it('should create order with Zelle, packaging fee and 100% direct payment discount bonus', async () => {
+      const orderData = {
+        items: [{ productId: 1, quantity: 2 }], // 50 * 2 = 100
+        delivery_type: 'pickup',
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-CONF-12345',
+      };
+
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-zelle-1',
+        delivery_fee: 0,
+        productDiscounts: [],
+      });
+
+      productRepository.find.mockResolvedValue([
+        { id: 1, price: 50 },
+      ]);
+
+      const expectedTotal = 100.00; // 100 + 3.50 packaging_fee - 3.50 packaging_discount = 100
+      const createdOrder = {
+        id: 'order-zelle-1',
+        total: expectedTotal,
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-CONF-12345',
+        payment_status: 'pending_zelle_verification',
+      };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      const result = await service.create('user-zelle-1', orderData);
+      expect(result.total).toBe(100.00);
+      expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-CONF-12345',
+        packaging_fee: 3.5,
+        packaging_discount: 3.5,
+        payment_status: 'pending_zelle_verification',
+        total: 100.00,
+      }));
+    });
+
+    it('should throw BadRequestException if payment_method is zelle and zelle_reference is missing or empty', async () => {
+      const orderData = {
+        items: [{ productId: 1, quantity: 2 }],
+        payment_method: 'zelle',
+        zelle_reference: '   ',
+      };
+
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-2', productDiscounts: [] });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
+
+      await expect(service.create('user-zelle-2', orderData)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if zelle_reference is already used in an active order', async () => {
+      const orderData = {
+        items: [{ productId: 1, quantity: 2 }],
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-DUP-999',
+      };
+
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-3', productDiscounts: [] });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
+
+      // Mock duplicate found in query builder
+      const dupQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue({ id: 'existing-order', zelle_reference: 'ZEL-DUP-999', status: 'pending' }),
+      };
+      orderRepository.createQueryBuilder = jest.fn().mockReturnValue(dupQueryBuilder);
+
+      await expect(service.create('user-zelle-3', orderData)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should approve Zelle payment, mark order as paid, and send order receipt', async () => {
+      const existingOrder = {
+        id: 'order-zelle-appr',
+        user_id: 'user-zelle-appr',
+        payment_status: 'pending_zelle_verification',
+        status: 'pending',
+      };
+      service.findOne = jest.fn().mockResolvedValue(existingOrder);
+      orderRepository.save = jest.fn().mockImplementation(o => Promise.resolve(o));
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-appr', email: 'zelle-client@test.com' });
+
+      const updated = await service.approveZellePayment('order-zelle-appr');
+      expect(updated.payment_status).toBe('paid');
+      expect(orderRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        payment_status: 'paid',
+      }));
+      expect(mockMailService.sendOrderReceipt).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_status: 'paid' }),
+        'zelle-client@test.com',
+      );
+    });
+
+    it('should reject Zelle payment, mark payment_status unpaid and order status Cancelado', async () => {
+      const existingOrder = {
+        id: 'order-zelle-rej',
+        user_id: 'user-zelle-rej',
+        payment_status: 'pending_zelle_verification',
+        status: 'pending',
+        notes: '',
+      };
+      service.findOne = jest.fn().mockResolvedValue(existingOrder);
+      orderRepository.save = jest.fn().mockImplementation(o => Promise.resolve(o));
+
+      const updated = await service.rejectZellePayment('order-zelle-rej', 'Referencia inválida o no recibida');
+      expect(updated.payment_status).toBe('unpaid');
+      expect(updated.status).toBe('Cancelado');
+      expect(updated.notes).toContain('Referencia inválida');
+    });
+
+    it('should reject order if delivery_date violates cutoff hour (>12 PM ET for next day)', () => {
+      // Create a reference date at 1:30 PM (13:30) in New York
+      const afternoonInNY = new Date('2026-10-25T17:30:00Z'); // 17:30 UTC is 13:30 EDT (America/New_York)
+      // Tomorrow is 2026-10-26
+      expect(() => {
+        service.validateCutoffTime('2026-10-26', afternoonInNY, 12);
+      }).toThrow(BadRequestException);
+    });
+
+    it('should allow next day delivery if placed before 12 PM ET', () => {
+      // 10:00 AM in NY (14:00 UTC)
+      const morningInNY = new Date('2026-10-25T14:00:00Z');
+      expect(() => {
+        service.validateCutoffTime('2026-10-26', morningInNY, 12);
+      }).not.toThrow();
+    });
+
+    it('should reject past delivery dates or same-day delivery', () => {
+      const morningInNY = new Date('2026-10-25T14:00:00Z');
+      expect(() => {
+        service.validateCutoffTime('2026-10-24', morningInNY, 12);
+      }).toThrow(BadRequestException);
+      expect(() => {
+        service.validateCutoffTime('2026-10-25', morningInNY, 12);
+      }).toThrow(BadRequestException);
+    });
   });
 });
 

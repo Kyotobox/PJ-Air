@@ -117,6 +117,20 @@ export class OrdersController {
     return this.ordersService.update(id, { payment_status: paymentStatus }, 'admin');
   }
 
+  @Patch(':id/approve-zelle')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async approveZelle(@Param('id') id: string) {
+    return this.ordersService.approveZellePayment(id);
+  }
+
+  @Patch(':id/reject-zelle')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async rejectZelle(@Param('id') id: string, @Body('reason') reason?: string) {
+    return this.ordersService.rejectZellePayment(id, reason);
+  }
+
   @Patch(':id/assign')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'produccion')

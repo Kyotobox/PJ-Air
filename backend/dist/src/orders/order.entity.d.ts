@@ -7,6 +7,10 @@ export declare class Order {
     total: number;
     status: string;
     payment_status: string;
+    payment_method: string;
+    zelle_reference: string;
+    packaging_fee: number;
+    packaging_discount: number;
     delivery_fee_charged: number;
     stripe_payment_id: string;
     refunded_amount: number;

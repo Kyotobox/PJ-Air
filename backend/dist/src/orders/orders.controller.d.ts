@@ -13,6 +13,8 @@ export declare class OrdersController {
     findOne(id: string, req: any): Promise<import("./order.entity").Order>;
     updateStatus(id: string, status: string, req: any): Promise<import("./order.entity").Order>;
     updatePaymentStatus(id: string, paymentStatus: string): Promise<import("./order.entity").Order>;
+    approveZelle(id: string): Promise<import("./order.entity").Order>;
+    rejectZelle(id: string, reason?: string): Promise<import("./order.entity").Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<import("./order.entity").Order>;
     update(id: string, body: any, req: any): Promise<import("./order.entity").Order>;
 }

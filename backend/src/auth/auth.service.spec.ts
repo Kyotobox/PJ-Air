@@ -49,7 +49,7 @@ describe('AuthService', () => {
   describe('signup', () => {
     it('should throw ConflictException if email already registered', async () => {
       mockUsersService.findByEmail.mockResolvedValue({ id: '1' });
-      await expect(service.signup({ email: 'test@example.com' })).rejects.toThrow(ConflictException);
+      await expect(service.signup({ email: 'test@example.com', company_name: 'Test Bakery' })).rejects.toThrow(ConflictException);
     });
 
     it('should create user and profile and return session', async () => {
@@ -57,7 +57,7 @@ describe('AuthService', () => {
       mockUsersService.create.mockResolvedValue({ id: '1', email: 'test@example.com' });
       mockUsersService.createProfile.mockResolvedValue({});
 
-      const result = await service.signup({ email: 'test@example.com', password: 'password', full_name: 'Test' });
+      const result = await service.signup({ email: 'test@example.com', password: 'password', full_name: 'Test', company_name: 'Test Bakery' });
       expect(mockUsersService.create).toHaveBeenCalled();
       expect(mockUsersService.createProfile).toHaveBeenCalled();
       expect(result).toHaveProperty('session');

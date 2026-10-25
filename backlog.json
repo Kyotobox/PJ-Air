@@ -87,31 +87,36 @@
           "id": "TASK-39-01",
           "label": "DOMAIN/ZELLE-CORE",
           "desc": "Extensión de Order con payment_method ('stripe'|'zelle'|'credit'), zelle_reference, packaging_fee y packaging_discount. Endpoints de registro y conciliación de Zelle.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-39-02",
           "label": "UI/CHECKOUT-ZELLE-FEES",
           "desc": "Selector de Zelle en /checkout con datos bancarios, input de referencia y desglose dinámico: cargo de empaque (3.5%) vs bonificación automática por Zelle (-3.5%).",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-39-03",
           "label": "ADMIN/ZELLE-AUDIT-APPROVAL",
           "desc": "Panel en /admin/orders para auditar y conciliar transferencias Zelle: contrastar referencia y botón de aprobación manual para habilitar orden en torre de producción.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-39-04",
           "label": "UI/CUTOFF-CALENDAR-GUARD",
           "desc": "Inhabilitar dinámicamente en el calendario de checkout la fecha de entrega del día siguiente cuando la hora en America/New_York supere las 12:00 PM.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-39-05",
           "label": "E2E/SAD-PATHS-REGRESSION",
           "desc": "Suite de pruebas unitarias y e2e cubriendo sad paths (referencias duplicadas, evasión de corte, cancelaciones) y certificación con logix audit.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         }
       ]
     },

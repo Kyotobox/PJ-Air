@@ -219,13 +219,15 @@ function ReportsPageContent() {
     };
 
     const reportData = useMemo(() => {
-        if (!orders.length) return { categories: [], columns: [] };
+        // Exclude orders pending Zelle verification and cancelled orders from production mass
+        const activeOrders = orders.filter(o => o.payment_status !== 'pending_zelle_verification' && o.status !== 'Cancelado' && o.status !== 'cancelled');
+        if (!activeOrders.length) return { categories: [], columns: [] };
 
         const isSpecific = viewMode === 'specific-client';
         const columnMap: Record<string, any> = {};
         const columnOrder: string[] = [];
 
-        orders.forEach(order => {
+        activeOrders.forEach(order => {
             let key = '';
             let label = '';
             let subLabel = '';
@@ -266,7 +268,7 @@ function ReportsPageContent() {
         const columns = columnOrder.map(k => columnMap[k]);
         const catMap: Record<string, CategoryBlock> = {};
 
-        orders.forEach(order => {
+        activeOrders.forEach(order => {
             const datePart = getProductionDate(order.delivery_date || order.created_at || '');
             let colKey = '';
             if (isSpecific) {
@@ -602,7 +604,7 @@ function ReportsPageContent() {
 
                     {/* Interactive Production Batch Manager */}
                     <InteractiveBatchManager
-                        orders={orders}
+                        orders={orders.filter(o => o.payment_status !== 'pending_zelle_verification')}
                         onOrderUpdated={(updatedOrder, newDate) => {
                             setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder, delivery_date: newDate } : o));
                         }}

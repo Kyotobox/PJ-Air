@@ -25,6 +25,10 @@ interface Order {
     total: number;
     status: string;
     payment_status?: string;
+    payment_method?: string;
+    zelle_reference?: string;
+    packaging_fee?: number;
+    packaging_discount?: number;
     refunded_amount?: number;
     refund_reason?: string;
     stripe_payment_id?: string;
@@ -146,6 +150,40 @@ export default function AdminOrdersPage() {
             showToast(err.message || 'Error al emitir el reembolso', 'error');
         } finally {
             setIsProcessingRefund(false);
+        }
+    };
+
+    const handleApproveZelle = async (orderId: string) => {
+        setSaving(true);
+        try {
+            const updated = await api.patch(`/orders/${orderId}/approve-zelle`, {}) as any;
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated, payment_status: 'paid' } : o));
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder(prev => prev ? { ...prev, ...updated, payment_status: 'paid' } : null);
+            }
+            showToast('✅ Pago Zelle aprobado y habilitado para producción');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al aprobar pago Zelle', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRejectZelle = async (orderId: string) => {
+        const reason = window.prompt('Indica el motivo del rechazo de la referencia Zelle:', 'Referencia no encontrada o monto no recibido');
+        if (reason === null) return;
+        setSaving(true);
+        try {
+            const updated = await api.patch(`/orders/${orderId}/reject-zelle`, { reason }) as any;
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : o));
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder(prev => prev ? { ...prev, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : null);
+            }
+            showToast('⚠️ Referencia Zelle rechazada y pedido cancelado');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al rechazar pago Zelle', 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -505,7 +543,23 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                 <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase border shadow-sm transition-all inline-block ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}>
                                                     {order.status}
                                                 </span>
-                                                {order.payment_status === 'paid' && (
+                                                {order.payment_method === 'zelle' && (
+                                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black border flex items-center gap-1 ${
+                                                        order.payment_status === 'paid'
+                                                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                                            : order.payment_status === 'pending_zelle_verification'
+                                                            ? 'bg-amber-50 text-amber-900 border-amber-300 animate-pulse'
+                                                            : 'bg-slate-50 text-slate-600 border-slate-200'
+                                                    }`}>
+                                                        🟣 Zelle (Ref: {order.zelle_reference || 'N/A'})
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'pending_zelle_verification' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[9px] font-black border border-amber-300">
+                                                        ⚠️ Verificación Pend.
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200">
                                                         ✓ Pagado
                                                     </span>
@@ -652,6 +706,55 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     ))}
                                 </div>
                             </section>
+
+                            {/* Zelle Audit & Approval Card */}
+                            {selectedOrder.payment_method === 'zelle' && (
+                                <section className="bg-purple-50/70 rounded-[2rem] p-6 border-2 border-purple-200 shadow-sm space-y-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-purple-600/30">
+                                                Z
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-purple-950 uppercase tracking-wider">
+                                                    Auditoría de Transferencia Zelle B2B
+                                                </h3>
+                                                <p className="text-xs text-purple-700 font-medium">
+                                                    Referencia bancaria: <span className="font-mono font-black text-purple-950 px-2 py-0.5 bg-white rounded-lg border border-purple-300">{selectedOrder.zelle_reference || 'Sin Referencia'}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
+                                            selectedOrder.payment_status === 'paid'
+                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                                : selectedOrder.payment_status === 'pending_zelle_verification'
+                                                ? 'bg-amber-100 text-amber-900 border-amber-300 animate-pulse'
+                                                : 'bg-red-100 text-red-800 border-red-300'
+                                        }`}>
+                                            {selectedOrder.payment_status === 'paid' ? '✓ Pago Aprobado' : selectedOrder.payment_status === 'pending_zelle_verification' ? '⚠️ Verificación Pendiente' : 'No Pagado / Cancelado'}
+                                        </span>
+                                    </div>
+
+                                    {selectedOrder.payment_status === 'pending_zelle_verification' && (
+                                        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                            <button
+                                                onClick={() => handleApproveZelle(selectedOrder.id)}
+                                                disabled={saving}
+                                                className="w-full sm:flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                            >
+                                                <CheckCircle2 size={16} /> Aprobar Pago Zelle
+                                            </button>
+                                            <button
+                                                onClick={() => handleRejectZelle(selectedOrder.id)}
+                                                disabled={saving}
+                                                className="w-full sm:flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                            >
+                                                <X size={16} /> Rechazar Referencia
+                                            </button>
+                                        </div>
+                                    )}
+                                </section>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Customer Insight */}

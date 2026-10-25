@@ -64,6 +64,11 @@ let AuthService = class AuthService {
     }
     async signup(body) {
         const { email, password, full_name, username, phone, company_name, role } = body;
+        const userRole = role || 'client';
+        const cleanCompany = (company_name || '').trim();
+        if (userRole === 'client' && !cleanCompany) {
+            throw new common_1.BadRequestException('Company or store name is required for wholesale registration');
+        }
         const existingUser = await this.usersService.findByEmail(email);
         if (existingUser)
             throw new common_1.ConflictException('Email already registered');
@@ -71,7 +76,7 @@ let AuthService = class AuthService {
         const userResult = await this.usersService.create({
             email,
             password: hashedPassword,
-            role: role || 'client',
+            role: userRole,
         });
         const user = Array.isArray(userResult) ? userResult[0] : userResult;
         await this.usersService.createProfile({
@@ -79,7 +84,7 @@ let AuthService = class AuthService {
             full_name,
             username: username || email.split('@')[0],
             phone,
-            company_name,
+            company_name: cleanCompany,
         });
         const payload = { id: user.id, email: user.email, role: user.role };
         const access_token = (0, crypto_util_1.signJwt)(payload);

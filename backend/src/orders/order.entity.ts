@@ -20,6 +20,18 @@ export class Order {
   @Column({ default: 'pending' })
   payment_status: string;
 
+  @Column({ default: 'stripe' })
+  payment_method: string; // 'stripe' | 'zelle' | 'credit'
+
+  @Column({ nullable: true })
+  zelle_reference: string;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  packaging_fee: number;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  packaging_discount: number;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   delivery_fee_charged: number;
 
