@@ -4,45 +4,8 @@
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S40",
-  "current_task": "TASK-40-01",
+  "current_task": "TASK-40-05",
   "sprints": [
-    {
-      "id": "S38",
-      "name": "Sprint 38: Pulido de Registro B2B, Simplificación de Direcciones y Blindaje de Cancelación de Pagos Stripe",
-      "status": "COMPLETED",
-      "start_date": "2026-10-25",
-      "goal": "Implementar feedback audiovisual del cliente: eliminación del campo alias en registro de direcciones, obligatoriedad del nombre de compañía B2B en el registro, y corrección integral del flujo de cancelación del modal de pagos Stripe para preservar el carrito y evitar falsas confirmaciones de orden.",
-      "tasks": [
-        {
-          "id": "TASK-38-01",
-          "label": "UI/ADDRESSES",
-          "desc": "Suprimir campo de entrada alias en la UI de creación de direcciones (/profile/addresses/new y /checkout), asignando internamente Principal o Entrega para preservar la integridad del modelo.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-38-02",
-          "label": "DOMAIN/B2B-AUTH",
-          "desc": "Establecer company_name como obligatorio en el registro de usuarios (RegisterForm y auth.service.signup), eliminando etiqueta Optional y adaptando payloads de pruebas existentes.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-38-03",
-          "label": "CHECKOUT/STRIPE-CANCEL",
-          "desc": "Blindar cancelación de Stripe en checkout (onCancel sin vaciar carrito ni redirigir a orden confirmada) y condicionar vista /orders/[id] para reflejar Pago Pendiente cuando no esté pagado ni tenga crédito.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-38-04",
-          "label": "E2E/REGRESSION-BASELINE",
-          "desc": "Verificación empírica con suite Playwright y tests unitarios de backend, certificación con logix audit y commit atómico.",
-          "status": "DONE",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S39",
       "name": "Sprint 39: Integración de Zelle B2B, Esquema Packaging & Handling con Bonificación y Blindaje de Corte de Producción",
@@ -90,7 +53,7 @@
     {
       "id": "S40",
       "name": "Sprint 40: Motor Dinámico de Zonas de Delivery por ZIP Codes y Mínimos de Compra para Free Delivery",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-10-26",
       "goal": "Implementar la gestión integral de zonas de entrega por bloques de códigos postales con tarifas base y montos mínimos de compra para envío gratis configurables desde el panel administrativo, con resolución automática en checkout y prioridad de tarifas acordadas B2B.",
       "tasks": [
@@ -98,31 +61,31 @@
           "id": "TASK-40-01",
           "label": "DOMAIN/DELIVERY-ZONES-CORE",
           "desc": "Entidad DeliveryZone (name, zip_codes, base_fee, min_free_delivery_amount, is_active), repositorio TypeORM, servicio y endpoints CRUD en backend NestJS.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-40-02",
           "label": "ADMIN/ZONES-MANAGEMENT-UI",
           "desc": "Panel de administración en /admin/zones para crear, editar y activar/desactivar zonas, gestionar bloques de ZIPs, tarifas base y montos mínimos de envío gratis.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-40-03",
           "label": "CHECKOUT/ZIP-AUTOCALC-ENGINE",
           "desc": "Lógica de resolución en checkout: detectar ZIP de la dirección seleccionada, autocalcular tarifa base, evaluar si subtotal >= min_free_delivery_amount (bonificando a $0.00 con badge de éxito) o mostrar aviso de cuánto falta para el envío gratis.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-40-04",
           "label": "LOGISTICS/DELIVERY-OVERRIDE-PRECEDENCE",
           "desc": "Matriz de precedencia: Pickup ($0) > Tarifa Especial fijada por Admin a Cliente VIP (user.delivery_fee) > Zona ZIP calculada > Tarifa General de contingencia (fallback si el ZIP no está mapeado).",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-40-05",
           "label": "E2E/ZONES-REGRESSION-BASELINE",
           "desc": "Pruebas de integración E2E (autocálculo de tarifa por ZIP, activación de free delivery al cruzar umbral de compra, y fallback de ZIP no registrado), certificación logix audit.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     },
@@ -166,7 +129,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 37,
+  "archived_sprints_count": 38,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S40",

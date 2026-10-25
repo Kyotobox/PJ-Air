@@ -68,7 +68,7 @@ describe('AddressesService', () => {
       
       expect(mockAddressRepository.create).toHaveBeenCalledWith({ ...mockAddressData, user_id: userId });
       expect(mockAddressRepository.save).toHaveBeenCalled();
-      expect(result.user_id).toBe(userId);
+      expect((result as any).user_id).toBe(userId);
     });
 
     it('should fetch all addresses correctly linked to user entities', async () => {

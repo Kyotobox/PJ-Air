@@ -20,6 +20,8 @@ const order_entity_1 = require("./order.entity");
 const order_item_entity_1 = require("./order-item.entity");
 const user_entity_1 = require("../users/user.entity");
 const product_entity_1 = require("../products/product.entity");
+const address_entity_1 = require("../addresses/address.entity");
+const zones_service_1 = require("../zones/zones.service");
 const mail_service_1 = require("../mail/mail.service");
 let OrdersService = class OrdersService {
     orderRepository;
@@ -27,13 +29,17 @@ let OrdersService = class OrdersService {
     userRepository;
     productRepository;
     dataSource;
+    addressRepository;
+    zonesService;
     mailService;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, mailService) {
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.dataSource = dataSource;
+        this.addressRepository = addressRepository;
+        this.zonesService = zonesService;
         this.mailService = mailService;
     }
     validateCutoffTime(deliveryDateStr, referenceDate, cutoffHour = 12) {
@@ -265,7 +271,53 @@ let OrdersService = class OrdersService {
         else if (appliedPaymentMethod === 'credit') {
             packagingDiscount = packagingFee;
         }
-        const deliveryFee = appliedDeliveryType === 'pickup' ? 0 : Number(user?.delivery_fee || 0);
+        let deliveryFee = 0;
+        if (appliedDeliveryType === 'pickup') {
+            deliveryFee = 0;
+        }
+        else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
+            deliveryFee = Number(user.delivery_fee);
+        }
+        else if (this.zonesService) {
+            let zip = orderData.zip_code || orderData.zip || rest.zip_code || rest.zip || null;
+            if (!zip && appliedAddressId && this.addressRepository) {
+                try {
+                    const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
+                    const match = addr?.address?.match(/\b\d{5}\b/);
+                    if (match)
+                        zip = match[0];
+                }
+                catch (_) { }
+            }
+            if (!zip && appliedDeliveryAddressText) {
+                const match = appliedDeliveryAddressText.match(/\b\d{5}\b/);
+                if (match)
+                    zip = match[0];
+            }
+            if (zip) {
+                const zone = await this.zonesService.resolveZip(zip);
+                if (zone) {
+                    if (zone.min_free_delivery_amount !== null &&
+                        zone.min_free_delivery_amount !== undefined &&
+                        Number(zone.min_free_delivery_amount) > 0 &&
+                        itemsTotal >= Number(zone.min_free_delivery_amount)) {
+                        deliveryFee = 0;
+                    }
+                    else {
+                        deliveryFee = Number(zone.base_fee);
+                    }
+                }
+                else {
+                    deliveryFee = 15.00;
+                }
+            }
+            else {
+                deliveryFee = 15.00;
+            }
+        }
+        else {
+            deliveryFee = Number(user?.delivery_fee || 0);
+        }
         const finalTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
         let shouldSendCreditAlert = false;
         let isOverdraftAlert = false;
@@ -438,11 +490,16 @@ exports.OrdersService = OrdersService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __param(3, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
     __param(5, (0, common_1.Optional)()),
+    __param(5, (0, typeorm_1.InjectRepository)(address_entity_1.Address)),
+    __param(6, (0, common_1.Optional)()),
+    __param(7, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.DataSource,
+        typeorm_2.Repository,
+        zones_service_1.ZonesService,
         mail_service_1.MailService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

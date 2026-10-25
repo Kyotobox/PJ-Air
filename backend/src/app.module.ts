@@ -14,6 +14,7 @@ import { SystemConfigsModule } from './system-configs/system-configs.module';
 import { AdminActionsModule } from './admin-actions/admin-actions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { MailModule } from './mail/mail.module';
+import { ZonesModule } from './zones/zones.module';
 
 // Entities
 import { Product } from './products/product.entity';
@@ -26,13 +27,14 @@ import { OrderItem } from './orders/order-item.entity';
 import { ScheduledOrder } from './orders/scheduled-order.entity';
 import { ProductDiscount } from './users/product-discount.entity';
 import { SystemConfig } from './system-configs/system-config.entity';
+import { DeliveryZone } from './zones/delivery-zone.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: DATABASE_PATH,
-      entities: [Product, Category, User, Profile, Address, Order, OrderItem, ScheduledOrder, ProductDiscount, SystemConfig],
+      entities: [Product, Category, User, Profile, Address, Order, OrderItem, ScheduledOrder, ProductDiscount, SystemConfig, DeliveryZone],
       synchronize: NODE_ENV !== 'production',
       logging: false,
     }),
@@ -46,6 +48,7 @@ import { SystemConfig } from './system-configs/system-config.entity';
     AdminActionsModule,
     PaymentsModule,
     MailModule,
+    ZonesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -113,6 +116,19 @@ export class AppModule implements OnModuleInit {
       if (!schedColNames.includes('total')) {
         await qr.query(`ALTER TABLE scheduled_orders ADD COLUMN total DECIMAL(10,2) DEFAULT 0;`);
       }
+
+      await qr.query(`
+        CREATE TABLE IF NOT EXISTS delivery_zones (
+          id VARCHAR PRIMARY KEY NOT NULL,
+          name VARCHAR NOT NULL,
+          zip_codes TEXT NOT NULL,
+          base_fee DECIMAL(10,2) DEFAULT 0,
+          min_free_delivery_amount DECIMAL(10,2) DEFAULT NULL,
+          is_active BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT (datetime('now')),
+          updated_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
       await qr.release();
       this.logger.log('Schema verification completed successfully.');
     } catch (e: any) {

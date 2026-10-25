@@ -116,7 +116,7 @@ describe('OrdersService', () => {
     const expectedTotal = 186.30; // 90 + 90 = 180 + 3.5% packaging fee (6.30)
     const createdOrder = { id: 'order-123', total: expectedTotal };
     
-    mockManager.create.mockImplementation((entity, data) => ({ ...createdOrder, ...data }));
+    mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
     mockManager.save.mockResolvedValue(createdOrder);
     service.findOne = jest.fn().mockResolvedValue(createdOrder);
 

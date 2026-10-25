@@ -60,6 +60,15 @@ export const api = {
     return handleResponse(response);
   },
 
+  async put(path: string, body: any = {}) {
+    const response = await fetch(`${API_URL}${path}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(body),
+    });
+    return handleResponse(response);
+  },
+
   async patch(path: string, body: any = {}) {
     const response = await fetch(`${API_URL}${path}`, {
       method: 'PATCH',

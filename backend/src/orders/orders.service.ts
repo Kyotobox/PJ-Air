@@ -5,6 +5,8 @@ import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
+import { Address } from '../addresses/address.entity';
+import { ZonesService } from '../zones/zones.service';
 import { MailService } from '../mail/mail.service';
 
 @Injectable()
@@ -19,6 +21,11 @@ export class OrdersService {
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     private dataSource: DataSource,
+    @Optional()
+    @InjectRepository(Address)
+    private addressRepository?: Repository<Address>,
+    @Optional()
+    private zonesService?: ZonesService,
     @Optional()
     private mailService?: MailService,
   ) {}
@@ -302,7 +309,52 @@ export class OrdersService {
       packagingDiscount = packagingFee; // Credit orders do not pay gateway surcharge
     }
 
-    const deliveryFee = appliedDeliveryType === 'pickup' ? 0 : Number(user?.delivery_fee || 0);
+    // Precedence Matrix for Delivery Fee:
+    // 1. Pickup: always $0.00.
+    // 2. VIP special fee set on user profile (user.delivery_fee > 0): takes precedence.
+    // 3. Zone resolution based on delivery ZIP and min_free_delivery_amount threshold.
+    // 4. Contingency fallback fee ($15.00) if unmapped.
+    let deliveryFee = 0;
+    if (appliedDeliveryType === 'pickup') {
+      deliveryFee = 0;
+    } else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
+      deliveryFee = Number(user.delivery_fee);
+    } else if (this.zonesService) {
+      let zip: string | null = (orderData as any).zip_code || (orderData as any).zip || (rest as any).zip_code || (rest as any).zip || null;
+      if (!zip && appliedAddressId && this.addressRepository) {
+        try {
+          const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
+          const match = addr?.address?.match(/\b\d{5}\b/);
+          if (match) zip = match[0];
+        } catch (_) {}
+      }
+      if (!zip && appliedDeliveryAddressText) {
+        const match = appliedDeliveryAddressText.match(/\b\d{5}\b/);
+        if (match) zip = match[0];
+      }
+
+      if (zip) {
+        const zone = await this.zonesService.resolveZip(zip);
+        if (zone) {
+          if (
+            zone.min_free_delivery_amount !== null &&
+            zone.min_free_delivery_amount !== undefined &&
+            Number(zone.min_free_delivery_amount) > 0 &&
+            itemsTotal >= Number(zone.min_free_delivery_amount)
+          ) {
+            deliveryFee = 0;
+          } else {
+            deliveryFee = Number(zone.base_fee);
+          }
+        } else {
+          deliveryFee = 15.00; // Contingency fallback for unmapped ZIP
+        }
+      } else {
+        deliveryFee = 15.00; // Contingency fallback when delivery requested without ZIP
+      }
+    } else {
+      deliveryFee = Number(user?.delivery_fee || 0);
+    }
     const finalTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
 
     let shouldSendCreditAlert = false;

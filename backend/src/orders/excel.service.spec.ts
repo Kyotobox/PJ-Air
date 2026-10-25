@@ -47,7 +47,7 @@ describe('ExcelService', () => {
       expect(buffer).toBeDefined();
 
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      await workbook.xlsx.load(buffer as any);
 
       // Sheet name should be based on nickname
       const sheet = workbook.getWorksheet('JD-Store');

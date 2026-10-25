@@ -27,6 +27,7 @@ const system_configs_module_1 = require("./system-configs/system-configs.module"
 const admin_actions_module_1 = require("./admin-actions/admin-actions.module");
 const payments_module_1 = require("./payments/payments.module");
 const mail_module_1 = require("./mail/mail.module");
+const zones_module_1 = require("./zones/zones.module");
 const product_entity_1 = require("./products/product.entity");
 const category_entity_1 = require("./products/category.entity");
 const user_entity_1 = require("./users/user.entity");
@@ -37,6 +38,7 @@ const order_item_entity_1 = require("./orders/order-item.entity");
 const scheduled_order_entity_1 = require("./orders/scheduled-order.entity");
 const product_discount_entity_1 = require("./users/product-discount.entity");
 const system_config_entity_1 = require("./system-configs/system-config.entity");
+const delivery_zone_entity_1 = require("./zones/delivery-zone.entity");
 let AppModule = AppModule_1 = class AppModule {
     dataSource;
     logger = new common_1.Logger(AppModule_1.name);
@@ -96,6 +98,18 @@ let AppModule = AppModule_1 = class AppModule {
             if (!schedColNames.includes('total')) {
                 await qr.query(`ALTER TABLE scheduled_orders ADD COLUMN total DECIMAL(10,2) DEFAULT 0;`);
             }
+            await qr.query(`
+        CREATE TABLE IF NOT EXISTS delivery_zones (
+          id VARCHAR PRIMARY KEY NOT NULL,
+          name VARCHAR NOT NULL,
+          zip_codes TEXT NOT NULL,
+          base_fee DECIMAL(10,2) DEFAULT 0,
+          min_free_delivery_amount DECIMAL(10,2) DEFAULT NULL,
+          is_active BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT (datetime('now')),
+          updated_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
             await qr.release();
             this.logger.log('Schema verification completed successfully.');
         }
@@ -111,7 +125,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'sqlite',
                 database: config_1.DATABASE_PATH,
-                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, scheduled_order_entity_1.ScheduledOrder, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig],
+                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, scheduled_order_entity_1.ScheduledOrder, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone],
                 synchronize: config_1.NODE_ENV !== 'production',
                 logging: false,
             }),
@@ -125,6 +139,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             admin_actions_module_1.AdminActionsModule,
             payments_module_1.PaymentsModule,
             mail_module_1.MailModule,
+            zones_module_1.ZonesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

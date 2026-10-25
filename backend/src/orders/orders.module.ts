@@ -10,12 +10,15 @@ import { OrderItem } from './order-item.entity';
 import { ScheduledOrder } from './scheduled-order.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
+import { Address } from '../addresses/address.entity';
 import { MailModule } from '../mail/mail.module';
+import { ZonesModule } from '../zones/zones.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, User, Product, ScheduledOrder]),
+    TypeOrmModule.forFeature([Order, OrderItem, User, Product, ScheduledOrder, Address]),
     MailModule,
+    ZonesModule,
   ],
   providers: [OrdersService, ScheduledOrdersService, ExcelService],
   controllers: [ScheduledOrdersController, OrdersController],
