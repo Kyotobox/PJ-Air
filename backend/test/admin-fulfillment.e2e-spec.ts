@@ -36,6 +36,7 @@ describe('Admin Fulfillment Flow (e2e)', () => {
         email: `fulfillment_client_${Date.now()}@test.com`,
         password: 'Password123!',
         full_name: 'Fulfillment Client',
+        company_name: 'Fulfillment Bakery',
       })
       .expect(201);
     clientJwtToken = clientSignupRes.body.session.access_token;

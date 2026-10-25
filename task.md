@@ -1,8 +1,8 @@
-# SPRINT S37 - Sprint 37: Ecosistema Integral de Correos Transaccionales B2B, Notificaciones Administrativas y Plantillas de Reembolso
-**Objetivo**: Conectar y blindar el ciclo completo de notificaciones por correo: recibos automáticos al cliente por compras de contado y crédito, alertas operativas de nuevos pedidos para producción y ventas, comprobantes de reembolso contable y confirmaciones de suscripciones semanales, con tolerancia a fallos cuando las credenciales SMTP estén en espera.
-**Fecha**: 2026-10-23
+# SPRINT S38 - Sprint 38: Pulido de Registro B2B, Simplificación de Direcciones y Blindaje de Cancelación de Pagos Stripe
+**Objetivo**: Implementar feedback audiovisual del cliente: eliminación del campo alias en registro de direcciones, obligatoriedad del nombre de compañía B2B en el registro, y corrección integral del flujo de cancelación del modal de pagos Stripe para preservar el carrito y evitar falsas confirmaciones de orden.
+**Fecha**: 2026-10-25
 
-- [x] **TASK-37-01** [MAIL/ORDER-RECEIPTS] Conectar sendOrderReceipt en OrdersService.create (crédito) y en PaymentsService.handleWebhook (Stripe), garantizando despacho asíncrono no bloqueante tolerante a fallos de SMTP.
-- [x] **TASK-37-02** [MAIL/ADMIN-ALERTS] Implementar sendAdminNewOrderAlert en MailService y dispararlo ante cada nuevo pedido (directo o del cron) para notificar al equipo de panadería sobre producción y horneados requeridos.
-- [x] **TASK-37-03** [MAIL/REFUND-AND-SUBSCRIPTIONS] Implementar plantillas y métodos sendRefundReceipt (comprobante de devolución en createRefund) y sendStandingOrderConfirmation (resumen de suscripción semanal en ScheduledOrdersService).
-- [x] **TASK-37-04** [E2E/RESILIENCE-BASELINE] Suite de pruebas unitarias y de integración de correos en mail.service.spec.ts, verificación de resiliencia con fallback a Ethereal, logix sync-tasks y auditoría logix audit.
+- [x] **TASK-38-01** [UI/ADDRESSES] Suprimir campo de entrada alias en la UI de creación de direcciones (/profile/addresses/new y /checkout), asignando internamente Principal o Entrega para preservar la integridad del modelo.
+- [x] **TASK-38-02** [DOMAIN/B2B-AUTH] Establecer company_name como obligatorio en el registro de usuarios (RegisterForm y auth.service.signup), eliminando etiqueta Optional y adaptando payloads de pruebas existentes.
+- [x] **TASK-38-03** [CHECKOUT/STRIPE-CANCEL] Blindar cancelación de Stripe en checkout (onCancel sin vaciar carrito ni redirigir a orden confirmada) y condicionar vista /orders/[id] para reflejar Pago Pendiente cuando no esté pagado ni tenga crédito.
+- [x] **TASK-38-04** [E2E/REGRESSION-BASELINE] Verificación empírica con suite Playwright y tests unitarios de backend, certificación con logix audit y commit atómico.

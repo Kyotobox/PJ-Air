@@ -24,7 +24,8 @@ describe('Customer Checkout Flow (e2e)', () => {
     email: `checkout_test_${Date.now()}@example.com`,
     password: 'Password123!',
     full_name: 'Checkout User',
-    username: `checkoutuser_${Date.now()}`
+    username: `checkoutuser_${Date.now()}`,
+    company_name: 'Panadería Central',
   };
 
   const addressPayload = {
@@ -55,6 +56,21 @@ describe('Customer Checkout Flow (e2e)', () => {
     
     expect(res.body.user).toHaveProperty('id');
     expect(res.body.user.email).toBe(testUser.email);
+  });
+
+  it('should fail user registration when company_name is missing for wholesale client', async () => {
+    const invalidUser = {
+      email: `no_company_${Date.now()}@example.com`,
+      password: 'Password123!',
+      full_name: 'No Company User',
+      username: `nocompany_${Date.now()}`,
+    };
+    const res = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send(invalidUser)
+      .expect(400);
+
+    expect(res.body.message).toContain('Company or store name is required');
   });
 
   it('should fail user registration with duplicate email', async () => {
@@ -102,7 +118,7 @@ describe('Customer Checkout Flow (e2e)', () => {
 
   it('should ensure users can only fetch and modify their own addresses (isolation)', async () => {
     // 1. Setup a second user
-    const secondUser = { email: `another_user_${Date.now()}@example.com`, password: 'Password123!', full_name: 'Another User', username: `another_${Date.now()}` };
+    const secondUser = { email: `another_user_${Date.now()}@example.com`, password: 'Password123!', full_name: 'Another User', username: `another_${Date.now()}`, company_name: 'Second Bakery' };
     await request(app.getHttpServer()).post('/auth/signup').send(secondUser);
     const loginRes = await request(app.getHttpServer()).post('/auth/login').send({ email: secondUser.email, password: secondUser.password });
     anotherUserJwtToken = loginRes.body.session.access_token;

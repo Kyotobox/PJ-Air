@@ -90,17 +90,15 @@ export const RegisterForm = ({
                     </div>
                 </div>
 
-                {/* Company name — full width, optional */}
+                {/* Company name — full width, mandatory */}
                 <div className="space-y-3 md:col-span-2">
                     <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
                         {t.register.companyName}
-                        <span className="text-[9px] normal-case font-semibold bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                            {t.register.optional}
-                        </span>
                     </label>
                     <div className="relative">
                         <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
                         <input
+                            required
                             type="text"
                             placeholder={locale === 'en' ? 'e.g. My Bakery Shop' : 'Ej: Panadería El Sol'}
                             className="premium-input pl-12"

@@ -113,7 +113,7 @@ function NewAddressContent() {
 
             await api.post('/addresses', {
                 userId: user.id,
-                alias,
+                alias: alias.trim() || (locale === 'en' ? 'Main Address' : 'Dirección Principal'),
                 address,
                 notes,
                 lat: geocodedPos?.lat || markerPos.lat,
@@ -188,21 +188,6 @@ function NewAddressContent() {
                                 {error}
                             </div>
                         )}
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* Alias — full width */}
-                            <div className="space-y-3 md:col-span-2">
-                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2 tracking-widest">{s.aliasLabel}</label>
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder={s.aliasPlaceholder}
-                                    className="premium-input px-6 py-4 font-bold"
-                                    value={alias}
-                                    onChange={(e) => setAlias(e.target.value)}
-                                />
-                            </div>
-                        </div>
 
                         {/* Full address */}
                         <div className="space-y-3">

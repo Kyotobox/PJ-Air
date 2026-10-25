@@ -120,13 +120,40 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             <Navbar />
 
             <main className="max-w-4xl mx-auto px-4 py-20 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                <div className="text-center mb-16">
-                    <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-100/50">
-                        <CheckCircle2 size={56} />
+                {/* Dynamic Status Header */}
+                {order.status === 'Cancelado' ? (
+                    <div className="text-center mb-16">
+                        <div className="w-24 h-24 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-rose-100/50">
+                            <AlertCircle size={56} />
+                        </div>
+                        <h1 className="text-4xl font-bold font-serif text-foreground mb-4">
+                            {locale === 'en' ? 'Order Cancelled' : 'Orden Cancelada'}
+                        </h1>
+                        <p className="text-lg text-muted-foreground font-medium">
+                            {locale === 'en' ? 'This order was cancelled or payment was not completed.' : 'Esta orden fue cancelada o el pago no fue completado.'}
+                        </p>
                     </div>
-                    <h1 className="text-4xl font-bold font-serif text-foreground mb-4">{t.orders.confirmed}</h1>
-                    <p className="text-lg text-muted-foreground font-medium">{t.orders.thanks}</p>
-                </div>
+                ) : order.payment_status !== 'paid' && order.payment_terms !== 'credit_net_15' ? (
+                    <div className="text-center mb-16">
+                        <div className="w-24 h-24 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-100/50">
+                            <Clock size={56} />
+                        </div>
+                        <h1 className="text-4xl font-bold font-serif text-foreground mb-4">
+                            {locale === 'en' ? 'Payment Pending' : 'Pago Pendiente'}
+                        </h1>
+                        <p className="text-lg text-muted-foreground font-medium">
+                            {locale === 'en' ? 'Please complete your wholesale payment to start bakery production.' : 'Por favor completa tu pago mayorista para iniciar la producción panadera.'}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="text-center mb-16">
+                        <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-100/50">
+                            <CheckCircle2 size={56} />
+                        </div>
+                        <h1 className="text-4xl font-bold font-serif text-foreground mb-4">{t.orders.confirmed}</h1>
+                        <p className="text-lg text-muted-foreground font-medium">{t.orders.thanks}</p>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     {/* Tracking & Info */}
@@ -210,14 +237,25 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
 
                                     {order.payment_status !== 'paid' && order.payment_status !== 'refunded' && (
                                         <div className="space-y-3 pt-1">
-                                            <div data-testid="order-credit-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">
-                                                <span className="text-sm">⏳</span>
-                                                <span>
-                                                    {locale === 'en'
-                                                        ? `B2B Credit Purchase • Due: ${order.payment_due_date || 'Pending'}`
-                                                        : `Compra a Crédito B2B • Fecha Límite: ${order.payment_due_date || 'Pendiente'}`}
-                                                </span>
-                                            </div>
+                                            {order.payment_terms === 'credit_net_15' ? (
+                                                <div data-testid="order-credit-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">
+                                                    <span className="text-sm">⏳</span>
+                                                    <span>
+                                                        {locale === 'en'
+                                                            ? `B2B Credit Purchase • Due: ${order.payment_due_date || 'Pending'}`
+                                                            : `Compra a Crédito B2B • Fecha Límite: ${order.payment_due_date || 'Pendiente'}`}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div data-testid="order-unpaid-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">
+                                                    <span className="text-sm">⚠️</span>
+                                                    <span>
+                                                        {locale === 'en'
+                                                            ? 'Payment Pending • Wholesale Card/ACH'
+                                                            : 'Pago Pendiente • Tarjeta/ACH Mayorista'}
+                                                    </span>
+                                                </div>
+                                            )}
 
                                             {/* Button to Pay Online */}
                                             <button
@@ -229,7 +267,9 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                                 {isInitiatingPayment ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
                                                 {isInitiatingPayment
                                                     ? (locale === 'en' ? 'Preparing Gateway...' : 'Conectando Pasarela...')
-                                                    : (locale === 'en' ? 'Pay Invoice Online' : 'Pagar Factura en Línea')}
+                                                    : (order.payment_terms === 'credit_net_15'
+                                                        ? (locale === 'en' ? 'Pay Invoice Online' : 'Liquidar Factura en Línea')
+                                                        : (locale === 'en' ? 'Complete Payment (Stripe)' : 'Completar Pago (Stripe)'))}
                                             </button>
                                         </div>
                                     )}

@@ -26,6 +26,7 @@ describe('Resource Ownership Security (e2e)', () => {
         email: `own_user1_${Date.now()}@test.com`,
         password: 'Password123!',
         full_name: 'Owner User 1',
+        company_name: 'Bakery One',
       });
     user1Token = res1.body.session.access_token;
     user1Id = res1.body.user.id;
@@ -37,6 +38,7 @@ describe('Resource Ownership Security (e2e)', () => {
         email: `own_user2_${Date.now()}@test.com`,
         password: 'Password123!',
         full_name: 'Owner User 2',
+        company_name: 'Bakery Two',
       });
     user2Token = res2.body.session.access_token;
     user2Id = res2.body.user.id;

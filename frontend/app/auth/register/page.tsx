@@ -12,7 +12,7 @@ import { useLanguage } from '@/context/LanguageContext';
 export default function RegisterPage() {
     const router = useRouter();
     const { updateLocalSession } = useAuth();
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
@@ -31,6 +31,11 @@ export default function RegisterPage() {
 
         if (formData.password !== formData.confirm_password) {
             setError(t.register.passwordMismatch);
+            return;
+        }
+
+        if (!formData.company_name || !formData.company_name.trim()) {
+            setError(locale === 'en' ? 'Company or store name is required' : 'El nombre de la compañía o tienda es obligatorio');
             return;
         }
 

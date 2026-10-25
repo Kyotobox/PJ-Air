@@ -69,7 +69,7 @@ function InlineAddressForm({
 
     useEffect(() => {
         onReady({ 
-            alias, 
+            alias: alias.trim() || (locale === 'en' ? 'Delivery Address' : 'Dirección de Entrega'), 
             address, 
             notes, 
             saveMode,
@@ -78,7 +78,7 @@ function InlineAddressForm({
             refined_lat: isManualAdjustment ? refinedPos?.lat || null : null,
             refined_lng: isManualAdjustment ? refinedPos?.lng || null : null
         });
-    }, [alias, address, notes, saveMode, markerPos, geocodedPos, refinedPos, isManualAdjustment]);
+    }, [alias, address, notes, saveMode, markerPos, geocodedPos, refinedPos, isManualAdjustment, locale]);
 
     const lbl = (es: string, en: string) => locale === 'en' ? en : es;
 
@@ -127,21 +127,6 @@ function InlineAddressForm({
             <h4 className="text-sm font-black uppercase tracking-widest text-foreground/60 flex items-center gap-2">
                 <MapPin size={16} /> {lbl('Nueva dirección de entrega', 'New delivery address')}
             </h4>
-
-            {/* Alias */}
-            <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    {lbl('Nombre / Alias', 'Name / Alias')}
-                </label>
-                <input
-                    type="text"
-                    required
-                    placeholder={lbl('Ej: Oficina, Casa de Ana', "e.g. Office, Ana's house")}
-                    value={alias}
-                    onChange={e => setAlias(e.target.value)}
-                    className="premium-input px-4 py-3"
-                />
-            </div>
 
             {/* Address */}
             <div className="space-y-2">
@@ -456,15 +441,15 @@ export default function CheckoutPage() {
             }
             finalAddressId = selectedAddressId;
         } else if (deliveryType === 'other') {
-            if (!otherAddrData.alias.trim() || !otherAddrData.address.trim()) {
-                showNotification(lbl('Por favor completa el nombre y la dirección.', 'Please fill in name and address.'), 'warning');
+            if (!otherAddrData.address.trim()) {
+                showNotification(lbl('Por favor completa la dirección de entrega.', 'Please fill in delivery address.'), 'warning');
                 return;
             }
             // Create address record (temporary or permanent)
             try {
                 const newAddr = await api.post('/addresses', {
                     userId: user.id,
-                    alias: otherAddrData.alias,
+                    alias: otherAddrData.alias?.trim() || (locale === 'en' ? 'Delivery Address' : 'Dirección de Entrega'),
                     address: otherAddrData.address,
                     notes: otherAddrData.notes,
                     is_temporary: otherAddrData.saveMode === 'temporary',
@@ -1107,10 +1092,19 @@ export default function CheckoutPage() {
                     amount={stripePaymentData.amount}
                     orderId={stripePaymentData.orderId}
                     onSuccess={handleStripePaymentSuccess}
-                    onCancel={() => {
+                    onCancel={async () => {
+                        const cancelledOrderId = stripePaymentData.orderId;
                         setStripePaymentData(null);
-                        clearCart();
-                        window.location.href = `/orders/${stripePaymentData.orderId}`;
+                        try {
+                            await api.patch(`/orders/${cancelledOrderId}/status`, { status: 'Cancelado' }).catch(() => {});
+                        } catch (_) {}
+                        showNotification(
+                            lbl(
+                                'Pago cancelado. Tus productos se mantienen en el carrito para que puedas reintentar cuando gustes.',
+                                'Payment cancelled. Your items remain in the cart so you can retry anytime.'
+                            ),
+                            'warning'
+                        );
                     }}
                     locale={locale}
                 />

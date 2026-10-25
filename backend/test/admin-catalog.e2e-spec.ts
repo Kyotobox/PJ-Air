@@ -89,7 +89,8 @@ describe('Admin Catalog Flow (e2e)', () => {
       email: `standard_user_${Date.now()}@example.com`,
       password: 'StandardPassword123!',
       full_name: 'Standard User',
-      username: `standard_${Date.now()}`
+      username: `standard_${Date.now()}`,
+      company_name: 'Catalog Bakery',
     };
 
     // Attempt to register standard user

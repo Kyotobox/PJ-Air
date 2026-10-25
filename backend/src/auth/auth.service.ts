@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
@@ -20,6 +20,12 @@ export class AuthService {
   async signup(body: any) {
     const { email, password, full_name, username, phone, company_name, role } = body;
 
+    const userRole = role || 'client';
+    const cleanCompany = (company_name || '').trim();
+    if (userRole === 'client' && !cleanCompany) {
+      throw new BadRequestException('Company or store name is required for wholesale registration');
+    }
+
     const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) throw new ConflictException('Email already registered');
 
@@ -28,7 +34,7 @@ export class AuthService {
     const userResult = await this.usersService.create({
       email,
       password: hashedPassword,
-      role: role || 'client',
+      role: userRole,
     });
     const user = Array.isArray(userResult) ? userResult[0] : userResult;
 
@@ -38,7 +44,7 @@ export class AuthService {
       full_name,
       username: username || email.split('@')[0],
       phone,
-      company_name,
+      company_name: cleanCompany,
     });
 
     const payload = { id: user.id, email: user.email, role: user.role };

@@ -26,6 +26,7 @@ describe('Admin Password Management (e2e)', () => {
     password: 'TestPwd2026!',
     full_name: 'Test Pwd User',
     username: 'pwdtestuser',
+    company_name: 'Password Test Bakery',
   };
 
   beforeAll(async () => {

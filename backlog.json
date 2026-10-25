@@ -3,42 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S37",
-  "current_task": "TASK-37-01",
+  "current_sprint": "S38",
+  "current_task": "TASK-38-01",
   "sprints": [
-    {
-      "id": "S35",
-      "name": "Sprint 35: Suite de Pruebas de Borde Financieras, Tarjetas Rechazadas y Resiliencia del Cron",
-      "status": "COMPLETED",
-      "start_date": "2026-11-15",
-      "goal": "Evaluar y blindar el comportamiento del sistema ante escenarios extremos: tarjetas rechazadas o sin fondos en 1-Click checkout, fallos aislados en cobros nocturnos del cron, productos desactivados en suscripciones y ajustes de deuda por reembolsos.",
-      "tasks": [
-        {
-          "id": "TASK-35-01",
-          "label": "EDGE/STRIPE-FAILURES",
-          "desc": "Prueba de borde de rechazo de pago en 1-Click Checkout (tarjetas de test Stripe pm_card_chargeDeclinedInsufficientFunds y pm_card_threeDSecure2Required), verificando captura elegante del error en UI sin romper el carrito.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-35-02",
-          "label": "EDGE/CRON-RESILIENCE",
-          "desc": "Prueba de borde de cobros automáticos fallidos en el cron nocturno: aislamiento de fallos (una tarjeta rechazada marca payment_failed sin detener el lote), envío de alerta por correo y manejo de productos desactivados.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-35-03",
-          "label": "EDGE/B2B-CONCILIATION",
-          "desc": "Prueba de borde de liquidación parcial y desbordamiento de crédito B2B: verificación de recálculo exacto del saldo neto deudor tras reembolsos parciales y actualización del odómetro de balance en /admin/clients.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-35-04",
-          "label": "E2E/PLAYWRIGHT",
-          "desc": "Suite automatizada Playwright ejecutando los 3 casos de borde contra https://testing.jhoanes.com con capturas de pantalla de error controlado y certificación logix audit.",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S36",
       "name": "Sprint 36: Concurrencia Masiva SQLite, Migración Idempotente y Regresión Global",
@@ -79,7 +46,7 @@
     {
       "id": "S37",
       "name": "Sprint 37: Ecosistema Integral de Correos Transaccionales B2B, Notificaciones Administrativas y Plantillas de Reembolso",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-17",
       "goal": "Conectar y blindar el ciclo completo de notificaciones por correo: recibos automáticos al cliente por compras de contado y crédito, alertas operativas de nuevos pedidos para producción y ventas, comprobantes de reembolso contable y confirmaciones de suscripciones semanales, con tolerancia a fallos cuando las credenciales SMTP estén en espera.",
       "tasks": [
@@ -108,8 +75,78 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S38",
+      "name": "Sprint 38: Pulido de Registro B2B, Simplificación de Direcciones y Blindaje de Cancelación de Pagos Stripe",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-10-25",
+      "goal": "Implementar feedback audiovisual del cliente: eliminación del campo alias en registro de direcciones, obligatoriedad del nombre de compañía B2B en el registro, y corrección integral del flujo de cancelación del modal de pagos Stripe para preservar el carrito y evitar falsas confirmaciones de orden.",
+      "tasks": [
+        {
+          "id": "TASK-38-01",
+          "label": "UI/ADDRESSES",
+          "desc": "Suprimir campo de entrada alias en la UI de creación de direcciones (/profile/addresses/new y /checkout), asignando internamente Principal o Entrega para preservar la integridad del modelo.",
+          "status": "DONE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-38-02",
+          "label": "DOMAIN/B2B-AUTH",
+          "desc": "Establecer company_name como obligatorio en el registro de usuarios (RegisterForm y auth.service.signup), eliminando etiqueta Optional y adaptando payloads de pruebas existentes.",
+          "status": "DONE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-38-03",
+          "label": "CHECKOUT/STRIPE-CANCEL",
+          "desc": "Blindar cancelación de Stripe en checkout (onCancel sin vaciar carrito ni redirigir a orden confirmada) y condicionar vista /orders/[id] para reflejar Pago Pendiente cuando no esté pagado ni tenga crédito.",
+          "status": "DONE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-38-04",
+          "label": "E2E/REGRESSION-BASELINE",
+          "desc": "Verificación empírica con suite Playwright y tests unitarios de backend, certificación con logix audit y commit atómico.",
+          "status": "DONE",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 34,
-  "archive_file": "vault/runtime/backlog_archive.json"
+  "archived_sprints_count": 35,
+  "archive_file": "vault/runtime/backlog_archive.json",
+  "active_sprint": {
+    "id": "S38",
+    "name": "Sprint 38: Pulido de Registro B2B, Simplificación de Direcciones y Blindaje de Cancelación de Pagos Stripe",
+    "status": "IN_PROGRESS",
+    "start_date": "2026-10-25",
+    "goal": "Implementar feedback audiovisual del cliente: eliminación del campo alias en registro de direcciones, obligatoriedad del nombre de compañía B2B en el registro, y corrección integral del flujo de cancelación del modal de pagos Stripe para preservar el carrito y evitar falsas confirmaciones de orden.",
+    "tasks": [
+      {
+        "id": "TASK-38-01",
+        "label": "UI/ADDRESSES",
+        "desc": "Suprimir campo de entrada alias en la UI de creación de direcciones (/profile/addresses/new y /checkout), asignando internamente Principal o Entrega para preservar la integridad del modelo.",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-38-02",
+        "label": "DOMAIN/B2B-AUTH",
+        "desc": "Establecer company_name como obligatorio en el registro de usuarios (RegisterForm y auth.service.signup), eliminando etiqueta Optional y adaptando payloads de pruebas existentes.",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-38-03",
+        "label": "CHECKOUT/STRIPE-CANCEL",
+        "desc": "Blindar cancelación de Stripe en checkout (onCancel sin vaciar carrito ni redirigir a orden confirmada) y condicionar vista /orders/[id] para reflejar Pago Pendiente cuando no esté pagado ni tenga crédito.",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-38-04",
+        "label": "E2E/REGRESSION-BASELINE",
+        "desc": "Verificación empírica con suite Playwright y tests unitarios de backend, certificación con logix audit y commit atómico.",
+        "status": "TODO"
+      }
+    ]
+  }
 }
