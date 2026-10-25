@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { User, MapPin, Mail, Phone, BadgeCheck, Loader2, Save, Plus, Trash2, CreditCard, Building2, ExternalLink, ShieldCheck } from 'lucide-react';
+import { User, MapPin, Mail, Phone, BadgeCheck, Loader2, Save, Plus, Trash2, CreditCard, Building2, ExternalLink, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { API_URL } from '@/lib/config';
+import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
+import { formatPhoneNumber } from '@/lib/firebase';
 
 export default function ProfilePage() {
     const { user, isLoading: isAuthLoading } = useAuth();
@@ -15,6 +17,7 @@ export default function ProfilePage() {
     const { t, locale } = useLanguage();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
     const [profile, setProfile] = useState<any>(null);
     const [addresses, setAddresses] = useState<any[]>([]);
     const [formData, setFormData] = useState({
@@ -176,18 +179,90 @@ export default function ProfilePage() {
         e.preventDefault();
         if (!user) return;
 
+        const originalPhone = profile?.phone || '';
+        const cleanOriginal = originalPhone.replace(/\D/g, '');
+        const cleanNew = formData.phone.replace(/\D/g, '');
+
+        // If phone changed, require SMS OTP verification
+        if (cleanNew !== cleanOriginal) {
+            if (cleanNew.length < 10) {
+                setMessage({
+                    type: 'error',
+                    text: locale === 'en' ? 'Please enter a valid 10-digit phone number' : 'Ingresa un número de teléfono válido de 10 dígitos'
+                });
+                return;
+            }
+            setIsPhoneModalOpen(true);
+            return;
+        }
+
         setIsSaving(true);
         setMessage({ type: '', text: '' });
         try {
             await api.patch(`/users/${user.id}/profile`, formData);
+            setProfile((prev: any) => ({ ...prev, ...formData }));
             setMessage({ type: 'success', text: t.profile.savedSuccess });
             setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error updating profile:', err);
-            setMessage({ type: 'error', text: t.profile.passwordError }); // Using a generic error key if profile specific one is missing, but savedError is not there. I'll use passwordError for now or assume I added one. Wait, I added savedSuccess but not savedError.
+            setMessage({ type: 'error', text: err.message || t.profile.passwordError });
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handlePhoneVerifiedAndSave = async (verifiedData: { phone: string; idToken?: string; verificationCode?: string }) => {
+        if (!user) return;
+        setIsSaving(true);
+        setMessage({ type: '', text: '' });
+        try {
+            const verifyRes = await api.post('/auth/verify-phone', {
+                phone: verifiedData.phone,
+                idToken: verifiedData.idToken,
+                verificationCode: verifiedData.verificationCode,
+            }) as any;
+
+            await api.patch(`/users/${user.id}/profile`, {
+                full_name: formData.full_name,
+                username: formData.username,
+            });
+
+            const verifiedPhone = verifyRes.phone || verifiedData.phone;
+            setProfile((prev: any) => ({
+                ...prev,
+                full_name: formData.full_name,
+                username: formData.username,
+                phone: verifiedPhone,
+                phone_verified: true,
+            }));
+
+            setFormData((prev) => ({
+                ...prev,
+                phone: verifiedPhone,
+            }));
+
+            setMessage({
+                type: 'success',
+                text: locale === 'en' ? 'Phone verified and profile updated successfully!' : '¡Teléfono verificado y perfil actualizado con éxito!'
+            });
+            setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+        } catch (err: any) {
+            console.error('Error verifying phone:', err);
+            setMessage({
+                type: 'error',
+                text: err.message || (locale === 'en' ? 'Failed to verify phone' : 'Error al verificar teléfono')
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleCancelPhoneModal = () => {
+        setIsPhoneModalOpen(false);
+        setFormData((prev) => ({
+            ...prev,
+            phone: profile?.phone || '',
+        }));
     };
 
     const handleChangePassword = async (e: React.FormEvent) => {
@@ -339,16 +414,31 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2 tracking-widest">{t.profile.contactPhone}</label>
+                                    <div className="flex items-center justify-between ml-2">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t.profile.contactPhone}</label>
+                                        {profile?.phone_verified ? (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                                <CheckCircle2 size={12} />
+                                                <span>{locale === 'en' ? 'Verified ✓' : 'Verificado ✓'}</span>
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                                {locale === 'en' ? 'Unverified' : 'No verificado'}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="relative">
                                         <input 
                                             type="tel"
-                                            className="premium-input px-6 h-14 font-bold pl-12"
+                                            className={`premium-input px-6 h-14 font-bold pl-12 ${profile?.phone_verified ? 'border-emerald-500/40' : ''}`}
                                             value={formData.phone}
-                                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            onChange={(e) => setFormData({...formData, phone: formatPhoneNumber(e.target.value)})}
                                             required
                                         />
                                         <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                        {profile?.phone_verified && (
+                                            <CheckCircle2 size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600" />
+                                        )}
                                     </div>
                                 </div>
 
@@ -562,6 +652,19 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </main>
+
+            <PhoneVerificationModal
+                isOpen={isPhoneModalOpen}
+                onClose={handleCancelPhoneModal}
+                phoneNumber={formData.phone}
+                title={locale === 'en' ? 'Verify New Phone Number' : 'Verificación de Nuevo Teléfono'}
+                description={
+                    locale === 'en'
+                        ? 'Please verify your new phone number via 6-digit SMS code to save it.'
+                        : 'Por favor verifica tu nuevo número de teléfono mediante código SMS de 6 dígitos para guardarlo.'
+                }
+                onVerified={handlePhoneVerifiedAndSave}
+            />
         </div>
     );
 }

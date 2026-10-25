@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Mail, Lock, User, Phone, Building2, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Phone, Building2, Loader2, ArrowRight, CheckCircle2, Smartphone } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { formatPhoneNumber } from '@/lib/firebase';
 
 interface RegisterFormProps {
     formData: any;
@@ -10,6 +11,9 @@ interface RegisterFormProps {
     onSubmit: (e: React.FormEvent) => void;
     isLoading: boolean;
     error: string;
+    isPhoneVerified?: boolean;
+    setIsPhoneVerified?: (verified: boolean) => void;
+    onVerifyPhoneClick?: () => void;
 }
 
 export const RegisterForm = ({
@@ -17,9 +21,20 @@ export const RegisterForm = ({
     setFormData,
     onSubmit,
     isLoading,
-    error
+    error,
+    isPhoneVerified = false,
+    setIsPhoneVerified,
+    onVerifyPhoneClick,
 }: RegisterFormProps) => {
     const { t, locale } = useLanguage();
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formatted = formatPhoneNumber(e.target.value);
+        setFormData({ ...formData, phone: formatted });
+        if (isPhoneVerified && setIsPhoneVerified) {
+            setIsPhoneVerified(false);
+        }
+    };
 
     return (
         <form onSubmit={onSubmit} className="space-y-8">
@@ -76,17 +91,41 @@ export const RegisterForm = ({
                 </div>
 
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{t.register.phone}</label>
+                    <div className="flex items-center justify-between ml-1">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t.register.phone}</label>
+                        {isPhoneVerified ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                                <CheckCircle2 size={12} />
+                                <span>{locale === 'en' ? 'Phone Verified ✓' : 'Teléfono Verificado ✓'}</span>
+                            </span>
+                        ) : (
+                            formData.phone && formData.phone.replace(/\D/g, '').length >= 10 && onVerifyPhoneClick && (
+                                <button
+                                    type="button"
+                                    onClick={onVerifyPhoneClick}
+                                    className="text-[10px] font-black text-primary hover:underline uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                                >
+                                    <Smartphone size={12} />
+                                    <span>{locale === 'en' ? 'Verify via SMS' : 'Verificar vía SMS'}</span>
+                                </button>
+                            )
+                        )}
+                    </div>
                     <div className="relative">
                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
                         <input
                             required
                             type="tel"
-                            placeholder={locale === 'en' ? 'e.g. +1 212 555 0100' : 'Ej: +51 987 654 321'}
-                            className="premium-input pl-12"
+                            placeholder="+1 (305) 555-0100"
+                            className={`premium-input pl-12 ${isPhoneVerified ? 'border-emerald-500 bg-emerald-50/20' : ''}`}
                             value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            onChange={handlePhoneChange}
                         />
+                        {isPhoneVerified && (
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600">
+                                <CheckCircle2 size={18} />
+                            </div>
+                        )}
                     </div>
                 </div>
 

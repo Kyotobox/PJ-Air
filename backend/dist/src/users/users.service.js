@@ -46,6 +46,9 @@ let UsersService = class UsersService {
             const newProfile = this.profileRepository.create({ ...profileData, id: userId });
             return this.profileRepository.save(newProfile);
         }
+        if (profileData.phone !== undefined && profileData.phone !== profile.phone && profileData.phone_verified === undefined) {
+            profile.phone_verified = false;
+        }
         Object.assign(profile, profileData);
         return this.profileRepository.save(profile);
     }

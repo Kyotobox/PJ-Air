@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { UnauthorizedException, ConflictException } from '@nestjs/common';
+import { UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { hashPassword, verifyJwt } from './crypto.util';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -21,6 +21,7 @@ describe('AuthService', () => {
     createProfile: jest.fn(),
     findOne: jest.fn(),
     updatePassword: jest.fn(),
+    updateProfile: jest.fn(),
   };
 
   const mockSystemConfigRepository = {
@@ -133,6 +134,92 @@ describe('AuthService', () => {
       const result = await service.changePassword('1', 'oldpassword', 'newpassword');
       expect(mockUsersService.updatePassword).toHaveBeenCalled();
       expect(result).toEqual({ message: 'Password updated successfully' });
+    });
+  });
+
+  describe('verifyPhone', () => {
+    it('should successfully verify phone with valid code (123456)', async () => {
+      mockUsersService.updateProfile.mockResolvedValue({
+        id: 'user-1',
+        phone: '+13055550100',
+        phone_verified: true,
+      });
+
+      const result = await service.verifyPhone('user-1', {
+        phone: '+13055550100',
+        verificationCode: '123456',
+      });
+
+      expect(mockUsersService.updateProfile).toHaveBeenCalledWith('user-1', {
+        phone: '+13055550100',
+        phone_verified: true,
+      });
+      expect(result).toEqual({
+        success: true,
+        phone_verified: true,
+        phone: '+13055550100',
+      });
+    });
+
+    it('should throw BadRequestException if code is invalid', async () => {
+      await expect(
+        service.verifyPhone('user-1', {
+          phone: '+13055550100',
+          verificationCode: '999999',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if phone format is invalid', async () => {
+      await expect(
+        service.verifyPhone('user-1', {
+          phone: '12345',
+          verificationCode: '123456',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if phone is missing or empty', async () => {
+      await expect(
+        service.verifyPhone('user-1', {
+          phone: '',
+          verificationCode: '123456',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw UnauthorizedException if userId is missing', async () => {
+      await expect(
+        service.verifyPhone('', {
+          phone: '+13055550100',
+          verificationCode: '123456',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should verify with valid mock Firebase ID token', async () => {
+      mockUsersService.updateProfile.mockResolvedValue({
+        id: 'user-1',
+        phone: '+13055550100',
+        phone_verified: true,
+      });
+
+      const result = await service.verifyPhone('user-1', {
+        phone: '+13055550100',
+        idToken: 'mock-valid-firebase-token',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.phone_verified).toBe(true);
+    });
+
+    it('should throw BadRequestException with invalid Firebase ID token', async () => {
+      await expect(
+        service.verifyPhone('user-1', {
+          phone: '+13055550100',
+          idToken: 'invalid-token',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

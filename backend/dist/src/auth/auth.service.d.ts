@@ -36,4 +36,13 @@ export declare class AuthService {
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{
         message: string;
     }>;
+    verifyPhone(userId: string, body: {
+        phone: string;
+        verificationCode?: string;
+        idToken?: string;
+    }): Promise<{
+        success: boolean;
+        phone_verified: boolean;
+        phone: string;
+    }>;
 }

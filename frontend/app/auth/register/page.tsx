@@ -7,6 +7,7 @@ import { Mail, Lock, User, Phone, Building2, Loader2, ArrowRight } from 'lucide-
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function RegisterPage() {
@@ -15,6 +16,8 @@ export default function RegisterPage() {
     const { t, locale } = useLanguage();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         full_name: '',
         username: '',
@@ -59,6 +62,7 @@ export default function RegisterPage() {
                 full_name: formData.full_name,
                 username: formData.username,
                 phone: formData.phone,
+                phone_verified: isPhoneVerified,
                 company_name: formData.company_name,
             }) as any;
 
@@ -75,6 +79,16 @@ export default function RegisterPage() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleVerifyPhoneClick = () => {
+        const digits = formData.phone.replace(/\D/g, '');
+        if (digits.length < 10) {
+            setError(locale === 'en' ? 'Please enter a valid 10-digit phone number first' : 'Ingresa un número de teléfono válido de 10 dígitos primero');
+            return;
+        }
+        setError('');
+        setIsVerificationModalOpen(true);
     };
 
     return (
@@ -94,6 +108,24 @@ export default function RegisterPage() {
                     onSubmit={handleSubmit}
                     isLoading={isLoading}
                     error={error}
+                    isPhoneVerified={isPhoneVerified}
+                    setIsPhoneVerified={setIsPhoneVerified}
+                    onVerifyPhoneClick={handleVerifyPhoneClick}
+                />
+
+                <PhoneVerificationModal
+                    isOpen={isVerificationModalOpen}
+                    onClose={() => setIsVerificationModalOpen(false)}
+                    phoneNumber={formData.phone}
+                    title={locale === 'en' ? 'Verify Mobile Number' : 'Verificación de Identidad Telefónica'}
+                    description={
+                        locale === 'en'
+                            ? `Verify your mobile number to activate instant B2B wholesale order notifications`
+                            : `Verifica tu número móvil para activar notificaciones automáticas de pedidos mayoristas`
+                    }
+                    onVerified={async () => {
+                        setIsPhoneVerified(true);
+                    }}
                 />
 
                 <div className="mt-12 pt-8 border-t border-border/40 text-center space-y-4">

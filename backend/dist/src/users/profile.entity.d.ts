@@ -5,6 +5,7 @@ export declare class Profile {
     username: string;
     nickname: string;
     phone: string;
+    phone_verified: boolean;
     company_name: string;
     avatar_url: string;
     user: User;

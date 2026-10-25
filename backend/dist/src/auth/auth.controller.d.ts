@@ -35,4 +35,22 @@ export declare class AuthController {
     changePassword(body: any): Promise<{
         message: string;
     }>;
+    verifyPhone(req: any, body: {
+        phone: string;
+        verificationCode?: string;
+        idToken?: string;
+    }): Promise<{
+        success: boolean;
+        phone_verified: boolean;
+        phone: string;
+    }>;
+    verifyPhoneToken(req: any, body: {
+        phone: string;
+        verificationCode?: string;
+        idToken?: string;
+    }): Promise<{
+        success: boolean;
+        phone_verified: boolean;
+        phone: string;
+    }>;
 }

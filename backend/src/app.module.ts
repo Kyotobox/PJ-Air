@@ -90,6 +90,12 @@ export class AppModule implements OnModuleInit {
         await qr.query(`ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR;`);
       }
 
+      const profileCols = await qr.query(`PRAGMA table_info(profiles);`);
+      const profileColNames = profileCols.map((c: any) => c.name);
+      if (!profileColNames.includes('phone_verified')) {
+        await qr.query(`ALTER TABLE profiles ADD COLUMN phone_verified BOOLEAN DEFAULT 0;`);
+      }
+
       await qr.query(`
         CREATE TABLE IF NOT EXISTS scheduled_orders (
           id VARCHAR PRIMARY KEY NOT NULL,

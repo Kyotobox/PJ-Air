@@ -13,6 +13,7 @@ describe('AuthController', () => {
       login: jest.fn(),
       recoverPassword: jest.fn(),
       changePassword: jest.fn(),
+      verifyPhone: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -96,6 +97,32 @@ describe('AuthController', () => {
       const result = await controller.changePassword({ userId: '1', currentPassword: 'old', newPassword: 'new' });
       expect(authService.changePassword).toHaveBeenCalledWith('1', 'old', 'new');
       expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('verifyPhone', () => {
+    it('should call authService.verifyPhone with userId and body', async () => {
+      const mockResult = { success: true, phone_verified: true, phone: '+13055550100' };
+      (authService.verifyPhone as jest.Mock).mockResolvedValue(mockResult);
+
+      const req = { user: { id: 'user-123' } };
+      const body = { phone: '+13055550100', verificationCode: '123456' };
+
+      const result = await controller.verifyPhone(req, body);
+      expect(authService.verifyPhone).toHaveBeenCalledWith('user-123', body);
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should support verifyPhoneToken endpoint as well', async () => {
+      const mockResult = { success: true, phone_verified: true, phone: '+13055550100' };
+      (authService.verifyPhone as jest.Mock).mockResolvedValue(mockResult);
+
+      const req = { user: { id: 'user-123' } };
+      const body = { phone: '+13055550100', idToken: 'mock-valid-firebase-token' };
+
+      const result = await controller.verifyPhoneToken(req, body);
+      expect(authService.verifyPhone).toHaveBeenCalledWith('user-123', body);
+      expect(result).toEqual(mockResult);
     });
   });
 });

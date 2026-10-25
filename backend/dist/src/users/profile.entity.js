@@ -18,6 +18,7 @@ let Profile = class Profile {
     username;
     nickname;
     phone;
+    phone_verified;
     company_name;
     avatar_url;
     user;
@@ -43,6 +44,10 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Profile.prototype, "phone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Profile.prototype, "phone_verified", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

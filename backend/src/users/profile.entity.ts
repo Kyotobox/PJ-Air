@@ -18,6 +18,9 @@ export class Profile {
   @Column({ nullable: true })
   phone: string;
 
+  @Column({ default: false })
+  phone_verified: boolean;
+
   @Column({ nullable: true })
   company_name: string;
 

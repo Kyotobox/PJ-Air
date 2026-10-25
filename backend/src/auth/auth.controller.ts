@@ -1,5 +1,6 @@
-import { Controller, Post, Body, UnauthorizedException, BadRequestException, Patch } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, BadRequestException, Patch, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { AuthGuard } from './auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -38,5 +39,19 @@ export class AuthController {
       throw new BadRequestException('All fields are required');
     }
     return this.authService.changePassword(userId, currentPassword, newPassword);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('verify-phone')
+  async verifyPhone(@Request() req: any, @Body() body: { phone: string; verificationCode?: string; idToken?: string }) {
+    const userId = req.user?.id;
+    return this.authService.verifyPhone(userId, body);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('verify-phone-token')
+  async verifyPhoneToken(@Request() req: any, @Body() body: { phone: string; verificationCode?: string; idToken?: string }) {
+    const userId = req.user?.id;
+    return this.authService.verifyPhone(userId, body);
   }
 }
