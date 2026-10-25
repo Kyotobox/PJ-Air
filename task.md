@@ -1,9 +1,9 @@
-# SPRINT S39 - Sprint 39: Integración de Zelle B2B, Esquema Packaging & Handling con Bonificación y Blindaje de Corte de Producción
-**Objetivo**: Incorporar Zelle como método de pago B2B con captura y auditoría de referencia, implementar el esquema de Packaging & Handling Fee con bonificación por pago directo para proteger márgenes mayoristas, y blindar el corte de producción de las 12:00 PM en el calendario del frontend.
+# SPRINT S40 - Sprint 40: Motor Dinámico de Zonas de Delivery por ZIP Codes y Mínimos de Compra para Free Delivery
+**Objetivo**: Implementar la gestión integral de zonas de entrega por bloques de códigos postales con tarifas base y montos mínimos de compra para envío gratis configurables desde el panel administrativo, con resolución automática en checkout y prioridad de tarifas acordadas B2B.
 **Fecha**: 2026-10-25
 
-- [x] **TASK-39-01** [DOMAIN/ZELLE-CORE] Extensión de Order con payment_method ('stripe'|'zelle'|'credit'), zelle_reference, packaging_fee y packaging_discount. Endpoints de registro y conciliación de Zelle.
-- [x] **TASK-39-02** [UI/CHECKOUT-ZELLE-FEES] Selector de Zelle en /checkout con datos bancarios, input de referencia y desglose dinámico: cargo de empaque (3.5%) vs bonificación automática por Zelle (-3.5%).
-- [x] **TASK-39-03** [ADMIN/ZELLE-AUDIT-APPROVAL] Panel en /admin/orders para auditar y conciliar transferencias Zelle: contrastar referencia y botón de aprobación manual para habilitar orden en torre de producción.
-- [x] **TASK-39-04** [UI/CUTOFF-CALENDAR-GUARD] Inhabilitar dinámicamente en el calendario de checkout la fecha de entrega del día siguiente cuando la hora en America/New_York supere las 12:00 PM.
-- [x] **TASK-39-05** [E2E/SAD-PATHS-REGRESSION] Suite de pruebas unitarias y e2e cubriendo sad paths (referencias duplicadas, evasión de corte, cancelaciones) y certificación con logix audit.
+- [ ] **TASK-40-01** [DOMAIN/DELIVERY-ZONES-CORE] Entidad DeliveryZone (name, zip_codes, base_fee, min_free_delivery_amount, is_active), repositorio TypeORM, servicio y endpoints CRUD en backend NestJS.
+- [ ] **TASK-40-02** [ADMIN/ZONES-MANAGEMENT-UI] Panel de administración en /admin/zones para crear, editar y activar/desactivar zonas, gestionar bloques de ZIPs, tarifas base y montos mínimos de envío gratis.
+- [ ] **TASK-40-03** [CHECKOUT/ZIP-AUTOCALC-ENGINE] Lógica de resolución en checkout: detectar ZIP de la dirección seleccionada, autocalcular tarifa base, evaluar si subtotal >= min_free_delivery_amount (bonificando a $0.00 con badge de éxito) o mostrar aviso de cuánto falta para el envío gratis.
+- [ ] **TASK-40-04** [LOGISTICS/DELIVERY-OVERRIDE-PRECEDENCE] Matriz de precedencia: Pickup ($0) > Tarifa Especial fijada por Admin a Cliente VIP (user.delivery_fee) > Zona ZIP calculada > Tarifa General de contingencia (fallback si el ZIP no está mapeado).
+- [ ] **TASK-40-05** [E2E/ZONES-REGRESSION-BASELINE] Pruebas de integración E2E (autocálculo de tarifa por ZIP, activación de free delivery al cruzar umbral de compra, y fallback de ZIP no registrado), certificación logix audit.
