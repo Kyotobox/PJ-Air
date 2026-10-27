@@ -1,0 +1,15 @@
+{
+  "skill_id": "lead-capture-pipeline",
+  "name": "Lead Capture Pipeline",
+  "version": "1.0.0",
+  "owner_node": "praxis",
+  "category": "ingestion",
+  "entrypoint": ".agents/skills/lead-capture-pipeline/SKILL.md",
+  "description": "Suite integral de Crecimiento Comercial y Conversión.",
+  "tags": [
+    "leads",
+    "crm",
+    "sales",
+    "conversion"
+  ]
+}

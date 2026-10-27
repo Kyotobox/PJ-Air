@@ -1,0 +1,15 @@
+{
+  "skill_id": "resilient-scraper",
+  "name": "Resilient Scraper",
+  "version": "1.0.0",
+  "owner_node": "Automa",
+  "category": "ingestion",
+  "entrypoint": ".agents/skills/resilient-scraper/SKILL.md",
+  "description": "Motor de recolección e ingesta de datos web y open data altamente resiliente.",
+  "tags": [
+    "scraping",
+    "ingestion",
+    "crawler",
+    "resilience"
+  ]
+}

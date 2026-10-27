@@ -1,0 +1,15 @@
+{
+  "skill_id": "adstudio-pipeline",
+  "name": "AdStudio Pipeline",
+  "version": "1.0.0",
+  "owner_node": "praxis",
+  "category": "orchestration",
+  "entrypoint": ".agents/skills/adstudio-pipeline/SKILL.md",
+  "description": "Motor integral de producción audiovisual publicitaria y social media.",
+  "tags": [
+    "marketing",
+    "video",
+    "adstudio",
+    "growth"
+  ]
+}

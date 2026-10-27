@@ -1,0 +1,25 @@
+{
+  "id": "POL-PERSISTENCE-AGNOSTIC",
+  "name": "Protocolo de Persistencia Agnóstica (SQLite Primacy)",
+  "description": "Exige que el almacenamiento de largo plazo sea agnóstico a la plataforma, priorizando SQLite sobre archivos planos JSON para datos de alto volumen.",
+  "trigger": {
+    "event": "DB_AUDIT",
+    "conditions": {
+      "platform": "ALL"
+    }
+  },
+  "rules": [
+    {
+      "id": "RULE-DB-01",
+      "name": "Prefer-SQLite-Over-JSON",
+      "condition": "active_storage.has_sqlite_support == true",
+      "severity": "MEDIUM"
+    }
+  ],
+  "actions": [
+    {
+      "type": "LOG_DEBT",
+      "message": "Persistencia JSON detectada. POL-PERSISTENCE-AGNOSTIC sugiere migración a SQLite para nodos de producción."
+    }
+  ]
+}

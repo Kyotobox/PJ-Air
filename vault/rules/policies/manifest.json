@@ -1,0 +1,83 @@
+{
+  "version": "1.0.3",
+  "description": "Manifiesto de Políticas Reactivas del Kernel v11 - B04 Final Edition",
+  "policies": [
+    {
+      "id": "POL-GATE-TASKS",
+      "file": "pol_gate_tasks.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-GATE-AUDIT",
+      "file": "pol_gate_audit.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-SCOPE-DRIFT",
+      "file": "pol_scope_drift.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-VISION-GUARD",
+      "file": "pol_vision_guard.json",
+      "enabled": false
+    },
+    {
+      "id": "POL-ATOMIC-UI-GO",
+      "file": "pol_atomic_ui_go.json",
+      "enabled": false
+    },
+    {
+      "id": "POL-SILVER-PATH",
+      "file": "pol_silver_path.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-VERSION-ISOMORPHISM",
+      "file": "pol_version_isomorphism.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-IDENTITY-VISION",
+      "file": "pol_identity_vision.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-ROLE-VETO",
+      "file": "pol_role_veto.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-VETO-01",
+      "file": "veto_risk.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-PURE-DART-CORE",
+      "file": "pol_pure_dart_core.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-THIN-CLIENT",
+      "file": "pol_thin_client.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-GATE2-AUTONOMY",
+      "file": "pol_gate2_autonomy.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-TEST-PARITY",
+      "file": "pol_test_parity.json",
+      "enabled": true
+    },
+    {
+      "id": "POL-SKILL-QUALITY-GATE",
+      "file": "pol_skill_quality_gate.json",
+      "enabled": true
+    }
+  ],
+  "last_update": "2026-09-25",
+  "signed_by": "AI-ADMIN"
+}

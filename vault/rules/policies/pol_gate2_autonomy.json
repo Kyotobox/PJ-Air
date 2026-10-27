@@ -1,0 +1,21 @@
+{
+  "id": "POL-GATE2-AUTONOMY",
+  "name": "Gate-2 Autonomous Execution and Anti-Paralysis Policy",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TURN_REGISTERED",
+    "conditions": {
+      "gate2_violation": true
+    }
+  },
+  "actions": [
+    {
+      "type": "VETO",
+      "params": {
+        "reason": "[RULE-41] Se prohíbe la parálisis por cuestionamiento interactivo (ask_question) en tareas GATE-2 cuando exista alternativa técnica sustentada."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "PO_ONLY"
+}

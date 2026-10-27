@@ -1,0 +1,30 @@
+{
+  "id": "POL-ROLE-VETO",
+  "name": "Protocolo de Veto Bicameral",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TURN_REGISTERED",
+    "conditions": {
+      "activeRole": "CERTIFIER",
+      "veto_activated": true
+    }
+  },
+  "actions": [
+    {
+      "type": "HALT",
+      "params": {
+        "message": "[VETO] El Auditor de Certeza ha bloqueado esta operación debido a una violación de integridad o deuda técnica crítica.",
+        "code": "AUDIT_VETO"
+      }
+    },
+    {
+      "type": "LOG_EVENT",
+      "params": {
+        "priority": "CRITICAL",
+        "category": "GOVERNANCE"
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "RSA_ONLY"
+}

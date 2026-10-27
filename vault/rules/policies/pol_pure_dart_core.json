@@ -1,0 +1,21 @@
+{
+  "id": "POL-PURE-DART-CORE",
+  "name": "Pure Dart Core Architecture Enforcement",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TURN_REGISTERED",
+    "conditions": {
+      "pure_dart_violation": true
+    }
+  },
+  "actions": [
+    {
+      "type": "VETO",
+      "params": {
+        "reason": "[RULE-39] Se prohíben importaciones de frameworks de UI (package:flutter, dart:html) en el núcleo de dominio o Shared Kernel. El Core debe ser 100% Pure Dart."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "PO_ONLY"
+}

@@ -1,0 +1,15 @@
+{
+  "skill_id": "biz-venture-forge",
+  "name": "Biz Venture Forge",
+  "version": "1.0.0",
+  "owner_node": "praxis",
+  "category": "orchestration",
+  "entrypoint": ".agents/skills/biz-venture-forge/SKILL.md",
+  "description": "Marco de incubación y forja de startups satélite (Venture Studio).",
+  "tags": [
+    "venture",
+    "startups",
+    "spin_off",
+    "equity"
+  ]
+}

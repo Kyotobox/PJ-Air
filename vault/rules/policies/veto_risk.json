@@ -1,0 +1,28 @@
+{
+  "id": "POL-VETO-01",
+  "name": "Adversarial Veto: Riesgo Estructural",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "ADVERSARIAL_VETO",
+    "conditions": {
+      "dna_drift": { "$gte": 15.0 }
+    }
+  },
+  "actions": [
+    {
+      "type": "VETO",
+      "params": {
+        "reason": "Deriva de ADN superior al límite autárquico (15%).",
+        "severity": "CRITICAL"
+      }
+    },
+    {
+      "type": "HALT",
+      "params": {
+        "message": "Comando bloqueado por Veto Adversarial (NUCLEUS-V9)."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "NEVER"
+}

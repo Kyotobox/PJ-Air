@@ -1,0 +1,26 @@
+{
+  "id": "POL-ATOMIC-UI-GO",
+  "name": "Certificación Atómica de UI",
+  "description": "Exige que toda modificación en la capa de presentación venga acompañada de una prueba de integración certificada.",
+  "trigger": {
+    "event": "TASK_HANDOVER",
+    "conditions": {
+      "changed_files": { "$regex": "presentation|screen|widget" }
+    }
+  },
+  "rules": [
+    {
+      "id": "RULE-UI-01",
+      "name": "Mandatory-Integration-Test",
+      "condition": "project.has_recent_ui_test == true",
+      "severity": "CRITICAL"
+    }
+  ],
+  "actions": [
+    {
+      "type": "BLOCK_HANDOVER",
+      "message": "Fallo de Integridad UI: Se detectaron cambios en la interfaz sin pruebas atómicas acompañantes (POL-ATOMIC-UI-GO)."
+    }
+  ],
+  "enforcement": "HARD"
+}

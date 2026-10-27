@@ -1,0 +1,23 @@
+{
+  "id": "POL-SILVER-PATH",
+  "name": "Silver Path: Auto-Aprobación de Datos Volátiles",
+  "description": "Permite el sellado de ADN sin firma física del PO si la deriva detectada se limita a archivos de reporte, logs o telemetría (CHROME-VOLATILE).",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "DNA_DRIFT_DETECTED",
+    "conditions": {
+      "drift_percentage": { "$lte": 15.0 },
+      "is_volatile_only": true,
+      "contains_constitutional_changes": false
+    }
+  },
+  "actions": [
+    {
+      "type": "AUTHORIZE_AUTO_BASELINE",
+      "params": {
+        "reason": "Deriva detectada dentro de límites volátiles no constitucionales.",
+        "security_level": "GATE-SILVER"
+      }
+    }
+  ]
+}

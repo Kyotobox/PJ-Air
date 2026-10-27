@@ -1,0 +1,15 @@
+{
+  "skill_id": "biz-autopart-pricing",
+  "name": "Biz Autopart Pricing",
+  "version": "1.0.0",
+  "owner_node": "ruedas",
+  "category": "analysis",
+  "entrypoint": ".agents/skills/biz-autopart-pricing/SKILL.md",
+  "description": "Motor integral de comercio automotriz y catálogo (precios y fitment).",
+  "tags": [
+    "autoparts",
+    "pricing",
+    "catalog",
+    "fitment"
+  ]
+}

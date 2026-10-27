@@ -1,0 +1,20 @@
+{
+  "id": "POL-TRUNCATION-SPLIT",
+  "name": "Truncation Auto-Balancer",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TRUNCATION_DETECTED",
+    "conditions": {
+      "consecutive_truncations": { "$gte": 2 }
+    }
+  },
+  "actions": [
+    {
+      "type": "NOTIFY",
+      "params": {
+        "message": "[CONTEXT-ALERT] Truncación recurrente detectada. Se recomienda subdividir la tarea actual para reducir la presión volumétrica."
+      }
+    }
+  ],
+  "enforcement": "ADVISORY"
+}

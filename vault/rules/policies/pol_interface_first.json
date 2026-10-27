@@ -1,0 +1,37 @@
+{
+  "id": "POL-INTERFACE-FIRST",
+  "name": "Protocolo de Desacoplamiento (Regla 14)",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "HANDOVER_REQUESTED",
+    "conditions": {
+      "has_shared_components": true
+    }
+  },
+  "rules": [
+    {
+      "id": "RULE-INF-01",
+      "name": "No-Global-Access",
+      "pattern": ["Instance", "current", "Locator", "Singleton"],
+      "message": "Violación de Regla 14: Los componentes compartidos no deben acceder a singletons o estados globales directamente."
+    }
+  ],
+  "actions": [
+    {
+      "type": "NOTIFY",
+      "params": {
+        "priority": "HIGH",
+        "message": "[INTERFACE-FIRST] Verificando desacoplamiento de componentes."
+      }
+    },
+    {
+      "type": "LOG_EVENT",
+      "params": {
+        "category": "ARCHITECTURE",
+        "detail": "Evaluación de Regla 14 activada para componentes heredables."
+      }
+    }
+  ],
+  "enforcement": "ADVISORY",
+  "bypass_mode": "PO_ONLY"
+}

@@ -1,0 +1,31 @@
+{
+  "id": "POL-VERSION-ISOMORPHISM",
+  "name": "Protocolo de Isomorfismo de Versión",
+  "description": "Asegura la paridad absoluta entre el Backlog, el Núcleo y la Constelación de Satélites.",
+  "trigger": {
+    "event": "GOV_AUDIT",
+    "conditions": {
+      "check_level": "GATE-1"
+    }
+  },
+  "rules": [
+    {
+      "id": "RULE-V1",
+      "name": "Backlog-Kernel Sync",
+      "condition": "backlog.version == version.dart.kKernelVersion",
+      "severity": "CRITICAL"
+    },
+    {
+      "id": "RULE-V2",
+      "name": "Satellite-Isomorphism",
+      "condition": "all(satellites.v == version.dart.kKernelVersion)",
+      "severity": "CRITICAL"
+    }
+  ],
+  "actions": [
+    {
+      "type": "BLOCK_HANDOVER",
+      "message": "Fallo de Isomorfismo: Desincronización de versiones detectada en la constelación."
+    }
+  ]
+}

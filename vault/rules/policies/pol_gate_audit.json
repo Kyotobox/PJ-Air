@@ -1,0 +1,20 @@
+{
+  "id": "POL-GATE-AUDIT",
+  "name": "Fresh Audit Gate",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "HANDOVER_REQUESTED",
+    "conditions": {
+      "audit_executed": false
+    }
+  },
+  "actions": [
+    {
+      "type": "HALT",
+      "params": {
+        "message": "Handover bloqueado: Se requiere una auditoría fresca (gov audit) antes de certificar el cierre."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY"
+}

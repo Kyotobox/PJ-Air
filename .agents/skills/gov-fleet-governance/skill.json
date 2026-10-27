@@ -1,0 +1,15 @@
+{
+  "skill_id": "gov-fleet-governance",
+  "name": "Gov Fleet Governance",
+  "version": "1.0.0",
+  "owner_node": "Smart",
+  "category": "governance",
+  "entrypoint": ".agents/skills/gov-fleet-governance/SKILL.md",
+  "description": "Guardián integral de gobernanza, arquitectura y calidad de assets.",
+  "tags": [
+    "governance",
+    "cmmi_l5",
+    "car",
+    "quality_gates"
+  ]
+}

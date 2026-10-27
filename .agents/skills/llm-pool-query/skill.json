@@ -1,0 +1,15 @@
+{
+  "skill_id": "llm-pool-query",
+  "name": "LLM Pool Query",
+  "version": "1.0.0",
+  "owner_node": "conext_core",
+  "category": "utility",
+  "entrypoint": ".agents/skills/llm-pool-query/SKILL.md",
+  "description": "Despachador resiliente de consultas hacia un pool multi-proveedor de LLMs.",
+  "tags": [
+    "llm",
+    "resilience",
+    "circuit_breaker",
+    "tokens"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "POL-UI-AUTOTEST",
+  "name": "UI Automation Reminder",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TASK_STATUS_CHANGE",
+    "conditions": {
+      "status": { "$in": ["DONE", "COMPLETED"] },
+      "label": { "$regex": "UI|FEATURE" }
+    }
+  },
+  "actions": [
+    {
+      "type": "NOTIFY",
+      "params": {
+        "message": "[UI-AUDIT] Tarea de interfaz finalizada. Se recomienda ejecutar la suite de integración para certificar la estabilidad visual: `dart test integration_test/all_tests.dart`."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY"
+}

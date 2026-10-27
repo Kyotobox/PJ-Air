@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "policy_name": "CONEXT Fleet Safe-Harvesting & Supply Chain Security Policy",
+  "last_updated": "2026-09-25",
+  "governance_node": "Smart",
+  "whitelist": {
+    "official_docs": [
+      "developers.facebook.com",
+      "developers.tiktok.com",
+      "docs.elevenlabs.io",
+      "platform.openai.com",
+      "docs.anthropic.com",
+      "cloud.google.com",
+      "docs.github.com",
+      "docs.python.org",
+      "dart.dev"
+    ],
+    "trusted_orgs_github": [
+      "facebook",
+      "openai",
+      "anthropics",
+      "google",
+      "huggingface",
+      "modelcontextprotocol",
+      "elevenlabs",
+      "psf",
+      "dart-lang",
+      "flutter"
+    ],
+    "vetting_rules": {
+      "min_github_stars": 150,
+      "max_inactive_months": 12,
+      "allowed_licenses": [
+        "MIT",
+        "Apache-2.0",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "ISC",
+        "0BSD",
+        "Unlicense"
+      ],
+      "require_readme": true,
+      "disallow_forks_without_attribution": true
+    }
+  },
+  "blacklist": {
+    "blocked_domains": [
+      "pastebin.com",
+      "ghostbin.com",
+      "hastebin.com",
+      "anonfiles.com",
+      "temp.sh",
+      "webhook.site",
+      "ngrok.io",
+      "localtunnel.me"
+    ],
+    "banned_licenses": [
+      "GPL-3.0",
+      "AGPL-3.0",
+      "SSPL",
+      "CC-BY-NC-4.0",
+      "Commons-Clause"
+    ],
+    "suspicious_patterns": [
+      "eval\\s*\\(",
+      "exec\\s*\\(",
+      "os\\.system\\s*\\(",
+      "subprocess\\.Popen\\s*\\([^)]*shell\\s*=\\s*True",
+      "base64\\.b64decode\\s*\\(",
+      "__import__\\s*\\(",
+      "pickle\\.loads\\s*\\(",
+      "shutil\\.rmtree\\s*\\(\\s*['\"]/(?:root|etc|home|bin)?['\"]\\s*\\)",
+      "curl\\s+[^|]+\\|\\s*(?:ba)?sh"
+    ],
+    "prompt_injection_indicators": [
+      "ignore\\s+(?:all\\s+)?(?:previous|prior)\\s+instructions",
+      "system\\s+override",
+      "you\\s+are\\s+now\\s+in\\s+developer\\s+mode",
+      "disregard\\s+all\\s+safety\\s+guidelines",
+      "jailbreak",
+      "bypass\\s+policy"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "POL-AXIOMA-ENFORCE",
+  "name": "Axioma Isomorphism Enforcement",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TURN_REGISTERED",
+    "conditions": {
+      "path": { "$regex": "packages/axioma|lib/src/business" }
+    }
+  },
+  "actions": [
+    {
+      "type": "VETO",
+      "params": {
+        "reason": "[RULE-17] Se prohíbe la duplicación de modelos de negocio fuera del Shared Kernel (axioma). Toda entidad de dominio debe nacer en el Núcleo de Gobernanza."
+      }
+    },
+    {
+      "type": "GENERATE_ARTIFACT",
+      "params": {
+        "template": "axioma_report",
+        "destination": "vault/runtime/enforcement_report.json"
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "PO_ONLY"
+}

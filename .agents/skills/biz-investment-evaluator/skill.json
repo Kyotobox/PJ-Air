@@ -1,0 +1,15 @@
+{
+  "skill_id": "biz-investment-evaluator",
+  "name": "Biz Investment Evaluator",
+  "version": "1.0.0",
+  "owner_node": "praxis",
+  "category": "analysis",
+  "entrypoint": ".agents/skills/biz-investment-evaluator/SKILL.md",
+  "description": "Suite integral de Due Diligence, Inversión y Modelado Financiero.",
+  "tags": [
+    "investment",
+    "due_diligence",
+    "financial",
+    "saas"
+  ]
+}

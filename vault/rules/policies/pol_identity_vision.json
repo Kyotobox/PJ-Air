@@ -1,0 +1,35 @@
+{
+  "id": "POL-IDENTITY-VISION",
+  "name": "Protocolo de Identidad Vision (SuperAdmin)",
+  "description": "Define los requisitos de certificación y privilegios para el acceso Root al búnker.",
+  "trigger": {
+    "event": "AGENT_AUTHENTICATION",
+    "conditions": {
+      "role": "SUPERADMIN"
+    }
+  },
+  "rules": [
+    {
+      "id": "RULE-ID-01",
+      "name": "RSA-Hard-Cert",
+      "condition": "agent.passport.level == 'GATE-1'",
+      "severity": "CRITICAL"
+    },
+    {
+      "id": "RULE-ID-02",
+      "name": "Perimeter-Check",
+      "condition": "agent.location == 'BUNKER-APPROVED'",
+      "severity": "HIGH"
+    }
+  ],
+  "actions": [
+    {
+      "type": "NOTIFY",
+      "message": "ALERTA: Acceso de SuperAdmin detectado. Iniciando monitoreo de alta fidelidad."
+    },
+    {
+      "type": "ENABLE_PRIVILEGED_MODE",
+      "message": "Modo privilegiado activo. Los límites de saturación ordinarios quedan en suspenso bajo firma RSA."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "POL-TEST-PARITY",
+  "name": "Test-to-Prod Parity and Anti-Entry-Point Bypass",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TURN_REGISTERED",
+    "conditions": {
+      "test_parity_violation": true
+    }
+  },
+  "actions": [
+    {
+      "type": "VETO",
+      "params": {
+        "reason": "[RULE-43] Violación de Paridad Test-to-Prod. Los tests de integración/features deben invocar exclusivamente Entry Points legítimos (UseCases, Controllers) y tienen prohibido el bypass directo a repositorios o métodos testOnly*."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "PO_ONLY"
+}

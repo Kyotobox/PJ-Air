@@ -1,0 +1,21 @@
+{
+  "id": "POL-THIN-CLIENT",
+  "name": "Thin Client Presentation Enforcement",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TURN_REGISTERED",
+    "conditions": {
+      "thin_client_violation": true
+    }
+  },
+  "actions": [
+    {
+      "type": "VETO",
+      "params": {
+        "reason": "[RULE-40] Se prohíbe la ejecución directa de queries SQL o persistencia en componentes de presentación. La UI debe delegar en Casos de Uso del dominio."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "PO_ONLY"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "POL-VISION-GUARD",
+  "name": "Vision Integrity Guard",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "SACRED_FILE_CHANGED",
+    "conditions": {
+      "is_vision": true
+    }
+  },
+  "actions": [
+    {
+      "type": "HALT",
+      "params": {
+        "message": "[VISION-BLOCK] Cambio en VISION.md detectado. Se requiere firma mandatoria del PO y re-evaluación del hito para continuar."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY"
+}

@@ -1,0 +1,21 @@
+name: axioma
+description: Núcleo de ADN Axioma (Shared Kernel) - Evolución del Shared Kernel con soporte para Pasaportes Atómicos.
+version: 4.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  json_annotation: ^4.9.0
+  freezed_annotation: ^2.4.4
+  crypto: ^3.0.3
+  sqlite3: ^3.5.1
+  cryptography: ^2.7.0
+
+dev_dependencies:
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
+  lints: ^6.0.0
+  test: ^1.25.6

@@ -1,0 +1,20 @@
+{
+  "id": "POL-GATE-TASKS",
+  "name": "Mandatory Task Gate",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "HANDOVER_REQUESTED",
+    "conditions": {
+      "has_pending_tasks": true
+    }
+  },
+  "actions": [
+    {
+      "type": "HALT",
+      "params": {
+        "message": "Handover bloqueado: Existen tareas en estado IN_PROGRESS. Finaliza o revierte antes de entregar."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY"
+}

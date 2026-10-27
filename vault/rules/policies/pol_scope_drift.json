@@ -1,0 +1,20 @@
+{
+  "id": "POL-SCOPE-DRIFT",
+  "name": "Scope Drift Monitor",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "TURN_REGISTERED",
+    "conditions": {
+      "turns_since_act": { "$gte": 5 }
+    }
+  },
+  "actions": [
+    {
+      "type": "NOTIFY",
+      "params": {
+        "message": "[SCOPE-ALERT] Más de 5 turnos de desarrollo sin certificar con 'gov act'. Se recomienda sincronizar hito para evitar deriva cognitiva."
+      }
+    }
+  ],
+  "enforcement": "ADVISORY"
+}

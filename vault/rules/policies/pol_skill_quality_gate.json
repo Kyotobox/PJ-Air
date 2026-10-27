@@ -1,0 +1,21 @@
+{
+  "id": "POL-SKILL-QUALITY-GATE",
+  "name": "Skill Quality Gate Policy",
+  "version": "1.0.0",
+  "trigger": {
+    "event": "SKILL_SYNC_REQUESTED",
+    "conditions": {
+      "skill_quality_violation": true
+    }
+  },
+  "actions": [
+    {
+      "type": "VETO",
+      "params": {
+        "reason": "[POLICY] Violación de calidad de skills. Requiere cumplimiento estricto de criterios Q1-Q7: frontmatter YAML válido (Q1), cero TODOs o mocks (Q2), especificidad y sin dilución (Q3), compatibilidad doctrinal (Q4 - BLOCKING), higiene digital sin archivos efímeros (Q5), no-redundancia con skills existentes (Q6 - WARNING) y documentación completa (Q7)."
+      }
+    }
+  ],
+  "enforcement": "MANDATORY",
+  "bypass_mode": "PO_ONLY"
+}

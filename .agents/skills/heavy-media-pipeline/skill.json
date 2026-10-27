@@ -1,0 +1,15 @@
+{
+  "skill_id": "heavy-media-pipeline",
+  "name": "Heavy Media Pipeline",
+  "version": "1.0.0",
+  "owner_node": "Automa",
+  "category": "execution",
+  "entrypoint": ".agents/skills/heavy-media-pipeline/SKILL.md",
+  "description": "Pipeline de procesamiento e inferencia pesada de medios.",
+  "tags": [
+    "media",
+    "video",
+    "ffmpeg",
+    "audio"
+  ]
+}
