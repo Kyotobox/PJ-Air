@@ -108,13 +108,30 @@ export interface OtpConfirmation {
 }
 
 /**
- * Formats user input into standard US phone mask +1 (XXX) XXX-XXXX
+ * Formats user input into standard phone mask (+1 US or +58 VZ / International)
  */
 export const formatPhoneNumber = (value: string): string => {
   if (!value) return '';
+  const trimmed = value.trim();
+
+  // Support Venezuela prefix (+58) or explicitly typed international numbers
+  if (trimmed.startsWith('+58') || trimmed.startsWith('58')) {
+    const clean = trimmed.replace(/\D/g, '');
+    let digits = clean.startsWith('58') ? clean.slice(2) : clean;
+    digits = digits.slice(0, 10);
+    if (digits.length === 0) return '+58 ';
+    if (digits.length <= 3) return `+58 (${digits}`;
+    if (digits.length <= 6) return `+58 (${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `+58 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  // Other international starting with +
+  if (trimmed.startsWith('+')) {
+    return trimmed;
+  }
+
+  // Default: US (+1)
   const clean = value.replace(/\D/g, '');
-  
-  // Strip leading 1 if provided
   let digits = clean;
   if (digits.startsWith('1') && digits.length > 10) {
     digits = digits.slice(1);
@@ -128,17 +145,21 @@ export const formatPhoneNumber = (value: string): string => {
 };
 
 /**
- * Converts formatted phone number to E.164 (+1XXXXXXXXXX)
+ * Converts formatted phone number to E.164 (+1XXXXXXXXXX or +58XXXXXXXXXX)
  */
 export const toE164Phone = (phone: string): string => {
-  const digits = phone.replace(/\D/g, '');
+  const clean = phone.trim();
+  if (clean.startsWith('+')) {
+    return `+${clean.replace(/\D/g, '')}`;
+  }
+  const digits = clean.replace(/\D/g, '');
+  if (digits.startsWith('58') && digits.length === 12) {
+    return `+${digits}`;
+  }
   if (digits.length === 10) {
     return `+1${digits}`;
   }
   if (digits.length === 11 && digits.startsWith('1')) {
-    return `+${digits}`;
-  }
-  if (phone.startsWith('+')) {
     return `+${digits}`;
   }
   return `+1${digits.slice(-10)}`;
