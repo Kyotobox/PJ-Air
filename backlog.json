@@ -92,7 +92,7 @@
     {
       "id": "S42",
       "name": "Sprint 42: Hard Gate de Verificación Telefónica SMS OTP en Registro Mayorista B2B y Blindaje de Endpoints",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-10-27",
       "goal": "Convertir la verificación telefónica SMS OTP en un requisito mandatorio (Hard Gate) e inviolable para el alta de cuentas comerciales B2B, bloqueando la creación de usuarios en backend ante la ausencia de token de verificación y deshabilitando la sumisión en frontend hasta certificar el número.",
       "tasks": [
