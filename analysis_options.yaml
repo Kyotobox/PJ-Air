@@ -1,6 +1,6 @@
 include: package:lints/recommended.yaml
 analyzer:
-  exclude: [ "**/build/**", "**/.dart_tool/**", "vault/runtime/**" ]
+  exclude: [ "**/build/**", "**/.dart_tool/**", "vault/runtime/**", "packages/**", "axis_hud/**", "apps/**", "base2/**" ]
   strong-mode:
     implicit-casts: false
     implicit-dynamic: false

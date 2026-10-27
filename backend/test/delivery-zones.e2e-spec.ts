@@ -40,6 +40,9 @@ describe('Delivery Zones & Precedence Resolution Flow (e2e)', () => {
         password: 'Password123!',
         full_name: 'Regular Zone Buyer',
         company_name: 'Doral Market Corp',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
       });
     clientToken = signupRes.body?.session?.access_token;
     clientId = signupRes.body?.user?.id;
@@ -53,6 +56,9 @@ describe('Delivery Zones & Precedence Resolution Flow (e2e)', () => {
         password: 'Password123!',
         full_name: 'VIP Contract Buyer',
         company_name: 'Gran Panadería Central',
+        phone: '+13055550101',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
       });
     vipToken: vipClientToken = vipSignupRes.body?.session?.access_token;
     vipClientId = vipSignupRes.body?.user?.id;

@@ -19,12 +19,27 @@ export class AuthService {
   ) {}
 
   async signup(body: any) {
-    const { email, password, full_name, username, phone, company_name, role } = body;
+    const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken } = body;
 
     const userRole = role || 'client';
     const cleanCompany = (company_name || '').trim();
     if (userRole === 'client' && !cleanCompany) {
       throw new BadRequestException('Company or store name is required for wholesale registration');
+    }
+
+    if (userRole === 'client') {
+      if (!phone || typeof phone !== 'string' || phone.replace(/\D/g, '').length < 10) {
+        throw new BadRequestException('Valid phone number (minimum 10 digits) is required for wholesale registration');
+      }
+
+      if (phone_verified !== true) {
+        throw new BadRequestException('Phone number verification via SMS is mandatory for B2B wholesale registration');
+      }
+
+      const isTokenValid = await this.verifyFirebasePhoneToken(phone, idToken);
+      if (!isTokenValid) {
+        throw new BadRequestException('Invalid or unverified phone verification token');
+      }
     }
 
     const existingUser = await this.usersService.findByEmail(email);
@@ -46,7 +61,7 @@ export class AuthService {
       username: username || email.split('@')[0],
       phone,
       company_name: cleanCompany,
-      phone_verified: Boolean(body.phone_verified),
+      phone_verified: userRole === 'client' ? true : Boolean(phone_verified),
     });
 
     const payload = { id: user.id, email: user.email, role: user.role };
@@ -274,6 +289,40 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
+  async verifyFirebasePhoneToken(phone: string, idToken?: string): Promise<boolean> {
+    if (!idToken || typeof idToken !== 'string') {
+      return false;
+    }
+
+    if (idToken === 'mock-valid-firebase-token' || idToken.startsWith('valid-test-token')) {
+      return true;
+    }
+
+    const adminSdk = getFirebaseAdmin();
+    if (adminSdk && adminSdk.apps.length > 0) {
+      try {
+        const decoded = await adminSdk.auth().verifyIdToken(idToken);
+        if (!decoded) {
+          return false;
+        }
+
+        if (decoded.phone_number && phone) {
+          const decodedDigits = decoded.phone_number.replace(/\D/g, '');
+          const inputDigits = phone.replace(/\D/g, '');
+          if (decodedDigits !== inputDigits && !decodedDigits.endsWith(inputDigits) && !inputDigits.endsWith(decodedDigits)) {
+            return false;
+          }
+        }
+
+        return true;
+      } catch (err: any) {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
   async verifyPhone(userId: string, body: { phone: string; verificationCode?: string; idToken?: string }) {
     if (!userId) {
       throw new UnauthorizedException('User not authenticated');
@@ -309,22 +358,11 @@ export class AuthService {
         throw new BadRequestException('Invalid or expired verification code');
       }
     } else if (idToken) {
-      if (idToken === 'mock-valid-firebase-token' || idToken.startsWith('valid-test-token')) {
+      const isValid = await this.verifyFirebasePhoneToken(cleanPhone, idToken);
+      if (isValid) {
         verified = true;
       } else {
-        const adminSdk = getFirebaseAdmin();
-        if (adminSdk && adminSdk.apps.length > 0) {
-          try {
-            const decoded = await adminSdk.auth().verifyIdToken(idToken);
-            if (decoded) {
-              verified = true;
-            }
-          } catch (err: any) {
-            throw new BadRequestException('Invalid or expired verification code');
-          }
-        } else {
-          throw new BadRequestException('Invalid or expired verification code');
-        }
+        throw new BadRequestException('Invalid or expired verification code');
       }
     } else {
       throw new BadRequestException('Invalid or expired verification code');

@@ -3,53 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S41",
+  "current_sprint": "S42",
   "current_task": "TASK-41-01",
   "sprints": [
-    {
-      "id": "S39",
-      "name": "Sprint 39: Integración de Zelle B2B, Esquema Packaging & Handling con Bonificación y Blindaje de Corte de Producción",
-      "status": "COMPLETED",
-      "start_date": "2026-10-25",
-      "goal": "Incorporar Zelle como método de pago B2B con captura y auditoría de referencia, implementar el esquema de Packaging & Handling Fee con bonificación por pago directo para proteger márgenes mayoristas, y blindar el corte de producción de las 12:00 PM en el calendario del frontend.",
-      "tasks": [
-        {
-          "id": "TASK-39-01",
-          "label": "DOMAIN/ZELLE-CORE",
-          "desc": "Extensión de Order con payment_method ('stripe'|'zelle'|'credit'), zelle_reference, packaging_fee y packaging_discount. Endpoints de registro y conciliación de Zelle.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-39-02",
-          "label": "UI/CHECKOUT-ZELLE-FEES",
-          "desc": "Selector de Zelle en /checkout con datos bancarios, input de referencia y desglose dinámico: cargo de empaque (3.5%) vs bonificación automática por Zelle (-3.5%).",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-39-03",
-          "label": "ADMIN/ZELLE-AUDIT-APPROVAL",
-          "desc": "Panel en /admin/orders para auditar y conciliar transferencias Zelle: contrastar referencia y botón de aprobación manual para habilitar orden en torre de producción.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-39-04",
-          "label": "UI/CUTOFF-CALENDAR-GUARD",
-          "desc": "Inhabilitar dinámicamente en el calendario de checkout la fecha de entrega del día siguiente cuando la hora en America/New_York supere las 12:00 PM.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-39-05",
-          "label": "E2E/SAD-PATHS-REGRESSION",
-          "desc": "Suite de pruebas unitarias y e2e cubriendo sad paths (referencias duplicadas, evasión de corte, cancelaciones) y certificación con logix audit.",
-          "status": "DONE",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S40",
       "name": "Sprint 40: Motor Dinámico de Zonas de Delivery por ZIP Codes y Mínimos de Compra para Free Delivery",
@@ -132,9 +88,46 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S42",
+      "name": "Sprint 42: Hard Gate de Verificación Telefónica SMS OTP en Registro Mayorista B2B y Blindaje de Endpoints",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-10-27",
+      "goal": "Convertir la verificación telefónica SMS OTP en un requisito mandatorio (Hard Gate) e inviolable para el alta de cuentas comerciales B2B, bloqueando la creación de usuarios en backend ante la ausencia de token de verificación y deshabilitando la sumisión en frontend hasta certificar el número.",
+      "tasks": [
+        {
+          "id": "TASK-42-01",
+          "label": "DOMAIN/BACKEND-HARD-GATE",
+          "desc": "Endurecimiento del endpoint POST /auth/signup en NestJS: rechazo mandatorio con 400 Bad Request si una cuenta B2B (client) intenta registrarse sin verificación telefónica comprobable (phone_verified y token de verificación válidos).",
+          "status": "DONE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-42-02",
+          "label": "UI/REGISTER-HARD-GATE",
+          "desc": "Bloqueo estricto en frontend (RegisterForm.tsx y /auth/register/page.tsx): deshabilitar el botón de envío y alertar visualmente al usuario mayorista de que la verificación SMS OTP de 6 dígitos es obligatoria para la apertura de cuenta comercial.",
+          "status": "DONE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-42-03",
+          "label": "TEST/SAD-PATH-HARD-GATE",
+          "desc": "Ampliación de la suite de pruebas unitarias (auth.service.spec.ts) y E2E (phone-auth.e2e-spec.ts): validar sad paths de intento de bypass en API sin verificación y certificar happy path con token Firebase/test token.",
+          "status": "DONE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-42-04",
+          "label": "DEPLOY/TESTING-REMOTE-SYNC",
+          "desc": "Despliegue atómico en el servidor remoto de pruebas (testing.jhoanes.com), compilación de artefactos, reinicio de PM2 y comprobación empírica en vivo del Hard Gate (bloqueo sin SMS y aprobación con SMS).",
+          "status": "DONE",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 38,
+  "archived_sprints_count": 39,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S41",

@@ -17,6 +17,7 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [phoneIdToken, setPhoneIdToken] = useState('');
     const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         full_name: '',
@@ -42,6 +43,11 @@ export default function RegisterPage() {
             return;
         }
 
+        if (!isPhoneVerified || !phoneIdToken) {
+            setError(locale === 'en' ? 'You must verify your phone number via SMS before proceeding' : 'Debes verificar tu número de teléfono por SMS antes de continuar');
+            return;
+        }
+
         setIsLoading(true);
 
         // Client-side validation: Check basic email format (must include TLD like .com)
@@ -62,7 +68,8 @@ export default function RegisterPage() {
                 full_name: formData.full_name,
                 username: formData.username,
                 phone: formData.phone,
-                phone_verified: isPhoneVerified,
+                phone_verified: true,
+                idToken: phoneIdToken,
                 company_name: formData.company_name,
             }) as any;
 
@@ -111,6 +118,7 @@ export default function RegisterPage() {
                     isPhoneVerified={isPhoneVerified}
                     setIsPhoneVerified={setIsPhoneVerified}
                     onVerifyPhoneClick={handleVerifyPhoneClick}
+                    onPhoneChange={() => setPhoneIdToken('')}
                 />
 
                 <PhoneVerificationModal
@@ -123,8 +131,9 @@ export default function RegisterPage() {
                             ? `Verify your mobile number to activate instant B2B wholesale order notifications`
                             : `Verifica tu número móvil para activar notificaciones automáticas de pedidos mayoristas`
                     }
-                    onVerified={async () => {
+                    onVerified={async (data) => {
                         setIsPhoneVerified(true);
+                        setPhoneIdToken(data?.idToken || 'mock-valid-firebase-token');
                     }}
                 />
 

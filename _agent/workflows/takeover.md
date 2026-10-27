@@ -1,25 +1,26 @@
 ---
-description: Workflow: /takeover (Protocolo de Onboarding). Sincroniza la sesión de la IA con el ADN del Búnker.
-Regla: Toda comunicación en español.
+description: Protocolo de Onboarding Soberano (Takeover). Sincroniza la sesión de la IA con el ADN del Búnker.
+Regla: Toda comunicación con el usuario debe ser exclusivamente en español.
 ---
 
-1. **Sincronización Sónica**:
-   - Si SHS < 50% y ADN es VALID, ejecutar: `dart run tool/brain_sweep.dart; .\bin\logix.exe sync-context; .\bin\logix.exe takeover`.
-   - **Asimilación**: Leer `TASK_RELAY.json` o nota de handover. Generar resumen explícito de continuidad.
-   - **HWC Check**: Verificar si el relay anterior tiene `hwc_complete: true`. Si es `false` o ausente → emitir advertencia `[RELAY-INCOMPLETO]` y leer con más cuidado el `TASK_RELAY.json`.
-   - **SSC Check**: El BAP reporta el `SSC` (pasos de sesión anterior del IDE). Si SSC > 1500 → emitir `[ZONA-CRITICA]`; si SSC > 400 → emitir `[ZONA-AMBAR]`.
-   - **Silencio Forense**: Ante solicitud de firma RSA, detenerse y reportar. PROHIBIDO indagar.
+> [!NOTE]
+> **COMPATIBILIDAD MULTI-AGENTE (CODEX/GENÉRICA)**
+> Si estás operando como un agente de terminal (Codex, Cursor, etc.), DEBES ejecutar `.\bin\logix.exe takeover` en tu shell para simular el comportamiento que Antigravity IDE haría nativamente.
 
-2. **Detección de Deriva**:
-   - Si hay deriva crítica en archivos GOLD (Banner ASCII / Sentinel Popup), ejecutar `.\bin\logix.exe audit`.
+1. **Sincronización Sónica (MANDATORIO)**:
+   - Si el búnker reporta SHS < 50% y ADN VALID, ejecutar directamente: `.\bin\logix.exe sync-context; .\bin\logix.exe takeover`.
+   - **Protocolo de Silencio**: En estado nominal, omitir la creación de planes extensos y proceder directamente a la tarea activa.
 
-3. **Verificación de CODE_MAP**:
-   - Confirmar que `vault/runtime/CODE_MAP.md` existe y tiene > 100 líneas.
-   - Si no existe o está vacío: ejecutar `dart run tool/generate_code_map.dart` antes de proceder.
-   - El logix lo valida automáticamente al final del takeover, pero el agente debe verificarlo explícitamente.
+2. **Detección de Deriva (Híbrida)**:
+   - El comando `takeover` ahora es instantáneo (< 2s).
+   - Si se detecta deriva crítica en archivos GOLD, el sistema mostrará un **Banner Visual ASCII** y Gobernanza UI lanzará un **Popup Persistente**.
+   - En este caso, se requiere ejecutar `.\bin\logix.exe audit` para un diagnóstico profundo.
 
-4. **Activación**:
-   - **Resiliencia (CRP)**: Si estaba `IN_PROGRESS` con odómetro saturado, ejecutar `logix audit`. Si es `VALID`, restaurar `PENDING_REVIEW`. Si es `DRIFT`, revertir al commit estable.
-   - Transitar a `/act`. Validar sprint en `DASHBOARD.md` contra `backlog.json`.
+3. **Asimilación de Continuidad Cognitiva**:
+   - Leer el mensaje del Agente Saliente (si existe) inyectado en el `relay`.
+   - Incorporar la nota estratégica al contexto actual y reportarla al PO antes de iniciar el workflow `/act`.
 
+4. **Activación Operativa**:
+   - Una vez finalizado, transitar al workflow `/act` para desarrollo de tareas.
+   - El sprint activo se muestra en task.md y backlog.json — verificar que coinciden.
 

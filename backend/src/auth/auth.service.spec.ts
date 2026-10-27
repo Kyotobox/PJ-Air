@@ -48,9 +48,42 @@ describe('AuthService', () => {
   });
 
   describe('signup', () => {
+    it('should throw BadRequestException if phone number is missing or invalid for wholesale registration', async () => {
+      await expect(service.signup({
+        email: 'test@example.com',
+        company_name: 'Test Bakery',
+        phone: '123',
+      })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if phone is not verified', async () => {
+      await expect(service.signup({
+        email: 'test@example.com',
+        company_name: 'Test Bakery',
+        phone: '+13055550100',
+        phone_verified: false,
+      })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if idToken is invalid', async () => {
+      await expect(service.signup({
+        email: 'test@example.com',
+        company_name: 'Test Bakery',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'invalid-token',
+      })).rejects.toThrow(BadRequestException);
+    });
+
     it('should throw ConflictException if email already registered', async () => {
       mockUsersService.findByEmail.mockResolvedValue({ id: '1' });
-      await expect(service.signup({ email: 'test@example.com', company_name: 'Test Bakery' })).rejects.toThrow(ConflictException);
+      await expect(service.signup({
+        email: 'test@example.com',
+        company_name: 'Test Bakery',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+      })).rejects.toThrow(ConflictException);
     });
 
     it('should create user and profile and return session', async () => {
@@ -58,7 +91,15 @@ describe('AuthService', () => {
       mockUsersService.create.mockResolvedValue({ id: '1', email: 'test@example.com' });
       mockUsersService.createProfile.mockResolvedValue({});
 
-      const result = await service.signup({ email: 'test@example.com', password: 'password', full_name: 'Test', company_name: 'Test Bakery' });
+      const result = await service.signup({
+        email: 'test@example.com',
+        password: 'password',
+        full_name: 'Test',
+        company_name: 'Test Bakery',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+      });
       expect(mockUsersService.create).toHaveBeenCalled();
       expect(mockUsersService.createProfile).toHaveBeenCalled();
       expect(result).toHaveProperty('session');

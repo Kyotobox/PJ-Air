@@ -37,6 +37,9 @@ describe('Admin Fulfillment Flow (e2e)', () => {
         password: 'Password123!',
         full_name: 'Fulfillment Client',
         company_name: 'Fulfillment Bakery',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
       })
       .expect(201);
     clientJwtToken = clientSignupRes.body.session.access_token;

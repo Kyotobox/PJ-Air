@@ -1,378 +1,421 @@
 {
-  "timestamp": "2026-07-03T17:35:52.232809",
+  "timestamp": "2026-10-25T05:12:08.309424",
   "capabilities": [
     {
-      "id": "AXIOM-EXPENSE-01",
-      "name": "ExpenseEntry",
-      "node": "conext_pilot",
-      "intent": "Gestión de gastos personales y operativos con categorización y soporte multi-moneda.",
-      "tags": [
-        "expense",
-        "financial",
-        "pilot"
-      ],
+      "id": "CAP-CORE-DISPATCH",
+      "name": "Satellite Dispatch Engine",
+      "node": "conext_core",
+      "intent": "Subcomando CLI logix dispatch y rampa de workers desatendidos",
+      "tags": [],
       "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MEKA-SETTINGS",
-      "name": "Global Governance Settings",
-      "node": "MEKA",
-      "intent": "Configuración centralizada mediante AppSettings (Axioma v1.0.0).",
-      "tags": [
-        "settings",
-        "axioma",
-        "certified"
-      ],
-      "version": 2
+      "id": "CAP-CORE-IMPACT",
+      "name": "Blast Radius AST Impact Analyzer",
+      "node": "conext_core",
+      "intent": "Analizador AST de radio de explosión (§46)",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MEKA-AUTH",
-      "name": "Atomic Identity",
-      "node": "MEKA",
-      "intent": "Gestión de identidad autárquica mediante UserIdentity (Axioma v1.0.0).",
-      "tags": [
-        "auth",
-        "axioma",
-        "certified"
-      ],
-      "version": 2
+      "id": "CAP-CORE-AUDIT",
+      "name": "Core System Health and Audit Probe",
+      "node": "conext_core",
+      "intent": "Sonda de auditoría integral y salud del sistema",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-MIIP-PRICEOPPORTUNITYGROUP",
-      "name": "PriceOpportunityGroup",
-      "node": "Ruedas",
-      "intent": "Modelo de entidad PriceOpportunityGroup en el dominio miip.",
-      "tags": [
-        "miip",
-        "priceopportunitygroup",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-CORE-AXIOMA",
+      "name": "Axioma Pure Dart Shared Kernel",
+      "node": "conext_core",
+      "intent": "Shared Kernel de Value Objects e invariantes puros (§39)",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-MIIP-PARTCATEGORY",
-      "name": "PartCategory",
-      "node": "Ruedas",
-      "intent": "Modelo de entidad PartCategory en el dominio miip.",
-      "tags": [
-        "miip",
-        "partcategory",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-CORE-BATCHER",
+      "name": "Dynamic Task Batcher",
+      "node": "conext_core",
+      "intent": "DynamicTaskBatcher de micro-lotes (§12.b)",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-MIIP-MIIPPRICEENTRY",
-      "name": "MiipPriceEntry",
-      "node": "Ruedas",
-      "intent": "Incluye campos específicos requeridos por el negocio que no están en el core de ag_domain.",
-      "tags": [
-        "miip",
-        "miippriceentry",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-RESOURCE-GUARD",
+      "name": "so-resource-guard",
+      "node": "conext_core",
+      "intent": "Salvaguarda física de memoria RAM con umbral mandatorio del 85% (§33) para prevención determinista de caídas del SO y anti-crash guard multi-stack.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-DASHBOARD_MODULE-CASHFLOWDATAPOINT",
-      "name": "CashflowDataPoint",
-      "node": "Ruedas",
-      "intent": "Generic data point for cashflow visualization.",
-      "tags": [
-        "dashboard_module",
-        "cashflowdatapoint",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-ISOLATE-THROTTLE",
+      "name": "isolate-concurrency-throttle",
+      "node": "conext_core",
+      "intent": "Limitador físico de concurrencia y workers de CPU a CPU-1 (§33) preservando al menos un núcleo lógico libre para el sistema operativo y el hilo principal.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-DASHBOARD_MODULE-PAYMENTCOMMITMENT",
-      "name": "PaymentCommitment",
-      "node": "Ruedas",
-      "intent": "Represents a generic financial commitment for dashboard visualization.",
-      "tags": [
-        "dashboard_module",
-        "paymentcommitment",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-CLAUDE-KEY-POOL",
+      "name": "claude-key-pool-dispatcher",
+      "node": "conext_core",
+      "intent": "Driver Pure Dart de rotación de claves para Anthropic Claude (Tier 2) con salto de cooldown, detección de HTTP 429/529 y cuotas según SPEC-LLM-POOL-01 §2.2.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MINIDUO-PROVEEDORES",
-      "name": "Supplier Management",
-      "node": "MINIDUO",
-      "intent": "Catálogo de proveedores, órdenes de compra y pagos a terceros.",
-      "tags": [
-        "suppliers",
-        "purchasing"
-      ],
-      "version": 1
+      "id": "CAP-SMART-GOVERNANCE-01",
+      "name": "gov-fleet-governance",
+      "node": "Smart",
+      "intent": "Guardián de principios de Core (§4 Mocks, §39 Pure Dart, §40 Thin Client, §33 Resources), rollout criptográfico RSA-2048 y Gate de Calidad Q1-Q7 de skills.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MINIDUO-SUELDOS",
-      "name": "Payroll Management",
-      "node": "MINIDUO",
-      "intent": "Cálculo y gestión de sueldos, adelantos y liquidaciones de personal.",
-      "tags": [
-        "hr",
-        "payroll",
-        "sueldos"
-      ],
-      "version": 1
+      "id": "CAP-SMART-ADSTUDIO-01",
+      "name": "adstudio-pipeline",
+      "node": "Smart",
+      "intent": "Suite de producción audiovisual y social media: espionaje de ad libraries, ganchos de 3s, guiones modulares A/B, voces TTS y compilación batch 9:16.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MINIDUO-CC",
-      "name": "Current Accounts (CC)",
-      "node": "MINIDUO",
-      "intent": "Gestión de cuentas corrientes de clientes y seguimiento de deudas.",
-      "tags": [
-        "finance",
-        "cc",
-        "customers"
-      ],
-      "version": 1
+      "id": "CAP-SMART-INVESTMENT-01",
+      "name": "biz-investment-evaluator",
+      "node": "Smart",
+      "intent": "Suite integral de Due Diligence, Inversión y Finanzas: 4 cuadrantes, unit economics (SaaS, SHS v5) y cuantificación de riesgo de deuda técnica.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MINIDUO-CAJA",
-      "name": "Cash Desk & Accounting",
-      "node": "MINIDUO",
-      "intent": "Módulo de gestión de caja diaria, ingresos y egresos operativos.",
-      "tags": [
-        "finance",
-        "accounting",
-        "caja"
-      ],
-      "version": 1
+      "id": "CAP-SMART-LEAD-01",
+      "name": "lead-capture-pipeline",
+      "node": "Smart",
+      "intent": "Suite integral de Crecimiento Comercial: captura multicanal, antifraude, scoring de capacidad y análisis de objeciones de ventas en llamadas.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-USER_MODULE-APPUSER",
-      "name": "AppUser",
-      "node": "Meka",
-      "intent": "Modelo de entidad AppUser en el dominio user_module.",
-      "tags": [
-        "user_module",
-        "appuser",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-SMART-PRICING-01",
+      "name": "biz-autopart-pricing",
+      "node": "Smart",
+      "intent": "Motor de precios en cascada, arbitraje multi-proveedor y matching de catálogo/fitment vehicular.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-HOME_MODULE-DASHBOARDSTAT",
-      "name": "DashboardStat",
-      "node": "Meka",
-      "intent": "Modelo de entidad DashboardStat en el dominio home_module.",
-      "tags": [
-        "home_module",
-        "dashboardstat",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-SMART-SCRAPER-01",
+      "name": "resilient-scraper",
+      "node": "Smart",
+      "intent": "Motor de extracción e ingesta de datos web resiliente con rotación de user-agents, backoff exponencial y persistencia DAL.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "CAP-HOME_MODULE-ACTIVITYLOG",
-      "name": "ActivityLog",
-      "node": "Meka",
-      "intent": "Modelo de entidad ActivityLog en el dominio home_module.",
-      "tags": [
-        "home_module",
-        "activitylog",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-SMART-MEDIA-01",
+      "name": "heavy-media-pipeline",
+      "node": "Smart",
+      "intent": "Pipeline de inferencia pesada de medios con salvaguarda de memoria RAM (<85%) y límites de concurrencia de CPU.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-BASE2-SHELL",
-      "name": "Dynamic Shell & Navigation",
-      "node": "BASE2",
-      "intent": "Orquestación de navegación y rutas dinámicas para aplicaciones multi-módulo.",
-      "tags": [
-        "navigation",
-        "shell",
-        "routing"
-      ],
-      "version": 1
+      "id": "CAP-SMART-FORGE-01",
+      "name": "biz-venture-forge",
+      "node": "Smart",
+      "intent": "Gobernanza de Venture Studio para incubación, forja de satélites en fleet.json y estructuración de spin-offs.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-BASE2-PREFS",
-      "name": "Global Configuration & Settings",
-      "node": "BASE2",
-      "intent": "Persistencia de preferencias globales, temas y configuración de entorno.",
-      "tags": [
-        "settings",
-        "theme",
-        "prefs"
-      ],
-      "version": 1
+      "id": "CAP-SMART-LLM-01",
+      "name": "llm-pool-query",
+      "node": "Smart",
+      "intent": "Despachador multi-proveedor de LLMs con conmutación por error (fallback), control presupuestario y validación de schemas JSON.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-BASE2-EXPORT",
-      "name": "Industrial Data Export",
-      "node": "BASE2",
-      "intent": "Sistema de exportación de reportes en formatos PDF, CSV, Excel y JSON.",
-      "tags": [
-        "export",
-        "pdf",
-        "excel",
-        "csv"
-      ],
-      "version": 1
+      "id": "CAP-SMART-DAL-CACHE",
+      "name": "smart-dal-cache",
+      "node": "Smart",
+      "intent": "Capa de abstracción de datos y caché unificado para almacenamiento persistente de subastas y avisos legales.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-BASE2-SEARCH",
-      "name": "Unified Search Engine",
-      "node": "BASE2",
-      "intent": "Motor de búsqueda indexado multi-módulo con soporte para palabras clave.",
-      "tags": [
-        "search",
-        "indexing"
-      ],
-      "version": 1
+      "id": "CAP-SMART-UTAH-SCRAPER",
+      "name": "utah-legals-scraper",
+      "node": "Smart",
+      "intent": "Scraper autónomo de avisos legales de Utah con normalización de registros y persistencia en DAL.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-BASE2-AUTH",
-      "name": "Identity & Access Management",
-      "node": "BASE2",
-      "intent": "Gestión de usuarios, roles (Admin, User, Viewer) y perfiles bajo estándar ADR-001.",
-      "tags": [
-        "auth",
-        "security",
-        "rbac"
-      ],
-      "version": 1
+      "id": "CAP-SMART-OPEN-DATA",
+      "name": "open-data-ingest",
+      "node": "Smart",
+      "intent": "Motor de ingestión de conjuntos de datos abiertos de entidades públicas hacia el repositorio unificado.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-FIREBASE-ENVIRONMENT_CONFIG",
-      "name": "FirebaseConfig",
-      "node": "Meka",
-      "intent": "Configuración técnica de Firebase (ApiKey, ProjectId) para la flota.",
-      "tags": [
-        "config",
-        "firebase",
-        "environment"
-      ],
-      "version": 1
+      "id": "CAP-SMART-EVENT-BUS",
+      "name": "strategic-event-bus",
+      "node": "Smart",
+      "intent": "Bus de eventos estratégicos tipado y atómico de la flota con persistencia en JSON y validación Draft-07.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-FIREBASE-REST_USER_REPOSITORY",
-      "name": "RestUserRepository",
-      "node": "Meka",
-      "intent": "Gestión de perfiles de usuario vía Firestore REST API.",
-      "tags": [
-        "user",
-        "firestore",
-        "rest",
-        "repository"
-      ],
-      "version": 1
+      "id": "CAP-SMART-HYDRATOR",
+      "name": "pure-dart-prompt-hydrator",
+      "node": "Smart",
+      "intent": "Herramienta Pure Dart de inyección de variables deterministas en plantillas gobernadas para workers Jules.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-FIREBASE-REST_AUTH_REPOSITORY",
-      "name": "RestAuthRepository",
-      "node": "Meka",
-      "intent": "Implementación REST de Firebase Authentication para el Shared Kernel.",
-      "tags": [
-        "auth",
-        "firebase",
-        "rest",
-        "repository"
-      ],
-      "version": 1
+      "id": "CAP-SATELLITE-FLUTTER-GOVERNANCE",
+      "name": "satellite-flutter-architecture",
+      "node": "Smart",
+      "intent": "Directivas maestras de arquitectura UI/UX para satélites de producto cosechadas de cursor.directory: inmutabilidad, §40 Thin Client, confinamiento de SDKs comerciales y tokens canónicos.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MIIP-PRICEOPPORTUNITYGROUP",
-      "name": "PriceOpportunityGroup",
-      "node": "Ruedas",
-      "intent": "Modelo de entidad PriceOpportunityGroup en el dominio miip.",
-      "tags": [
-        "miip",
-        "priceopportunitygroup",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-FLEET-ALERT-CONTRACT",
+      "name": "fleet-alert-contract",
+      "node": "Smart",
+      "intent": "Contrato agnóstico canónico de alertas de flota para telemetría pasiva y megáfono único conforme a SPEC-FLEET-ALERT-01.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MIIP-PARTCATEGORY",
-      "name": "PartCategory",
-      "node": "Ruedas",
-      "intent": "Modelo de entidad PartCategory en el dominio miip.",
-      "tags": [
-        "miip",
-        "partcategory",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-FLEET-SINGLE-ALERT-ROUTER",
+      "name": "single-alert-channel-policy",
+      "node": "Smart",
+      "intent": "Directiva vinculante que proscribe canales dispersos y consagra el canal único de Discord con Silencio Nominal.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MIIP-MIIPPRICEENTRY",
-      "name": "MiipPriceEntry",
-      "node": "Ruedas",
-      "intent": "Incluye campos específicos requeridos por el negocio que no están en el core de ag_domain.",
-      "tags": [
-        "miip",
-        "miippriceentry",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-DASHBOARD-HYGIENE-GUARD",
+      "name": "dashboard-hygiene-policy",
+      "node": "Smart",
+      "intent": "Directiva constitucional de 3 niveles de observabilidad para erradicar la sobreingeniería y fatiga de tableros.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-DASHBOARD_MODULE-PAYMENTCOMMITMENT",
-      "name": "PaymentCommitment",
-      "node": "Ruedas",
-      "intent": "Represents a generic financial commitment for dashboard visualization.",
-      "tags": [
-        "dashboard_module",
-        "paymentcommitment",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-GITHUB-PROJECTS-ORCHESTRATOR",
+      "name": "github-projects-orchestrator",
+      "node": "Smart",
+      "intent": "Protocolo declarativo de proyección unidireccional de tareas y PRs factory hacia GitHub Projects v2 a costo $0.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MEKA-EXPORT",
-      "name": "Advanced Data Export (Meka Edition)",
-      "node": "MEKA",
-      "intent": "Motor de exportación optimizado para grandes volúmenes de datos industriales.",
-      "tags": [
-        "export",
-        "data",
-        "performance"
-      ],
-      "version": 1
+      "id": "CAP-GOVERNANCE-ATLAS-VISUAL",
+      "name": "governance-atlas-visual",
+      "node": "Smart",
+      "intent": "Atlas visual y topológico de la factoría tripartita (Smart-Core-Automa), tubería de canal único #factory-status y matriz SSSoT para LLMs y humanos.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-MEKA-INDUSTRIAL",
-      "name": "Industrial Telemetry & Control",
-      "node": "MEKA",
-      "intent": "Monitoreo de señales industriales y control de dispositivos mecánicos.",
-      "tags": [
-        "iot",
-        "industrial",
-        "control"
-      ],
-      "version": 1
+      "id": "CAP-PWA-COMMAND-PORTAL",
+      "name": "pwa-command-portal",
+      "node": "Smart",
+      "intent": "Tablero de mando móvil PWA y radar de la flota (Telemetría Discord, Cola Jules, Radar Sprints, Governance Atlas y Salud Vibraframe).",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-USER_MODULE-_$APPUSERCOPYWITHIMPL<$RES>",
-      "name": "_$AppUserCopyWithImpl<$Res>",
-      "node": "Ruedas",
-      "intent": "@nodoc",
-      "tags": [
-        "user_module",
-        "_$appusercopywithimpl<$res>",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-SKILL-IMPROVEMENT-POLICY",
+      "name": "skill-improvement-policy",
+      "node": "Smart",
+      "intent": "Regla operativa lean para el ciclo de auto-mejora de skills: umbral ≥2 sesiones, 4 tipos de refactorización y gate Q1-Q7 + AC-1/2/3.",
+      "tags": [],
+      "version": "1.0.0"
     },
     {
-      "id": "NEXUS-HOME_MODULE-_$ACTIVITYLOGCOPYWITHIMPL<$RES>",
-      "name": "_$ActivityLogCopyWithImpl<$Res>",
-      "node": "Ruedas",
-      "intent": "@nodoc",
-      "tags": [
-        "home_module",
-        "_$activitylogcopywithimpl<$res>",
-        "domain-model"
-      ],
-      "version": 1
+      "id": "CAP-FLEET-DESIGN-TOKENS",
+      "name": "fleet-design-tokens",
+      "node": "Smart",
+      "intent": "Tokens de diseño canónicos y esquemas Draft-07 como SSSoT de presentación de la flota (Dark Navy, Neon Cyan, Emerald, Amber).",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-PWA-AUTO-SYNC",
+      "name": "pwa-auto-sync",
+      "node": "Smart",
+      "intent": "Herramienta autónoma de sincronización de telemetría física viva para la PWA de mando y pipeline CI/CD de auto-despliegue continuo.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-PEDA-EVALUATOR",
+      "name": "adaptive-evaluation-protocol",
+      "node": "Smart",
+      "intent": "Protocolo de Evaluación Adaptativa (PEDA) y Junta Evaluadora colegiada de 6 roles con veto vinculante del Customer Proxy / UAT Sentinel para arbitraje y control estratégico sin mutación de código.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-TYPED-POLICY-ENGINE",
+      "name": "typed-policy-engine",
+      "node": "Smart",
+      "intent": "Motor de políticas reactivas tipadas del Kernel v11 (21 políticas JSON) para control de gates, drift arquitectónico y reglas de flota.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-SATELLITE-QUEUE-DISPATCH",
+      "name": "satellite-queue-dispatch",
+      "node": "Smart",
+      "intent": "Contrato canónico y protocolo de despacho asíncrono encolado desde satélites hacia el daemon de Automa y Google Jules (§15, §12.b, §41).",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-OFFLINE-FIRST-POLICY",
+      "name": "offline-first-policy",
+      "node": "Smart",
+      "intent": "Directiva canónica de inmunidad ante desconexión de red, proscripción de bloqueos en UI/CLI y degradación elegante hacia SQLite/cache local.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-LLM-KEY-POOL",
+      "name": "llm-key-pool-dispatcher",
+      "node": "Smart",
+      "intent": "Despachador y rotador asimétrico de claves de LLMs (Gemini Tier-1 volumen / Claude Tier-2 auditoría con Sonnet 5.5) con balanceo de cuotas, chequeo de vitalidad y aislamiento.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-SPRINT-STATE-MACHINE",
+      "name": "sprint-state-machine",
+      "node": "Smart",
+      "intent": "Máquina de estados finitos que gobierna el ciclo de vida de sprints y tareas en la flota (PLANNED, ACTIVE, COMPLETED).",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-NEXUS-STATIC-PROTOCOL",
+      "name": "nexus-static-protocol",
+      "node": "Smart",
+      "intent": "Especificación canónica del bus asíncrono estático de eventos sobre Git y JSON Draft-07 (cero daemons).",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-EXTERNAL-TOOLS-POLICY",
+      "name": "external-tools-policy",
+      "node": "Smart",
+      "intent": "Política de congelamiento del stack a 3 herramientas externas (Lovable/v0, Miro Edu, Mobbin) y ventana trimestral de 48h.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-RESOURCE-GUARD",
+      "name": "so-resource-guard",
+      "node": "Smart",
+      "intent": "Salvaguarda física de memoria RAM con umbral mandatorio del 85% (§33) para prevención determinista de caídas del SO y anti-crash guard multi-stack.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-ISOLATE-THROTTLE",
+      "name": "isolate-concurrency-throttle",
+      "node": "Smart",
+      "intent": "Limitador físico de concurrencia y workers de CPU a CPU-1 (§33) preservando al menos un núcleo lógico libre para el sistema operativo y el hilo principal.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-CLAUDE-KEY-POOL",
+      "name": "claude-key-pool-dispatcher",
+      "node": "Smart",
+      "intent": "Driver Pure Dart de rotación de claves para Anthropic Claude (Tier 2) con salto de cooldown, detección de HTTP 429/529 y cuotas según SPEC-LLM-POOL-01 §2.2.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-POL-UX-CROSS-BUNKER-22",
+      "name": "ux-cross-bunker-policy",
+      "node": "Smart",
+      "intent": "Política #22 de UX Cross-Búnker y SLAs cuantitativos vinculantes (<400ms búsqueda, ≥98% fitment, WCAG AA ≥4.5:1) con elevación a S1 ante regresión.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-CORE-DISPATCH",
+      "name": "Satellite Dispatch Engine",
+      "node": "local",
+      "intent": "Subcomando CLI logix dispatch y rampa de workers desatendidos",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-CORE-IMPACT",
+      "name": "Blast Radius AST Impact Analyzer",
+      "node": "local",
+      "intent": "Analizador AST de radio de explosión (§46)",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-CORE-AUDIT",
+      "name": "Core System Health and Audit Probe",
+      "node": "local",
+      "intent": "Sonda de auditoría integral y salud del sistema",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-CORE-AXIOMA",
+      "name": "Axioma Pure Dart Shared Kernel",
+      "node": "local",
+      "intent": "Shared Kernel de Value Objects e invariantes puros (§39)",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-CORE-BATCHER",
+      "name": "Dynamic Task Batcher",
+      "node": "local",
+      "intent": "DynamicTaskBatcher de micro-lotes (§12.b)",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-RESOURCE-GUARD",
+      "name": "so-resource-guard",
+      "node": "local",
+      "intent": "Salvaguarda física de memoria RAM con umbral mandatorio del 85% (§33) para prevención determinista de caídas del SO y anti-crash guard multi-stack.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-ISOLATE-THROTTLE",
+      "name": "isolate-concurrency-throttle",
+      "node": "local",
+      "intent": "Limitador físico de concurrencia y workers de CPU a CPU-1 (§33) preservando al menos un núcleo lógico libre para el sistema operativo y el hilo principal.",
+      "tags": [],
+      "version": "1.0.0"
+    },
+    {
+      "id": "CAP-CLAUDE-KEY-POOL",
+      "name": "claude-key-pool-dispatcher",
+      "node": "local",
+      "intent": "Driver Pure Dart de rotación de claves para Anthropic Claude (Tier 2) con salto de cooldown, detección de HTTP 429/529 y cuotas según SPEC-LLM-POOL-01 §2.2.",
+      "tags": [],
+      "version": "1.0.0"
     }
   ]
 }

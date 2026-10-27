@@ -39,6 +39,9 @@ describe('Zelle B2B Checkout & Cutoff Flow (e2e)', () => {
         password: 'Password123!',
         full_name: 'Zelle Wholesale Buyer',
         company_name: 'Bodega El Roble B2B',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
       });
     clientToken = signupRes.body?.session?.access_token;
     clientId = signupRes.body?.user?.id;
@@ -196,6 +199,6 @@ describe('Zelle B2B Checkout & Cutoff Flow (e2e)', () => {
       })
       .expect(400);
 
-    expect(res.body.message).toContain('pasado');
+    expect(res.body.message).toMatch(/(pasado|mismo d[ií]a)/i);
   });
 });

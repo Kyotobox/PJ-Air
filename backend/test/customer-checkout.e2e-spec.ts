@@ -26,6 +26,9 @@ describe('Customer Checkout Flow (e2e)', () => {
     full_name: 'Checkout User',
     username: `checkoutuser_${Date.now()}`,
     company_name: 'Panadería Central',
+    phone: '+13055550100',
+    phone_verified: true,
+    idToken: 'mock-valid-firebase-token',
   };
 
   const addressPayload = {
@@ -118,7 +121,16 @@ describe('Customer Checkout Flow (e2e)', () => {
 
   it('should ensure users can only fetch and modify their own addresses (isolation)', async () => {
     // 1. Setup a second user
-    const secondUser = { email: `another_user_${Date.now()}@example.com`, password: 'Password123!', full_name: 'Another User', username: `another_${Date.now()}`, company_name: 'Second Bakery' };
+    const secondUser = {
+      email: `another_user_${Date.now()}@example.com`,
+      password: 'Password123!',
+      full_name: 'Another User',
+      username: `another_${Date.now()}`,
+      company_name: 'Second Bakery',
+      phone: '+13055550101',
+      phone_verified: true,
+      idToken: 'mock-valid-firebase-token',
+    };
     await request(app.getHttpServer()).post('/auth/signup').send(secondUser);
     const loginRes = await request(app.getHttpServer()).post('/auth/login').send({ email: secondUser.email, password: secondUser.password });
     anotherUserJwtToken = loginRes.body.session.access_token;

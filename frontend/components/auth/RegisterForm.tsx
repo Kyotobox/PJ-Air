@@ -14,6 +14,7 @@ interface RegisterFormProps {
     isPhoneVerified?: boolean;
     setIsPhoneVerified?: (verified: boolean) => void;
     onVerifyPhoneClick?: () => void;
+    onPhoneChange?: () => void;
 }
 
 export const RegisterForm = ({
@@ -25,6 +26,7 @@ export const RegisterForm = ({
     isPhoneVerified = false,
     setIsPhoneVerified,
     onVerifyPhoneClick,
+    onPhoneChange,
 }: RegisterFormProps) => {
     const { t, locale } = useLanguage();
 
@@ -33,6 +35,9 @@ export const RegisterForm = ({
         setFormData({ ...formData, phone: formatted });
         if (isPhoneVerified && setIsPhoneVerified) {
             setIsPhoneVerified(false);
+        }
+        if (onPhoneChange) {
+            onPhoneChange();
         }
     };
 
@@ -127,6 +132,27 @@ export const RegisterForm = ({
                             </div>
                         )}
                     </div>
+                    {formData.phone && !isPhoneVerified && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-center justify-between gap-2 animate-fade-in shadow-xs">
+                            <div className="flex items-center gap-2">
+                                <Smartphone size={16} className="text-amber-600 shrink-0" />
+                                <span className="font-semibold text-[11px] leading-tight">
+                                    {locale === 'en'
+                                        ? 'Phone verification required for wholesale accounts'
+                                        : 'Verificación de teléfono requerida para cuentas mayoristas'}
+                                </span>
+                            </div>
+                            {onVerifyPhoneClick && (
+                                <button
+                                    type="button"
+                                    onClick={onVerifyPhoneClick}
+                                    className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors shrink-0 cursor-pointer"
+                                >
+                                    {locale === 'en' ? 'Verify via SMS' : 'Verificar vía SMS'}
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Company name — full width, mandatory */}
@@ -196,13 +222,22 @@ export const RegisterForm = ({
 
             <div className="pt-4">
                 <button
-                    disabled={isLoading}
-                    className="w-full premium-button jhoanes-gradient text-white text-sm uppercase tracking-widest py-4 flex items-center justify-center gap-3"
+                    disabled={isLoading || !isPhoneVerified}
+                    className={`w-full premium-button jhoanes-gradient text-white text-sm uppercase tracking-widest py-4 flex items-center justify-center gap-3 transition-all ${
+                        (!isPhoneVerified || isLoading) ? 'opacity-50 cursor-not-allowed shadow-none' : ''
+                    }`}
                 >
                     {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
                         <>{t.register.submit} <ArrowRight size={20} /></>
                     )}
                 </button>
+                {!isPhoneVerified && (
+                    <p className="text-[11px] text-center text-amber-700/80 font-bold mt-2.5 animate-fade-in">
+                        {locale === 'en'
+                            ? '⚠ SMS phone verification is required to enable wholesale account registration'
+                            : '⚠ Se requiere verificación de teléfono vía SMS para habilitar el registro mayorista'}
+                    </p>
+                )}
             </div>
         </form>
     );

@@ -36,6 +36,7 @@ export declare class AuthService {
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{
         message: string;
     }>;
+    verifyFirebasePhoneToken(phone: string, idToken?: string): Promise<boolean>;
     verifyPhone(userId: string, body: {
         phone: string;
         verificationCode?: string;

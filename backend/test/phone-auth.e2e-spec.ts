@@ -20,6 +20,8 @@ describe('Phone Auth Verification (e2e)', () => {
     full_name: 'Phone Auth Tester',
     company_name: 'B2B Verification Bakery',
     phone: '+1 (305) 555-0100',
+    phone_verified: true,
+    idToken: 'mock-valid-firebase-token',
   };
 
   beforeAll(async () => {
@@ -188,5 +190,66 @@ describe('Phone Auth Verification (e2e)', () => {
     const profile = await profileRepo.findOne({ where: { id: testUserId } });
     expect(profile?.phone).toBe('+1 (305) 555-9999');
     expect(profile?.phone_verified).toBe(false);
+  });
+
+  it('Sad path: registro client sin verificación telefónica -> 400 Bad Request', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        email: `unverified_phone_${Date.now()}@jhpanesbakery.com`,
+        password: 'TestPassword123!',
+        full_name: 'Unverified Tester',
+        company_name: 'Unverified Bakery LLC',
+        phone: '+1 (305) 555-0999',
+        phone_verified: false,
+      })
+      .expect(400);
+
+    expect(res.body.message).toMatch(/phone number verification via sms is mandatory for b2b wholesale registration/i);
+  });
+
+  it('Sad path: registro client con phone_verified pero token inválido o ausente -> 400 Bad Request', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        email: `invalid_token_${Date.now()}@jhpanesbakery.com`,
+        password: 'TestPassword123!',
+        full_name: 'Invalid Token Tester',
+        company_name: 'Invalid Token Bakery LLC',
+        phone: '+1 (305) 555-0888',
+        phone_verified: true,
+        idToken: 'invalid-fake-token-12345',
+      })
+      .expect(400);
+
+    expect(res.body.message).toMatch(/invalid or unverified phone verification token/i);
+  });
+
+  it('Happy path: registro mayorista B2B exitoso con teléfono y token verificado -> 201 Created y phone_verified en BD', async () => {
+    const happyEmail = `happy_b2b_${Date.now()}@jhpanesbakery.com`;
+    const res = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        email: happyEmail,
+        password: 'TestPassword123!',
+        full_name: 'Happy B2B Wholesale Client',
+        company_name: 'Happy Bakery Florida LLC',
+        phone: '+1 (305) 555-0777',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+      })
+      .expect(201);
+
+    expect(res.body.user).toBeDefined();
+    expect(res.body.user.email).toBe(happyEmail);
+    expect(res.body.session).toBeDefined();
+
+    const createdProfile = await profileRepo.findOne({ where: { id: res.body.user.id } });
+    expect(createdProfile).toBeDefined();
+    expect(createdProfile?.phone_verified).toBe(true);
+
+    // Cleanup
+    await profileRepo.delete({ id: res.body.user.id });
+    await userRepo.delete({ id: res.body.user.id });
   });
 });

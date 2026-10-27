@@ -1,9 +1,8 @@
-# SPRINT S41 - Sprint 41: Verificación Telefónica SMS OTP con Firebase en Registro B2B y Modificación de Perfil
-**Objetivo**: Implementar la verificación de identidad telefónica mediante SMS OTP de 6 dígitos con Firebase Authentication (Free Tier) tanto en el registro B2B inicial como en la edición de número de teléfono en /profile, con soporte para números de prueba y preservación de cuenta ante cancelaciones.
-**Fecha**: 2026-10-25
+# SPRINT S42 - Sprint 42: Hard Gate de Verificación Telefónica SMS OTP en Registro Mayorista B2B y Blindaje de Endpoints
+**Objetivo**: Convertir la verificación telefónica SMS OTP en un requisito mandatorio (Hard Gate) e inviolable para el alta de cuentas comerciales B2B, bloqueando la creación de usuarios en backend ante la ausencia de token de verificación y deshabilitando la sumisión en frontend hasta certificar el número.
+**Fecha**: 2026-10-27
 
-- [x] **TASK-41-01** [DOMAIN/PHONE-AUTH-CORE] Integración de Firebase Admin en backend NestJS, columna phone_verified en Profile y endpoint POST /api/auth/verify-phone-token para certificar el token emitido por Firebase.
-- [x] **TASK-41-02** [UI/FIREBASE-PHONE-CLIENT] Configuración del cliente Firebase Web SDK en frontend/lib/firebase.ts con reCAPTCHA invisible y fallback graceful si faltan credenciales en .env.
-- [x] **TASK-41-03** [UI/REGISTER-SMS-OTP] Modal emergente de verificación SMS OTP en /auth/register: envío de código de 6 dígitos al teléfono ingresado, verificación atómica y feedback visual de confirmación.
-- [x] **TASK-41-04** [UI/PROFILE-PHONE-CHANGE-GUARD] Guardarraíl en /profile: detección de mutación en el campo de teléfono, despliegue de modal OTP para el nuevo número y persistencia en backend solo tras verificación exitosa.
-- [x] **TASK-41-05** [E2E/PHONE-AUTH-REGRESSION] Suite de pruebas unitarias y Playwright con números de prueba de Firebase (+1 305 555 0100 -> 123456), sad paths (código incorrecto, reintento expirado, cancelación de modal) y certificación logix audit.
+- [x] **TASK-42-01** [DOMAIN/BACKEND-HARD-GATE] Endurecimiento del endpoint POST /auth/signup en NestJS: rechazo mandatorio con 400 Bad Request si una cuenta B2B (client) intenta registrarse sin verificación telefónica comprobable (phone_verified y token de verificación válidos).
+- [x] **TASK-42-02** [UI/REGISTER-HARD-GATE] Bloqueo estricto en frontend (RegisterForm.tsx y /auth/register/page.tsx): deshabilitar el botón de envío y alertar visualmente al usuario mayorista de que la verificación SMS OTP de 6 dígitos es obligatoria para la apertura de cuenta comercial.
+- [x] **TASK-42-03** [TEST/SAD-PATH-HARD-GATE] Ampliación de la suite de pruebas unitarias (auth.service.spec.ts) y E2E (phone-auth.e2e-spec.ts): validar sad paths de intento de bypass en API sin verificación y certificar happy path con token Firebase/test token.
+- [x] **TASK-42-04** [DEPLOY/TESTING-REMOTE-SYNC] Despliegue atómico en el servidor remoto de pruebas (testing.jhoanes.com), compilación de artefactos, reinicio de PM2 y comprobación empírica en vivo del Hard Gate (bloqueo sin SMS y aprobación con SMS).
