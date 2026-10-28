@@ -133,91 +133,92 @@ class _$FitmentEntityCopyWithImpl<$Res, $Val extends FitmentEntity>
   }) {
     return _then(
       _value.copyWith(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        partId: null == partId
-            ? _value.partId
-            : partId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        vehicleId: freezed == vehicleId
-            ? _value.vehicleId
-            : vehicleId // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        vehicleMake: null == vehicleMake
-            ? _value.vehicleMake
-            : vehicleMake // ignore: cast_nullable_to_non_nullable
-                  as String,
-        vehicleModel: null == vehicleModel
-            ? _value.vehicleModel
-            : vehicleModel // ignore: cast_nullable_to_non_nullable
-                  as String,
-        vehicleYear: null == vehicleYear
-            ? _value.vehicleYear
-            : vehicleYear // ignore: cast_nullable_to_non_nullable
-                  as String,
-        vehicleSubModel: freezed == vehicleSubModel
-            ? _value.vehicleSubModel
-            : vehicleSubModel // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        engineCode: freezed == engineCode
-            ? _value.engineCode
-            : engineCode // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        driveType: freezed == driveType
-            ? _value.driveType
-            : driveType // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        yearFrom: freezed == yearFrom
-            ? _value.yearFrom
-            : yearFrom // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        yearTo: freezed == yearTo
-            ? _value.yearTo
-            : yearTo // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        engineCc: freezed == engineCc
-            ? _value.engineCc
-            : engineCc // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        fuelType: freezed == fuelType
-            ? _value.fuelType
-            : fuelType // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        bodyType: freezed == bodyType
-            ? _value.bodyType
-            : bodyType // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        verificationStatus: null == verificationStatus
-            ? _value.verificationStatus
-            : verificationStatus // ignore: cast_nullable_to_non_nullable
-                  as String,
-        verificationSource: freezed == verificationSource
-            ? _value.verificationSource
-            : verificationSource // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        isOemValidated: null == isOemValidated
-            ? _value.isOemValidated
-            : isOemValidated // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        oemPartNumber: freezed == oemPartNumber
-            ? _value.oemPartNumber
-            : oemPartNumber // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        isInferred: null == isInferred
-            ? _value.isInferred
-            : isInferred // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        confidence: null == confidence
-            ? _value.confidence
-            : confidence // ignore: cast_nullable_to_non_nullable
-                  as double,
-        notes: freezed == notes
-            ? _value.notes
-            : notes // ignore: cast_nullable_to_non_nullable
-                  as String?,
-      ) as $Val,
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            partId: null == partId
+                ? _value.partId
+                : partId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            vehicleId: freezed == vehicleId
+                ? _value.vehicleId
+                : vehicleId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            vehicleMake: null == vehicleMake
+                ? _value.vehicleMake
+                : vehicleMake // ignore: cast_nullable_to_non_nullable
+                      as String,
+            vehicleModel: null == vehicleModel
+                ? _value.vehicleModel
+                : vehicleModel // ignore: cast_nullable_to_non_nullable
+                      as String,
+            vehicleYear: null == vehicleYear
+                ? _value.vehicleYear
+                : vehicleYear // ignore: cast_nullable_to_non_nullable
+                      as String,
+            vehicleSubModel: freezed == vehicleSubModel
+                ? _value.vehicleSubModel
+                : vehicleSubModel // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            engineCode: freezed == engineCode
+                ? _value.engineCode
+                : engineCode // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            driveType: freezed == driveType
+                ? _value.driveType
+                : driveType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            yearFrom: freezed == yearFrom
+                ? _value.yearFrom
+                : yearFrom // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            yearTo: freezed == yearTo
+                ? _value.yearTo
+                : yearTo // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            engineCc: freezed == engineCc
+                ? _value.engineCc
+                : engineCc // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            fuelType: freezed == fuelType
+                ? _value.fuelType
+                : fuelType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            bodyType: freezed == bodyType
+                ? _value.bodyType
+                : bodyType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            verificationStatus: null == verificationStatus
+                ? _value.verificationStatus
+                : verificationStatus // ignore: cast_nullable_to_non_nullable
+                      as String,
+            verificationSource: freezed == verificationSource
+                ? _value.verificationSource
+                : verificationSource // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isOemValidated: null == isOemValidated
+                ? _value.isOemValidated
+                : isOemValidated // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            oemPartNumber: freezed == oemPartNumber
+                ? _value.oemPartNumber
+                : oemPartNumber // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isInferred: null == isInferred
+                ? _value.isInferred
+                : isInferred // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            confidence: null == confidence
+                ? _value.confidence
+                : confidence // ignore: cast_nullable_to_non_nullable
+                      as double,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
     );
   }
 }
@@ -560,27 +561,27 @@ class _$FitmentEntityImpl implements _FitmentEntity {
 
 abstract class _FitmentEntity implements FitmentEntity {
   const factory _FitmentEntity({
-    required String id,
-    required String partId,
-    String? vehicleId,
-    required String vehicleMake,
-    required String vehicleModel,
-    required String vehicleYear,
-    String? vehicleSubModel,
-    String? engineCode,
-    String? driveType,
-    int? yearFrom,
-    int? yearTo,
-    String? engineCc,
-    String? fuelType,
-    String? bodyType,
-    String verificationStatus,
-    String? verificationSource,
-    bool isOemValidated,
-    String? oemPartNumber,
-    required bool isInferred,
-    required double confidence,
-    String? notes,
+    required final String id,
+    required final String partId,
+    final String? vehicleId,
+    required final String vehicleMake,
+    required final String vehicleModel,
+    required final String vehicleYear,
+    final String? vehicleSubModel,
+    final String? engineCode,
+    final String? driveType,
+    final int? yearFrom,
+    final int? yearTo,
+    final String? engineCc,
+    final String? fuelType,
+    final String? bodyType,
+    final String verificationStatus,
+    final String? verificationSource,
+    final bool isOemValidated,
+    final String? oemPartNumber,
+    required final bool isInferred,
+    required final double confidence,
+    final String? notes,
   }) = _$FitmentEntityImpl;
 
   factory _FitmentEntity.fromJson(Map<String, dynamic> json) =

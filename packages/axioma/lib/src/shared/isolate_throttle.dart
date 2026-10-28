@@ -7,7 +7,6 @@ library;
 
 import 'dart:async';
 import 'dart:io';
-
 import 'resource_guard.dart';
 
 /// Excepción lanzada cuando una solicitud de workers satura todos los núcleos de CPU.
@@ -102,7 +101,8 @@ class IsolateThrottle {
         requestedWorkers: requestedWorkers,
         maxAllowedWorkers: maxAllowed,
         totalCores: cores,
-        message: 'La cantidad de workers solicitada supera el límite recomendado de CPU - 1.',
+        message:
+            'La cantidad de workers solicitada supera el límite recomendado de CPU - 1.',
       );
     }
   }

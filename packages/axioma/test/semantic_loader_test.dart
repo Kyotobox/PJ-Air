@@ -4,9 +4,11 @@ import 'package:test/test.dart';
 
 void main() {
   group('SemanticLoader Unit Tests', () {
-    test('fromDb carga search_aliases, regional_aliases y taxonomyRules de DB en memoria', () {
-      final Database db = sqlite3.openInMemory();
-      db.execute('''
+    test(
+      'fromDb carga search_aliases, regional_aliases y taxonomyRules de DB en memoria',
+      () {
+        final Database db = sqlite3.openInMemory();
+        db.execute('''
         CREATE TABLE search_aliases (
           id INTEGER PRIMARY KEY,
           alias_term TEXT NOT NULL,
@@ -14,7 +16,7 @@ void main() {
           alias_type TEXT
         );
       ''');
-      db.execute('''
+        db.execute('''
         CREATE TABLE regional_aliases (
           id INTEGER PRIMARY KEY,
           raw_term TEXT NOT NULL,
@@ -23,7 +25,7 @@ void main() {
           source TEXT
         );
       ''');
-      db.execute('''
+        db.execute('''
         CREATE TABLE canonical_taxonomy_matrix (
           id INTEGER PRIMARY KEY,
           raw_input TEXT NOT NULL,
@@ -34,37 +36,41 @@ void main() {
         );
       ''');
 
-      db.execute(
-        "INSERT INTO search_aliases VALUES (1, 'pastilla', 'FRENO', 'SYNONYM');",
-      );
-      db.execute(
-        "INSERT INTO regional_aliases VALUES (1, 'croche', 'EMBRAGUE', 'VE', 'LOCAL');",
-      );
-      db.execute(
-        "INSERT INTO canonical_taxonomy_matrix VALUES (1, 'pastillas freno', 'FRENO', 'PASTILLAS', 0.95, 'RULE');",
-      );
+        db.execute(
+          "INSERT INTO search_aliases VALUES (1, 'pastilla', 'FRENO', 'SYNONYM');",
+        );
+        db.execute(
+          "INSERT INTO regional_aliases VALUES (1, 'croche', 'EMBRAGUE', 'VE', 'LOCAL');",
+        );
+        db.execute(
+          "INSERT INTO canonical_taxonomy_matrix VALUES (1, 'pastillas freno', 'FRENO', 'PASTILLAS', 0.95, 'RULE');",
+        );
 
-      final SemanticLoader loader = SemanticLoader.fromDb(db);
+        final SemanticLoader loader = SemanticLoader.fromDb(db);
 
-      expect(loader.searchAliases['PASTILLA'], equals('FRENO'));
-      expect(loader.regionalAliases['CROCHE'], equals('EMBRAGUE'));
-      expect(loader.taxonomyRules, hasLength(1));
-      expect(loader.taxonomyRules.first['canonical_l1'], equals('FRENO'));
+        expect(loader.searchAliases['PASTILLA'], equals('FRENO'));
+        expect(loader.regionalAliases['CROCHE'], equals('EMBRAGUE'));
+        expect(loader.taxonomyRules, hasLength(1));
+        expect(loader.taxonomyRules.first['canonical_l1'], equals('FRENO'));
 
-      db.close();
-    });
+        db.close();
+      },
+    );
 
-    test('fromDb con DB vacía no arroja excepción y retorna loader con mapas vacíos', () {
-      final Database db = sqlite3.openInMemory();
-      final SemanticLoader loader = SemanticLoader.fromDb(db);
+    test(
+      'fromDb con DB vacía no arroja excepción y retorna loader con mapas vacíos',
+      () {
+        final Database db = sqlite3.openInMemory();
+        final SemanticLoader loader = SemanticLoader.fromDb(db);
 
-      expect(loader.searchAliases, isEmpty);
-      expect(loader.regionalAliases, isEmpty);
-      expect(loader.taxonomyRules, isEmpty);
-      expect(loader.descriptionTokens, isNotEmpty); // fallback por defecto
+        expect(loader.searchAliases, isEmpty);
+        expect(loader.regionalAliases, isEmpty);
+        expect(loader.taxonomyRules, isEmpty);
+        expect(loader.descriptionTokens, isNotEmpty); // fallback por defecto
 
-      db.close();
-    });
+        db.close();
+      },
+    );
 
     test('fromSeedMeta lee description_tokens desde snapshot_meta', () {
       final Database db = sqlite3.openInMemory();

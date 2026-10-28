@@ -10,11 +10,13 @@ void main() {
     });
 
     group('Happy Paths', () {
-      test('HP-1: Calcula PageRank y otorga mayor jerarquía al archivo más referenciado', () {
-        // Archivo A es un modelo base (Core)
-        // Archivo B y Archivo C hacen referencia a la clase UserModel de A
-        final Map<String, String> files = <String, String>{
-          'lib/models/user_model.dart': '''
+      test(
+        'HP-1: Calcula PageRank y otorga mayor jerarquía al archivo más referenciado',
+        () {
+          // Archivo A es un modelo base (Core)
+          // Archivo B y Archivo C hacen referencia a la clase UserModel de A
+          final Map<String, String> files = <String, String>{
+            'lib/models/user_model.dart': '''
             class UserModel {
               final String id;
               final String name;
@@ -22,7 +24,7 @@ void main() {
               String getDisplayName() => name;
             }
           ''',
-          'lib/services/auth_service.dart': '''
+            'lib/services/auth_service.dart': '''
             import 'package:app/models/user_model.dart';
             class AuthService {
               UserModel? currentUser;
@@ -31,34 +33,37 @@ void main() {
               }
             }
           ''',
-          'lib/controllers/user_controller.dart': '''
+            'lib/controllers/user_controller.dart': '''
             import 'package:app/models/user_model.dart';
             class UserController {
               UserModel profile() => UserModel(id: "2", name: "Guest");
             }
           ''',
-        };
+          };
 
-        final RepoMap repoMap = generator.generateFromSourceMap(files);
+          final RepoMap repoMap = generator.generateFromSourceMap(files);
 
-        expect(repoMap.includedFiles, contains('lib/models/user_model.dart'));
-        expect(repoMap.fileScores, contains('lib/models/user_model.dart'));
+          expect(repoMap.includedFiles, contains('lib/models/user_model.dart'));
+          expect(repoMap.fileScores, contains('lib/models/user_model.dart'));
 
-        // user_model es referenciado por auth_service y user_controller, debe tener el score más alto
-        final double modelScore =
-            repoMap.fileScores['lib/models/user_model.dart']!;
-        final double authScore =
-            repoMap.fileScores['lib/services/auth_service.dart']!;
-        final double controllerScore =
-            repoMap.fileScores['lib/controllers/user_controller.dart']!;
+          // user_model es referenciado por auth_service y user_controller, debe tener el score más alto
+          final double modelScore =
+              repoMap.fileScores['lib/models/user_model.dart']!;
+          final double authScore =
+              repoMap.fileScores['lib/services/auth_service.dart']!;
+          final double controllerScore =
+              repoMap.fileScores['lib/controllers/user_controller.dart']!;
 
-        expect(modelScore, greaterThan(authScore));
-        expect(modelScore, greaterThan(controllerScore));
-      });
+          expect(modelScore, greaterThan(authScore));
+          expect(modelScore, greaterThan(controllerScore));
+        },
+      );
 
-      test('HP-2: Renderizado estructural contiene símbolos y firmas sin cuerpos verbosos', () {
-        final Map<String, String> files = <String, String>{
-          'lib/engine.dart': '''
+      test(
+        'HP-2: Renderizado estructural contiene símbolos y firmas sin cuerpos verbosos',
+        () {
+          final Map<String, String> files = <String, String>{
+            'lib/engine.dart': '''
             class ExecutionEngine {
               void start() {
                 // implementación compleja
@@ -75,18 +80,19 @@ void main() {
               halted
             }
           ''',
-        };
+          };
 
-        final RepoMap repoMap = generator.generateFromSourceMap(files);
-        final String outline = repoMap.formattedOutline;
+          final RepoMap repoMap = generator.generateFromSourceMap(files);
+          final String outline = repoMap.formattedOutline;
 
-        expect(outline, contains('class ExecutionEngine'));
-        expect(outline, contains('void start()'));
-        expect(outline, contains('Future<bool> stop()'));
-        expect(outline, contains('enum EngineState'));
-        // No debe filtrar la implementación interna verbosa
-        expect(outline, isNot(contains('int x = 10;')));
-      });
+          expect(outline, contains('class ExecutionEngine'));
+          expect(outline, contains('void start()'));
+          expect(outline, contains('Future<bool> stop()'));
+          expect(outline, contains('enum EngineState'));
+          // No debe filtrar la implementación interna verbosa
+          expect(outline, isNot(contains('int x = 10;')));
+        },
+      );
 
       test(
         'HP-3: Presupuesto restrictivo trunca archivos de menor jerarquía',
@@ -154,16 +160,19 @@ void main() {
         },
       );
 
-      test('SP-2: RepoMapGenerator con dampingFactor fuera de (0, 1) lanza AssertionError', () {
-        expect(
-          () => RepoMapGenerator(dampingFactor: 1.5),
-          throwsA(isA<AssertionError>()),
-        );
-        expect(
-          () => RepoMapGenerator(dampingFactor: -0.1),
-          throwsA(isA<AssertionError>()),
-        );
-      });
+      test(
+        'SP-2: RepoMapGenerator con dampingFactor fuera de (0, 1) lanza AssertionError',
+        () {
+          expect(
+            () => RepoMapGenerator(dampingFactor: 1.5),
+            throwsA(isA<AssertionError>()),
+          );
+          expect(
+            () => RepoMapGenerator(dampingFactor: -0.1),
+            throwsA(isA<AssertionError>()),
+          );
+        },
+      );
 
       test('SP-3: maxTokens <= 0 lanza AssertionError', () {
         expect(
@@ -172,22 +181,25 @@ void main() {
         );
       });
 
-      test('SP-4: Archivo con llaves desbalanceadas no cuelga el parser (resiliencia)', () {
-        final Map<String, String> brokenFiles = <String, String>{
-          'lib/broken.dart': '''
+      test(
+        'SP-4: Archivo con llaves desbalanceadas no cuelga el parser (resiliencia)',
+        () {
+          final Map<String, String> brokenFiles = <String, String>{
+            'lib/broken.dart': '''
             class BrokenClass {
               void unclosedMethod( {
                 int broken = 1;
           ''',
-        };
+          };
 
-        expect(
-          () => generator.generateFromSourceMap(brokenFiles),
-          returnsNormally,
-        );
-        final RepoMap repoMap = generator.generateFromSourceMap(brokenFiles);
-        expect(repoMap.includedFiles, contains('lib/broken.dart'));
-      });
+          expect(
+            () => generator.generateFromSourceMap(brokenFiles),
+            returnsNormally,
+          );
+          final RepoMap repoMap = generator.generateFromSourceMap(brokenFiles);
+          expect(repoMap.includedFiles, contains('lib/broken.dart'));
+        },
+      );
     });
   });
 }

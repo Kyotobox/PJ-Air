@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:cryptography/cryptography.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
@@ -59,216 +58,243 @@ Future<String> _buildPtgToken({
 }
 
 void main() {
-  group('TASK-G205-05: Suite Física Integral de Certificación Criptográfica y Resiliencia (§6)', () {
-    late Ed25519 ed25519;
-    late SimpleKeyPair orchestratorKeyPair;
-    late List<int> orchestratorPubKeyBytes;
-    late PtgTokenVerifier verifier;
-    late List<String> telemetryLogs;
-    late ClaudeKeyPool claudePool;
-    late Database memoryDb;
-    late GlobalCircuitBreaker breaker;
+  group(
+    'TASK-G205-05: Suite Física Integral de Certificación Criptográfica y Resiliencia (§6)',
+    () {
+      late Ed25519 ed25519;
+      late SimpleKeyPair orchestratorKeyPair;
+      late List<int> orchestratorPubKeyBytes;
+      late PtgTokenVerifier verifier;
+      late List<String> telemetryLogs;
+      late ClaudeKeyPool claudePool;
+      late Database memoryDb;
+      late GlobalCircuitBreaker breaker;
 
-    setUp(() async {
-      ed25519 = Ed25519();
-      orchestratorKeyPair = await ed25519.newKeyPair();
-      final SimplePublicKey pubKey = await orchestratorKeyPair
-          .extractPublicKey();
-      orchestratorPubKeyBytes = pubKey.bytes;
+      setUp(() async {
+        ed25519 = Ed25519();
+        orchestratorKeyPair = await ed25519.newKeyPair();
+        final SimplePublicKey pubKey = await orchestratorKeyPair
+            .extractPublicKey();
+        orchestratorPubKeyBytes = pubKey.bytes;
 
-      verifier = PtgTokenVerifier(
-        defaultPublicKeyBytes: orchestratorPubKeyBytes,
-      );
-      telemetryLogs = <String>[];
+        verifier = PtgTokenVerifier(
+          defaultPublicKeyBytes: orchestratorPubKeyBytes,
+        );
+        telemetryLogs = <String>[];
 
-      claudePool = ClaudeKeyPool(
-        keys: <String>['sk-ant-primary-live', 'sk-ant-secondary-live'],
-        verifier: verifier,
-        auditLogger: (String log) => telemetryLogs.add(log),
-      );
-
-      memoryDb = sqlite3.openInMemory();
-      breaker = GlobalCircuitBreaker(
-        circuitId: 'global_529_cert',
-        customDb: memoryDb,
-        failureThreshold: 3,
-        windowDuration: const Duration(seconds: 10),
-      );
-      breaker.init();
-    });
-
-    tearDown(() {
-      breaker.dispose();
-    });
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // HAPPY PATHS
-    // ═════════════════════════════════════════════════════════════════════════
-    test('Happy Path 1: Concesión criptográfica legítima de Tier 2 en ClaudeKeyPool', () async {
-      final String token = await _buildPtgToken(
-        keyPair: orchestratorKeyPair,
-        model: 'claude-sonnet-5-5',
-        jti: 'happy-cert-slot-01',
-      );
-
-      final ClaudeSlotGrant grant = await claudePool.acquireSlot(
-        requestedModel: 'claude-sonnet-5-5',
-        ptgToken: token,
-      );
-
-      expect(grant.tier, equals(ClaudeTier.tier2));
-      expect(grant.model, equals('claude-sonnet-5-5'));
-      expect(grant.isDowngraded, isFalse);
-      expect(grant.ptgJti, equals('happy-cert-slot-01'));
-      expect(telemetryLogs.length, equals(1));
-      expect(telemetryLogs.first, contains('[SECURITY_AUDIT: PTG_GRANT]'));
-    });
-
-    test('Happy Path 2: Resiliencia HTTP 529 completa: CLOSED -> OPEN -> HALF_OPEN -> CLOSED', () {
-      final DateTime t0 = DateTime.utc(2026, 10, 12, 12, 0, 0);
-
-      // 1. Estado inicial nominal
-      expect(breaker.getState(now: t0), equals(CircuitState.closed));
-      expect(breaker.canExecute(now: t0), isTrue);
-
-      // 2. Acumulación de 3 fallos 529 en 4s
-      breaker.recordFailure(529, now: t0);
-      breaker.recordFailure(529, now: t0.add(const Duration(seconds: 2)));
-      breaker.recordFailure(529, now: t0.add(const Duration(seconds: 4)));
-
-      final DateTime openTime = t0.add(const Duration(seconds: 4));
-      final CircuitStateSnapshot openSnapshot = breaker.getSnapshot(
-        now: openTime,
-      );
-
-      expect(openSnapshot.state, equals(CircuitState.open));
-      expect(openSnapshot.failureCount, equals(3));
-      expect(breaker.canExecute(now: openTime), isFalse);
-
-      // 3. Transición a HALF_OPEN tras transcurrir retryAfterMs
-      final DateTime halfOpenTime = openTime.add(
-        Duration(milliseconds: openSnapshot.retryAfterMs + 100),
-      );
-      expect(
-        breaker.getState(now: halfOpenTime),
-        equals(CircuitState.halfOpen),
-      );
-      expect(breaker.canExecute(now: halfOpenTime), isTrue);
-
-      // 4. Sonda exitosa cierra el circuito
-      breaker.recordSuccess(now: halfOpenTime);
-      expect(breaker.getState(now: halfOpenTime), equals(CircuitState.closed));
-      expect(breaker.getSnapshot(now: halfOpenTime).failureCount, equals(0));
-    });
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // SAD PATHS (§6, §16)
-    // ═════════════════════════════════════════════════════════════════════════
-    test(
-      'Sad Path 1: Rechazo estricto ante firma Ed25519 manipulada (tampering)',
-      () async {
-        final String corruptToken = await _buildPtgToken(
-          keyPair: orchestratorKeyPair,
-          corruptSignature: true,
-          jti: 'tampered-signature-01',
+        claudePool = ClaudeKeyPool(
+          keys: <String>['sk-ant-primary-live', 'sk-ant-secondary-live'],
+          verifier: verifier,
+          auditLogger: (String log) => telemetryLogs.add(log),
         );
 
-        final PtgTokenValidationResult result = await verifier.validate(
-          corruptToken,
+        memoryDb = sqlite3.openInMemory();
+        breaker = GlobalCircuitBreaker(
+          circuitId: 'global_529_cert',
+          customDb: memoryDb,
+          failureThreshold: 3,
+          windowDuration: const Duration(seconds: 10),
         );
-        expect(result.isValid, isFalse);
-        expect(
-          result.reason,
-          contains('Firma criptográfica Ed25519 matemáticamente inválida'),
-        );
-      },
-    );
+        breaker.init();
+      });
 
-    test(
-      'Sad Path 2: Rechazo ante TTL superior al límite constitucional (900s)',
-      () async {
-        final String illegalTtlToken = await _buildPtgToken(
-          keyPair: orchestratorKeyPair,
-          ttlSec: 901,
-          jti: 'illegal-ttl-01',
-        );
+      tearDown(() {
+        breaker.dispose();
+      });
 
-        final PtgTokenValidationResult result = await verifier.validate(
-          illegalTtlToken,
-        );
-        expect(result.isValid, isFalse);
-        expect(
-          result.reason,
-          contains('TTL excede el máximo permitido de 15 minutos'),
-        );
-      },
-    );
+      // ═════════════════════════════════════════════════════════════════════════
+      // HAPPY PATHS
+      // ═════════════════════════════════════════════════════════════════════════
+      test(
+        'Happy Path 1: Concesión criptográfica legítima de Tier 2 en ClaudeKeyPool',
+        () async {
+          final String token = await _buildPtgToken(
+            keyPair: orchestratorKeyPair,
+            model: 'claude-sonnet-5-5',
+            jti: 'happy-cert-slot-01',
+          );
 
-    test(
-      'Sad Path 3: Rechazo ante Replay de nonce jti previamente consumido',
-      () async {
-        final String token = await _buildPtgToken(
-          keyPair: orchestratorKeyPair,
-          jti: 'single-use-jti-cert',
-        );
+          final ClaudeSlotGrant grant = await claudePool.acquireSlot(
+            requestedModel: 'claude-sonnet-5-5',
+            ptgToken: token,
+          );
 
-        final PtgTokenValidationResult firstUse = await verifier.validate(
-          token,
-        );
-        expect(firstUse.isValid, isTrue);
-
-        final PtgTokenValidationResult secondUse = await verifier.validate(
-          token,
-        );
-        expect(secondUse.isValid, isFalse);
-        expect(secondUse.reason, contains('Ataque de Replay detectado'));
-      },
-    );
-
-    test('Sad Path 4: Fail-Safe Downgrade en ClaudeKeyPool emite telemetría estructurada sin crash', () async {
-      final ClaudeSlotGrant grant = await claudePool.acquireSlot(
-        requestedModel: 'claude-sonnet-5-5',
-        ptgToken: 'totally.invalid.token',
+          expect(grant.tier, equals(ClaudeTier.tier2));
+          expect(grant.model, equals('claude-sonnet-5-5'));
+          expect(grant.isDowngraded, isFalse);
+          expect(grant.ptgJti, equals('happy-cert-slot-01'));
+          expect(telemetryLogs.length, equals(1));
+          expect(telemetryLogs.first, contains('[SECURITY_AUDIT: PTG_GRANT]'));
+        },
       );
 
-      expect(grant.tier, equals(ClaudeTier.tier1));
-      expect(grant.model, equals('claude-3-5-haiku'));
-      expect(grant.isDowngraded, isTrue);
-      expect(grant.downgradeReason, isNotNull);
-      expect(telemetryLogs.length, equals(1));
-      expect(telemetryLogs.first, contains('[SECURITY_AUDIT: PTG_DOWNGRADE]'));
-    });
+      test(
+        'Happy Path 2: Resiliencia HTTP 529 completa: CLOSED -> OPEN -> HALF_OPEN -> CLOSED',
+        () {
+          final DateTime t0 = DateTime.utc(2026, 10, 12, 12, 0, 0);
 
-    test('Sad Path 5: Bloqueo determinista de requests en estado OPEN con CircuitBreakerOpenException', () {
-      final DateTime t0 = DateTime.utc(2026, 10, 12, 12, 0, 0);
+          // 1. Estado inicial nominal
+          expect(breaker.getState(now: t0), equals(CircuitState.closed));
+          expect(breaker.canExecute(now: t0), isTrue);
 
-      breaker.recordFailure(529, now: t0);
-      breaker.recordFailure(529, now: t0);
-      breaker.recordFailure(529, now: t0);
+          // 2. Acumulación de 3 fallos 529 en 4s
+          breaker.recordFailure(529, now: t0);
+          breaker.recordFailure(529, now: t0.add(const Duration(seconds: 2)));
+          breaker.recordFailure(529, now: t0.add(const Duration(seconds: 4)));
 
-      expect(
-        () => breaker.checkExecutionPermission(now: t0),
-        throwsA(isA<CircuitBreakerOpenException>()),
+          final DateTime openTime = t0.add(const Duration(seconds: 4));
+          final CircuitStateSnapshot openSnapshot = breaker.getSnapshot(
+            now: openTime,
+          );
+
+          expect(openSnapshot.state, equals(CircuitState.open));
+          expect(openSnapshot.failureCount, equals(3));
+          expect(breaker.canExecute(now: openTime), isFalse);
+
+          // 3. Transición a HALF_OPEN tras transcurrir retryAfterMs
+          final DateTime halfOpenTime = openTime.add(
+            Duration(milliseconds: openSnapshot.retryAfterMs + 100),
+          );
+          expect(
+            breaker.getState(now: halfOpenTime),
+            equals(CircuitState.halfOpen),
+          );
+          expect(breaker.canExecute(now: halfOpenTime), isTrue);
+
+          // 4. Sonda exitosa cierra el circuito
+          breaker.recordSuccess(now: halfOpenTime);
+          expect(
+            breaker.getState(now: halfOpenTime),
+            equals(CircuitState.closed),
+          );
+          expect(
+            breaker.getSnapshot(now: halfOpenTime).failureCount,
+            equals(0),
+          );
+        },
       );
-    });
 
-    test('Sad Path 6: Fallo en HALF_OPEN reabre de inmediato el circuito', () {
-      final DateTime t0 = DateTime.utc(2026, 10, 12, 12, 0, 0);
+      // ═════════════════════════════════════════════════════════════════════════
+      // SAD PATHS (§6, §16)
+      // ═════════════════════════════════════════════════════════════════════════
+      test(
+        'Sad Path 1: Rechazo estricto ante firma Ed25519 manipulada (tampering)',
+        () async {
+          final String corruptToken = await _buildPtgToken(
+            keyPair: orchestratorKeyPair,
+            corruptSignature: true,
+            jti: 'tampered-signature-01',
+          );
 
-      breaker.recordFailure(529, now: t0);
-      breaker.recordFailure(529, now: t0);
-      breaker.recordFailure(529, now: t0);
-
-      final CircuitStateSnapshot snap = breaker.getSnapshot(now: t0);
-      final DateTime tHalf = t0.add(
-        Duration(milliseconds: snap.retryAfterMs + 100),
+          final PtgTokenValidationResult result = await verifier.validate(
+            corruptToken,
+          );
+          expect(result.isValid, isFalse);
+          expect(
+            result.reason,
+            contains('Firma criptográfica Ed25519 matemáticamente inválida'),
+          );
+        },
       );
-      expect(breaker.getState(now: tHalf), equals(CircuitState.halfOpen));
 
-      // Falla la sonda
-      breaker.recordFailure(529, now: tHalf);
-      expect(breaker.getState(now: tHalf), equals(CircuitState.open));
-      expect(breaker.canExecute(now: tHalf), isFalse);
-    });
-  });
+      test(
+        'Sad Path 2: Rechazo ante TTL superior al límite constitucional (900s)',
+        () async {
+          final String illegalTtlToken = await _buildPtgToken(
+            keyPair: orchestratorKeyPair,
+            ttlSec: 901,
+            jti: 'illegal-ttl-01',
+          );
+
+          final PtgTokenValidationResult result = await verifier.validate(
+            illegalTtlToken,
+          );
+          expect(result.isValid, isFalse);
+          expect(
+            result.reason,
+            contains('TTL excede el máximo permitido de 15 minutos'),
+          );
+        },
+      );
+
+      test(
+        'Sad Path 3: Rechazo ante Replay de nonce jti previamente consumido',
+        () async {
+          final String token = await _buildPtgToken(
+            keyPair: orchestratorKeyPair,
+            jti: 'single-use-jti-cert',
+          );
+
+          final PtgTokenValidationResult firstUse = await verifier.validate(
+            token,
+          );
+          expect(firstUse.isValid, isTrue);
+
+          final PtgTokenValidationResult secondUse = await verifier.validate(
+            token,
+          );
+          expect(secondUse.isValid, isFalse);
+          expect(secondUse.reason, contains('Ataque de Replay detectado'));
+        },
+      );
+
+      test(
+        'Sad Path 4: Fail-Safe Downgrade en ClaudeKeyPool emite telemetría estructurada sin crash',
+        () async {
+          final ClaudeSlotGrant grant = await claudePool.acquireSlot(
+            requestedModel: 'claude-sonnet-5-5',
+            ptgToken: 'totally.invalid.token',
+          );
+
+          expect(grant.tier, equals(ClaudeTier.tier1));
+          expect(grant.model, equals('claude-3-5-haiku'));
+          expect(grant.isDowngraded, isTrue);
+          expect(grant.downgradeReason, isNotNull);
+          expect(telemetryLogs.length, equals(1));
+          expect(
+            telemetryLogs.first,
+            contains('[SECURITY_AUDIT: PTG_DOWNGRADE]'),
+          );
+        },
+      );
+
+      test(
+        'Sad Path 5: Bloqueo determinista de requests en estado OPEN con CircuitBreakerOpenException',
+        () {
+          final DateTime t0 = DateTime.utc(2026, 10, 12, 12, 0, 0);
+
+          breaker.recordFailure(529, now: t0);
+          breaker.recordFailure(529, now: t0);
+          breaker.recordFailure(529, now: t0);
+
+          expect(
+            () => breaker.checkExecutionPermission(now: t0),
+            throwsA(isA<CircuitBreakerOpenException>()),
+          );
+        },
+      );
+
+      test(
+        'Sad Path 6: Fallo en HALF_OPEN reabre de inmediato el circuito',
+        () {
+          final DateTime t0 = DateTime.utc(2026, 10, 12, 12, 0, 0);
+
+          breaker.recordFailure(529, now: t0);
+          breaker.recordFailure(529, now: t0);
+          breaker.recordFailure(529, now: t0);
+
+          final CircuitStateSnapshot snap = breaker.getSnapshot(now: t0);
+          final DateTime tHalf = t0.add(
+            Duration(milliseconds: snap.retryAfterMs + 100),
+          );
+          expect(breaker.getState(now: tHalf), equals(CircuitState.halfOpen));
+
+          // Falla la sonda
+          breaker.recordFailure(529, now: tHalf);
+          expect(breaker.getState(now: tHalf), equals(CircuitState.open));
+          expect(breaker.canExecute(now: tHalf), isFalse);
+        },
+      );
+    },
+  );
 }

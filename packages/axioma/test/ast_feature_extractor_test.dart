@@ -350,20 +350,23 @@ void broken() {
       expect(v.cyclomaticComplexity, greaterThanOrEqualTo(1));
     });
 
-    test('INV-3: toNormalizedList con valores extremos no supera 1.0 ni baja de 0.0', () {
-      // Vector con valores enormes → normalización no debe exceder 1.0
-      const AstVector v = AstVector(
-        lineCount: 99999,
-        methodCount: 99999,
-        conditionalCount: 99999,
-        maxNestingDepth: 99999,
-        cyclomaticComplexity: 99999,
-      );
-      final List<double> normalized = v.toNormalizedList();
-      for (final double val in normalized) {
-        expect(val, lessThanOrEqualTo(1.0));
-        expect(val, greaterThanOrEqualTo(0.0));
-      }
-    });
+    test(
+      'INV-3: toNormalizedList con valores extremos no supera 1.0 ni baja de 0.0',
+      () {
+        // Vector con valores enormes → normalización no debe exceder 1.0
+        const AstVector v = AstVector(
+          lineCount: 99999,
+          methodCount: 99999,
+          conditionalCount: 99999,
+          maxNestingDepth: 99999,
+          cyclomaticComplexity: 99999,
+        );
+        final List<double> normalized = v.toNormalizedList();
+        for (final double val in normalized) {
+          expect(val, lessThanOrEqualTo(1.0));
+          expect(val, greaterThanOrEqualTo(0.0));
+        }
+      },
+    );
   });
 }

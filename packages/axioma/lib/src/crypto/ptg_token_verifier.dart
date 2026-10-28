@@ -7,7 +7,6 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:cryptography/cryptography.dart';
 
 /// Catálogo canónico de modelos autorizados para Tier 2

@@ -82,35 +82,36 @@ class _$AssetEntityCopyWithImpl<$Res, $Val extends AssetEntity>
   }) {
     return _then(
       _value.copyWith(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        name: null == name
-            ? _value.name
-            : name // ignore: cast_nullable_to_non_nullable
-                  as String,
-        category: null == category
-            ? _value.category
-            : category // ignore: cast_nullable_to_non_nullable
-                  as String,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
-                  as AssetStatus,
-        createdAt: null == createdAt
-            ? _value.createdAt
-            : createdAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        description: freezed == description
-            ? _value.description
-            : description // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        metadata: freezed == metadata
-            ? _value.metadata
-            : metadata // ignore: cast_nullable_to_non_nullable
-                  as Map<String, dynamic>?,
-      ) as $Val,
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            category: null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                      as String,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as AssetStatus,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            metadata: freezed == metadata
+                ? _value.metadata
+                : metadata // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
+          )
+          as $Val,
     );
   }
 }
@@ -202,7 +203,7 @@ class _$AssetEntityImpl implements _AssetEntity {
     required this.status,
     required this.createdAt,
     this.description,
-    Map<String, dynamic>? metadata,
+    final Map<String, dynamic>? metadata,
   }) : _metadata = metadata;
 
   factory _$AssetEntityImpl.fromJson(Map<String, dynamic> json) =>
@@ -281,13 +282,13 @@ class _$AssetEntityImpl implements _AssetEntity {
 
 abstract class _AssetEntity implements AssetEntity {
   const factory _AssetEntity({
-    required String id,
-    required String name,
-    required String category,
-    required AssetStatus status,
-    required DateTime createdAt,
-    String? description,
-    Map<String, dynamic>? metadata,
+    required final String id,
+    required final String name,
+    required final String category,
+    required final AssetStatus status,
+    required final DateTime createdAt,
+    final String? description,
+    final Map<String, dynamic>? metadata,
   }) = _$AssetEntityImpl;
 
   factory _AssetEntity.fromJson(Map<String, dynamic> json) =

@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:cryptography/cryptography.dart';
 import 'package:test/test.dart';
 import 'package:axioma/axioma.dart';
@@ -93,58 +92,67 @@ void main() {
       },
     );
 
-    test('Happy Path 2: Solicitud de Tier 2 con PTG-Token legítimo concede slot Tier 2', () async {
-      final String token = await _buildValidPtgToken(
-        keyPair: keyPair,
-        model: 'claude-sonnet-5-5',
-        jti: 'legit-jti-001',
-      );
+    test(
+      'Happy Path 2: Solicitud de Tier 2 con PTG-Token legítimo concede slot Tier 2',
+      () async {
+        final String token = await _buildValidPtgToken(
+          keyPair: keyPair,
+          model: 'claude-sonnet-5-5',
+          jti: 'legit-jti-001',
+        );
 
-      final ClaudeSlotGrant grant = await pool.acquireSlot(
-        requestedModel: 'claude-sonnet-5-5',
-        ptgToken: token,
-      );
+        final ClaudeSlotGrant grant = await pool.acquireSlot(
+          requestedModel: 'claude-sonnet-5-5',
+          ptgToken: token,
+        );
 
-      expect(grant.tier, equals(ClaudeTier.tier2));
-      expect(grant.model, equals('claude-sonnet-5-5'));
-      expect(grant.isDowngraded, isFalse);
-      expect(grant.ptgJti, equals('legit-jti-001'));
-      expect(auditLogs.length, equals(1));
-      expect(auditLogs.first, contains('[SECURITY_AUDIT: PTG_GRANT]'));
-      expect(pool.totalGrants, equals(1));
-    });
+        expect(grant.tier, equals(ClaudeTier.tier2));
+        expect(grant.model, equals('claude-sonnet-5-5'));
+        expect(grant.isDowngraded, isFalse);
+        expect(grant.ptgJti, equals('legit-jti-001'));
+        expect(auditLogs.length, equals(1));
+        expect(auditLogs.first, contains('[SECURITY_AUDIT: PTG_GRANT]'));
+        expect(pool.totalGrants, equals(1));
+      },
+    );
 
     // ─────────────────────────────────────────────────────────────────────────
     // SAD PATHS (§6, §16)
     // ─────────────────────────────────────────────────────────────────────────
-    test('Sad Path 1: Solicitud de Tier 2 sin token degrada de forma fail-safe a Tier 1 con auditoría', () async {
-      final ClaudeSlotGrant grant = await pool.acquireSlot(
-        requestedModel: 'claude-sonnet-5-5',
-        ptgToken: null,
-      );
+    test(
+      'Sad Path 1: Solicitud de Tier 2 sin token degrada de forma fail-safe a Tier 1 con auditoría',
+      () async {
+        final ClaudeSlotGrant grant = await pool.acquireSlot(
+          requestedModel: 'claude-sonnet-5-5',
+          ptgToken: null,
+        );
 
-      expect(grant.tier, equals(ClaudeTier.tier1));
-      expect(grant.model, equals('claude-3-5-haiku'));
-      expect(grant.isDowngraded, isTrue);
-      expect(grant.downgradeReason, contains('Token ausente o vacío'));
-      expect(auditLogs.length, equals(1));
-      expect(auditLogs.first, contains('[SECURITY_AUDIT: PTG_DOWNGRADE]'));
-    });
+        expect(grant.tier, equals(ClaudeTier.tier1));
+        expect(grant.model, equals('claude-3-5-haiku'));
+        expect(grant.isDowngraded, isTrue);
+        expect(grant.downgradeReason, contains('Token ausente o vacío'));
+        expect(auditLogs.length, equals(1));
+        expect(auditLogs.first, contains('[SECURITY_AUDIT: PTG_DOWNGRADE]'));
+      },
+    );
 
-    test('Sad Path 2: Solicitud de Tier 2 con token corrupto degrada a Tier 1 sin crashear', () async {
-      final ClaudeSlotGrant grant = await pool.acquireSlot(
-        requestedModel: 'claude-opus-5',
-        ptgToken: 'invalid.corrupted.token',
-      );
+    test(
+      'Sad Path 2: Solicitud de Tier 2 con token corrupto degrada a Tier 1 sin crashear',
+      () async {
+        final ClaudeSlotGrant grant = await pool.acquireSlot(
+          requestedModel: 'claude-opus-5',
+          ptgToken: 'invalid.corrupted.token',
+        );
 
-      expect(grant.tier, equals(ClaudeTier.tier1));
-      expect(grant.model, equals('claude-3-5-haiku'));
-      expect(grant.isDowngraded, isTrue);
-      expect(auditLogs.length, equals(1));
-      expect(auditLogs.first, contains('RequestedModel: claude-opus-5'));
-      expect(pool.totalDowngrades, equals(1));
-      expect(pool.lastDowngradeReason, isNotNull);
-    });
+        expect(grant.tier, equals(ClaudeTier.tier1));
+        expect(grant.model, equals('claude-3-5-haiku'));
+        expect(grant.isDowngraded, isTrue);
+        expect(auditLogs.length, equals(1));
+        expect(auditLogs.first, contains('RequestedModel: claude-opus-5'));
+        expect(pool.totalDowngrades, equals(1));
+        expect(pool.lastDowngradeReason, isNotNull);
+      },
+    );
 
     test(
       'Sad Path 3: Replay de PTG-Token degrada a Tier 1 en el segundo uso',
@@ -189,48 +197,57 @@ void main() {
       },
     );
 
-    test('Happy Path 3: ClaudeKeyPool resuelve clave pública vía publicKeyPemPath y fromEnvironment', () async {
-      final ClaudeKeyPool envPool = ClaudeKeyPool.fromEnvironment(
-        environment: <String, String>{
-          'CLAUDE_API_KEY': 'sk-ant-env-key-1',
-          'PTG_ORCHESTRATOR_PUBLIC_KEY_PEM_PATH':
-              'vault/specs/orchestrator_public_key.pem',
-        },
-      );
+    test(
+      'Happy Path 3: ClaudeKeyPool resuelve clave pública vía publicKeyPemPath y fromEnvironment',
+      () async {
+        final ClaudeKeyPool envPool = ClaudeKeyPool.fromEnvironment(
+          environment: <String, String>{
+            'CLAUDE_API_KEY': 'sk-ant-env-key-1',
+            'PTG_ORCHESTRATOR_PUBLIC_KEY_PEM_PATH':
+                'vault/specs/orchestrator_public_key.pem',
+          },
+        );
 
-      expect(envPool.keys, contains('sk-ant-env-key-1'));
-      expect(envPool.verifier.hasPublicKeyConfigured, isTrue);
-      expect(envPool.verifier.defaultPublicKeyBytes?.length, equals(32));
-    });
+        expect(envPool.keys, contains('sk-ant-env-key-1'));
+        expect(envPool.verifier.hasPublicKeyConfigured, isTrue);
+        expect(envPool.verifier.defaultPublicKeyBytes?.length, equals(32));
+      },
+    );
 
-    test('Happy Path 4: PtgTokenVerifier resuelve automáticamente rutas canónicas si el PEM existe', () async {
-      final PtgTokenVerifier autoVerifier = PtgTokenVerifier();
-      // Debe resolver la clave de vault/specs/orchestrator_public_key.pem si existe en el workspace
-      if (autoVerifier.hasPublicKeyConfigured) {
-        expect(autoVerifier.defaultPublicKeyBytes?.length, equals(32));
-      }
-    });
+    test(
+      'Happy Path 4: PtgTokenVerifier resuelve automáticamente rutas canónicas si el PEM existe',
+      () async {
+        final PtgTokenVerifier autoVerifier = PtgTokenVerifier();
+        // Debe resolver la clave de vault/specs/orchestrator_public_key.pem si existe en el workspace
+        if (autoVerifier.hasPublicKeyConfigured) {
+          expect(autoVerifier.defaultPublicKeyBytes?.length, equals(32));
+        }
+      },
+    );
 
-    test('Sad Path 5: Token firmado con clave ajena degrada a Tier 1 con motivo de firma inválida', () async {
-      final SimpleKeyPair rogueKeyPair = await ed25519.newKeyPair();
-      final String rogueToken = await _buildValidPtgToken(
-        keyPair: rogueKeyPair,
-        model: 'claude-sonnet-5-5',
-        jti: 'rogue-key-jti-01',
-      );
+    test(
+      'Sad Path 5: Token firmado con clave ajena degrada a Tier 1 con motivo de firma inválida',
+      () async {
+        final SimpleKeyPair rogueKeyPair = await ed25519.newKeyPair();
+        final String rogueToken = await _buildValidPtgToken(
+          keyPair: rogueKeyPair,
+          model: 'claude-sonnet-5-5',
+          jti: 'rogue-key-jti-01',
+        );
 
-      final ClaudeSlotGrant grant = await pool.acquireSlot(
-        requestedModel: 'claude-sonnet-5-5',
-        ptgToken: rogueToken,
-      );
+        final ClaudeSlotGrant grant = await pool.acquireSlot(
+          requestedModel: 'claude-sonnet-5-5',
+          ptgToken: rogueToken,
+        );
 
-      expect(grant.tier, equals(ClaudeTier.tier1));
-      expect(grant.isDowngraded, isTrue);
-      expect(
-        grant.downgradeReason,
-        contains('Firma criptográfica Ed25519 matemáticamente inválida'),
-      );
-      expect(pool.totalDowngrades, equals(1));
-    });
+        expect(grant.tier, equals(ClaudeTier.tier1));
+        expect(grant.isDowngraded, isTrue);
+        expect(
+          grant.downgradeReason,
+          contains('Firma criptográfica Ed25519 matemáticamente inválida'),
+        );
+        expect(pool.totalDowngrades, equals(1));
+      },
+    );
   });
 }

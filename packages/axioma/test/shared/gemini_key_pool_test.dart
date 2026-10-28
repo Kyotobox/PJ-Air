@@ -98,19 +98,22 @@ void main() {
         expect(pool.isKeyAvailable('AQ.Ab8RN6_KEY_ALPHA_01', now: t1), isTrue);
       });
 
-      test('Sad Path: Si todas las claves están en cooldown, lanza GeminiPoolExhaustedException', () {
-        final GeminiKeyPool pool = GeminiKeyPool(keys: testKeys);
-        final DateTime now = DateTime.now();
+      test(
+        'Sad Path: Si todas las claves están en cooldown, lanza GeminiPoolExhaustedException',
+        () {
+          final GeminiKeyPool pool = GeminiKeyPool(keys: testKeys);
+          final DateTime now = DateTime.now();
 
-        for (final String key in testKeys) {
-          pool.markQuotaExhausted(key, now: now);
-        }
+          for (final String key in testKeys) {
+            pool.markQuotaExhausted(key, now: now);
+          }
 
-        expect(
-          () => pool.acquireNextKey(now: now),
-          throwsA(isA<GeminiPoolExhaustedException>()),
-        );
-      });
+          expect(
+            () => pool.acquireNextKey(now: now),
+            throwsA(isA<GeminiPoolExhaustedException>()),
+          );
+        },
+      );
     });
 
     group('Carga desde Variables de Entorno (fromEnvironment)', () {

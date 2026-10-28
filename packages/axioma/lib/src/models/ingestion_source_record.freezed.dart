@@ -93,43 +93,44 @@ class _$IngestionSourceRecordCopyWithImpl<
   }) {
     return _then(
       _value.copyWith(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        contentHash: null == contentHash
-            ? _value.contentHash
-            : contentHash // ignore: cast_nullable_to_non_nullable
-                  as String,
-        rawContent: null == rawContent
-            ? _value.rawContent
-            : rawContent // ignore: cast_nullable_to_non_nullable
-                  as String,
-        providerId: null == providerId
-            ? _value.providerId
-            : providerId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        acquiredAt: null == acquiredAt
-            ? _value.acquiredAt
-            : acquiredAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
-                  as IngestionSourceStatus,
-        catalogPartId: freezed == catalogPartId
-            ? _value.catalogPartId
-            : catalogPartId // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        errorLog: freezed == errorLog
-            ? _value.errorLog
-            : errorLog // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        metadata: freezed == metadata
-            ? _value.metadata
-            : metadata // ignore: cast_nullable_to_non_nullable
-                  as Map<String, dynamic>?,
-      ) as $Val,
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            contentHash: null == contentHash
+                ? _value.contentHash
+                : contentHash // ignore: cast_nullable_to_non_nullable
+                      as String,
+            rawContent: null == rawContent
+                ? _value.rawContent
+                : rawContent // ignore: cast_nullable_to_non_nullable
+                      as String,
+            providerId: null == providerId
+                ? _value.providerId
+                : providerId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            acquiredAt: null == acquiredAt
+                ? _value.acquiredAt
+                : acquiredAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as IngestionSourceStatus,
+            catalogPartId: freezed == catalogPartId
+                ? _value.catalogPartId
+                : catalogPartId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            errorLog: freezed == errorLog
+                ? _value.errorLog
+                : errorLog // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            metadata: freezed == metadata
+                ? _value.metadata
+                : metadata // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
+          )
+          as $Val,
     );
   }
 }
@@ -236,7 +237,7 @@ class _$IngestionSourceRecordImpl implements _IngestionSourceRecord {
     required this.status,
     this.catalogPartId,
     this.errorLog,
-    Map<String, dynamic>? metadata,
+    final Map<String, dynamic>? metadata,
   }) : _metadata = metadata;
 
   factory _$IngestionSourceRecordImpl.fromJson(Map<String, dynamic> json) =>
@@ -330,15 +331,15 @@ class _$IngestionSourceRecordImpl implements _IngestionSourceRecord {
 
 abstract class _IngestionSourceRecord implements IngestionSourceRecord {
   const factory _IngestionSourceRecord({
-    required String id,
-    required String contentHash,
-    required String rawContent,
-    required String providerId,
-    required DateTime acquiredAt,
-    required IngestionSourceStatus status,
-    String? catalogPartId,
-    String? errorLog,
-    Map<String, dynamic>? metadata,
+    required final String id,
+    required final String contentHash,
+    required final String rawContent,
+    required final String providerId,
+    required final DateTime acquiredAt,
+    required final IngestionSourceStatus status,
+    final String? catalogPartId,
+    final String? errorLog,
+    final Map<String, dynamic>? metadata,
   }) = _$IngestionSourceRecordImpl;
 
   factory _IngestionSourceRecord.fromJson(Map<String, dynamic> json) =

@@ -1,0 +1,28 @@
+#!/bin/sh
+# [CONEXT GOVERNANCE] Universal Pre-push Hook — Blindaje Pre-Vuelo
+# §43 Paridad Test-to-Prod, §48 Cierre Autárquico
+
+echo "=== [PRE-PUSH] CONEXT PRE-FLIGHT TEST GATE ==="
+
+if [ -f "pubspec.yaml" ] && [ -d "test" ]; then
+  echo "[PRE-PUSH] Ejecutando suite de pruebas físicas..."
+  dart test
+  if [ $? -ne 0 ]; then
+    echo "❌ [PUSH-FAIL] Suite de tests fallida. Prohibido empujar a origin."
+    exit 1
+  fi
+fi
+
+if [ -x "./bin/logix" ]; then
+  ./bin/logix check
+elif [ -x "/home/opc/.local/bin/logix" ]; then
+  /home/opc/.local/bin/logix check
+fi
+
+if [ $? -ne 0 ]; then
+  echo "❌ [PUSH-FAIL] Odómetro o gobernanza en zona no permitida."
+  exit 1
+fi
+
+echo "✅ [PRE-PUSH] Suite física íntegra. Push autorizado."
+exit 0

@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:sqlite3/sqlite3.dart';
 
 /// **SemanticLoader** — Motor puro y sin estado para cargar diccionarios y

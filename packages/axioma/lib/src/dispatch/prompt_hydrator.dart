@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'dispatch_manifest.dart';
 
 /// Motor determinista de hidratación de prompts de despacho para workers automatizados (Jules).

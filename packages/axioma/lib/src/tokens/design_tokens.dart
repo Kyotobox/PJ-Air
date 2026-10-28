@@ -117,7 +117,8 @@ class FleetTypography {
   });
 
   static const FleetTypography canonical = FleetTypography(
-    fontFamilySans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    fontFamilySans:
+        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     fontFamilyMono:
         "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     fontSizeXs: '12px',

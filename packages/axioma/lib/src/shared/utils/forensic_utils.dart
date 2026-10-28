@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:crypto/crypto.dart';
 
 /// [G23-01] ForensicUtils: Proveedor de Veracidad Atómica para identidades.

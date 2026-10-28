@@ -306,5 +306,33 @@
     "exile_name": "1783307650662_database.sqlite",
     "hash": "D5CE69CCDA6E7B67529D43AA4D57EC13F8CF70E5CF370F2D59B73C5519FFF7C1",
     "original_path": "C:\\Users\\Ruben\\Documents\\pj-air\\database.sqlite"
+  },
+  {
+    "timestamp": "2026-10-28T14:20:02.327158",
+    "original_name": "database.sqlite",
+    "exile_name": "1793197202323_database.sqlite",
+    "hash": "3F5E3C6EC969CF657B3F9C74F9A07C7AEEE9D5AA1A2967C9B4C934DF33B8EF8A",
+    "original_path": "/home/opc/code/pj-air/database.sqlite"
+  },
+  {
+    "timestamp": "2026-10-28T14:20:02.329484",
+    "original_name": "deploy-testing.sh",
+    "exile_name": "1793197202328_deploy-testing.sh",
+    "hash": "6DD0DFC126106A6008034FEA47B8B7122B89C608D8E204EB89AB1892ACD2460B",
+    "original_path": "/home/opc/code/pj-air/deploy-testing.sh"
+  },
+  {
+    "timestamp": "2026-10-28T14:20:02.331054",
+    "original_name": "PO-Executive-Map.md",
+    "exile_name": "1793197202330_PO-Executive-Map.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/PO-Executive-Map.md"
+  },
+  {
+    "timestamp": "2026-10-28T14:20:02.332636",
+    "original_name": "ARCHITECTURE.md",
+    "exile_name": "1793197202331_ARCHITECTURE.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/ARCHITECTURE.md"
   }
 ]

@@ -1,8 +1,11 @@
-# SPRINT S42 - Sprint 42: Hard Gate de Verificación Telefónica SMS OTP en Registro Mayorista B2B y Blindaje de Endpoints
-**Objetivo**: Convertir la verificación telefónica SMS OTP en un requisito mandatorio (Hard Gate) e inviolable para el alta de cuentas comerciales B2B, bloqueando la creación de usuarios en backend ante la ausencia de token de verificación y deshabilitando la sumisión en frontend hasta certificar el número.
-**Fecha**: 2026-10-27
+# SPRINT S43 - Sprint 43: Purga de Pedidos Futuros y Fundación de Crédito a 7 Días
+**Objetivo**: Eliminar el subsistema obsoleto de pedidos futuros/recurrentes y establecer el modelo de datos y lógica base de crédito a 7 días calendario con métodos de consulta de saldo y límites.
+**Fecha**: 2026-10-28
 
-- [x] **TASK-42-01** [DOMAIN/BACKEND-HARD-GATE] Endurecimiento del endpoint POST /auth/signup en NestJS: rechazo mandatorio con 400 Bad Request si una cuenta B2B (client) intenta registrarse sin verificación telefónica comprobable (phone_verified y token de verificación válidos).
-- [x] **TASK-42-02** [UI/REGISTER-HARD-GATE] Bloqueo estricto en frontend (RegisterForm.tsx y /auth/register/page.tsx): deshabilitar el botón de envío y alertar visualmente al usuario mayorista de que la verificación SMS OTP de 6 dígitos es obligatoria para la apertura de cuenta comercial.
-- [x] **TASK-42-03** [TEST/SAD-PATH-HARD-GATE] Ampliación de la suite de pruebas unitarias (auth.service.spec.ts) y E2E (phone-auth.e2e-spec.ts): validar sad paths de intento de bypass en API sin verificación y certificar happy path con token Firebase/test token.
-- [x] **TASK-42-04** [DEPLOY/TESTING-REMOTE-SYNC] Despliegue atómico en el servidor remoto de pruebas (testing.jhoanes.com), compilación de artefactos, reinicio de PM2 y comprobación empírica en vivo del Hard Gate (bloqueo sin SMS y aprobación con SMS).
+- [ ] **TASK-43-01** [CLEAN/CHECKOUT-PURGE] Eliminar checkbox de pedido recurrente y estados asociados en checkout/page.tsx.
+- [ ] **TASK-43-02** [CLEAN/ROUTES-PURGE] Eliminar vistas obsoletas /orders/scheduled y /admin/standing-orders y sus enlaces de navegación.
+- [ ] **TASK-43-03** [CLEAN/BACKEND-SCHEDULED-PURGE] Migración para eliminar tabla scheduled_orders y purgar entidad ScheduledOrder, servicio y controlador en backend NestJS.
+- [ ] **TASK-43-04** [DOMAIN/CREDIT-DUE-DATE-CORE] Modelar cálculo determinista de payment_due_date = created_at + 7 días (ISO YYYY-MM-DD) para órdenes a crédito en backend.
+- [ ] **TASK-43-05** [DOMAIN/CREDIT-SERVICE-REFACTOR] Estandarizar métodos getAvailableCredit, getUsedCredit y getCreditLimit en backend con cálculo estricto de deuda neta.
+- [ ] **TASK-43-06** [TEST/CREDIT-AND-PURGE-REGRESSION] Suite de pruebas unitarias para CreditService (happy path y sad paths de sobregiro) y certificación de no regresiones tras la purga.
+- [ ] **TASK-43-07** [DEPLOY/TESTING-SYNC] Compilación limpia, verificación de integridad y despliegue sincronizado en testing.jhoanes.com.

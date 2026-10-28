@@ -76,27 +76,28 @@ class _$WholesalerEntityCopyWithImpl<$Res, $Val extends WholesalerEntity>
   }) {
     return _then(
       _value.copyWith(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        name: null == name
-            ? _value.name
-            : name // ignore: cast_nullable_to_non_nullable
-                  as String,
-        currency: null == currency
-            ? _value.currency
-            : currency // ignore: cast_nullable_to_non_nullable
-                  as String,
-        formula: null == formula
-            ? _value.formula
-            : formula // ignore: cast_nullable_to_non_nullable
-                  as String,
-        metadata: freezed == metadata
-            ? _value.metadata
-            : metadata // ignore: cast_nullable_to_non_nullable
-                  as Map<String, dynamic>?,
-      ) as $Val,
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            currency: null == currency
+                ? _value.currency
+                : currency // ignore: cast_nullable_to_non_nullable
+                      as String,
+            formula: null == formula
+                ? _value.formula
+                : formula // ignore: cast_nullable_to_non_nullable
+                      as String,
+            metadata: freezed == metadata
+                ? _value.metadata
+                : metadata // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
+          )
+          as $Val,
     );
   }
 }
@@ -174,7 +175,7 @@ class _$WholesalerEntityImpl implements _WholesalerEntity {
     required this.name,
     required this.currency,
     required this.formula,
-    Map<String, dynamic>? metadata,
+    final Map<String, dynamic>? metadata,
   }) : _metadata = metadata;
 
   factory _$WholesalerEntityImpl.fromJson(Map<String, dynamic> json) =>
@@ -246,11 +247,11 @@ class _$WholesalerEntityImpl implements _WholesalerEntity {
 
 abstract class _WholesalerEntity implements WholesalerEntity {
   const factory _WholesalerEntity({
-    required String id,
-    required String name,
-    required String currency,
-    required String formula,
-    Map<String, dynamic>? metadata,
+    required final String id,
+    required final String name,
+    required final String currency,
+    required final String formula,
+    final Map<String, dynamic>? metadata,
   }) = _$WholesalerEntityImpl;
 
   factory _WholesalerEntity.fromJson(Map<String, dynamic> json) =

@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:test/test.dart';
 import 'package:axioma/src/analysis/product_leak_linter.dart';
 

@@ -10,7 +10,7 @@ void main() {
     });
 
     test('Happy Path: Causa Especial clasificada y aprobada para síntesis', () {
-      final sample = AstCandidateSample(
+      final AstCandidateSample sample = const AstCandidateSample(
         snippet: 'catch (_) {}',
         nodeType: 'CatchClause',
         recurrenceCount: 4,
@@ -18,7 +18,7 @@ void main() {
         violatesInvariant: true,
       );
 
-      final result = stabilizer.evaluate(sample);
+      final VarianceEvaluationResult result = stabilizer.evaluate(sample);
 
       expect(
         result.classification,
@@ -32,7 +32,7 @@ void main() {
     test(
       'Happy Path: Causa Común clasificada y rechazada (ruido sintáctico)',
       () {
-        final sample = const AstCandidateSample(
+        final AstCandidateSample sample = const AstCandidateSample(
           snippet: 'myTempVar',
           nodeType: 'SimpleIdentifier',
           recurrenceCount: 1,
@@ -40,7 +40,7 @@ void main() {
           violatesInvariant: false,
         );
 
-        final result = stabilizer.evaluate(sample);
+        final VarianceEvaluationResult result = stabilizer.evaluate(sample);
 
         expect(
           result.classification,
@@ -55,7 +55,7 @@ void main() {
     test(
       'Happy Path: Filtrado de lista de candidatos reteniendo solo Causa Especial',
       () {
-        final candidates = <>[
+        final List<AstCandidateSample> candidates = <AstCandidateSample>[
           const AstCandidateSample(
             snippet: 'tempX',
             nodeType: 'SimpleIdentifier',
@@ -78,19 +78,29 @@ void main() {
           ),
         ];
 
-        final filtered = stabilizer.filterSpecialCauses(candidates);
+        final List<AstCandidateSample> filtered = stabilizer
+            .filterSpecialCauses(candidates);
 
         expect(filtered.length, equals(2));
-        expect(filtered.any((c) => c.snippet == 'tempX'), isFalse);
-        expect(filtered.any((c) => c.snippet == 'as String'), isTrue);
-        expect(filtered.any((c) => c.snippet == 'catch (e) {}'), isTrue);
+        expect(
+          filtered.any((AstCandidateSample c) => c.snippet == 'tempX'),
+          isFalse,
+        );
+        expect(
+          filtered.any((AstCandidateSample c) => c.snippet == 'as String'),
+          isTrue,
+        );
+        expect(
+          filtered.any((AstCandidateSample c) => c.snippet == 'catch (e) {}'),
+          isTrue,
+        );
       },
     );
 
     test(
       'Sad Path: Caso Indeterminado para muestra ambigua sin invariante rota',
       () {
-        final ambiguous = const AstCandidateSample(
+        final AstCandidateSample ambiguous = const AstCandidateSample(
           snippet: 'calculateSubtotal(items)',
           nodeType: 'MethodInvocation',
           recurrenceCount: 2,
@@ -98,7 +108,7 @@ void main() {
           violatesInvariant: false,
         );
 
-        final result = stabilizer.evaluate(ambiguous);
+        final VarianceEvaluationResult result = stabilizer.evaluate(ambiguous);
 
         expect(
           result.classification,

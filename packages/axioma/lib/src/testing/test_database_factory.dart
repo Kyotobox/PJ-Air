@@ -1,6 +1,5 @@
 import 'dart:ffi';
 import 'dart:io';
-
 import 'package:sqlite3/sqlite3.dart';
 
 /// [RULE-04 / RULE-37] Fábrica de bases de datos SQLite efímeras y deterministas

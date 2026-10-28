@@ -132,10 +132,12 @@ class FallbackFitmentExtractor {
       final RegExpMatch? rangeMatch = RegExp(
         r'\b(19\d{2}|20\d{2})-(19\d{2}|20\d{2})\b',
       ).firstMatch(afterMake);
-      final RegExpMatch? shortRange = RegExp(r'\b(\d{2})-(\d{2})\b')
-          .firstMatch(afterMake);
-      final RegExpMatch? single = RegExp(r'\b(19\d{2}|20\d{2})\b')
-          .firstMatch(afterMake);
+      final RegExpMatch? shortRange = RegExp(
+        r'\b(\d{2})-(\d{2})\b',
+      ).firstMatch(afterMake);
+      final RegExpMatch? single = RegExp(
+        r'\b(19\d{2}|20\d{2})\b',
+      ).firstMatch(afterMake);
 
       if (rangeMatch != null) {
         vehicleYear = rangeMatch.group(0)!;

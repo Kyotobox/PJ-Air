@@ -124,91 +124,92 @@ class _$CatalogPartCopyWithImpl<$Res, $Val extends CatalogPart>
   }) {
     return _then(
       _value.copyWith(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        sku: null == sku
-            ? _value.sku
-            : sku // ignore: cast_nullable_to_non_nullable
-                  as String,
-        name: null == name
-            ? _value.name
-            : name // ignore: cast_nullable_to_non_nullable
-                  as String,
-        brand: null == brand
-            ? _value.brand
-            : brand // ignore: cast_nullable_to_non_nullable
-                  as String,
-        price: freezed == price
-            ? _value.price
-            : price // ignore: cast_nullable_to_non_nullable
-                  as double?,
-        categoryId: null == categoryId
-            ? _value.categoryId
-            : categoryId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
-                  as CatalogPartStatus,
-        createdAt: null == createdAt
-            ? _value.createdAt
-            : createdAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        fitments: null == fitments
-            ? _value.fitments
-            : fitments // ignore: cast_nullable_to_non_nullable
-                  as List<FitmentEntity>,
-        tags: null == tags
-            ? _value.tags
-            : tags // ignore: cast_nullable_to_non_nullable
-                  as List<String>,
-        code2: freezed == code2
-            ? _value.code2
-            : code2 // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        description2: freezed == description2
-            ? _value.description2
-            : description2 // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        sourceHash: freezed == sourceHash
-            ? _value.sourceHash
-            : sourceHash // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        fitmentHash: freezed == fitmentHash
-            ? _value.fitmentHash
-            : fitmentHash // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        lastCertifiedAt: freezed == lastCertifiedAt
-            ? _value.lastCertifiedAt
-            : lastCertifiedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime?,
-        crossReferences: freezed == crossReferences
-            ? _value.crossReferences
-            : crossReferences // ignore: cast_nullable_to_non_nullable
-                  as List<String>?,
-        techSpecs: freezed == techSpecs
-            ? _value.techSpecs
-            : techSpecs // ignore: cast_nullable_to_non_nullable
-                  as Map<String, dynamic>?,
-        imageRef: freezed == imageRef
-            ? _value.imageRef
-            : imageRef // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        wholesalerId: freezed == wholesalerId
-            ? _value.wholesalerId
-            : wholesalerId // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        originalRaw: freezed == originalRaw
-            ? _value.originalRaw
-            : originalRaw // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        metadata: freezed == metadata
-            ? _value.metadata
-            : metadata // ignore: cast_nullable_to_non_nullable
-                  as Map<String, dynamic>?,
-      ) as $Val,
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            sku: null == sku
+                ? _value.sku
+                : sku // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            brand: null == brand
+                ? _value.brand
+                : brand // ignore: cast_nullable_to_non_nullable
+                      as String,
+            price: freezed == price
+                ? _value.price
+                : price // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            categoryId: null == categoryId
+                ? _value.categoryId
+                : categoryId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as CatalogPartStatus,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            fitments: null == fitments
+                ? _value.fitments
+                : fitments // ignore: cast_nullable_to_non_nullable
+                      as List<FitmentEntity>,
+            tags: null == tags
+                ? _value.tags
+                : tags // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
+            code2: freezed == code2
+                ? _value.code2
+                : code2 // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            description2: freezed == description2
+                ? _value.description2
+                : description2 // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            sourceHash: freezed == sourceHash
+                ? _value.sourceHash
+                : sourceHash // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            fitmentHash: freezed == fitmentHash
+                ? _value.fitmentHash
+                : fitmentHash // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            lastCertifiedAt: freezed == lastCertifiedAt
+                ? _value.lastCertifiedAt
+                : lastCertifiedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            crossReferences: freezed == crossReferences
+                ? _value.crossReferences
+                : crossReferences // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            techSpecs: freezed == techSpecs
+                ? _value.techSpecs
+                : techSpecs // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
+            imageRef: freezed == imageRef
+                ? _value.imageRef
+                : imageRef // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            wholesalerId: freezed == wholesalerId
+                ? _value.wholesalerId
+                : wholesalerId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            originalRaw: freezed == originalRaw
+                ? _value.originalRaw
+                : originalRaw // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            metadata: freezed == metadata
+                ? _value.metadata
+                : metadata // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
+          )
+          as $Val,
     );
   }
 }
@@ -386,19 +387,19 @@ class _$CatalogPartImpl implements _CatalogPart {
     required this.categoryId,
     required this.status,
     required this.createdAt,
-    required List<FitmentEntity> fitments,
-    required List<String> tags,
+    required final List<FitmentEntity> fitments,
+    required final List<String> tags,
     this.code2,
     this.description2,
     this.sourceHash,
     this.fitmentHash,
     this.lastCertifiedAt,
-    List<String>? crossReferences,
-    Map<String, dynamic>? techSpecs,
+    final List<String>? crossReferences,
+    final Map<String, dynamic>? techSpecs,
     this.imageRef,
     this.wholesalerId,
     this.originalRaw,
-    Map<String, dynamic>? metadata,
+    final Map<String, dynamic>? metadata,
   }) : _fitments = fitments,
        _tags = tags,
        _crossReferences = crossReferences,
@@ -577,27 +578,27 @@ class _$CatalogPartImpl implements _CatalogPart {
 
 abstract class _CatalogPart implements CatalogPart {
   const factory _CatalogPart({
-    required String id,
-    required String sku,
-    required String name,
-    required String brand,
-    required double? price,
-    required String categoryId,
-    required CatalogPartStatus status,
-    required DateTime createdAt,
-    required List<FitmentEntity> fitments,
-    required List<String> tags,
-    String? code2,
-    String? description2,
-    String? sourceHash,
-    String? fitmentHash,
-    DateTime? lastCertifiedAt,
-    List<String>? crossReferences,
-    Map<String, dynamic>? techSpecs,
-    String? imageRef,
-    String? wholesalerId,
-    String? originalRaw,
-    Map<String, dynamic>? metadata,
+    required final String id,
+    required final String sku,
+    required final String name,
+    required final String brand,
+    required final double? price,
+    required final String categoryId,
+    required final CatalogPartStatus status,
+    required final DateTime createdAt,
+    required final List<FitmentEntity> fitments,
+    required final List<String> tags,
+    final String? code2,
+    final String? description2,
+    final String? sourceHash,
+    final String? fitmentHash,
+    final DateTime? lastCertifiedAt,
+    final List<String>? crossReferences,
+    final Map<String, dynamic>? techSpecs,
+    final String? imageRef,
+    final String? wholesalerId,
+    final String? originalRaw,
+    final Map<String, dynamic>? metadata,
   }) = _$CatalogPartImpl;
 
   factory _CatalogPart.fromJson(Map<String, dynamic> json) =

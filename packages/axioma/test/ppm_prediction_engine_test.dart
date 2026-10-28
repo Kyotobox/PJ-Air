@@ -10,13 +10,13 @@ void main() {
     });
 
     test('Happy Path: Predicción nominal para ticket válido', () {
-      const profile = PpmTicketProfile(
+      const PpmTicketProfile profile = PpmTicketProfile(
         filesCount: 2,
         promptTokens: 4000,
         zone: TaskRiskZone.green,
       );
 
-      final result = engine.predict(profile);
+      final PpmPredictionResult result = engine.predict(profile);
 
       expect(result.failureProbability, inInclusiveRange(0.0, 1.0));
       expect(result.expectedDurationSeconds, greaterThan(0.0));
@@ -38,20 +38,20 @@ void main() {
     });
 
     test('Happy Path: Riesgo escalado en Zona ROJA con múltiples archivos', () {
-      const lowRiskProfile = PpmTicketProfile(
+      const PpmTicketProfile lowRiskProfile = PpmTicketProfile(
         filesCount: 1,
         promptTokens: 1000,
         zone: TaskRiskZone.green,
       );
-      const highRiskProfile = PpmTicketProfile(
+      const PpmTicketProfile highRiskProfile = PpmTicketProfile(
         filesCount: 6,
         promptTokens: 12000,
         zone: TaskRiskZone.red,
         historicalDefectDensity: 3,
       );
 
-      final lowRes = engine.predict(lowRiskProfile);
-      final highRes = engine.predict(highRiskProfile);
+      final PpmPredictionResult lowRes = engine.predict(lowRiskProfile);
+      final PpmPredictionResult highRes = engine.predict(highRiskProfile);
 
       expect(
         highRes.failureProbability,
@@ -69,50 +69,51 @@ void main() {
       () {
         expect(engine.isCalibrated, isFalse);
 
-        final observations = <>[
-          const ExecutionTelemetryRecord(
-            sprintId: 'G217',
-            taskId: 'TASK-G217-01',
-            filesChanged: 2,
-            promptTokens: 3500,
-            zone: TaskRiskZone.green,
-            durationSeconds: 24.5,
-            failed: false,
-          ),
-          const ExecutionTelemetryRecord(
-            sprintId: 'G218',
-            taskId: 'TASK-G218-02',
-            filesChanged: 4,
-            promptTokens: 8200,
-            zone: TaskRiskZone.amber,
-            durationSeconds: 52.0,
-            failed: false,
-          ),
-          const ExecutionTelemetryRecord(
-            sprintId: 'G219',
-            taskId: 'TASK-G219-01',
-            filesChanged: 3,
-            promptTokens: 6000,
-            zone: TaskRiskZone.amber,
-            durationSeconds: 38.0,
-            failed: true,
-          ),
-          const ExecutionTelemetryRecord(
-            sprintId: 'G219',
-            taskId: 'TASK-G219-03',
-            filesChanged: 1,
-            promptTokens: 2500,
-            zone: TaskRiskZone.green,
-            durationSeconds: 14.0,
-            failed: false,
-          ),
-        ];
+        final List<ExecutionTelemetryRecord> observations =
+            <ExecutionTelemetryRecord>[
+              const ExecutionTelemetryRecord(
+                sprintId: 'G217',
+                taskId: 'TASK-G217-01',
+                filesChanged: 2,
+                promptTokens: 3500,
+                zone: TaskRiskZone.green,
+                durationSeconds: 24.5,
+                failed: false,
+              ),
+              const ExecutionTelemetryRecord(
+                sprintId: 'G218',
+                taskId: 'TASK-G218-02',
+                filesChanged: 4,
+                promptTokens: 8200,
+                zone: TaskRiskZone.amber,
+                durationSeconds: 52.0,
+                failed: false,
+              ),
+              const ExecutionTelemetryRecord(
+                sprintId: 'G219',
+                taskId: 'TASK-G219-01',
+                filesChanged: 3,
+                promptTokens: 6000,
+                zone: TaskRiskZone.amber,
+                durationSeconds: 38.0,
+                failed: true,
+              ),
+              const ExecutionTelemetryRecord(
+                sprintId: 'G219',
+                taskId: 'TASK-G219-03',
+                filesChanged: 1,
+                promptTokens: 2500,
+                zone: TaskRiskZone.green,
+                durationSeconds: 14.0,
+                failed: false,
+              ),
+            ];
 
         engine.calibrate(observations);
 
         expect(engine.isCalibrated, isTrue);
 
-        final calibratedResult = engine.predict(
+        final PpmPredictionResult calibratedResult = engine.predict(
           const PpmTicketProfile(filesCount: 2, promptTokens: 4000),
         );
 
@@ -162,51 +163,53 @@ void main() {
     );
 
     test('Sad Path: Muestra de calibración menor a 3 lanza StateError', () {
-      final insufficient = <>[
-        const ExecutionTelemetryRecord(
-          sprintId: 'G219',
-          taskId: 'TASK-G219-01',
-          filesChanged: 2,
-          promptTokens: 3000,
-          zone: TaskRiskZone.green,
-          durationSeconds: 20.0,
-          failed: false,
-        ),
-      ];
+      final List<ExecutionTelemetryRecord> insufficient =
+          <ExecutionTelemetryRecord>[
+            const ExecutionTelemetryRecord(
+              sprintId: 'G219',
+              taskId: 'TASK-G219-01',
+              filesChanged: 2,
+              promptTokens: 3000,
+              zone: TaskRiskZone.green,
+              durationSeconds: 20.0,
+              failed: false,
+            ),
+          ];
 
       expect(() => engine.calibrate(insufficient), throwsA(isA<StateError>()));
     });
 
     test('Sad Path: Muestra con varianza nula lanza StateError', () {
-      final degenerate = <>[
-        const ExecutionTelemetryRecord(
-          sprintId: 'G219',
-          taskId: 'TASK-01',
-          filesChanged: 2,
-          promptTokens: 3000,
-          zone: TaskRiskZone.green,
-          durationSeconds: 25.0,
-          failed: false,
-        ),
-        const ExecutionTelemetryRecord(
-          sprintId: 'G219',
-          taskId: 'TASK-02',
-          filesChanged: 2,
-          promptTokens: 3000,
-          zone: TaskRiskZone.green,
-          durationSeconds: 25.0,
-          failed: false,
-        ),
-        const ExecutionTelemetryRecord(
-          sprintId: 'G219',
-          taskId: 'TASK-03',
-          filesChanged: 2,
-          promptTokens: 3000,
-          zone: TaskRiskZone.green,
-          durationSeconds: 25.0,
-          failed: false,
-        ),
-      ];
+      final List<ExecutionTelemetryRecord> degenerate =
+          <ExecutionTelemetryRecord>[
+            const ExecutionTelemetryRecord(
+              sprintId: 'G219',
+              taskId: 'TASK-01',
+              filesChanged: 2,
+              promptTokens: 3000,
+              zone: TaskRiskZone.green,
+              durationSeconds: 25.0,
+              failed: false,
+            ),
+            const ExecutionTelemetryRecord(
+              sprintId: 'G219',
+              taskId: 'TASK-02',
+              filesChanged: 2,
+              promptTokens: 3000,
+              zone: TaskRiskZone.green,
+              durationSeconds: 25.0,
+              failed: false,
+            ),
+            const ExecutionTelemetryRecord(
+              sprintId: 'G219',
+              taskId: 'TASK-03',
+              filesChanged: 2,
+              promptTokens: 3000,
+              zone: TaskRiskZone.green,
+              durationSeconds: 25.0,
+              failed: false,
+            ),
+          ];
 
       expect(() => engine.calibrate(degenerate), throwsA(isA<StateError>()));
     });

@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:test/test.dart';
 import 'package:axioma/src/dispatch/dispatch_manifest.dart';
 import 'package:axioma/src/dispatch/prompt_hydrator.dart';
@@ -78,22 +77,25 @@ void main() {
       );
     });
 
-    test('Sad Path: Rechaza manifiesto sin verification_command o target_files vacío', () {
-      final Map<String, Object> jsonMap = <String, Object>{
-        'task_id': 'TASK-01',
-        'task_title': 'Sin comando',
-        'satellite': 'Kyotobox/ProspectAtlas',
-        'branch': 'factory/exec-001/TASK-01',
-        'target_files': <String>[],
-        'verification_command': '',
-        'acceptance_criteria': <String>['criterio'],
-      };
+    test(
+      'Sad Path: Rechaza manifiesto sin verification_command o target_files vacío',
+      () {
+        final Map<String, Object> jsonMap = <String, Object>{
+          'task_id': 'TASK-01',
+          'task_title': 'Sin comando',
+          'satellite': 'Kyotobox/ProspectAtlas',
+          'branch': 'factory/exec-001/TASK-01',
+          'target_files': <String>[],
+          'verification_command': '',
+          'acceptance_criteria': <String>['criterio'],
+        };
 
-      expect(
-        () => DispatchManifest.fromJson(jsonMap),
-        throwsA(isA<FormatException>()),
-      );
-    });
+        expect(
+          () => DispatchManifest.fromJson(jsonMap),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
   });
 
   group('PromptHydrator Tests (Happy + Sad Path)', () {
@@ -122,48 +124,54 @@ void main() {
       executionId: 'exec-001',
     );
 
-    test('Happy Path: Hidratación determinista exhaustiva sin variables residuales', () {
-      final String rendered = PromptHydrator.hydrate(
-        templateContent: sampleTemplate,
-        manifest: validManifest,
-      );
+    test(
+      'Happy Path: Hidratación determinista exhaustiva sin variables residuales',
+      () {
+        final String rendered = PromptHydrator.hydrate(
+          templateContent: sampleTemplate,
+          manifest: validManifest,
+        );
 
-      expect(rendered, contains('DESPACHO: exec-001'));
-      expect(rendered, contains('TASK-PRO-JULES-01 - DTO Leads'));
-      expect(rendered, contains('Kyotobox/ProspectAtlas'));
-      expect(rendered, contains('Implementar DTO'));
-      expect(rendered, contains('- `src/dto.py`'));
-      expect(rendered, contains('- `tests/test_dto.py`'));
-      expect(rendered, contains('- Validar campos'));
-      expect(rendered, contains('- Sad path exception'));
-      expect(rendered, contains('pytest tests/test_dto.py'));
+        expect(rendered, contains('DESPACHO: exec-001'));
+        expect(rendered, contains('TASK-PRO-JULES-01 - DTO Leads'));
+        expect(rendered, contains('Kyotobox/ProspectAtlas'));
+        expect(rendered, contains('Implementar DTO'));
+        expect(rendered, contains('- `src/dto.py`'));
+        expect(rendered, contains('- `tests/test_dto.py`'));
+        expect(rendered, contains('- Validar campos'));
+        expect(rendered, contains('- Sad path exception'));
+        expect(rendered, contains('pytest tests/test_dto.py'));
 
-      // Verificación de cero {{...}}
-      expect(rendered.contains('{{'), isFalse);
-      expect(rendered.contains('}}'), isFalse);
-    });
+        // Verificación de cero {{...}}
+        expect(rendered.contains('{{'), isFalse);
+        expect(rendered.contains('}}'), isFalse);
+      },
+    );
 
-    test('Sad Path: Lanza FormatException si quedan variables residuales no reconocidas', () {
-      const String templateWithUnknown = '''
+    test(
+      'Sad Path: Lanza FormatException si quedan variables residuales no reconocidas',
+      () {
+        const String templateWithUnknown = '''
 # DESPACHO: {{EXECUTION_ID}}
 {{TASK_ID}}
 {{UNKNOWN_VARIABLE}}
 ''';
 
-      expect(
-        () => PromptHydrator.hydrate(
-          templateContent: templateWithUnknown,
-          manifest: validManifest,
-        ),
-        throwsA(
-          isA<FormatException>().having(
-            (FormatException e) => e.message,
-            'msg',
-            contains('UNKNOWN_VARIABLE'),
+        expect(
+          () => PromptHydrator.hydrate(
+            templateContent: templateWithUnknown,
+            manifest: validManifest,
           ),
-        ),
-      );
-    });
+          throwsA(
+            isA<FormatException>().having(
+              (FormatException e) => e.message,
+              'msg',
+              contains('UNKNOWN_VARIABLE'),
+            ),
+          ),
+        );
+      },
+    );
 
     test('Sad Path: Lanza FormatException si la plantilla está vacía', () {
       expect(
@@ -181,17 +189,20 @@ void main() {
       );
     });
 
-    test('Sad Path: hydrateAndSave lanza FileSystemException ante archivo inexistente', () {
-      expect(
-        () => PromptHydrator.hydrateAndSave(
-          templateFile: File('vault/non_existent_template.md'),
-          manifestFile: File(
-            'vault/dispatch/dispatch_manifest_prospect_atlas.json',
+    test(
+      'Sad Path: hydrateAndSave lanza FileSystemException ante archivo inexistente',
+      () {
+        expect(
+          () => PromptHydrator.hydrateAndSave(
+            templateFile: File('vault/non_existent_template.md'),
+            manifestFile: File(
+              'vault/dispatch/dispatch_manifest_prospect_atlas.json',
+            ),
+            outputDir: Directory('vault/dispatch/rendered'),
           ),
-          outputDir: Directory('vault/dispatch/rendered'),
-        ),
-        throwsA(isA<FileSystemException>()),
-      );
-    });
+          throwsA(isA<FileSystemException>()),
+        );
+      },
+    );
   });
 }

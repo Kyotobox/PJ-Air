@@ -6,7 +6,6 @@
 library;
 
 import 'dart:io';
-
 import 'key_pool_base.dart';
 
 /// Excepción lanzada cuando todas las claves del pool están en cooldown.
@@ -49,19 +48,24 @@ class GeminiKeyPool implements KeyPool {
   }
 
   /// Claves registradas en el pool (inmutables desde el exterior).
+  @override
   List<String> get keys => List<String>.unmodifiable(_keys);
 
   /// Cooldowns activos (clave -> DateTime hasta el cual no puede usarse).
+  @override
   Map<String, DateTime> get cooldowns =>
       Map<String, DateTime>.unmodifiable(_cooldowns);
 
   /// Índice circular actual del pool.
+  @override
   int get currentIndex => _currentIndex;
 
   /// Cantidad total de claves registradas.
+  @override
   int get length => _keys.length;
 
   /// Retorna si una clave específica está disponible para despacho.
+  @override
   bool isKeyAvailable(String key, {DateTime? now}) {
     if (!_keys.contains(key)) return false;
     final DateTime current = now ?? DateTime.now();
@@ -74,9 +78,11 @@ class GeminiKeyPool implements KeyPool {
   /// Obtiene la siguiente clave disponible mediante rotación Round-Robin.
   /// Si una clave está en cooldown, se salta automáticamente a la siguiente.
   /// Si todas las claves están en cooldown, lanza [GeminiPoolExhaustedException].
+  @override
   String get nextKey => acquireNextKey();
 
   /// Adquiere la siguiente clave disponible avanzando el puntero de rotación.
+  @override
   String acquireNextKey({DateTime? now}) {
     final DateTime current = now ?? DateTime.now();
     final int count = _keys.length;
@@ -99,6 +105,7 @@ class GeminiKeyPool implements KeyPool {
 
   /// Marca una clave como agotada por cuota diaria (RPD / TPD / RESOURCE_EXHAUSTED).
   /// Aplica un cooldown de 24 horas por defecto.
+  @override
   void markQuotaExhausted(
     String key, {
     Duration duration = const Duration(hours: 24),
@@ -110,6 +117,7 @@ class GeminiKeyPool implements KeyPool {
 
   /// Marca una clave con rate-limit temporal (RPM / HTTP 429).
   /// Aplica un cooldown breve según el parámetro `cooldownSec` (por defecto 60s).
+  @override
   void markRateLimited(String key, {double cooldownSec = 60.0, DateTime? now}) {
     final DateTime current = now ?? DateTime.now();
     final int millis = (cooldownSec * 1000).round();
@@ -117,11 +125,13 @@ class GeminiKeyPool implements KeyPool {
   }
 
   /// Limpia el cooldown de una clave específica.
+  @override
   void resetCooldown(String key) {
     _cooldowns.remove(key);
   }
 
   /// Limpia todos los cooldowns registrados en el pool.
+  @override
   void clearAllCooldowns() {
     _cooldowns.clear();
   }

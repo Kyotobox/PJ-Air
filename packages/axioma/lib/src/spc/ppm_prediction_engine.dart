@@ -163,13 +163,13 @@ class PpmPredictionResult {
 /// antes de su ejecución o despacho a runners.
 class PpmPredictionEngine {
   double _baseFailureProb = 0.05;
-  double _fileRiskSlope = 0.045;
-  double _tokenRiskSlope = 0.000015;
-  double _defectMultiplier = 0.03;
+  final double _fileRiskSlope = 0.045;
+  final double _tokenRiskSlope = 0.000015;
+  final double _defectMultiplier = 0.03;
 
   double _baseDurationSec = 12.0;
-  double _fileDurationSlope = 7.5;
-  double _tokenDurationSlope = 0.0012;
+  final double _fileDurationSlope = 7.5;
+  final double _tokenDurationSlope = 0.0012;
 
   double _durationVariance = 16.0;
   bool _isCalibrated = false;

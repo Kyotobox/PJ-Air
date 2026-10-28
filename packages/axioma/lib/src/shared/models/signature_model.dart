@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import '../../axiom_version.dart';
 
 /// [G11] SignatureModel: Estandarización de firmas criptográficas para la flota.

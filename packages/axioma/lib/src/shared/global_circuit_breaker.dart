@@ -7,7 +7,6 @@ library;
 
 import 'dart:io';
 import 'dart:math';
-
 import 'package:sqlite3/sqlite3.dart';
 
 /// Estados de la máquina finita del Circuit Breaker

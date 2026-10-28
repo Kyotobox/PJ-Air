@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:cryptography/cryptography.dart';
 import 'package:test/test.dart';
 import 'package:axioma/axioma.dart';
@@ -225,13 +224,16 @@ void main() {
       expect(result.reason, contains('Emisor inválido'));
     });
 
-    test('Sad Path 8: Rechazo estricto ante path traversal con ascensos relativos (..)', () {
-      expect(
-        () => PtgTokenVerifier(
-          publicKeyPemPath: '../../vault/specs/orchestrator_public_key.pem',
-        ),
-        throwsA(isA<ArgumentError>()),
-      );
-    });
+    test(
+      'Sad Path 8: Rechazo estricto ante path traversal con ascensos relativos (..)',
+      () {
+        expect(
+          () => PtgTokenVerifier(
+            publicKeyPemPath: '../../vault/specs/orchestrator_public_key.pem',
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
   });
 }

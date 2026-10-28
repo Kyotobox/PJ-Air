@@ -91,47 +91,48 @@ class _$VehicleEntityCopyWithImpl<$Res, $Val extends VehicleEntity>
   }) {
     return _then(
       _value.copyWith(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        make: null == make
-            ? _value.make
-            : make // ignore: cast_nullable_to_non_nullable
-                  as String,
-        model: null == model
-            ? _value.model
-            : model // ignore: cast_nullable_to_non_nullable
-                  as String,
-        yearFrom: null == yearFrom
-            ? _value.yearFrom
-            : yearFrom // ignore: cast_nullable_to_non_nullable
-                  as int,
-        yearTo: freezed == yearTo
-            ? _value.yearTo
-            : yearTo // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        engineDisplacement: freezed == engineDisplacement
-            ? _value.engineDisplacement
-            : engineDisplacement // ignore: cast_nullable_to_non_nullable
-                  as double?,
-        cylinders: freezed == cylinders
-            ? _value.cylinders
-            : cylinders // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        subModel: freezed == subModel
-            ? _value.subModel
-            : subModel // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        fuelType: freezed == fuelType
-            ? _value.fuelType
-            : fuelType // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        canonicalSlug: null == canonicalSlug
-            ? _value.canonicalSlug
-            : canonicalSlug // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ) as $Val,
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            make: null == make
+                ? _value.make
+                : make // ignore: cast_nullable_to_non_nullable
+                      as String,
+            model: null == model
+                ? _value.model
+                : model // ignore: cast_nullable_to_non_nullable
+                      as String,
+            yearFrom: null == yearFrom
+                ? _value.yearFrom
+                : yearFrom // ignore: cast_nullable_to_non_nullable
+                      as int,
+            yearTo: freezed == yearTo
+                ? _value.yearTo
+                : yearTo // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            engineDisplacement: freezed == engineDisplacement
+                ? _value.engineDisplacement
+                : engineDisplacement // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            cylinders: freezed == cylinders
+                ? _value.cylinders
+                : cylinders // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            subModel: freezed == subModel
+                ? _value.subModel
+                : subModel // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            fuelType: freezed == fuelType
+                ? _value.fuelType
+                : fuelType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            canonicalSlug: null == canonicalSlug
+                ? _value.canonicalSlug
+                : canonicalSlug // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
     );
   }
 }
@@ -331,16 +332,16 @@ class _$VehicleEntityImpl implements _VehicleEntity {
 
 abstract class _VehicleEntity implements VehicleEntity {
   const factory _VehicleEntity({
-    required String id,
-    required String make,
-    required String model,
-    required int yearFrom,
-    int? yearTo,
-    double? engineDisplacement,
-    int? cylinders,
-    String? subModel,
-    String? fuelType,
-    required String canonicalSlug,
+    required final String id,
+    required final String make,
+    required final String model,
+    required final int yearFrom,
+    final int? yearTo,
+    final double? engineDisplacement,
+    final int? cylinders,
+    final String? subModel,
+    final String? fuelType,
+    required final String canonicalSlug,
   }) = _$VehicleEntityImpl;
 
   factory _VehicleEntity.fromJson(Map<String, dynamic> json) =

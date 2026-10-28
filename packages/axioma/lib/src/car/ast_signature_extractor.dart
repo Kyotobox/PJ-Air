@@ -113,7 +113,8 @@ class AstSignatureExtractor {
         nodeType: 'AsExpression',
         pattern: r'\bas\s+[A-Z]\w+',
         severity: CarRuleSeverity.warn,
-        description: 'Casteo inseguro detectado sin verificación de tipo previa. Usar pattern matching o `is`.',
+        description:
+            'Casteo inseguro detectado sin verificación de tipo previa. Usar pattern matching o `is`.',
         quarantineDays: 7,
         promotionStatus: CarPromotionStatus.observation,
         createdAt: DateTime.now(),
@@ -129,7 +130,8 @@ class AstSignatureExtractor {
         nodeType: 'PropertyAccess',
         pattern: r'\.first\b(?!\w)',
         severity: CarRuleSeverity.warn,
-        description: 'Acceso ciego a `.first` sobre iterable potencialmente vacío. Usar `.firstOrNull`.',
+        description:
+            'Acceso ciego a `.first` sobre iterable potencialmente vacío. Usar `.firstOrNull`.',
         quarantineDays: 7,
         promotionStatus: CarPromotionStatus.observation,
         createdAt: DateTime.now(),
@@ -144,7 +146,8 @@ class AstSignatureExtractor {
         nodeType: 'PostfixExpression',
         pattern: r'!\s*(\.|\)|;|,|\n|$)',
         severity: CarRuleSeverity.warn,
-        description: 'Operador de aserción nula forzada `!` riesgoso. Reemplazar por manejo seguro de nulos.',
+        description:
+            'Operador de aserción nula forzada `!` riesgoso. Reemplazar por manejo seguro de nulos.',
         quarantineDays: 7,
         promotionStatus: CarPromotionStatus.observation,
         createdAt: DateTime.now(),
@@ -160,7 +163,8 @@ class AstSignatureExtractor {
         nodeType: 'CatchClause',
         pattern: r'catch\s*\([^)]*\)\s*\{\s*\}',
         severity: CarRuleSeverity.warn,
-        description: 'Bloque catch vacío proscrito por Doctrina Anti-Atajos. Incorporar manejo de error.',
+        description:
+            'Bloque catch vacío proscrito por Doctrina Anti-Atajos. Incorporar manejo de error.',
         quarantineDays: 7,
         promotionStatus: CarPromotionStatus.observation,
         createdAt: DateTime.now(),

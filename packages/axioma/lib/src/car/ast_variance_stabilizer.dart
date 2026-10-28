@@ -126,7 +126,8 @@ class AstVarianceStabilizer {
         specialCauseScore: 0.10,
         commonCauseScore: 0.90,
         isApprovedForSynthesis: false,
-        rationale: 'Variación de causa común: Identificador o cambio cosmético aislado sin violación de invariantes.',
+        rationale:
+            'Variación de causa común: Identificador o cambio cosmético aislado sin violación de invariantes.',
       );
     }
 
@@ -198,7 +199,8 @@ class AstVarianceStabilizer {
         specialCauseScore: specialScore,
         commonCauseScore: commonScore,
         isApprovedForSynthesis: false,
-        rationale: 'Causa Común confirmada: Ruido estadístico sin patrón anómalo ni recurrencia estructural.',
+        rationale:
+            'Causa Común confirmada: Ruido estadístico sin patrón anómalo ni recurrencia estructural.',
       );
     }
 

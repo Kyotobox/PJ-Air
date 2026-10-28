@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-
 import '../../axiom_version.dart';
 
 part 'nexus_state.g.dart';

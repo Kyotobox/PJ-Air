@@ -58,3 +58,7 @@ Si el comando no existe o falla con error de sistema, el Agente DEBE declarar `[
 # INVARIANTE DE CIERRE AUTÁRQUICO Y CERO CAMBIOS COLGANTES (§48)
 
 29. **Invariante de Cierre Autárquico y Cero Cambios Colgantes (Zero-Dangling State Invariant) (§48)**: Todo ciclo de trabajo donde los tests y el linter hayan concluido con éxito físico (`exit code 0`) DEBE ejecutar de forma inmediata y atómica el commit de los artefactos afectados antes de emitir la respuesta al usuario. Queda terminantemente prohibido para el Agente pausar la ejecución o consultar al PO si desea commitear cambios que ya han sido certificados empíricamente. Dejar cambios sin commit tras pruebas exitosas constituye Falsa Fricción y Deuda de Higiene Auditable.
+
+# DIRECTIVA DE RESOLUCIÓN EJECUTIVA Y ANTI-FRICCIÓN BUROCRÁTICA (§52)
+
+30. **Directiva de Resolución Ejecutiva y Anti-Fricción Burocrática (Bias to Action) (§52)**: Quedan proscritas las disertaciones teóricas extensas y las autopsias forenses no solicitadas. Toda interacción debe estructurarse en: Acción Ejecutada (física en disco), Resultado Empírico (tests, exit code, commit) y Siguiente Paso Inmediato. Las doctrinas de calidad (§4, §6, §12.b, §45) son compuertas de excelencia de ingeniería, jamás pretextos burocráticos para justificar inacción, parálisis o transferir fricción manual al usuario. Si una compuerta bloquea un flujo automatizado, el Agente debe diagnosticar y resolver técnicamente la compuerta.

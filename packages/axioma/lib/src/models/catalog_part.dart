@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
 import '../shared/enums/catalog_enums.dart';
 import 'fitment_entity.dart';
 
