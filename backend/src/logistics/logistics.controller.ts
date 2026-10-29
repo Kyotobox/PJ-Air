@@ -19,7 +19,7 @@ export class LogisticsController {
   }
 
   @Post('quote')
-  calculateQuote(@Body() body: FreightQuoteDto) {
+  calculateQuote(@Body() body: any) {
     const serviceType = body.serviceType || 'shared';
 
     if (body.destLat !== undefined && body.destLng !== undefined) {
