@@ -3,53 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S43",
-  "current_task": "TASK-43-01",
+  "current_sprint": "S44",
+  "current_task": "TASK-44-01",
   "sprints": [
-    {
-      "id": "S41",
-      "name": "Sprint 41: Verificación Telefónica SMS OTP con Firebase en Registro B2B y Modificación de Perfil",
-      "status": "COMPLETED",
-      "start_date": "2026-10-27",
-      "goal": "Implementar la verificación de identidad telefónica mediante SMS OTP de 6 dígitos con Firebase Authentication (Free Tier) tanto en el registro B2B inicial como en la edición de número de teléfono en /profile, con soporte para números de prueba y preservación de cuenta ante cancelaciones.",
-      "tasks": [
-        {
-          "id": "TASK-41-01",
-          "label": "DOMAIN/PHONE-AUTH-CORE",
-          "desc": "Integración de Firebase Admin en backend NestJS, columna phone_verified en Profile y endpoint POST /api/auth/verify-phone-token para certificar el token emitido por Firebase.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-41-02",
-          "label": "UI/FIREBASE-PHONE-CLIENT",
-          "desc": "Configuración del cliente Firebase Web SDK en frontend/lib/firebase.ts con reCAPTCHA invisible y fallback graceful si faltan credenciales en .env.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-41-03",
-          "label": "UI/REGISTER-SMS-OTP",
-          "desc": "Modal emergente de verificación SMS OTP en /auth/register: envío de código de 6 dígitos al teléfono ingresado, verificación atómica y feedback visual de confirmación.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-41-04",
-          "label": "UI/PROFILE-PHONE-CHANGE-GUARD",
-          "desc": "Guardarraíl en /profile: detección de mutación en el campo de teléfono, despliegue de modal OTP para el nuevo número y persistencia en backend solo tras verificación exitosa.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-41-05",
-          "label": "E2E/PHONE-AUTH-REGRESSION",
-          "desc": "Suite de pruebas unitarias y Playwright con números de prueba de Firebase (+1 305 555 0100 -> 123456), sad paths (código incorrecto, reintento expirado, cancelación de modal) y certificación logix audit.",
-          "status": "DONE",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S42",
       "name": "Sprint 42: Hard Gate de Verificación Telefónica SMS OTP en Registro Mayorista B2B y Blindaje de Endpoints",
@@ -137,58 +93,313 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S44",
+      "name": "Sprint 44: Cobranza Automatizada y Comunicación",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-10-29",
+      "goal": "Automatizar la gestión de vencimientos de crédito con notificaciones multicanal (Email y SMS Twilio preparado), cron diario a las 9 AM NY y badges visuales de estado financiero.",
+      "tasks": [
+        {
+          "id": "TASK-44-01",
+          "label": "DOMAIN/CRON-OVERDUE-CORE",
+          "desc": "Cron job diario a las 9:00 AM (America/New_York) para consultar órdenes vencidas.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-44-02",
+          "label": "DOMAIN/MAIL-OVERDUE-TEMPLATE",
+          "desc": "Plantilla HTML responsive invoice_overdue.html y método sendOverdueInvoiceAlert en MailService.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-44-03",
+          "label": "DOMAIN/SMS-TWILIO-MODULE",
+          "desc": "Módulo SmsService con integración Twilio y guardarraíl estricto SMS_ENABLED=false.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-44-04",
+          "label": "DOMAIN/MULTICHANNEL-DISPATCH",
+          "desc": "Orquestación en el Cron diario para disparo de Email y SMS diferido.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-44-05",
+          "label": "UI/FINANCIAL-STATUS-BADGES",
+          "desc": "Badges visuales de estado de crédito en /orders y /admin/orders.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-44-06",
+          "label": "TEST/CRON-AND-SMS-SUITE",
+          "desc": "Suite de pruebas unitarias para el Cron de cobranza y sad path para SmsService.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-44-07",
+          "label": "DEPLOY/TESTING-SYNC",
+          "desc": "Compilación limpia de frontend y backend, verificación de integridad y sincronización de backlog.",
+          "status": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "S45",
+      "name": "Sprint 45: Pagos por Cheque y Conciliación Contable",
+      "status": "PLANNED",
+      "start_date": "2026-10-30",
+      "goal": "Gestión completa del ciclo de vida de pagos con cheque (3 días hábiles), reversión automática y bloqueo de crédito ante rebote bancario.",
+      "tasks": [
+        {
+          "id": "TASK-45-01",
+          "label": "DOMAIN/CHECK-PAYMENT-ENTITY",
+          "desc": "Entidad y tabla check_payments en backend NestJS.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-45-02",
+          "label": "DOMAIN/BUSINESS-DAYS-UTIL",
+          "desc": "Utilidad determinista addBusinessDays(date, 3) excluyendo fines de semana.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-45-03",
+          "label": "DOMAIN/CHECK-SERVICE-CORE",
+          "desc": "Servicio CheckPaymentsService con métodos de depósito, liberación de cupo y bloqueo ante rebote.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-45-04",
+          "label": "UI/REGISTER-CHECK-MODAL",
+          "desc": "Modal administrativo RegisterCheckModal en /admin/orders/[id].",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-45-05",
+          "label": "UI/CHECK-RECONCILIATION-TABS",
+          "desc": "Pestañas de conciliación de cheques en /admin/orders.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-45-06",
+          "label": "TEST/CHECK-SERVICE-SUITE",
+          "desc": "Suite de pruebas unitarias para CheckPaymentsService (happy y sad paths).",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-45-07",
+          "label": "DEPLOY/TESTING-SYNC",
+          "desc": "Compilación limpia de frontend y backend, verificación de integridad y sincronización de backlog.",
+          "status": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "S46",
+      "name": "Sprint 46: Cumplimiento Fiscal New York ST-120 & Visión AI",
+      "status": "PLANNED",
+      "start_date": "2026-10-31",
+      "goal": "Cumplimiento fiscal de reventa de NY con captura ágil de Tax ID, carga de documento ST-120 y validación automática inteligente con Visión AI.",
+      "tasks": [
+        {
+          "id": "TASK-46-01",
+          "label": "DOMAIN/TAX-EXEMPT-SCHEMA",
+          "desc": "Columnas tax_id, st120_status, st120_doc_url, tax_exempt en User/Profile.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-46-02",
+          "label": "UI/REGISTER-LEAN-TAX-ID",
+          "desc": "Formulario de registro mayorista con Tax ID / NY Resale Certificate # y checkbox ST-120.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-46-03",
+          "label": "UI/PROFILE-ST120-UPLOAD",
+          "desc": "Carga de certificado ST-120 (PDF/imagen) en /profile.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-46-04",
+          "label": "DOMAIN/VISION-AI-ST120-VALIDATOR",
+          "desc": "Servicio VisionValidationService con Gemini Flash Vision API.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-46-05",
+          "label": "UI/ADMIN-ST120-APPROVAL",
+          "desc": "Panel /admin/clients para auditar y aprobar/rechazar ST-120.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-46-06",
+          "label": "DOMAIN/TAX-EXEMPT-0-PERCENT-ENGINE",
+          "desc": "Lógica de 0% Sales Tax en facturas y leyenda oficial NYS DTF.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-46-07",
+          "label": "TEST/ST120-AND-VISION-SUITE",
+          "desc": "Suite de pruebas unitarias para VisionValidationService y cálculo fiscal.",
+          "status": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "S47",
+      "name": "Sprint 47: Processing Fees Transversales",
+      "status": "PLANNED",
+      "start_date": "2026-11-01",
+      "goal": "Aplicar recargos transparentes por método de pago (Tarjeta 3.5%, ACH 0.8% tope $5, Zelle/Cheque 0%) tanto en checkout como en liquidación de facturas a crédito.",
+      "tasks": [
+        {
+          "id": "TASK-47-01",
+          "label": "DOMAIN/FEE-CALCULATOR-SERVICE",
+          "desc": "Servicio determinista FeeCalculatorService.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-47-02",
+          "label": "UI/CHECKOUT-FEES-BREAKDOWN",
+          "desc": "Desglose dinámico de comisiones en Checkout.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-47-03",
+          "label": "DOMAIN/CREDIT-SETTLEMENT-FEE",
+          "desc": "Aplicar fee en liquidación diferida de facturas a crédito.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-47-04",
+          "label": "DOMAIN/FEE-PERSISTENCE-AUDIT",
+          "desc": "Persistir fee_amount y fee_method en Order.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-47-05",
+          "label": "UI/INVOICE-DOWNLOAD-BREAKDOWN",
+          "desc": "Invoices descargables con desglose legal contable.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-47-06",
+          "label": "TEST/FEE-CALCULATOR-SUITE",
+          "desc": "Suite de pruebas unitarias para FeeCalculatorService.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-47-07",
+          "label": "DEPLOY/TESTING-SYNC",
+          "desc": "Compilación limpia de frontend y backend, verificación de integridad y sincronización de backlog.",
+          "status": "TODO"
+        }
+      ]
+    },
+    {
+      "id": "S48",
+      "name": "Sprint 48: Dashboard B2B y Motor de Fletes por Millas desde Astoria",
+      "status": "PLANNED",
+      "start_date": "2026-11-02",
+      "goal": "Dashboard comercial para clientes mayoristas en /orders y motor de fletes por millas de van comercial desde Astoria NY.",
+      "tasks": [
+        {
+          "id": "TASK-48-01",
+          "label": "UI/DASHBOARD-HERO-CREDIT",
+          "desc": "Tarjetas de Salud Financiera en /orders.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-48-02",
+          "label": "UI/DASHBOARD-METRICS-CARDS",
+          "desc": "Widgets de consumo y actividad comercial.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-48-03",
+          "label": "UI/MULTI-ORDER-SETTLEMENT-SELECTOR",
+          "desc": "Selector multi-orden con checkboxes para saldar facturas.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-48-04",
+          "label": "DOMAIN/BATCH-SETTLEMENT-ENDPOINT",
+          "desc": "Endpoint POST /orders/settle-batch.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-48-05",
+          "label": "UI/FREQUENT-PRODUCTS-CAROUSEL",
+          "desc": "Carrusel de productos frecuentes con reorden 1-clic.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-48-06",
+          "label": "DOMAIN/FEEDBACK-SUGGESTION-BOX",
+          "desc": "Entidad Feedback y buzón de sugerencias.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-48-07",
+          "label": "DOMAIN/MILEAGE-FREIGHT-ASTORIA",
+          "desc": "Motor MileageFreightService con origen en 3304 Broadway, Astoria, NY 11106.",
+          "status": "TODO"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 40,
+  "archived_sprints_count": 41,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S43",
-    "name": "Sprint 43: Purga de Pedidos Futuros y Fundación de Crédito a 7 Días",
-    "status": "COMPLETED",
-    "start_date": "2026-10-28",
-    "goal": "Eliminar el subsistema obsoleto de pedidos futuros/recurrentes y establecer el modelo de datos y lógica base de crédito a 7 días calendario con métodos de consulta de saldo y límites.",
+    "id": "S44",
+    "name": "Sprint 44: Cobranza Automatizada y Comunicación",
+    "status": "IN_PROGRESS",
+    "start_date": "2026-10-29",
+    "goal": "Automatizar la gestión de vencimientos de crédito con notificaciones multicanal (Email y SMS Twilio preparado), cron diario a las 9 AM NY y badges visuales de estado financiero.",
     "tasks": [
       {
-        "id": "TASK-43-01",
-        "label": "CLEAN/CHECKOUT-PURGE",
-        "desc": "Eliminar checkbox de pedido recurrente y estados asociados en checkout/page.tsx.",
-        "status": "DONE"
+        "id": "TASK-44-01",
+        "label": "DOMAIN/CRON-OVERDUE-CORE",
+        "desc": "Cron job diario a las 9:00 AM (America/New_York) para consultar órdenes vencidas.",
+        "status": "TODO"
       },
       {
-        "id": "TASK-43-02",
-        "label": "CLEAN/ROUTES-PURGE",
-        "desc": "Eliminar vistas obsoletas /orders/scheduled y /admin/standing-orders y sus enlaces de navegación.",
-        "status": "DONE"
+        "id": "TASK-44-02",
+        "label": "DOMAIN/MAIL-OVERDUE-TEMPLATE",
+        "desc": "Plantilla HTML responsive invoice_overdue.html y método sendOverdueInvoiceAlert en MailService.",
+        "status": "TODO"
       },
       {
-        "id": "TASK-43-03",
-        "label": "CLEAN/BACKEND-SCHEDULED-PURGE",
-        "desc": "Migración para eliminar tabla scheduled_orders y purgar entidad ScheduledOrder, servicio y controlador en backend NestJS.",
-        "status": "DONE"
+        "id": "TASK-44-03",
+        "label": "DOMAIN/SMS-TWILIO-MODULE",
+        "desc": "Módulo SmsService con integración Twilio y guardarraíl estricto SMS_ENABLED=false.",
+        "status": "TODO"
       },
       {
-        "id": "TASK-43-04",
-        "label": "DOMAIN/CREDIT-DUE-DATE-CORE",
-        "desc": "Modelar cálculo determinista de payment_due_date = created_at + 7 días (ISO YYYY-MM-DD) para órdenes a crédito en backend.",
-        "status": "DONE"
+        "id": "TASK-44-04",
+        "label": "DOMAIN/MULTICHANNEL-DISPATCH",
+        "desc": "Orquestación en el Cron diario para disparo de Email y SMS diferido.",
+        "status": "TODO"
       },
       {
-        "id": "TASK-43-05",
-        "label": "DOMAIN/CREDIT-SERVICE-REFACTOR",
-        "desc": "Estandarizar métodos getAvailableCredit, getUsedCredit y getCreditLimit en backend con cálculo estricto de deuda neta.",
-        "status": "DONE"
+        "id": "TASK-44-05",
+        "label": "UI/FINANCIAL-STATUS-BADGES",
+        "desc": "Badges visuales de estado de crédito en /orders y /admin/orders.",
+        "status": "TODO"
       },
       {
-        "id": "TASK-43-06",
-        "label": "TEST/CREDIT-AND-PURGE-REGRESSION",
-        "desc": "Suite de pruebas unitarias para CreditService (happy path y sad paths de sobregiro) y certificación de no regresiones tras la purga.",
-        "status": "DONE"
+        "id": "TASK-44-06",
+        "label": "TEST/CRON-AND-SMS-SUITE",
+        "desc": "Suite de pruebas unitarias para el Cron de cobranza y sad path para SmsService.",
+        "status": "TODO"
       },
       {
-        "id": "TASK-43-07",
+        "id": "TASK-44-07",
         "label": "DEPLOY/TESTING-SYNC",
-        "desc": "Compilación limpia, verificación de integridad y despliegue sincronizado en testing.jhoanes.com.",
-        "status": "DONE"
+        "desc": "Compilación limpia de frontend y backend, verificación de integridad y sincronización de backlog.",
+        "status": "TODO"
       }
     ]
   }

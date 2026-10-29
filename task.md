@@ -1,11 +1,11 @@
-# SPRINT S43 - Sprint 43: Purga de Pedidos Futuros y Fundación de Crédito a 7 Días
-**Objetivo**: Eliminar el subsistema obsoleto de pedidos futuros/recurrentes y establecer el modelo de datos y lógica base de crédito a 7 días calendario con métodos de consulta de saldo y límites.
+# SPRINT S44 - Sprint 44: Cobranza Automatizada y Comunicación
+**Objetivo**: Automatizar la gestión de vencimientos de crédito con notificaciones multicanal (Email y SMS Twilio preparado), cron diario a las 9 AM NY y badges visuales de estado financiero.
 **Fecha**: 2026-10-29
 
-- [x] **TASK-43-01** [CLEAN/CHECKOUT-PURGE] Eliminar checkbox de pedido recurrente y estados asociados en checkout/page.tsx.
-- [x] **TASK-43-02** [CLEAN/ROUTES-PURGE] Eliminar vistas obsoletas /orders/scheduled y /admin/standing-orders y sus enlaces de navegación.
-- [x] **TASK-43-03** [CLEAN/BACKEND-SCHEDULED-PURGE] Migración para eliminar tabla scheduled_orders y purgar entidad ScheduledOrder, servicio y controlador en backend NestJS.
-- [x] **TASK-43-04** [DOMAIN/CREDIT-DUE-DATE-CORE] Modelar cálculo determinista de payment_due_date = created_at + 7 días (ISO YYYY-MM-DD) para órdenes a crédito en backend.
-- [x] **TASK-43-05** [DOMAIN/CREDIT-SERVICE-REFACTOR] Estandarizar métodos getAvailableCredit, getUsedCredit y getCreditLimit en backend con cálculo estricto de deuda neta.
-- [x] **TASK-43-06** [TEST/CREDIT-AND-PURGE-REGRESSION] Suite de pruebas unitarias para CreditService (happy path y sad paths de sobregiro) y certificación de no regresiones tras la purga.
-- [x] **TASK-43-07** [DEPLOY/TESTING-SYNC] Compilación limpia, verificación de integridad y despliegue sincronizado en testing.jhoanes.com.
+- [ ] **TASK-44-01** [DOMAIN/CRON-OVERDUE-CORE] Cron job diario a las 9:00 AM (America/New_York) para consultar órdenes vencidas.
+- [ ] **TASK-44-02** [DOMAIN/MAIL-OVERDUE-TEMPLATE] Plantilla HTML responsive invoice_overdue.html y método sendOverdueInvoiceAlert en MailService.
+- [ ] **TASK-44-03** [DOMAIN/SMS-TWILIO-MODULE] Módulo SmsService con integración Twilio y guardarraíl estricto SMS_ENABLED=false.
+- [ ] **TASK-44-04** [DOMAIN/MULTICHANNEL-DISPATCH] Orquestación en el Cron diario para disparo de Email y SMS diferido.
+- [ ] **TASK-44-05** [UI/FINANCIAL-STATUS-BADGES] Badges visuales de estado de crédito en /orders y /admin/orders.
+- [ ] **TASK-44-06** [TEST/CRON-AND-SMS-SUITE] Suite de pruebas unitarias para el Cron de cobranza y sad path para SmsService.
+- [ ] **TASK-44-07** [DEPLOY/TESTING-SYNC] Compilación limpia de frontend y backend, verificación de integridad y sincronización de backlog.
