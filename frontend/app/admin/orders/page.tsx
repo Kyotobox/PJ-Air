@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
+import FinancialStatusBadge from '@/components/orders/FinancialStatusBadge';
 
 interface OrderItem {
     id: string;
@@ -26,6 +27,7 @@ interface Order {
     status: string;
     payment_status?: string;
     payment_method?: string;
+    payment_due_date?: string;
     zelle_reference?: string;
     packaging_fee?: number;
     packaging_discount?: number;
@@ -552,24 +554,11 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ⚠️ Verificación Pend.
                                                     </span>
                                                 )}
-                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && (
-                                                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200">
-                                                        ✓ Pagado
-                                                    </span>
-                                                )}
+                                                {/* Financial status badge (TASK-44-05) */}
+                                                <FinancialStatusBadge order={order} size="sm" />
                                                 {order.payment_status === 'partially_refunded' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 text-[9px] font-bold border border-orange-200">
                                                         ↩ Reemb. Parcial
-                                                    </span>
-                                                )}
-                                                {order.payment_status === 'refunded' && (
-                                                    <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[9px] font-bold border border-rose-200">
-                                                        ↩ Reembolsado
-                                                    </span>
-                                                )}
-                                                {order.payment_status === 'pending' && (
-                                                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">
-                                                        ⏳ Crédito Pend.
                                                     </span>
                                                 )}
                                             </div>
@@ -644,6 +633,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-3">
                                     <h2 className="text-2xl font-black text-slate-800">Expediente del Pedido</h2>
+                                    <FinancialStatusBadge order={selectedOrder} size="normal" />
                                     {isModified(selectedOrder) && <span className="text-amber-600 text-[10px] font-black uppercase bg-amber-50 px-3 py-1 rounded-full border border-amber-100">Modificado</span>}
                                 </div>
                                 <p className="font-mono text-xs text-slate-400 font-bold tracking-widest">TRANSMISIÓN: #{selectedOrder.id}</p>

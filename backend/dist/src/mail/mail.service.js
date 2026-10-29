@@ -46,6 +46,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MailService = void 0;
 const common_1 = require("@nestjs/common");
 const nodemailer = __importStar(require("nodemailer"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const config_1 = require("../config");
 let MailService = MailService_1 = class MailService {
     logger = new common_1.Logger(MailService_1.name);
@@ -493,6 +495,95 @@ let MailService = MailService_1 = class MailService {
         }
         catch (err) {
             this.logger.error(`Error sending payment failed alert: ${err.message}`);
+            return false;
+        }
+    }
+    async sendOverdueInvoiceAlert(clientEmail, orderData) {
+        if (!this.transporter || !clientEmail)
+            return false;
+        try {
+            const orderId = orderData.id || '';
+            const orderIdShort = orderId.toString().slice(0, 8);
+            const totalAmount = Number(orderData.total || 0).toFixed(2);
+            const dueDate = orderData.payment_due_date || 'N/A';
+            const clientName = orderData.clientName || orderData.user?.profile?.company_name || orderData.user?.profile?.full_name || 'Estimado(a) Cliente';
+            const paymentLink = orderData.paymentLink || `${config_1.SITE_URL}/orders/${orderId}`;
+            let daysOverdue = orderData.daysOverdue;
+            if (daysOverdue === undefined && orderData.payment_due_date) {
+                const dueTime = new Date(orderData.payment_due_date).getTime();
+                const nowTime = new Date().getTime();
+                daysOverdue = Math.max(0, Math.floor((nowTime - dueTime) / (1000 * 60 * 60 * 24)));
+            }
+            daysOverdue = daysOverdue ?? 0;
+            let itemsTable = '';
+            if (Array.isArray(orderData.items) && orderData.items.length > 0) {
+                const rows = orderData.items.map((item) => `
+          <tr>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.product_name || item.name || 'Producto'}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${Number(item.price_at_time || item.price || 0).toFixed(2)}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${(Number(item.price_at_time || item.price || 0) * item.quantity).toFixed(2)}</td>
+          </tr>
+        `).join('');
+                itemsTable = `
+          <div style="margin-top: 20px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <thead>
+                <tr style="background: #f1f5f9; color: #475569; text-align: left;">
+                  <th style="padding: 10px 14px;">Producto</th>
+                  <th style="padding: 10px 14px; text-align: center;">Cant.</th>
+                  <th style="padding: 10px 14px; text-align: right;">Precio</th>
+                  <th style="padding: 10px 14px; text-align: right;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+            }
+            let html = '';
+            const templatePath = path.join(__dirname, 'templates', 'invoice_overdue.html');
+            if (fs.existsSync(templatePath)) {
+                html = fs.readFileSync(templatePath, 'utf8')
+                    .replace(/\{\{orderId\}\}/g, orderIdShort)
+                    .replace(/\{\{clientName\}\}/g, clientName)
+                    .replace(/\{\{paymentDueDate\}\}/g, dueDate)
+                    .replace(/\{\{daysOverdue\}\}/g, String(daysOverdue))
+                    .replace(/\{\{amountDue\}\}/g, totalAmount)
+                    .replace(/\{\{paymentLink\}\}/g, paymentLink)
+                    .replace(/\{\{itemsTable\}\}/g, itemsTable);
+            }
+            else {
+                html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
+            <h2 style="color: #dc2626; margin-bottom: 8px;">Aviso de Factura Vencida — Panadería Jhoanes Wholesale</h2>
+            <p>Estimado(a) <strong>${clientName}</strong>,</p>
+            <p>Le notificamos que su orden <strong>#${orderIdShort}</strong> con vencimiento el <strong>${dueDate}</strong> presenta <strong>${daysOverdue} día(s) de atraso</strong>.</p>
+            <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 16px; margin: 16px 0;">
+              <p style="margin: 0; font-size: 16px; font-weight: bold; color: #991b1b;">Monto Pendiente: $${totalAmount}</p>
+            </div>
+            ${itemsTable}
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${paymentLink}" style="background: #059669; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Pagar Factura en Línea</a>
+            </div>
+            <p style="font-size: 12px; color: #64748b;">Para asistencia, responda a este correo o contacte a cobranzas@jhoanes.com.</p>
+          </div>
+        `;
+            }
+            const adminEmail = config_1.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || 'pedidos@jhoanes.com';
+            const subject = `⚠️ FACTURA VENCIDA: Orden #${orderIdShort} — ${clientName} (${daysOverdue} días de atraso)`;
+            await this.transporter.sendMail({
+                from: config_1.SMTP_USER ? `"Panadería Jhoanes Cobranzas" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes Cobranzas" <pedidos@jhoanes.com>',
+                to: clientEmail,
+                cc: adminEmail,
+                subject,
+                html,
+            });
+            this.logger.log(`Overdue invoice alert sent successfully to ${clientEmail} with copy to ${adminEmail}`);
+            return true;
+        }
+        catch (err) {
+            this.logger.error(`Error sending overdue invoice alert: ${err.message}`);
             return false;
         }
     }

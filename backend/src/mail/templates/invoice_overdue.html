@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviso de Factura Vencida — Panadería Jhoanes Wholesale</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #334155;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #f8fafc;
+      padding: 32px 16px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .header {
+      background: linear-gradient(135deg, #854d0e 0%, #b8860b 100%);
+      padding: 28px 24px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .badge-urgent {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 12px;
+      background: #dc2626;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 9999px;
+    }
+    .content {
+      padding: 28px 24px;
+    }
+    .greeting {
+      font-size: 15px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .summary-card {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      border-left: 4px solid #d97706;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .summary-row:last-child {
+      margin-bottom: 0;
+      padding-top: 8px;
+      border-top: 1px dashed #fde68a;
+      font-size: 16px;
+      font-weight: 800;
+      color: #b45309;
+    }
+    .label {
+      color: #64748b;
+    }
+    .value {
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .btn-container {
+      text-align: center;
+      margin: 28px 0;
+    }
+    .btn-pay {
+      display: inline-block;
+      background: #059669;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 800;
+      padding: 14px 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);
+    }
+    .table-container {
+      margin-top: 20px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      background: #f1f5f9;
+      color: #475569;
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 700;
+    }
+    td {
+      padding: 10px 14px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 20px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <h1>Panadería Jhoanes</h1>
+        <p>Departamento de Crédito y Cobranzas Wholesale</p>
+        <span class="badge-urgent">Aviso de Vencimiento</span>
+      </div>
+
+      <div class="content">
+        <p class="greeting">
+          Estimado(a) <strong>{{clientName}}</strong>,<br><br>
+          Le notificamos que el plazo de crédito acordado para su orden comercial ha expirado. A continuación, detallamos el saldo pendiente de liquidación:
+        </p>
+
+        <div class="summary-card">
+          <div class="summary-row">
+            <span class="label">Número de Pedido:</span>
+            <span class="value">#{{orderId}}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Fecha Límite de Pago:</span>
+            <span class="value">{{paymentDueDate}}</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Días de Atraso:</span>
+            <span class="value" style="color: #dc2626;">{{daysOverdue}} día(s)</span>
+          </div>
+          <div class="summary-row">
+            <span>Monto Total Adeudado:</span>
+            <span>${{amountDue}}</span>
+          </div>
+        </div>
+
+        <div class="btn-container">
+          <a href="{{paymentLink}}" class="btn-pay" target="_blank">Pagar Factura en Línea</a>
+        </div>
+
+        {{itemsTable}}
+
+        <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-top: 24px;">
+          Para evitar suspensiones en sus próximos despachos o afectación de su límite de crédito comercial, le solicitamos regularizar el pago a la brevedad. Si ya realizó una transferencia vía Zelle o cheque, por favor reporte la referencia correspondiente a través del portal de cliente.
+        </p>
+      </div>
+
+      <div class="footer">
+        Panadería Jhoanes Wholesale • Astoria, Queens, NY<br>
+        ¿Consultas sobre su estado de cuenta? Contáctenos a cobranzas@jhoanes.com o al (718) 555-0199.<br>
+        <em>Este mensaje contiene una copia de auditoría administrativa automática.</em>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

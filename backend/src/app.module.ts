@@ -1,5 +1,6 @@
 import { Module, OnModuleInit, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { DataSource } from 'typeorm';
 import { DATABASE_PATH, NODE_ENV } from './config';
 import { AppController } from './app.controller';
@@ -16,6 +17,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { MailModule } from './mail/mail.module';
 import { ZonesModule } from './zones/zones.module';
 import { CreditModule } from './credit/credit.module';
+import { SmsModule } from './sms/sms.module';
+import { CollectionCronModule } from './cron/collection-cron.module';
 
 // Entities
 import { Product } from './products/product.entity';
@@ -50,6 +53,9 @@ import { DeliveryZone } from './zones/delivery-zone.entity';
     MailModule,
     ZonesModule,
     CreditModule,
+    ScheduleModule.forRoot(),
+    SmsModule,
+    CollectionCronModule,
   ],
   controllers: [AppController],
   providers: [AppService],

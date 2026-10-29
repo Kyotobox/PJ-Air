@@ -13,4 +13,5 @@ export declare class MailService {
     sendStandingOrderConfirmation(scheduledOrder: any, customerEmail: string, clientName?: string): Promise<boolean>;
     sendCreditAlert(userEmail: string, clientName: string, usedCredit: number, creditLimit: number, isOverdraft: boolean): Promise<boolean>;
     sendPaymentFailedAlert(userEmail: string, clientName: string, orderId: string, amount: number, reason: string): Promise<boolean>;
+    sendOverdueInvoiceAlert(clientEmail: string, orderData: any): Promise<boolean>;
 }

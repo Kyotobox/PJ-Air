@@ -97,7 +97,7 @@
     {
       "id": "S44",
       "name": "Sprint 44: Cobranza Automatizada y Comunicación",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-10-29",
       "goal": "Automatizar la gestión de vencimientos de crédito con notificaciones multicanal (Email y SMS Twilio preparado), cron diario a las 9 AM NY y badges visuales de estado financiero.",
       "tasks": [
@@ -105,43 +105,43 @@
           "id": "TASK-44-01",
           "label": "DOMAIN/CRON-OVERDUE-CORE",
           "desc": "Cron job diario a las 9:00 AM (America/New_York) para consultar órdenes vencidas.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-44-02",
           "label": "DOMAIN/MAIL-OVERDUE-TEMPLATE",
           "desc": "Plantilla HTML responsive invoice_overdue.html y método sendOverdueInvoiceAlert en MailService.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-44-03",
           "label": "DOMAIN/SMS-TWILIO-MODULE",
           "desc": "Módulo SmsService con integración Twilio y guardarraíl estricto SMS_ENABLED=false.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-44-04",
           "label": "DOMAIN/MULTICHANNEL-DISPATCH",
           "desc": "Orquestación en el Cron diario para disparo de Email y SMS diferido.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-44-05",
           "label": "UI/FINANCIAL-STATUS-BADGES",
           "desc": "Badges visuales de estado de crédito en /orders y /admin/orders.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-44-06",
           "label": "TEST/CRON-AND-SMS-SUITE",
           "desc": "Suite de pruebas unitarias para el Cron de cobranza y sad path para SmsService.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-44-07",
           "label": "DEPLOY/TESTING-SYNC",
           "desc": "Compilación limpia de frontend y backend, verificación de integridad y sincronización de backlog.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     },

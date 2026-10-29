@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import FinancialStatusBadge from '@/components/orders/FinancialStatusBadge';
 
 const getClientStatusOptions = (t: any) => [
     { value: 'Pedido Enviado',  label: t.orders.orderShipped },
@@ -99,17 +100,8 @@ export default function ClientOrdersPage() {
                                                 }`}>
                                                     {order.status === 'Pedido Recibido' ? t.orders.delivered : (order.status === 'Pedido Enviado' ? t.orders.shipping : order.status)}
                                                 </span>
-                                                {/* Payment Status Badge */}
-                                                {order.payment_status === 'paid' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                        <span>✅</span> {locale === 'en' ? 'Paid' : 'Pagado'}
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                                                        <span>⏳</span> {locale === 'en' ? 'Pending' : 'Pendiente'}
-                                                        {order.payment_due_date ? ` (${order.payment_due_date})` : ''}
-                                                    </span>
-                                                )}
+                                                {/* Payment Financial Status Badge (TASK-44-05) */}
+                                                <FinancialStatusBadge order={order} locale={locale} size="normal" />
                                             </div>
                                             <p className="text-sm text-muted-foreground font-medium">{t.orders.orderedOn} {new Date(order.created_at).toLocaleDateString()}</p>
                                         </div>
@@ -122,22 +114,14 @@ export default function ClientOrdersPage() {
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">{locale === 'en' ? 'Payment' : 'Pago'}</p>
-                                            {order.payment_status === 'paid' ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                    ✅ {locale === 'en' ? 'Paid' : 'Pagado'}
-                                                </span>
-                                            ) : (
-                                                <div className="flex flex-col">
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                                        ⏳ {locale === 'en' ? 'Pending' : 'Pendiente'}
+                                            <div className="flex flex-col">
+                                                <FinancialStatusBadge order={order} locale={locale} size="sm" />
+                                                {order.payment_due_date && (
+                                                    <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                                                        {locale === 'en' ? `Due: ${order.payment_due_date}` : `Vence: ${order.payment_due_date}`}
                                                     </span>
-                                                    {order.payment_due_date && (
-                                                        <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                                                            {locale === 'en' ? `Due: ${order.payment_due_date}` : `Vence: ${order.payment_due_date}`}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">{locale === 'en' ? 'Delivery' : 'Entrega'}</p>

@@ -15,4 +15,8 @@ export declare const ADMIN_NOTIFICATION_EMAIL: string | undefined;
 export declare const STRIPE_SECRET_KEY: string | undefined;
 export declare const STRIPE_PUBLISHABLE_KEY: string | undefined;
 export declare const STRIPE_WEBHOOK_SECRET: string | undefined;
+export declare const TWILIO_ACCOUNT_SID: string | undefined;
+export declare const TWILIO_AUTH_TOKEN: string | undefined;
+export declare const TWILIO_PHONE_NUMBER: string | undefined;
+export declare const SMS_ENABLED: string | undefined;
 export declare function initialize(): void;

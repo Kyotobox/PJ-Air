@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const schedule_1 = require("@nestjs/schedule");
 const typeorm_2 = require("typeorm");
 const config_1 = require("./config");
 const app_controller_1 = require("./app.controller");
@@ -29,6 +30,8 @@ const payments_module_1 = require("./payments/payments.module");
 const mail_module_1 = require("./mail/mail.module");
 const zones_module_1 = require("./zones/zones.module");
 const credit_module_1 = require("./credit/credit.module");
+const sms_module_1 = require("./sms/sms.module");
+const collection_cron_module_1 = require("./cron/collection-cron.module");
 const product_entity_1 = require("./products/product.entity");
 const category_entity_1 = require("./products/category.entity");
 const user_entity_1 = require("./users/user.entity");
@@ -138,6 +141,9 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             mail_module_1.MailModule,
             zones_module_1.ZonesModule,
             credit_module_1.CreditModule,
+            schedule_1.ScheduleModule.forRoot(),
+            sms_module_1.SmsModule,
+            collection_cron_module_1.CollectionCronModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

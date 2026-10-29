@@ -103,4 +103,32 @@ describe('MailService', () => {
     );
     expect(typeof result).toBe('boolean');
   });
+
+  it('should send overdue invoice alert email (happy path)', async () => {
+    const mockOrder = {
+      id: 'order-overdue-12345678',
+      total: 450.00,
+      payment_due_date: '2026-10-20',
+      daysOverdue: 9,
+      clientName: 'Restaurante El Gourmet',
+      items: [
+        { product: { name: 'Pan Campesino' }, quantity: 20, price_at_time: 5.00 },
+        { product: { name: 'Croissant Almendras' }, quantity: 70, price_at_time: 5.00 }
+      ],
+    };
+
+    const result = await service.sendOverdueInvoiceAlert('cliente@example.com', mockOrder);
+    expect(typeof result).toBe('boolean');
+  });
+
+  it('should return false if clientEmail is missing (sad path)', async () => {
+    const mockOrder = {
+      id: 'order-overdue-12345678',
+      total: 450.00,
+      payment_due_date: '2026-10-20',
+    };
+
+    const result = await service.sendOverdueInvoiceAlert('', mockOrder);
+    expect(result).toBe(false);
+  });
 });
