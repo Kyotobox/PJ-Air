@@ -33,6 +33,8 @@ const credit_module_1 = require("./credit/credit.module");
 const sms_module_1 = require("./sms/sms.module");
 const collection_cron_module_1 = require("./cron/collection-cron.module");
 const tax_module_1 = require("./tax/tax.module");
+const logistics_module_1 = require("./logistics/logistics.module");
+const feedback_module_1 = require("./feedback/feedback.module");
 const product_entity_1 = require("./products/product.entity");
 const category_entity_1 = require("./products/category.entity");
 const user_entity_1 = require("./users/user.entity");
@@ -44,6 +46,7 @@ const product_discount_entity_1 = require("./users/product-discount.entity");
 const system_config_entity_1 = require("./system-configs/system-config.entity");
 const delivery_zone_entity_1 = require("./zones/delivery-zone.entity");
 const check_payment_entity_1 = require("./payments/check-payment.entity");
+const feedback_entity_1 = require("./feedback/feedback.entity");
 let AppModule = AppModule_1 = class AppModule {
     dataSource;
     logger = new common_1.Logger(AppModule_1.name);
@@ -75,12 +78,6 @@ let AppModule = AppModule_1 = class AppModule {
             }
             if (!orderColNames.includes('payment_due_date')) {
                 await qr.query(`ALTER TABLE orders ADD COLUMN payment_due_date VARCHAR;`);
-            }
-            if (!orderColNames.includes('fee_amount')) {
-                await qr.query(`ALTER TABLE orders ADD COLUMN fee_amount DECIMAL(10,2) DEFAULT 0;`);
-            }
-            if (!orderColNames.includes('fee_method')) {
-                await qr.query(`ALTER TABLE orders ADD COLUMN fee_method VARCHAR;`);
             }
             const userCols = await qr.query(`PRAGMA table_info(users);`);
             const userColNames = userCols.map((c) => c.name);
@@ -151,32 +148,24 @@ let AppModule = AppModule_1 = class AppModule {
             if (!orderColNames.includes('tax_legend')) {
                 await qr.query(`ALTER TABLE orders ADD COLUMN tax_legend TEXT;`);
             }
+            if (!orderColNames.includes('fee_amount')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN fee_amount DECIMAL(10,2) DEFAULT 0;`);
+            }
+            if (!orderColNames.includes('fee_method')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN fee_method VARCHAR;`);
+            }
             await qr.query(`DROP TABLE IF EXISTS scheduled_orders;`);
+            await qr.query(`DROP TABLE IF EXISTS delivery_zones;`);
             await qr.query(`
-        CREATE TABLE IF NOT EXISTS delivery_zones (
+        CREATE TABLE IF NOT EXISTS feedbacks (
           id VARCHAR PRIMARY KEY NOT NULL,
-          name VARCHAR NOT NULL,
-          zip_codes TEXT NOT NULL,
-          base_fee DECIMAL(10,2) DEFAULT 0,
-          min_free_delivery_amount DECIMAL(10,2) DEFAULT NULL,
-          is_active BOOLEAN DEFAULT 1,
-          created_at DATETIME DEFAULT (datetime('now')),
-          updated_at DATETIME DEFAULT (datetime('now'))
+          user_id VARCHAR,
+          category VARCHAR NOT NULL,
+          message TEXT NOT NULL,
+          status VARCHAR DEFAULT 'pending',
+          created_at DATETIME DEFAULT (datetime('now'))
         );
       `);
-            const zoneCountRows = await qr.query(`SELECT COUNT(*) as count FROM delivery_zones;`);
-            const zoneCount = zoneCountRows && zoneCountRows[0] ? Number(zoneCountRows[0].count ?? zoneCountRows[0]['COUNT(*)'] ?? 0) : 0;
-            if (zoneCount === 0) {
-                await qr.query(`
-          INSERT INTO delivery_zones (id, name, zip_codes, base_fee, min_free_delivery_amount, is_active)
-          VALUES 
-          ('zone-astoria-lic', 'Zona 1: Local Inmediata (Astoria & LIC)', '11101, 11102, 11103, 11104, 11105, 11106, 11109, 11377', 5.00, 60.00, 1),
-          ('zone-queens-mid', 'Zona 2: Queens Centro & Norte', '11354, 11355, 11356, 11368, 11369, 11370, 11372, 11373, 11374, 11375, 11378, 11379, 11385', 12.00, 120.00, 1),
-          ('zone-bk-east-mnh', 'Zona 3: North Brooklyn & East Manhattan', '10044, 10016, 10017, 10021, 10022, 10028, 10065, 10075, 11206, 11211, 11222, 11237, 11249', 18.00, 180.00, 1),
-          ('zone-mnh-south-bk', 'Zona 4: Manhattan Central/Sur & Downtown Brooklyn', '10001, 10002, 10003, 10004, 10005, 10006, 10007, 10009, 10010, 10011, 10012, 10013, 10014, 10018, 10019, 10023, 10024, 10025, 10036, 10038, 11201, 11205, 11215, 11217, 11231, 11238', 25.00, 250.00, 1),
-          ('zone-outer-bx', 'Zona 5: Queens Exterior & South Bronx', '10451, 10454, 10455, 11357, 11360, 11361, 11364, 11415, 11418, 11421, 11432, 11435', 35.00, 350.00, 1);
-        `);
-            }
             await qr.release();
             this.logger.log('Schema verification completed successfully.');
         }
@@ -192,7 +181,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'sqlite',
                 database: config_1.DATABASE_PATH,
-                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment],
+                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment, feedback_entity_1.Feedback],
                 synchronize: config_1.NODE_ENV !== 'production',
                 logging: false,
             }),
@@ -212,6 +201,8 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             sms_module_1.SmsModule,
             collection_cron_module_1.CollectionCronModule,
             tax_module_1.TaxModule,
+            logistics_module_1.LogisticsModule,
+            feedback_module_1.FeedbackModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

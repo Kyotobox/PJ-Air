@@ -14,4 +14,13 @@ export declare class MailService {
     sendCreditAlert(userEmail: string, clientName: string, usedCredit: number, creditLimit: number, isOverdraft: boolean): Promise<boolean>;
     sendPaymentFailedAlert(userEmail: string, clientName: string, orderId: string, amount: number, reason: string): Promise<boolean>;
     sendOverdueInvoiceAlert(clientEmail: string, orderData: any): Promise<boolean>;
+    sendFeedbackAlert(feedback: {
+        id: string;
+        userId?: string;
+        userName?: string;
+        userEmail?: string;
+        category: string;
+        message: string;
+        createdAt?: Date | string;
+    }): Promise<boolean>;
 }

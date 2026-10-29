@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, DataSource } from 'typeorm';
 import { Order } from './order.entity';
@@ -9,7 +9,8 @@ import { Address } from '../addresses/address.entity';
 import { ZonesService } from '../zones/zones.service';
 import { MailService } from '../mail/mail.service';
 import { CreditService } from '../credit/credit.service';
-import { FeeCalculatorService } from '../payments/fee-calculator.service';
+import { FeeCalculatorService } from './fee-calculator.service';
+import { MileageFreightService } from '../logistics/mileage-freight.service';
 
 @Injectable()
 export class OrdersService {
@@ -32,6 +33,10 @@ export class OrdersService {
     private mailService?: MailService,
     @Optional()
     private creditService?: CreditService,
+    @Optional()
+    private feeCalculatorService?: FeeCalculatorService,
+    @Optional()
+    private mileageFreightService?: MileageFreightService,
   ) {}
 
   validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour = 12): void {
@@ -361,6 +366,13 @@ export class OrdersService {
       deliveryFee = 0;
     } else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
       deliveryFee = Number(user.delivery_fee);
+    } else if (this.mileageFreightService && ((orderData as any).miles !== undefined || (orderData as any).dest_lat !== undefined)) {
+      const miles = (orderData as any).miles !== undefined
+        ? Number((orderData as any).miles)
+        : this.mileageFreightService.calculateDistanceMiles(Number((orderData as any).dest_lat), Number((orderData as any).dest_lng));
+      const serviceType = (orderData as any).freight_service_type || 'shared';
+      const quote = this.mileageFreightService.calculateFreight(miles, serviceType);
+      deliveryFee = quote.cost;
     } else if (this.zonesService) {
       let zip: string | null = (orderData as any).zip_code || (orderData as any).zip || (rest as any).zip_code || (rest as any).zip || null;
       if (!zip && appliedAddressId && this.addressRepository) {
@@ -642,5 +654,157 @@ export class OrdersService {
       order.notes = `[Rechazo Zelle]: ${reason}\n${order.notes || ''}`;
     }
     return this.orderRepository.save(order);
+  }
+
+  /**
+   * TASK-48-04: Liquidación por lotes de facturas a crédito.
+   * Aplica FeeCalculatorService de acuerdo al método de pago y libera cupo en tiempo real.
+   */
+  async settleBatch(
+    userId: string,
+    userRole: string,
+    dto: { order_ids: string[]; payment_method: string; payment_reference?: string },
+  ) {
+    if (!dto || !Array.isArray(dto.order_ids) || dto.order_ids.length === 0) {
+      throw new BadRequestException('Debe proporcionar una lista no vacía de order_ids');
+    }
+
+    if (!dto.payment_method || typeof dto.payment_method !== 'string' || !dto.payment_method.trim()) {
+      throw new BadRequestException('El método de pago es obligatorio para la liquidación');
+    }
+
+    const cleanMethod = dto.payment_method.trim().toLowerCase();
+    const orders = await this.orderRepository.find({
+      where: { id: In(dto.order_ids) },
+      relations: ['items'],
+    });
+
+    if (orders.length !== dto.order_ids.length) {
+      const foundIds = orders.map((o) => o.id);
+      const missing = dto.order_ids.filter((id) => !foundIds.includes(id));
+      throw new NotFoundException(`No se encontraron las órdenes: ${missing.join(', ')}`);
+    }
+
+    for (const order of orders) {
+      if (userRole !== 'admin' && order.user_id !== userId) {
+        throw new ForbiddenException(`No tiene autorización para liquidar la orden #${order.id}`);
+      }
+      if (order.status === 'cancelled' || order.status === 'Cancelado') {
+        throw new BadRequestException(`La orden #${order.id.slice(0, 8)} está cancelada y no puede ser liquidada`);
+      }
+      if (order.payment_status === 'paid') {
+        throw new BadRequestException(`La orden #${order.id.slice(0, 8)} ya se encuentra pagada`);
+      }
+    }
+
+    // Cálculo determinista del fee vía FeeCalculatorService
+    const feeCalc = this.feeCalculatorService || new FeeCalculatorService();
+    const orderNetDebts = orders.map((o) =>
+      Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0))
+    );
+    const feeResult = feeCalc.calculateBatchFee(orderNetDebts, cleanMethod);
+
+    const totalBase = feeResult.baseAmount;
+    const totalFee = feeResult.feeAmount;
+
+    for (let i = 0; i < orders.length; i++) {
+      const order = orders[i];
+      const netDebt = orderNetDebts[i];
+      const propFee = totalBase > 0 ? Math.round(((netDebt / totalBase) * totalFee + Number.EPSILON) * 100) / 100 : 0;
+      order.payment_status = 'paid';
+      order.fee_amount = propFee;
+      order.fee_method = cleanMethod;
+      if (dto.payment_reference) {
+        order.zelle_reference = (order.zelle_reference ? order.zelle_reference + ' | ' : '') + dto.payment_reference;
+      }
+      await this.orderRepository.save(order);
+    }
+
+    // Calcular nuevo cupo disponible tras la liberación de las facturas
+    let newAvailableCredit = 0;
+    let newUsedCredit = 0;
+    if (this.creditService) {
+      newAvailableCredit = await this.creditService.getAvailableCredit(userId);
+      newUsedCredit = await this.creditService.getUsedCredit(userId);
+    }
+
+    return {
+      success: true,
+      settled_count: orders.length,
+      order_ids: dto.order_ids,
+      base_total: totalBase,
+      fee_amount: totalFee,
+      fee_percentage: feeResult.feePercentage,
+      total_paid: feeResult.totalWithFee,
+      payment_method: cleanMethod,
+      available_credit: newAvailableCredit,
+      used_credit: newUsedCredit,
+    };
+  }
+
+  /**
+   * TASK-48-05: Top de SKUs más comprados por el cliente para reorden 1-clic.
+   */
+  async getFrequentProducts(userId: string): Promise<any[]> {
+    if (!userId) {
+      throw new BadRequestException('UserId es obligatorio');
+    }
+
+    const orders = await this.orderRepository.find({
+      where: { user_id: userId },
+      relations: ['items', 'items.product'],
+      order: { created_at: 'DESC' },
+    });
+
+    const validOrders = orders.filter((o) => o.status !== 'cancelled' && o.status !== 'Cancelado');
+
+    const productCountMap = new Map<number, { product: Product; count: number; totalQuantity: number; lastOrdered: Date }>();
+
+    for (const order of validOrders) {
+      for (const item of (order.items || [])) {
+        if (!item.product) continue;
+        const pId = item.product.id;
+        const existing = productCountMap.get(pId);
+        if (existing) {
+          existing.count += 1;
+          existing.totalQuantity += Number(item.quantity) || 1;
+          if (new Date(order.created_at) > existing.lastOrdered) {
+            existing.lastOrdered = new Date(order.created_at);
+          }
+        } else {
+          productCountMap.set(pId, {
+            product: item.product,
+            count: 1,
+            totalQuantity: Number(item.quantity) || 1,
+            lastOrdered: new Date(order.created_at),
+          });
+        }
+      }
+    }
+
+    let results: Array<any> = Array.from(productCountMap.values())
+      .sort((a, b) => b.totalQuantity - a.totalQuantity || b.count - a.count)
+      .slice(0, 10)
+      .map((entry) => ({
+        ...entry.product,
+        order_frequency: entry.count,
+        total_purchased_units: entry.totalQuantity,
+        last_ordered: entry.lastOrdered,
+      }));
+
+    if (results.length === 0) {
+      const topCatalog = await this.productRepository.find({
+        where: { is_deleted: false },
+        take: 8,
+      });
+      results = topCatalog.map((p) => ({
+        ...p,
+        order_frequency: 0,
+        total_purchased_units: 0,
+        last_ordered: null,
+      }));
+    }
+
+    return results;
   }
 }

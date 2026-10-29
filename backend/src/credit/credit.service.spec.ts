@@ -98,6 +98,26 @@ describe('CreditService', () => {
       expect(available).toBe(600);
     });
 
+    it('should return complete financial health summary in getClientCreditSummary', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-b2b-01',
+        credit_limit: 1000,
+        credit_blocked: false,
+        credit_override: false,
+      } as any);
+
+      orderRepository.find.mockResolvedValue([
+        { id: 'o-1', payment_method: 'credit', status: 'confirmed', payment_status: 'pending', total: 350, refunded_amount: 0 },
+      ] as any[]);
+
+      const summary = await service.getClientCreditSummary('user-b2b-01');
+      expect(summary.credit_limit).toBe(1000);
+      expect(summary.used_credit).toBe(350);
+      expect(summary.available_credit).toBe(650);
+      expect(summary.credit_blocked).toBe(false);
+      expect(summary.credit_override).toBe(false);
+    });
+
     it('should calculate deterministic payment_due_date = created_at + 7 days in ISO YYYY-MM-DD', () => {
       const fixedCreatedAt = new Date('2026-10-25T14:30:00.000Z');
       const dueDate = service.calculatePaymentDueDate(fixedCreatedAt);

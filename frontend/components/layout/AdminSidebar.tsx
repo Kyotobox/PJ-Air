@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3, MapPin } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3, MapPin, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -34,6 +34,7 @@ export default function AdminSidebar() {
         { name: t.adminSidebar.users,       icon: Users,            href: '/admin/users' },
         { name: t.adminSidebar.clients,     icon: Users,            href: '/admin/clients' },
         { name: t.adminSidebar.routes,      icon: Truck,            href: '/admin/routes' },
+        { name: locale === 'en' ? 'B2B Feedback' : 'Buzón Feedback', icon: MessageSquare, href: '/admin/feedback' },
         { name: locale === 'en' ? 'Delivery Zones' : 'Zonas Delivery', icon: MapPin, href: '/admin/zones' },
         { name: t.adminSidebar.settings,    icon: Settings,         href: '/admin/settings' },
     ];

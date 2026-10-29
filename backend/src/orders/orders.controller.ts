@@ -21,6 +21,31 @@ export class OrdersController {
     return this.ordersService.create(targetUserId, orderData);
   }
 
+  @Post('settle-batch')
+  @UseGuards(AuthGuard)
+  async settleBatch(
+    @Body() body: { order_ids: string[]; payment_method: string; payment_reference?: string },
+    @Req() req: any,
+  ) {
+    return this.ordersService.settleBatch(req.user.id, req.user.role, body);
+  }
+
+  @Get('frequent-products')
+  @UseGuards(AuthGuard)
+  async getFrequentProducts(@Req() req: any) {
+    return this.ordersService.getFrequentProducts(req.user.id);
+  }
+
+  @Get('user/:userId/frequent-products')
+  @UseGuards(AuthGuard, ResourceOwnershipGuard)
+  async getUserFrequentProducts(@Param('userId') userId: string, @Req() req: any) {
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && req.user.id !== userId) {
+      throw new ForbiddenException('Cannot access other user frequent products');
+    }
+    return this.ordersService.getFrequentProducts(userId);
+  }
+
   @Get()
   @UseGuards(AuthGuard)
   async findAll(@Req() req: any) {

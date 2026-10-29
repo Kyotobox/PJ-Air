@@ -605,4 +605,64 @@ export class MailService {
       return false;
     }
   }
+
+  async sendFeedbackAlert(feedback: {
+    id: string;
+    userId?: string;
+    userName?: string;
+    userEmail?: string;
+    category: string;
+    message: string;
+    createdAt?: Date | string;
+  }): Promise<boolean> {
+    const adminEmail = ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || 'pedidos@jhoanes.com';
+    this.logger.log(`[FEEDBACK] Notificando buzón de sugerencias #${feedback.id} a ${adminEmail}`);
+
+    if (!this.transporter) return false;
+
+    try {
+      const subject = `📩 Nuevo Mensaje en Buzón de Sugerencias [${feedback.category.toUpperCase()}]`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #2563eb; margin-top: 0;">Nuevo Feedback de Cliente B2B</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold; width: 140px;">ID Feedback:</td>
+              <td style="padding: 6px 0;">${feedback.id}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Categoría:</td>
+              <td style="padding: 6px 0; text-transform: uppercase; font-weight: bold; color: #1e293b;">${feedback.category}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Cliente:</td>
+              <td style="padding: 6px 0;">${feedback.userName || 'Usuario B2B'} (${feedback.userEmail || feedback.userId || 'Anónimo'})</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Fecha:</td>
+              <td style="padding: 6px 0;">${new Date(feedback.createdAt || Date.now()).toLocaleString()}</td>
+            </tr>
+          </table>
+          <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 15px; border-radius: 4px;">
+            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap;">${feedback.message}</p>
+          </div>
+          <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
+            Puede gestionar y responder este ticket desde el panel administrativo: <a href="${SITE_URL}/admin/feedback">${SITE_URL}/admin/feedback</a>
+          </p>
+        </div>
+      `;
+
+      await this.transporter.sendMail({
+        from: SMTP_USER ? `"Panadería Jhoanes" <${SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+        to: adminEmail,
+        subject,
+        html,
+      });
+
+      return true;
+    } catch (err: any) {
+      this.logger.error(`Error sending feedback alert: ${err.message}`);
+      return false;
+    }
+  }
 }

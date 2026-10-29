@@ -657,5 +657,148 @@ describe('OrdersService', () => {
       );
     });
   });
+
+  describe('settleBatch - Batch Settlement (TASK-48-04)', () => {
+    it('should settle batch of orders with card applying 3.5% fee and updating to paid', async () => {
+      const order1 = { id: 'ord-1', user_id: 'usr-1', total: 100, refunded_amount: 0, status: 'confirmed', payment_status: 'pending' };
+      const order2 = { id: 'ord-2', user_id: 'usr-1', total: 200, refunded_amount: 0, status: 'confirmed', payment_status: 'pending' };
+      orderRepository.find.mockResolvedValue([order1, order2]);
+      orderRepository.save.mockImplementation(async (o: any) => o);
+
+      const result = await service.settleBatch('usr-1', 'client', {
+        order_ids: ['ord-1', 'ord-2'],
+        payment_method: 'card',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.settled_count).toBe(2);
+      expect(result.base_total).toBe(300);
+      expect(result.fee_amount).toBe(10.50); // 300 * 0.035
+      expect(result.total_paid).toBe(310.50);
+      expect(order1.payment_status).toBe('paid');
+      expect(order2.payment_status).toBe('paid');
+    });
+
+    it('should settle batch with ACH capping fee at $5.00', async () => {
+      const order1 = { id: 'ord-10', user_id: 'usr-1', total: 1000, refunded_amount: 0, status: 'confirmed', payment_status: 'pending' };
+      orderRepository.find.mockResolvedValue([order1]);
+      orderRepository.save.mockImplementation(async (o: any) => o);
+
+      const result = await service.settleBatch('usr-1', 'client', {
+        order_ids: ['ord-10'],
+        payment_method: 'ach',
+      });
+
+      expect(result.base_total).toBe(1000);
+      expect(result.fee_amount).toBe(5.00);
+      expect(result.total_paid).toBe(1005.00);
+      expect(order1.payment_status).toBe('paid');
+    });
+
+    it('should settle batch with Zelle with 0.0% fee', async () => {
+      const order1 = { id: 'ord-zelle', user_id: 'usr-1', total: 450, refunded_amount: 0, status: 'confirmed', payment_status: 'pending' };
+      orderRepository.find.mockResolvedValue([order1]);
+      orderRepository.save.mockImplementation(async (o: any) => o);
+
+      const result = await service.settleBatch('usr-1', 'client', {
+        order_ids: ['ord-zelle'],
+        payment_method: 'zelle',
+        payment_reference: 'ZELLE-CONF-987',
+      });
+
+      expect(result.fee_amount).toBe(0);
+      expect(result.total_paid).toBe(450);
+      expect(order1.payment_status).toBe('paid');
+      expect((order1 as any).zelle_reference).toContain('ZELLE-CONF-987');
+    });
+
+    it('should throw BadRequestException for empty order_ids list (Sad Path §6)', async () => {
+      await expect(service.settleBatch('usr-1', 'client', { order_ids: [], payment_method: 'card' }))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for missing payment_method (Sad Path §6)', async () => {
+      await expect(service.settleBatch('usr-1', 'client', { order_ids: ['ord-1'], payment_method: '' }))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException if any order in batch is missing (Sad Path §6)', async () => {
+      orderRepository.find.mockResolvedValue([{ id: 'ord-1' }]);
+      await expect(service.settleBatch('usr-1', 'client', { order_ids: ['ord-1', 'ord-missing'], payment_method: 'card' }))
+        .rejects.toThrow();
+    });
+
+    it('should throw ForbiddenException if user tries to settle another client order (Sad Path §6)', async () => {
+      const orderForeign = { id: 'ord-foreign', user_id: 'other-user', total: 100, payment_status: 'pending', status: 'confirmed' };
+      orderRepository.find.mockResolvedValue([orderForeign]);
+
+      await expect(service.settleBatch('usr-1', 'client', { order_ids: ['ord-foreign'], payment_method: 'card' }))
+        .rejects.toThrow();
+    });
+
+    it('should throw BadRequestException if order is already paid (Sad Path §6)', async () => {
+      const orderPaid = { id: 'ord-paid', user_id: 'usr-1', total: 100, payment_status: 'paid', status: 'confirmed' };
+      orderRepository.find.mockResolvedValue([orderPaid]);
+
+      await expect(service.settleBatch('usr-1', 'client', { order_ids: ['ord-paid'], payment_method: 'card' }))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if order is cancelled (Sad Path §6)', async () => {
+      const orderCancelled = { id: 'ord-canc', user_id: 'usr-1', total: 100, payment_status: 'pending', status: 'cancelled' };
+      orderRepository.find.mockResolvedValue([orderCancelled]);
+
+      await expect(service.settleBatch('usr-1', 'client', { order_ids: ['ord-canc'], payment_method: 'card' }))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('getFrequentProducts - Frequent Products Carousel (TASK-48-05)', () => {
+    it('should return top products sorted by total units purchased', async () => {
+      const prodA = { id: 101, name: 'Pan Campesino' };
+      const prodB = { id: 102, name: 'Baguette Rústica' };
+
+      orderRepository.find.mockResolvedValue([
+        {
+          id: 'o-1',
+          user_id: 'usr-1',
+          status: 'delivered',
+          created_at: new Date('2026-10-01'),
+          items: [
+            { product: prodA, quantity: 5 },
+            { product: prodB, quantity: 20 },
+          ],
+        },
+        {
+          id: 'o-2',
+          user_id: 'usr-1',
+          status: 'confirmed',
+          created_at: new Date('2026-10-15'),
+          items: [{ product: prodA, quantity: 10 }],
+        },
+      ]);
+
+      const frequent = await service.getFrequentProducts('usr-1');
+      expect(frequent.length).toBe(2);
+      expect(frequent[0].id).toBe(102); // prodB total 20 > prodA total 15
+      expect(frequent[0].total_purchased_units).toBe(20);
+      expect(frequent[1].id).toBe(101);
+      expect(frequent[1].total_purchased_units).toBe(15);
+    });
+
+    it('should fallback to active catalog products when user has no purchase history', async () => {
+      orderRepository.find.mockResolvedValue([]);
+      productRepository.find.mockResolvedValue([{ id: 1, name: 'Pan de Molde', is_active: true }]);
+
+      const frequent = await service.getFrequentProducts('usr-new');
+      expect(frequent.length).toBe(1);
+      expect(frequent[0].id).toBe(1);
+      expect(frequent[0].order_frequency).toBe(0);
+    });
+
+    it('should throw BadRequestException if userId is empty (Sad Path §6)', async () => {
+      await expect(service.getFrequentProducts('')).rejects.toThrow(BadRequestException);
+    });
+  });
 });
 

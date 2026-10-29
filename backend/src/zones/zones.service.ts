@@ -12,9 +12,14 @@ export class ZonesService {
   ) {}
 
   async findAll(): Promise<DeliveryZone[]> {
-    return this.zoneRepository.find({
-      order: { created_at: 'DESC' },
-    });
+    try {
+      return await this.zoneRepository.find({
+        order: { created_at: 'DESC' },
+      });
+    } catch (_) {
+      // INTENTIONAL: delivery_zones table purged in Sprint S48 in favor of MileageFreightService
+      return [];
+    }
   }
 
   async findOne(id: string): Promise<DeliveryZone> {
@@ -80,26 +85,7 @@ export class ZonesService {
   }
 
   async resolveZip(zip: string): Promise<DeliveryZone | null> {
-    if (!zip) return null;
-    const raw = String(zip).trim();
-    const match = raw.match(/\b\d{5}\b/);
-    const cleanZip = match ? match[0] : raw;
-
-    const activeZones = await this.zoneRepository.find({
-      where: { is_active: true },
-      order: { created_at: 'DESC' },
-    });
-
-    for (const zone of activeZones) {
-      const codes = zone.zip_codes
-        .split(/[\s,]+/)
-        .map((c) => c.trim())
-        .filter(Boolean);
-      if (codes.includes(cleanZip)) {
-        return zone;
-      }
-    }
-
+    // INTENTIONAL: Resolvedor de ZIP obsoleto purgado en Sprint S48 (reemplazado por MileageFreightService desde Astoria)
     return null;
   }
 }

@@ -7,6 +7,8 @@ import { Address } from '../addresses/address.entity';
 import { ZonesService } from '../zones/zones.service';
 import { MailService } from '../mail/mail.service';
 import { CreditService } from '../credit/credit.service';
+import { FeeCalculatorService } from './fee-calculator.service';
+import { MileageFreightService } from '../logistics/mileage-freight.service';
 export declare class OrdersService {
     private orderRepository;
     private orderItemRepository;
@@ -17,7 +19,9 @@ export declare class OrdersService {
     private zonesService?;
     private mailService?;
     private creditService?;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined);
+    private feeCalculatorService?;
+    private mileageFreightService?;
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined);
     validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour?: number): void;
     private validateStatusTransition;
     private calculateOrderPricesAndTotal;
@@ -31,4 +35,21 @@ export declare class OrdersService {
     update(id: string, updateData: any, userRole?: string): Promise<Order>;
     approveZellePayment(orderId: string): Promise<Order>;
     rejectZellePayment(orderId: string, reason?: string): Promise<Order>;
+    settleBatch(userId: string, userRole: string, dto: {
+        order_ids: string[];
+        payment_method: string;
+        payment_reference?: string;
+    }): Promise<{
+        success: boolean;
+        settled_count: number;
+        order_ids: string[];
+        base_total: number;
+        fee_amount: number;
+        fee_percentage: number;
+        total_paid: number;
+        payment_method: string;
+        available_credit: number;
+        used_credit: number;
+    }>;
+    getFrequentProducts(userId: string): Promise<any[]>;
 }

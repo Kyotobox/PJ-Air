@@ -14,6 +14,38 @@ export class CreditService {
   ) {}
 
   /**
+   * Obtiene el resumen de salud financiera del cliente en tiempo real.
+   */
+  async getClientCreditSummary(clientId: string): Promise<{
+    credit_limit: number;
+    used_credit: number;
+    available_credit: number;
+    credit_blocked: boolean;
+    credit_override: boolean;
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: clientId },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Cliente con id ${clientId} no encontrado`);
+    }
+
+    const creditLimit = await this.getCreditLimit(clientId);
+    const usedCredit = await this.getUsedCredit(clientId);
+    const availableCredit = await this.getAvailableCredit(clientId);
+
+    return {
+      credit_limit: creditLimit,
+      used_credit: usedCredit,
+      available_credit: availableCredit,
+      credit_blocked: Boolean(user.credit_blocked),
+      credit_override: Boolean(user.credit_override),
+    };
+  }
+
+  /**
    * Obtiene el límite de crédito autorizado en el perfil / cuenta del cliente.
    */
   async getCreditLimit(clientId: string): Promise<number> {

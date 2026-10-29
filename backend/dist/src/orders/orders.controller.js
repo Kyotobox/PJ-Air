@@ -32,6 +32,19 @@ let OrdersController = class OrdersController {
         const { userId, ...orderData } = body;
         return this.ordersService.create(targetUserId, orderData);
     }
+    async settleBatch(body, req) {
+        return this.ordersService.settleBatch(req.user.id, req.user.role, body);
+    }
+    async getFrequentProducts(req) {
+        return this.ordersService.getFrequentProducts(req.user.id);
+    }
+    async getUserFrequentProducts(userId, req) {
+        const role = req.user?.role;
+        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && req.user.id !== userId) {
+            throw new common_1.ForbiddenException('Cannot access other user frequent products');
+        }
+        return this.ordersService.getFrequentProducts(userId);
+    }
     async findAll(req) {
         const role = req.user?.role;
         if (role === 'admin' || role === 'delivery' || role === 'produccion') {
@@ -116,6 +129,32 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('settle-batch'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "settleBatch", null);
+__decorate([
+    (0, common_1.Get)('frequent-products'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getFrequentProducts", null);
+__decorate([
+    (0, common_1.Get)('user/:userId/frequent-products'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, resource_ownership_guard_1.ResourceOwnershipGuard),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "getUserFrequentProducts", null);
 __decorate([
     (0, common_1.Get)(),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
