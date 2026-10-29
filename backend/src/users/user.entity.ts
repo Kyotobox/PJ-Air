@@ -42,6 +42,9 @@ export class User {
   @Column({ default: false })
   credit_override: boolean;
 
+  @Column({ default: false })
+  credit_blocked: boolean;
+
   @Column({ nullable: true })
   stripe_customer_id: string;
 

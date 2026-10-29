@@ -84,6 +84,12 @@ export class CreditService {
       throw new NotFoundException(`Cliente con id ${clientId} no encontrado`);
     }
 
+    if (user.credit_blocked && !user.credit_override) {
+      throw new BadRequestException(
+        'Crédito bloqueado por mora o cheques devueltos. Contacte a administración para regularizar su cuenta.'
+      );
+    }
+
     const availableCredit = await this.getAvailableCredit(clientId);
     const limit = await this.getCreditLimit(clientId);
     const used = await this.getUsedCredit(clientId);

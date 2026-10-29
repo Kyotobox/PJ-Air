@@ -6,10 +6,11 @@ import AdminSidebar from '@/components/layout/AdminSidebar';
 import {
     ArrowLeft, ShoppingBag, Clock, User, MapPin, Phone,
     CheckCircle2, AlertCircle, RefreshCcw, DollarSign, Loader2,
-    ShieldCheck, CreditCard, ChevronRight, Truck, FileText
+    ShieldCheck, CreditCard, ChevronRight, Truck, FileText, Building2
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
+import { RegisterCheckModal } from '@/components/admin/RegisterCheckModal';
 
 interface OrderItem {
     id: string;
@@ -59,6 +60,11 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
     const [refundCustomNotes, setRefundCustomNotes] = useState<string>('');
     const [isProcessingRefund, setIsProcessingRefund] = useState(false);
 
+    // Check Payment State (TASK-45-04)
+    const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
+    const [orderChecks, setOrderChecks] = useState<any[]>([]);
+    const [isProcessingCheck, setIsProcessingCheck] = useState(false);
+
     useEffect(() => {
         fetchOrder();
     }, [id]);
@@ -68,15 +74,53 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         setTimeout(() => setToast(null), 4000);
     };
 
+    const fetchChecks = async (orderId: string) => {
+        try {
+            const checks = await api.get(`/payments/checks/order/${orderId}`) as any[];
+            setOrderChecks(checks || []);
+        } catch (_) {
+            setOrderChecks([]);
+        }
+    };
+
     const fetchOrder = async () => {
         try {
             setLoading(true);
             const data = await api.get(`/orders/${id}`) as OrderDetail;
             setOrder(data);
+            await fetchChecks(id as string);
         } catch (err: any) {
             setError(err.message || 'No se pudo cargar la orden');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDepositCheck = async (checkId: string) => {
+        try {
+            setIsProcessingCheck(true);
+            await api.post(`/payments/checks/${checkId}/deposit`, {});
+            showToast('✅ Cheque marcado como DEPOSITADO. Cupo de crédito liberado.');
+            await fetchOrder();
+        } catch (err: any) {
+            showToast(err.message || 'Error al depositar cheque', 'error');
+        } finally {
+            setIsProcessingCheck(false);
+        }
+    };
+
+    const handleBounceCheck = async (checkId: string) => {
+        const reason = window.prompt('Motivo del rebote bancario (ej. Fondos insuficientes / Cuenta cerrada):');
+        if (!reason) return;
+        try {
+            setIsProcessingCheck(true);
+            await api.post(`/payments/checks/${checkId}/bounce`, { reason });
+            showToast('⚠️ Cheque marcado como REBOTADO. Crédito bloqueado y orden revertida a pendiente.', 'error');
+            await fetchOrder();
+        } catch (err: any) {
+            showToast(err.message || 'Error al reportar rebote', 'error');
+        } finally {
+            setIsProcessingCheck(false);
         }
     };
 
@@ -217,6 +261,15 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {/* Register Check Action Button (TASK-45-04) */}
+                        <button
+                            data-testid="register-check-btn"
+                            onClick={() => setIsCheckModalOpen(true)}
+                            className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/20 flex items-center gap-2 transition-all active:scale-95"
+                        >
+                            <Building2 size={16} /> Registrar Cheque
+                        </button>
+
                         {/* Refund Action Button */}
                         {['paid', 'partially_refunded', 'pending', 'credit'].includes(order.payment_status) && maxRefundable > 0 && (
                             <button
@@ -291,6 +344,118 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                 <p className="font-bold text-amber-900">Motivo del Ajuste / Reembolso:</p>
                                 <p className="text-amber-800 mt-0.5 font-medium">{order.refund_reason}</p>
                             </div>
+                        </div>
+                    )}
+                </section>
+
+                {/* Check Payments & Reconciliation Section (TASK-45-04) */}
+                <section data-testid="check-reconciliation-card" className="bg-white rounded-[2rem] p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold">
+                                <Building2 size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-slate-800 tracking-tight">
+                                    Conciliación de Pagos por Cheque
+                                </h3>
+                                <p className="text-xs text-slate-500 font-medium">
+                                    Control de compensación (3 días hábiles), liberación de cupo y bloqueo ante rebote
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            data-testid="register-check-inline-btn"
+                            onClick={() => setIsCheckModalOpen(true)}
+                            className="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                        >
+                            + Nuevo Cheque
+                        </button>
+                    </div>
+
+                    {orderChecks.length === 0 ? (
+                        <div className="p-6 rounded-2xl bg-slate-50/60 border border-dashed border-slate-200 text-center">
+                            <p className="text-xs font-semibold text-slate-500">
+                                No se han registrado cheques para esta orden aún.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {orderChecks.map((chk) => (
+                                <div
+                                    key={chk.id}
+                                    data-testid={`check-payment-row-${chk.id}`}
+                                    className="p-5 rounded-2xl border border-slate-200/70 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all hover:bg-white hover:shadow-sm"
+                                >
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                                N° Cheque & Banco
+                                            </p>
+                                            <p className="text-sm font-black text-slate-800">
+                                                #{chk.check_number} • {chk.bank_name}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                                Monto
+                                            </p>
+                                            <p className="text-sm font-black text-slate-900">
+                                                ${Number(chk.amount || 0).toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                                Recepción / Vencimiento Estimado
+                                            </p>
+                                            <p className="text-xs font-bold text-slate-700">
+                                                {chk.received_date} → <span className="text-indigo-600 font-extrabold">{chk.clearance_deadline}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 self-end md:self-center">
+                                        {/* Status Badge */}
+                                        {chk.status === 'DEPOSITED' && (
+                                            <span data-testid="check-badge-deposited" className="px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black uppercase tracking-wider border border-emerald-200 flex items-center gap-1.5">
+                                                <CheckCircle2 size={13} className="text-emerald-600" /> Depositado
+                                            </span>
+                                        )}
+                                        {(chk.status === 'IN_HAND' || chk.status === 'PENDING_RECEIPT') && (
+                                            <span data-testid="check-badge-in-hand" className="px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-black uppercase tracking-wider border border-amber-200 flex items-center gap-1.5">
+                                                <Clock size={13} className="text-amber-600" /> En Cartera
+                                            </span>
+                                        )}
+                                        {chk.status === 'BOUNCED' && (
+                                            <span data-testid="check-badge-bounced" className="px-3.5 py-1.5 rounded-full bg-rose-100 text-rose-800 text-[11px] font-black uppercase tracking-wider border border-rose-200 flex items-center gap-1.5">
+                                                <AlertCircle size={13} className="text-rose-600" /> Rebotado
+                                            </span>
+                                        )}
+
+                                        {/* Action buttons if IN_HAND or PENDING_RECEIPT */}
+                                        {(chk.status === 'IN_HAND' || chk.status === 'PENDING_RECEIPT') && (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    data-testid="deposit-check-btn"
+                                                    disabled={isProcessingCheck}
+                                                    onClick={() => handleDepositCheck(chk.id)}
+                                                    className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                                                >
+                                                    Depositar
+                                                </button>
+                                                <button
+                                                    data-testid="bounce-check-btn"
+                                                    disabled={isProcessingCheck}
+                                                    onClick={() => handleBounceCheck(chk.id)}
+                                                    className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                                                >
+                                                    Rebotar
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </section>
@@ -543,6 +708,19 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                     </div>
                 </div>
             )}
+
+            {/* Register Check Modal (TASK-45-04) */}
+            <RegisterCheckModal
+                isOpen={isCheckModalOpen}
+                onClose={() => setIsCheckModalOpen(false)}
+                orderId={order.id}
+                orderTotal={Number(order.total || 0)}
+                userId={order.user?.id}
+                onSuccess={async () => {
+                    await fetchOrder();
+                    showToast('✅ Cheque registrado exitosamente');
+                }}
+            />
 
             {/* Notification Toast */}
             {toast && (

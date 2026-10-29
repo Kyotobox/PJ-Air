@@ -28,6 +28,7 @@ let User = class User {
     account_type;
     credit_limit;
     credit_override;
+    credit_blocked;
     stripe_customer_id;
     productDiscounts;
 };
@@ -80,6 +81,10 @@ __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "credit_override", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "credit_blocked", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

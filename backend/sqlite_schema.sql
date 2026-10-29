@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS "users" (
   "account_type" VARCHAR NOT NULL DEFAULT ('cash'),
   "credit_limit" DECIMAL(10,2) NOT NULL DEFAULT (0),
   "credit_override" BOOLEAN NOT NULL DEFAULT (0),
+  "credit_blocked" BOOLEAN NOT NULL DEFAULT (0),
   CONSTRAINT "UQ_users_email" UNIQUE ("email")
 );
 
@@ -154,6 +155,28 @@ CREATE TABLE IF NOT EXISTS "system_configs" (
   "value" VARCHAR NOT NULL
 );
 
+-- -----------------------------------------------------------------------------
+-- 10. CHECK_PAYMENTS (Ciclo de Vida de Pagos por Cheque y Conciliación)
+-- SPRINT S45
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "check_payments" (
+  "id" VARCHAR PRIMARY KEY NOT NULL,
+  "order_id" VARCHAR NOT NULL,
+  "user_id" VARCHAR NOT NULL,
+  "check_number" VARCHAR NOT NULL,
+  "bank_name" VARCHAR NOT NULL,
+  "amount" DECIMAL(10,2) NOT NULL,
+  "received_date" VARCHAR NOT NULL,
+  "clearance_deadline" VARCHAR NOT NULL,
+  "status" VARCHAR NOT NULL DEFAULT 'PENDING_RECEIPT',
+  "notes" TEXT,
+  "created_at" DATETIME DEFAULT (datetime('now')),
+  CONSTRAINT "FK_check_payments_order_id" FOREIGN KEY ("order_id")
+    REFERENCES "orders" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT "FK_check_payments_user_id" FOREIGN KEY ("user_id")
+    REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+);
+
 -- =============================================================================
 -- SECONDARY PERFORMANCE INDICES (B-TREE)
 -- SPRINT S14: Eliminates SCAN TABLE and AUTOMATIC COVERING INDEX
@@ -165,3 +188,6 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_addresses_user_id ON addresses(user_id);
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_check_payments_order_id ON check_payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_check_payments_user_id ON check_payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_check_payments_status ON check_payments(status);

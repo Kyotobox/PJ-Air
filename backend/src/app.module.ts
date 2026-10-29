@@ -31,13 +31,14 @@ import { OrderItem } from './orders/order-item.entity';
 import { ProductDiscount } from './users/product-discount.entity';
 import { SystemConfig } from './system-configs/system-config.entity';
 import { DeliveryZone } from './zones/delivery-zone.entity';
+import { CheckPayment } from './payments/check-payment.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: DATABASE_PATH,
-      entities: [Product, Category, User, Profile, Address, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone],
+      entities: [Product, Category, User, Profile, Address, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone, CheckPayment],
       synchronize: NODE_ENV !== 'production',
       logging: false,
     }),
@@ -99,6 +100,30 @@ export class AppModule implements OnModuleInit {
       if (!userColNames.includes('stripe_customer_id')) {
         await qr.query(`ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR;`);
       }
+      if (!userColNames.includes('credit_blocked')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN credit_blocked BOOLEAN DEFAULT 0;`);
+      }
+
+      await qr.query(`
+        CREATE TABLE IF NOT EXISTS check_payments (
+          id VARCHAR PRIMARY KEY NOT NULL,
+          order_id VARCHAR NOT NULL,
+          user_id VARCHAR NOT NULL,
+          amount DECIMAL(10,2) NOT NULL,
+          check_number VARCHAR NOT NULL,
+          bank_name VARCHAR NOT NULL,
+          status VARCHAR NOT NULL DEFAULT 'PENDING_CLEARANCE',
+          deposit_date DATETIME NOT NULL,
+          estimated_clearance_date DATETIME NOT NULL,
+          cleared_at DATETIME,
+          bounced_at DATETIME,
+          bounce_reason VARCHAR,
+          reference_image_url VARCHAR,
+          notes VARCHAR,
+          created_at DATETIME DEFAULT (datetime('now')),
+          updated_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
 
       const profileCols = await qr.query(`PRAGMA table_info(profiles);`);
       const profileColNames = profileCols.map((c: any) => c.name);

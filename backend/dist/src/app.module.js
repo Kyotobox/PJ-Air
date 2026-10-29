@@ -42,6 +42,7 @@ const order_item_entity_1 = require("./orders/order-item.entity");
 const product_discount_entity_1 = require("./users/product-discount.entity");
 const system_config_entity_1 = require("./system-configs/system-config.entity");
 const delivery_zone_entity_1 = require("./zones/delivery-zone.entity");
+const check_payment_entity_1 = require("./payments/check-payment.entity");
 let AppModule = AppModule_1 = class AppModule {
     dataSource;
     logger = new common_1.Logger(AppModule_1.name);
@@ -79,6 +80,29 @@ let AppModule = AppModule_1 = class AppModule {
             if (!userColNames.includes('stripe_customer_id')) {
                 await qr.query(`ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR;`);
             }
+            if (!userColNames.includes('credit_blocked')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN credit_blocked BOOLEAN DEFAULT 0;`);
+            }
+            await qr.query(`
+        CREATE TABLE IF NOT EXISTS check_payments (
+          id VARCHAR PRIMARY KEY NOT NULL,
+          order_id VARCHAR NOT NULL,
+          user_id VARCHAR NOT NULL,
+          amount DECIMAL(10,2) NOT NULL,
+          check_number VARCHAR NOT NULL,
+          bank_name VARCHAR NOT NULL,
+          status VARCHAR NOT NULL DEFAULT 'PENDING_CLEARANCE',
+          deposit_date DATETIME NOT NULL,
+          estimated_clearance_date DATETIME NOT NULL,
+          cleared_at DATETIME,
+          bounced_at DATETIME,
+          bounce_reason VARCHAR,
+          reference_image_url VARCHAR,
+          notes VARCHAR,
+          created_at DATETIME DEFAULT (datetime('now')),
+          updated_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
             const profileCols = await qr.query(`PRAGMA table_info(profiles);`);
             const profileColNames = profileCols.map((c) => c.name);
             if (!profileColNames.includes('phone_verified')) {
@@ -125,7 +149,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'sqlite',
                 database: config_1.DATABASE_PATH,
-                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone],
+                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment],
                 synchronize: config_1.NODE_ENV !== 'production',
                 logging: false,
             }),

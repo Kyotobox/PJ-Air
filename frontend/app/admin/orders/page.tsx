@@ -6,12 +6,12 @@ import {
     ShoppingBag, Search, Filter, Edit, Truck, Clock, 
     CheckCircle2, X, User, ChevronRight, Loader2, Save,
     AlertCircle, MapPin, Phone, MessageSquare, History,
-    Plus, Minus, Trash2, CalendarDays, Printer, RefreshCcw, ExternalLink
+    Plus, Minus, Trash2, CalendarDays, Printer, RefreshCcw, ExternalLink,
+    Building2, Hash, DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
-import FinancialStatusBadge from '@/components/orders/FinancialStatusBadge';
 
 interface OrderItem {
     id: string;
@@ -27,7 +27,6 @@ interface Order {
     status: string;
     payment_status?: string;
     payment_method?: string;
-    payment_due_date?: string;
     zelle_reference?: string;
     packaging_fee?: number;
     packaging_discount?: number;
@@ -82,6 +81,16 @@ export default function AdminOrdersPage() {
     const [motivo, setMotivo] = useState('');
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+    // Check Reconciliation State (TASK-45-05)
+    type OrderViewTab = 'orders' | 'in_hand' | 'deposited' | 'bounced';
+    const [activeTab, setActiveTab] = useState<OrderViewTab>('orders');
+    const [checksReconciliation, setChecksReconciliation] = useState<{
+        inHand: any[];
+        deposited: any[];
+        bounced: any[];
+    }>({ inHand: [], deposited: [], bounced: [] });
+    const [loadingChecks, setLoadingChecks] = useState(false);
 
     // Refund Modal State
     const [refundModalOpen, setRefundModalOpen] = useState(false);
@@ -192,7 +201,44 @@ export default function AdminOrdersPage() {
     useEffect(() => {
         fetchOrders();
         fetchDeliveryUsers();
+        fetchChecksReconciliation();
     }, []);
+
+    const fetchChecksReconciliation = async () => {
+        try {
+            setLoadingChecks(true);
+            const data = await api.get('/payments/checks/reconciliation') as any;
+            setChecksReconciliation(data || { inHand: [], deposited: [], bounced: [] });
+        } catch (e) {
+            console.error('Error fetching checks reconciliation:', e);
+        } finally {
+            setLoadingChecks(false);
+        }
+    };
+
+    const handleDepositCheck = async (checkId: string) => {
+        try {
+            await api.post(`/payments/checks/${checkId}/deposit`, {});
+            showToast('✅ Cheque marcado como DEPOSITADO. Cupo de crédito liberado.');
+            await fetchChecksReconciliation();
+            await fetchOrders();
+        } catch (err: any) {
+            showToast(err?.message || 'Error al depositar cheque', 'error');
+        }
+    };
+
+    const handleBounceCheck = async (checkId: string) => {
+        const reason = window.prompt('Motivo del rebote bancario (ej. Fondos insuficientes / Cuenta cerrada):');
+        if (!reason) return;
+        try {
+            await api.post(`/payments/checks/${checkId}/bounce`, { reason });
+            showToast('⚠️ Cheque marcado como REBOTADO. Crédito bloqueado y orden revertida a deuda.', 'error');
+            await fetchChecksReconciliation();
+            await fetchOrders();
+        } catch (err: any) {
+            showToast(err?.message || 'Error al registrar rebote', 'error');
+        }
+    };
 
     const fetchOrders = async () => {
         try {
@@ -360,6 +406,26 @@ export default function AdminOrdersPage() {
         return matchesSearch && matchesStatus && matchesStart && matchesEnd;
     });
 
+    const activeChecks = activeTab === 'in_hand'
+        ? checksReconciliation.inHand
+        : activeTab === 'deposited'
+        ? checksReconciliation.deposited
+        : activeTab === 'bounced'
+        ? checksReconciliation.bounced
+        : [];
+
+    const filteredChecks = activeChecks.filter(c => {
+        const q = search.toLowerCase();
+        return (
+            !q ||
+            c.check_number?.toLowerCase().includes(q) ||
+            c.bank_name?.toLowerCase().includes(q) ||
+            c.notes?.toLowerCase().includes(q) ||
+            c.user?.email?.toLowerCase().includes(q) ||
+            c.order_id?.toLowerCase().includes(q)
+        );
+    });
+
     const isModified = (order: Order) => order.notes && order.notes.includes('modificado');
 
     const handlePrintOrder = (order: Order) => {
@@ -439,14 +505,205 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
         <div className="flex min-h-screen bg-muted/30 font-sans">
             <AdminSidebar />
             <main className="flex-1 p-8 overflow-auto">
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                     <div>
                         <h1 className="text-3xl font-black mb-1 animate-fade-in text-slate-800">Panel de Pedidos</h1>
                         <p className="text-muted-foreground font-medium">Supervisión y control de ventas en tiempo real</p>
                     </div>
                 </header>
 
-                <div className="bg-white p-6 rounded-3xl border border-border shadow-sm mb-8 flex flex-col gap-4">
+                {/* Check Reconciliation & Orders Tabs (TASK-45-05) */}
+                <div data-testid="check-reconciliation-tabs" className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl mb-8 overflow-x-auto">
+                    <button
+                        data-testid="tab-orders"
+                        onClick={() => setActiveTab('orders')}
+                        className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap ${
+                            activeTab === 'orders'
+                                ? 'bg-white text-slate-800 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        <ShoppingBag size={14} /> Todos los Pedidos ({orders.length})
+                    </button>
+                    <button
+                        data-testid="tab-in-hand"
+                        onClick={() => setActiveTab('in_hand')}
+                        className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap ${
+                            activeTab === 'in_hand'
+                                ? 'bg-white text-amber-700 shadow-sm'
+                                : 'text-slate-500 hover:text-amber-700'
+                        }`}
+                    >
+                        <Clock size={14} className="text-amber-500" />
+                        Por Depositar ({checksReconciliation.inHand.length})
+                    </button>
+                    <button
+                        data-testid="tab-deposited"
+                        onClick={() => setActiveTab('deposited')}
+                        className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap ${
+                            activeTab === 'deposited'
+                                ? 'bg-white text-emerald-700 shadow-sm'
+                                : 'text-slate-500 hover:text-emerald-700'
+                        }`}
+                    >
+                        <CheckCircle2 size={14} className="text-emerald-500" />
+                        Depositados ({checksReconciliation.deposited.length})
+                    </button>
+                    <button
+                        data-testid="tab-bounced"
+                        onClick={() => setActiveTab('bounced')}
+                        className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap ${
+                            activeTab === 'bounced'
+                                ? 'bg-white text-rose-700 shadow-sm'
+                                : 'text-slate-500 hover:text-rose-700'
+                        }`}
+                    >
+                        <AlertCircle size={14} className="text-rose-500" />
+                        Rebotados / Consecuencias ({checksReconciliation.bounced.length})
+                    </button>
+                </div>
+
+                {activeTab !== 'orders' ? (
+                    <div data-testid="checks-reconciliation-view" className="space-y-6">
+                        {/* Search bar for checks */}
+                        <div className="bg-white p-4 rounded-3xl border border-border shadow-sm flex items-center gap-3">
+                            <Search size={18} className="text-muted-foreground ml-2" />
+                            <input
+                                type="text"
+                                placeholder="Buscar cheques por número, banco, cliente o nota..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full bg-transparent outline-none text-sm font-medium text-slate-800 placeholder-slate-400"
+                            />
+                            {search && (
+                                <button onClick={() => setSearch('')} className="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+                                    <X size={16} />
+                                </button>
+                            )}
+                        </div>
+
+                        {loadingChecks ? (
+                            <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                                <Loader2 size={36} className="animate-spin text-primary opacity-60" />
+                                <p className="font-bold text-xs uppercase tracking-wider">Cargando cheques de conciliación...</p>
+                            </div>
+                        ) : filteredChecks.length === 0 ? (
+                            <div data-testid="no-checks-found" className="p-16 rounded-3xl bg-white border border-border text-center space-y-2">
+                                <Building2 size={36} className="mx-auto text-slate-300" />
+                                <h4 className="text-sm font-bold text-slate-700">No hay cheques en esta categoría</h4>
+                                <p className="text-xs text-slate-400">
+                                    {activeTab === 'in_hand'
+                                        ? 'No hay cheques pendientes de depósito en cartera.'
+                                        : activeTab === 'deposited'
+                                        ? 'No hay cheques marcados como depositados.'
+                                        : 'No hay cheques rebotados registrados.'}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-[2rem] border border-border overflow-hidden shadow-xl shadow-slate-200/50">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50/80 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 border-b border-border">
+                                        <tr>
+                                            <th className="px-8 py-5">Cheque & Banco</th>
+                                            <th className="px-8 py-5">Orden</th>
+                                            <th className="px-8 py-5">Cliente</th>
+                                            <th className="px-8 py-5">Fechas Contables</th>
+                                            <th className="px-8 py-5 text-right">Monto</th>
+                                            <th className="px-8 py-5">Estado</th>
+                                            <th className="px-8 py-5 text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border">
+                                        {filteredChecks.map((chk) => (
+                                            <tr key={chk.id} data-testid={`check-row-${chk.id}`} className="hover:bg-primary/[0.02] transition-colors">
+                                                <td className="px-8 py-5">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="font-mono text-xs font-black text-slate-800">#{chk.check_number}</span>
+                                                        <span className="text-xs text-slate-500 font-bold flex items-center gap-1">
+                                                            <Building2 size={12} className="text-slate-400" /> {chk.bank_name}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <Link
+                                                        href={`/admin/orders/${chk.order_id}`}
+                                                        className="font-mono text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                                                    >
+                                                        #{chk.order_id.slice(0, 8)} <ExternalLink size={11} />
+                                                    </Link>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <p className="text-xs font-bold text-slate-800">{chk.user?.profile?.full_name || chk.user?.profile?.nickname || 'Cliente'}</p>
+                                                    <p className="text-[11px] text-muted-foreground font-medium">{chk.user?.email || chk.user_id?.slice(0, 8)}</p>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    <div className="text-xs">
+                                                        <p className="text-slate-500 font-medium">Recibido: <span className="font-bold text-slate-700">{chk.received_date}</span></p>
+                                                        <p className="text-slate-500 font-medium">Vence: <span className="font-black text-indigo-600">{chk.clearance_deadline}</span></p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-5 text-right">
+                                                    <span className="text-sm font-black text-slate-900 font-mono">
+                                                        ${Number(chk.amount || 0).toFixed(2)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-5">
+                                                    {chk.status === 'DEPOSITED' && (
+                                                        <span data-testid="reconciliation-badge-deposited" className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider border border-emerald-200 inline-flex items-center gap-1">
+                                                            <CheckCircle2 size={12} className="text-emerald-600" /> Depositado
+                                                        </span>
+                                                    )}
+                                                    {(chk.status === 'IN_HAND' || chk.status === 'PENDING_RECEIPT') && (
+                                                        <span data-testid="reconciliation-badge-in-hand" className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider border border-amber-200 inline-flex items-center gap-1">
+                                                            <Clock size={12} className="text-amber-600" /> En Cartera
+                                                        </span>
+                                                    )}
+                                                    {chk.status === 'BOUNCED' && (
+                                                        <div className="flex flex-col gap-1">
+                                                            <span data-testid="reconciliation-badge-bounced" className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black uppercase tracking-wider border border-rose-200 inline-flex items-center gap-1">
+                                                                <AlertCircle size={12} className="text-rose-600" /> Rebotado
+                                                            </span>
+                                                            <span className="text-[10px] font-bold text-rose-600">Crédito Bloqueado</span>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-8 py-5 text-right">
+                                                    {(chk.status === 'IN_HAND' || chk.status === 'PENDING_RECEIPT') ? (
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                data-testid={`deposit-btn-${chk.id}`}
+                                                                onClick={() => handleDepositCheck(chk.id)}
+                                                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-all"
+                                                            >
+                                                                Depositar
+                                                            </button>
+                                                            <button
+                                                                data-testid={`bounce-btn-${chk.id}`}
+                                                                onClick={() => handleBounceCheck(chk.id)}
+                                                                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider transition-all"
+                                                            >
+                                                                Rebotar
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <Link
+                                                            href={`/admin/orders/${chk.order_id}`}
+                                                            className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                                                        >
+                                                            Ver Orden →
+                                                        </Link>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                    <div className="bg-white p-6 rounded-3xl border border-border shadow-sm mb-8 flex flex-col gap-4">
                     <div className="flex flex-col md:flex-row gap-4 items-center">
                         <div className="relative flex-1 w-full group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
@@ -554,11 +811,24 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ⚠️ Verificación Pend.
                                                     </span>
                                                 )}
-                                                {/* Financial status badge (TASK-44-05) */}
-                                                <FinancialStatusBadge order={order} size="sm" />
+                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200">
+                                                        ✓ Pagado
+                                                    </span>
+                                                )}
                                                 {order.payment_status === 'partially_refunded' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 text-[9px] font-bold border border-orange-200">
                                                         ↩ Reemb. Parcial
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'refunded' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[9px] font-bold border border-rose-200">
+                                                        ↩ Reembolsado
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'pending' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">
+                                                        ⏳ Crédito Pend.
                                                     </span>
                                                 )}
                                             </div>
@@ -620,6 +890,8 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         </table>
                     </div>
                 )}
+                </>
+            )}
             </main>
 
             {/* Order Detail Side Panel */}
@@ -633,7 +905,6 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-3">
                                     <h2 className="text-2xl font-black text-slate-800">Expediente del Pedido</h2>
-                                    <FinancialStatusBadge order={selectedOrder} size="normal" />
                                     {isModified(selectedOrder) && <span className="text-amber-600 text-[10px] font-black uppercase bg-amber-50 px-3 py-1 rounded-full border border-amber-100">Modificado</span>}
                                 </div>
                                 <p className="font-mono text-xs text-slate-400 font-bold tracking-widest">TRANSMISIÓN: #{selectedOrder.id}</p>
