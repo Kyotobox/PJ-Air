@@ -529,5 +529,70 @@ describe('OrdersService', () => {
       }).toThrow(BadRequestException);
     });
   });
+
+  describe('Sprint 43: Credit Payment Due Date & 7-Day Foundation', () => {
+    it('should calculate payment_due_date = created_at + 7 days in YYYY-MM-DD format for credit orders', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'credit-client-43',
+        account_type: 'credit',
+        credit_limit: 1000,
+        orders: [],
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 20 }]);
+
+      const createdOrder = { id: 'order-credit-due-date', total: 20 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      await service.create('credit-client-43', {
+        items: [{ productId: 1, quantity: 1 }],
+        delivery_type: 'pickup',
+        payment_method: 'credit',
+      });
+
+      const now = new Date();
+      const expectedDue = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const expectedDateStr = `${expectedDue.getUTCFullYear()}-${String(expectedDue.getUTCMonth() + 1).padStart(2, '0')}-${String(expectedDue.getUTCDate()).padStart(2, '0')}`;
+
+      expect(mockManager.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          payment_method: 'credit',
+          payment_due_date: expectedDateStr,
+        }),
+      );
+    });
+
+    it('should set payment_due_date to null when payment_method is not credit (Sad Path §6)', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'stripe-client-43',
+        account_type: 'cash',
+        orders: [],
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 20 }]);
+
+      const createdOrder = { id: 'order-stripe-due-date', total: 20 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      await service.create('stripe-client-43', {
+        items: [{ productId: 1, quantity: 1 }],
+        delivery_type: 'pickup',
+        payment_method: 'stripe',
+      });
+
+      expect(mockManager.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          payment_method: 'stripe',
+          payment_due_date: null,
+        }),
+      );
+    });
+  });
 });
 

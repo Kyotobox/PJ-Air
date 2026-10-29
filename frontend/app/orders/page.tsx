@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Link from 'next/link';
-import { Package, Truck, CheckCircle2, AlertCircle, Clock, Eye, Loader2, ShoppingBag, ChevronDown, CreditCard, RefreshCw } from 'lucide-react';
+import { Package, Truck, CheckCircle2, AlertCircle, Clock, Eye, Loader2, ShoppingBag, ChevronDown, CreditCard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -73,13 +73,6 @@ export default function ClientOrdersPage() {
                         <h1 className="text-4xl font-bold font-serif text-primary mb-2">{t.orders.title}</h1>
                         <p className="text-muted-foreground">{t.orders.subtitleTracking}</p>
                     </div>
-                    <Link
-                        href="/orders/scheduled"
-                        className="inline-flex items-center gap-2 px-5 py-3 bg-slate-900 hover:bg-amber-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md shrink-0"
-                    >
-                        <RefreshCw size={14} className="text-amber-400" />
-                        <span>{locale === 'en' ? 'Standing Orders & Subscriptions' : 'Pedidos Recurrentes / Suscripciones'}</span>
-                    </Link>
                 </div>
 
                 <div className="space-y-6">

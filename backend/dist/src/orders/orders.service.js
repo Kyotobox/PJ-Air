@@ -23,6 +23,7 @@ const product_entity_1 = require("../products/product.entity");
 const address_entity_1 = require("../addresses/address.entity");
 const zones_service_1 = require("../zones/zones.service");
 const mail_service_1 = require("../mail/mail.service");
+const credit_service_1 = require("../credit/credit.service");
 let OrdersService = class OrdersService {
     orderRepository;
     orderItemRepository;
@@ -32,7 +33,8 @@ let OrdersService = class OrdersService {
     addressRepository;
     zonesService;
     mailService;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService) {
+    creditService;
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -41,12 +43,13 @@ let OrdersService = class OrdersService {
         this.addressRepository = addressRepository;
         this.zonesService = zonesService;
         this.mailService = mailService;
+        this.creditService = creditService;
     }
     validateCutoffTime(deliveryDateStr, referenceDate, cutoffHour = 12) {
         if (!deliveryDateStr)
             return;
         const now = referenceDate || new Date();
-        const nyDateFormatter = new Intl.DateTimeFormat('en-CA', {
+        const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/New_York',
             year: 'numeric',
             month: '2-digit',
@@ -55,15 +58,16 @@ let OrdersService = class OrdersService {
         const nyTimeFormatter = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/New_York',
             hour: 'numeric',
-            minute: 'numeric',
-            second: 'numeric',
             hour12: false,
         });
-        const nyDateStr = nyDateFormatter.format(now);
-        const nyTimeStr = nyTimeFormatter.format(now);
-        const nyHour = parseInt(nyTimeStr.split(':')[0], 10);
-        const [todayY, todayM, todayD] = nyDateStr.split('-').map(Number);
-        const todayNY = new Date(Date.UTC(todayY, todayM - 1, todayD));
+        const dateParts = nyDateFormatter.formatToParts(now);
+        const yr = dateParts.find(p => p.type === 'year')?.value || '1970';
+        const mo = dateParts.find(p => p.type === 'month')?.value || '01';
+        const da = dateParts.find(p => p.type === 'day')?.value || '01';
+        const nyDateStr = `${yr}-${mo}-${da}`;
+        const timeParts = nyTimeFormatter.formatToParts(now);
+        const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        const todayNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
         const tomorrowNY = new Date(todayNY);
         tomorrowNY.setUTCDate(tomorrowNY.getUTCDate() + 1);
         const yrT = tomorrowNY.getUTCFullYear();
@@ -241,13 +245,29 @@ let OrdersService = class OrdersService {
         });
         const appliedDeliveryType = deliveryType || rest.delivery_type || 'saved';
         const appliedDeliveryDate = deliveryDate || rest.delivery_date;
-        const appliedPaymentDueDate = paymentDueDate || rest.payment_due_date;
         const appliedAddressId = addressId || rest.address_id || null;
         const appliedDeliveryAddressText = deliveryAddressText || rest.delivery_address_text || null;
         let appliedPaymentStatus = paymentStatus || rest.payment_status || 'pending';
         const appliedPaymentMethod = rest.payment_method || orderData.payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
         const rawZelleRef = rest.zelle_reference || orderData.zelle_reference;
         const appliedZelleReference = rawZelleRef ? String(rawZelleRef).trim() : null;
+        let appliedPaymentDueDate = null;
+        if (appliedPaymentMethod === 'credit') {
+            if (this.creditService) {
+                appliedPaymentDueDate = this.creditService.calculatePaymentDueDate();
+            }
+            else {
+                const now = new Date();
+                const dueDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const yr = dueDate.getUTCFullYear();
+                const mo = String(dueDate.getUTCMonth() + 1).padStart(2, '0');
+                const da = String(dueDate.getUTCDate()).padStart(2, '0');
+                appliedPaymentDueDate = `${yr}-${mo}-${da}`;
+            }
+        }
+        else {
+            appliedPaymentDueDate = null;
+        }
         this.validateCutoffTime(appliedDeliveryDate);
         const packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
         let packagingDiscount = 0;
@@ -323,15 +343,22 @@ let OrdersService = class OrdersService {
         let isOverdraftAlert = false;
         let prospectiveCreditTotal = 0;
         let clientCreditLimit = 0;
-        if (user?.account_type === 'credit') {
-            const unpaidOrders = (user.orders || []).filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado');
-            const usedCredit = unpaidOrders.reduce((acc, o) => {
-                const netOrderDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
-                return acc + netOrderDebt;
-            }, 0);
-            clientCreditLimit = Number(user.credit_limit || 0);
+        if (user?.account_type === 'credit' || appliedPaymentMethod === 'credit') {
+            let usedCredit = 0;
+            if (this.creditService) {
+                clientCreditLimit = await this.creditService.getCreditLimit(userId);
+                usedCredit = await this.creditService.getUsedCredit(userId);
+            }
+            else {
+                const unpaidOrders = (user?.orders || []).filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado');
+                usedCredit = unpaidOrders.reduce((acc, o) => {
+                    const netOrderDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
+                    return acc + netOrderDebt;
+                }, 0);
+                clientCreditLimit = Number(user?.credit_limit || 0);
+            }
             prospectiveCreditTotal = Math.round((usedCredit + finalTotal + Number.EPSILON) * 100) / 100;
-            const isOverride = Boolean(user.credit_override);
+            const isOverride = Boolean(user?.credit_override);
             if (prospectiveCreditTotal > clientCreditLimit && !isOverride) {
                 throw new common_1.BadRequestException(`Límite de crédito excedido: Tu límite es de $${clientCreditLimit.toFixed(2)}, tienes $${usedCredit.toFixed(2)} pendiente y esta orden suma $${finalTotal.toFixed(2)}. Contacta a la administración para una autorización.`);
             }
@@ -493,6 +520,7 @@ exports.OrdersService = OrdersService = __decorate([
     __param(5, (0, typeorm_1.InjectRepository)(address_entity_1.Address)),
     __param(6, (0, common_1.Optional)()),
     __param(7, (0, common_1.Optional)()),
+    __param(8, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -500,6 +528,7 @@ exports.OrdersService = OrdersService = __decorate([
         typeorm_2.DataSource,
         typeorm_2.Repository,
         zones_service_1.ZonesService,
-        mail_service_1.MailService])
+        mail_service_1.MailService,
+        credit_service_1.CreditService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

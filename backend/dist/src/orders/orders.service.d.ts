@@ -6,6 +6,7 @@ import { Product } from '../products/product.entity';
 import { Address } from '../addresses/address.entity';
 import { ZonesService } from '../zones/zones.service';
 import { MailService } from '../mail/mail.service';
+import { CreditService } from '../credit/credit.service';
 export declare class OrdersService {
     private orderRepository;
     private orderItemRepository;
@@ -15,7 +16,8 @@ export declare class OrdersService {
     private addressRepository?;
     private zonesService?;
     private mailService?;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined);
+    private creditService?;
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined);
     validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour?: number): void;
     private validateStatusTransition;
     private calculateOrderPricesAndTotal;

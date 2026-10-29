@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "cross-var next dev -p $FRONTEND_PORT",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "cross-var next start -p $FRONTEND_PORT",
     "lint": "eslint",
     "test": "vitest run",

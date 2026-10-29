@@ -90,7 +90,7 @@
     {
       "id": "S43",
       "name": "Sprint 43: Purga de Pedidos Futuros y Fundación de Crédito a 7 Días",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-10-28",
       "goal": "Eliminar el subsistema obsoleto de pedidos futuros/recurrentes y establecer el modelo de datos y lógica base de crédito a 7 días calendario con métodos de consulta de saldo y límites.",
       "tasks": [
@@ -98,43 +98,43 @@
           "id": "TASK-43-01",
           "label": "CLEAN/CHECKOUT-PURGE",
           "desc": "Eliminar checkbox de pedido recurrente y estados asociados en checkout/page.tsx.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-43-02",
           "label": "CLEAN/ROUTES-PURGE",
           "desc": "Eliminar vistas obsoletas /orders/scheduled y /admin/standing-orders y sus enlaces de navegación.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-43-03",
           "label": "CLEAN/BACKEND-SCHEDULED-PURGE",
           "desc": "Migración para eliminar tabla scheduled_orders y purgar entidad ScheduledOrder, servicio y controlador en backend NestJS.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-43-04",
           "label": "DOMAIN/CREDIT-DUE-DATE-CORE",
           "desc": "Modelar cálculo determinista de payment_due_date = created_at + 7 días (ISO YYYY-MM-DD) para órdenes a crédito en backend.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-43-05",
           "label": "DOMAIN/CREDIT-SERVICE-REFACTOR",
           "desc": "Estandarizar métodos getAvailableCredit, getUsedCredit y getCreditLimit en backend con cálculo estricto de deuda neta.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-43-06",
           "label": "TEST/CREDIT-AND-PURGE-REGRESSION",
           "desc": "Suite de pruebas unitarias para CreditService (happy path y sad paths de sobregiro) y certificación de no regresiones tras la purga.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-43-07",
           "label": "DEPLOY/TESTING-SYNC",
           "desc": "Compilación limpia, verificación de integridad y despliegue sincronizado en testing.jhoanes.com.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     }
@@ -144,7 +144,7 @@
   "active_sprint": {
     "id": "S43",
     "name": "Sprint 43: Purga de Pedidos Futuros y Fundación de Crédito a 7 Días",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "start_date": "2026-10-28",
     "goal": "Eliminar el subsistema obsoleto de pedidos futuros/recurrentes y establecer el modelo de datos y lógica base de crédito a 7 días calendario con métodos de consulta de saldo y límites.",
     "tasks": [
@@ -152,43 +152,43 @@
         "id": "TASK-43-01",
         "label": "CLEAN/CHECKOUT-PURGE",
         "desc": "Eliminar checkbox de pedido recurrente y estados asociados en checkout/page.tsx.",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-43-02",
         "label": "CLEAN/ROUTES-PURGE",
         "desc": "Eliminar vistas obsoletas /orders/scheduled y /admin/standing-orders y sus enlaces de navegación.",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-43-03",
         "label": "CLEAN/BACKEND-SCHEDULED-PURGE",
         "desc": "Migración para eliminar tabla scheduled_orders y purgar entidad ScheduledOrder, servicio y controlador en backend NestJS.",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-43-04",
         "label": "DOMAIN/CREDIT-DUE-DATE-CORE",
         "desc": "Modelar cálculo determinista de payment_due_date = created_at + 7 días (ISO YYYY-MM-DD) para órdenes a crédito en backend.",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-43-05",
         "label": "DOMAIN/CREDIT-SERVICE-REFACTOR",
         "desc": "Estandarizar métodos getAvailableCredit, getUsedCredit y getCreditLimit en backend con cálculo estricto de deuda neta.",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-43-06",
         "label": "TEST/CREDIT-AND-PURGE-REGRESSION",
         "desc": "Suite de pruebas unitarias para CreditService (happy path y sad paths de sobregiro) y certificación de no regresiones tras la purga.",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-43-07",
         "label": "DEPLOY/TESTING-SYNC",
         "desc": "Compilación limpia, verificación de integridad y despliegue sincronizado en testing.jhoanes.com.",
-        "status": "PENDING"
+        "status": "DONE"
       }
     ]
   }

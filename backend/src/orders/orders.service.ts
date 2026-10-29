@@ -8,6 +8,7 @@ import { Product } from '../products/product.entity';
 import { Address } from '../addresses/address.entity';
 import { ZonesService } from '../zones/zones.service';
 import { MailService } from '../mail/mail.service';
+import { CreditService } from '../credit/credit.service';
 
 @Injectable()
 export class OrdersService {
@@ -28,13 +29,15 @@ export class OrdersService {
     private zonesService?: ZonesService,
     @Optional()
     private mailService?: MailService,
+    @Optional()
+    private creditService?: CreditService,
   ) {}
 
   validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour = 12): void {
     if (!deliveryDateStr) return;
 
     const now = referenceDate || new Date();
-    const nyDateFormatter = new Intl.DateTimeFormat('en-CA', {
+    const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       year: 'numeric',
       month: '2-digit',
@@ -43,17 +46,19 @@ export class OrdersService {
     const nyTimeFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
       hour12: false,
     });
 
-    const nyDateStr = nyDateFormatter.format(now); // YYYY-MM-DD
-    const nyTimeStr = nyTimeFormatter.format(now);
-    const nyHour = parseInt(nyTimeStr.split(':')[0], 10);
+    const dateParts = nyDateFormatter.formatToParts(now);
+    const yr = dateParts.find(p => p.type === 'year')?.value || '1970';
+    const mo = dateParts.find(p => p.type === 'month')?.value || '01';
+    const da = dateParts.find(p => p.type === 'day')?.value || '01';
+    const nyDateStr = `${yr}-${mo}-${da}`; // YYYY-MM-DD
 
-    const [todayY, todayM, todayD] = nyDateStr.split('-').map(Number);
-    const todayNY = new Date(Date.UTC(todayY, todayM - 1, todayD));
+    const timeParts = nyTimeFormatter.formatToParts(now);
+    const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+
+    const todayNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
     const tomorrowNY = new Date(todayNY);
     tomorrowNY.setUTCDate(tomorrowNY.getUTCDate() + 1);
 
@@ -270,7 +275,6 @@ export class OrdersService {
     });
     const appliedDeliveryType = deliveryType || (rest as any).delivery_type || 'saved';
     const appliedDeliveryDate = deliveryDate || (rest as any).delivery_date;
-    const appliedPaymentDueDate = paymentDueDate || (rest as any).payment_due_date;
     const appliedAddressId = addressId || (rest as any).address_id || null;
     const appliedDeliveryAddressText = deliveryAddressText || (rest as any).delivery_address_text || null;
     let appliedPaymentStatus = paymentStatus || (rest as any).payment_status || 'pending';
@@ -278,6 +282,25 @@ export class OrdersService {
     const appliedPaymentMethod = (rest as any).payment_method || (orderData as any).payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
     const rawZelleRef = (rest as any).zelle_reference || (orderData as any).zelle_reference;
     const appliedZelleReference = rawZelleRef ? String(rawZelleRef).trim() : null;
+
+    // TASK-43-04: Deterministic payment_due_date calculation
+    // If credit order: created_at + 7 days (ISO YYYY-MM-DD)
+    // Sad Path (§6): If not credit, payment_due_date must be null
+    let appliedPaymentDueDate: string | null = null;
+    if (appliedPaymentMethod === 'credit') {
+      if (this.creditService) {
+        appliedPaymentDueDate = this.creditService.calculatePaymentDueDate();
+      } else {
+        const now = new Date();
+        const dueDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const yr = dueDate.getUTCFullYear();
+        const mo = String(dueDate.getUTCMonth() + 1).padStart(2, '0');
+        const da = String(dueDate.getUTCDate()).padStart(2, '0');
+        appliedPaymentDueDate = `${yr}-${mo}-${da}`;
+      }
+    } else {
+      appliedPaymentDueDate = null;
+    }
 
     // Validate 12:00 PM cutoff time for next-day deliveries
     this.validateCutoffTime(appliedDeliveryDate);
@@ -363,17 +386,24 @@ export class OrdersService {
     let clientCreditLimit = 0;
 
     // Credit gate validation for B2B accounts
-    if (user?.account_type === 'credit') {
-      const unpaidOrders = (user.orders || []).filter(
-        (o: any) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado'
-      );
-      const usedCredit = unpaidOrders.reduce((acc: number, o: any) => {
-        const netOrderDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
-        return acc + netOrderDebt;
-      }, 0);
-      clientCreditLimit = Number(user.credit_limit || 0);
+    if (user?.account_type === 'credit' || appliedPaymentMethod === 'credit') {
+      let usedCredit = 0;
+      if (this.creditService) {
+        clientCreditLimit = await this.creditService.getCreditLimit(userId);
+        usedCredit = await this.creditService.getUsedCredit(userId);
+      } else {
+        const unpaidOrders = (user?.orders || []).filter(
+          (o: any) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado'
+        );
+        usedCredit = unpaidOrders.reduce((acc: number, o: any) => {
+          const netOrderDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
+          return acc + netOrderDebt;
+        }, 0);
+        clientCreditLimit = Number(user?.credit_limit || 0);
+      }
+
       prospectiveCreditTotal = Math.round((usedCredit + finalTotal + Number.EPSILON) * 100) / 100;
-      const isOverride = Boolean(user.credit_override);
+      const isOverride = Boolean(user?.credit_override);
 
       if (prospectiveCreditTotal > clientCreditLimit && !isOverride) {
         throw new BadRequestException(
