@@ -154,4 +154,48 @@ describe('PaymentsService', () => {
       }
     );
   });
+
+  describe('Sprint 47: Credit Settlement Processing Fee (TASK-47-03)', () => {
+    it('should apply 3.5% fee on credit settlement when paying with card without absorbing it', async () => {
+      ordersService.findOne.mockResolvedValueOnce({
+        id: 'order-credit-settle-01',
+        total: 200,
+        refunded_amount: 0,
+        payment_status: 'pending',
+        user: { email: 'credit-buyer@example.com' },
+      });
+
+      const res = await service.createSettlementLink({
+        orderId: 'order-credit-settle-01',
+        paymentMethod: 'STRIPE_CARD',
+      });
+
+      // 200 * 0.035 = 7.00. Total to charge = 207.00
+      expect(res.balance).toBe(200);
+      expect(res.feeAmount).toBe(7.00);
+      expect(res.feeMethod).toBe('STRIPE_CARD');
+      expect(res.amount).toBe(207.00);
+    });
+
+    it('should apply 0.8% fee capped at $5.00 on credit settlement when paying with ACH', async () => {
+      ordersService.findOne.mockResolvedValueOnce({
+        id: 'order-credit-settle-ach',
+        total: 1000,
+        refunded_amount: 0,
+        payment_status: 'pending',
+        user: { email: 'ach-buyer@example.com' },
+      });
+
+      const res = await service.createSettlementLink({
+        orderId: 'order-credit-settle-ach',
+        paymentMethod: 'ACH',
+      });
+
+      // 1000 * 0.008 = 8.00 -> capped at 5.00. Total to charge = 1005.00
+      expect(res.balance).toBe(1000);
+      expect(res.feeAmount).toBe(5.00);
+      expect(res.feeMethod).toBe('ACH');
+      expect(res.amount).toBe(1005.00);
+    });
+  });
 });

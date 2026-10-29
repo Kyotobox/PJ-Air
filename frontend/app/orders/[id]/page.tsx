@@ -5,12 +5,13 @@ import Navbar from '@/components/layout/Navbar';
 import {
     CheckCircle2, Package, Calendar, Clock, MapPin,
     ChevronRight, ShoppingBag, Receipt, Loader2, CreditCard,
-    RefreshCcw, AlertCircle
+    RefreshCcw, AlertCircle, Printer, Building2, X
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
+import { calculateProcessingFee } from '@/lib/fee-calculator';
 
 export default function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: orderId } = use(params);
@@ -21,6 +22,8 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
 
     // Online settlement payment states
     const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
+    const [settlementMethodModalOpen, setSettlementMethodModalOpen] = useState(false);
+    const [selectedSettlementMethod, setSelectedSettlementMethod] = useState<'STRIPE_CARD' | 'ACH'>('STRIPE_CARD');
     const [settlementModalOpen, setSettlementModalOpen] = useState(false);
     const [settlementClientSecret, setSettlementClientSecret] = useState<string | null>(null);
     const [settlementAmount, setSettlementAmount] = useState<number>(0);
@@ -42,10 +45,20 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
         fetchOrderDetails();
     }, [orderId]);
 
-    const handlePayOnline = async () => {
+    const handlePayOnline = () => {
+        // Open modal to select payment method (Card 3.5% vs ACH 0.8% cap $5)
+        setSettlementMethodModalOpen(true);
+    };
+
+    const executeSettlement = async (method: 'STRIPE_CARD' | 'ACH') => {
+        setSettlementMethodModalOpen(false);
         setIsInitiatingPayment(true);
         try {
-            const res = await api.post('/payments/create-settlement-link', { orderId }) as any;
+            const res = await api.post('/payments/create-settlement-link', {
+                orderId,
+                paymentMethod: method,
+            }) as any;
+
             if (res.clientSecret) {
                 setSettlementClientSecret(res.clientSecret);
                 setSettlementAmount(res.amount || Number(order?.total) || 0);
@@ -61,6 +74,155 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             setTimeout(() => setPaymentToast(null), 4000);
         } finally {
             setIsInitiatingPayment(false);
+        }
+    };
+
+    const handlePrintInvoice = () => {
+        if (!order) return;
+        const clientName = order.user?.profile?.full_name || order.user?.name || order.user?.email || 'Cliente Mayorista';
+        const clientPhone = order.user?.profile?.phone || '';
+        const orderDate = new Date(order.created_at || Date.now()).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+        const itemsTotal = items.reduce((acc: number, item: any) => {
+            const price = Number(item.price_at_time || item.product?.price || 0);
+            return acc + (price * Number(item.quantity || 1));
+        }, 0);
+        const deliveryFee = Number(order.delivery_fee_charged || 0);
+        const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? itemsTotal * 0.035 : 0));
+        const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXENTO');
+        const grandTotal = Number(order.total) || (itemsTotal + deliveryFee + feeAmount);
+
+        const itemsRows = items.map((item: any) => {
+            const price = Number(item.price_at_time || item.product?.price || 0);
+            const qty = Number(item.quantity || 1);
+            const lineTotal = price * qty;
+            return `<tr>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || 'Producto Artesanal'}</td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: center;">${qty}</td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${price.toFixed(2)}</td>
+                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${lineTotal.toFixed(2)}</td>
+            </tr>`;
+        }).join('');
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Factura Comercial #${order.id.slice(0, 8).toUpperCase()}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        body { padding: 40px; color: #1e293b; background: #fff; font-size: 12px; line-height: 1.5; }
+        @media print {
+            body { padding: 20px; }
+            @page { margin: 10mm; size: letter; }
+        }
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 24px; }
+        .brand h1 { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; }
+        .brand p { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .invoice-meta { text-align: right; }
+        .invoice-meta h2 { font-size: 16px; font-weight: 800; color: #d97706; text-transform: uppercase; }
+        .invoice-meta p { font-size: 11px; color: #475569; }
+        .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .party h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .party p { font-size: 12px; font-weight: 600; color: #1e293b; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        th { background: #0f172a; color: #fff; text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; padding: 8px; text-align: left; }
+        th:nth-child(2) { text-align: center; }
+        th:nth-child(3), th:nth-child(4) { text-align: right; }
+        .summary-box { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+        .summary-table { width: 320px; border-collapse: collapse; }
+        .summary-table td { padding: 6px 8px; font-size: 12px; }
+        .summary-table td:last-child { text-align: right; font-family: monospace; font-weight: 700; }
+        .summary-table tr.total-row td { border-top: 2px solid #0f172a; font-size: 14px; font-weight: 900; color: #0f172a; padding-top: 10px; }
+        .legal-notice { border-top: 1px dashed #cbd5e1; padding-top: 16px; font-size: 10px; color: #64748b; text-align: center; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">
+            <h1>JHOANES BAKERY & WHOLESALE</h1>
+            <p>3304 Broadway, Astoria, NY 11106 • Tel: (718) 555-0199</p>
+            <p>NYS Certificate of Authority • Wholesale Bakery Division</p>
+        </div>
+        <div class="invoice-meta">
+            <h2>FACTURA COMERCIAL</h2>
+            <p><b>No:</b> INV-${order.id.slice(0, 8).toUpperCase()}</p>
+            <p><b>Fecha:</b> ${orderDate}</p>
+            <p><b>Vencimiento:</b> ${order.payment_due_date || 'Inmediato'}</p>
+            <p><b>Estado:</b> <span style="text-transform: uppercase; font-weight: bold;">${order.payment_status === 'paid' ? 'PAGADO / PAID' : 'PENDIENTE / UNPAID'}</span></p>
+        </div>
+    </div>
+
+    <div class="parties">
+        <div class="party">
+            <h3>Emisor (Proveedor):</h3>
+            <p>Jhoanes Bakery Wholesale LLC</p>
+            <p>Astoria, Queens, NY 11106</p>
+            <p>accounting@jhoanes.com</p>
+        </div>
+        <div class="party">
+            <h3>Facturado a (Cliente B2B):</h3>
+            <p>${clientName}</p>
+            ${clientPhone ? `<p>Tel: ${clientPhone}</p>` : ''}
+            <p>${order.address ? `${order.address.address}, ${order.address.city || 'NY'}` : (order.delivery_address_text || 'Entrega en tienda (Pick Up)')}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Descripción del Producto</th>
+                <th>Cant</th>
+                <th>Precio Unit</th>
+                <th>Importe</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${itemsRows}
+        </tbody>
+    </table>
+
+    <div class="summary-box">
+        <table class="summary-table">
+            <tr>
+                <td>Subtotal Mercancía:</td>
+                <td>$${itemsTotal.toFixed(2)}</td>
+            </tr>
+            <tr>
+                <td>Cargo por Flete / Delivery:</td>
+                <td>+$${deliveryFee.toFixed(2)}</td>
+            </tr>
+            <tr style="background: #f1f5f9; border-radius: 6px;">
+                <td>
+                    <b>Processing Fee:</b><br/>
+                    <small style="color: #64748b; font-size: 9px;">${feeMethod} (Comisión de pasarela no absorbida)</small>
+                </td>
+                <td style="color: #0f172a;">+$${feeAmount.toFixed(2)}</td>
+            </tr>
+            <tr class="total-row">
+                <td>TOTAL FACTURADO:</td>
+                <td style="color: #b45309;">$${grandTotal.toFixed(2)}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="legal-notice">
+        <p><b>Desglose Legal y Contable:</b> De conformidad con la normativa de transparencia comercial del Estado de Nueva York, las comisiones de procesamiento de pagos (3.5% en tarjetas de crédito/débito o 0.8% con tope de $5.00 en transferencias ACH) se desglosan explícitamente y no son absorbidas en ventas comerciales al por mayor.</p>
+        <p>Gracias por su preferencia comercial • Jhoanes Bakery & Wholesale</p>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>`;
+        const w = window.open('', '_blank', 'width=900,height=800');
+        if (w) {
+            w.document.write(html);
+            w.document.close();
         }
     };
 
@@ -222,6 +384,27 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                 ))}
 
                                 <div className="pt-6 border-t border-border space-y-3">
+                                    <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                        <span>Subtotal</span>
+                                        <span className="font-bold text-foreground font-mono">
+                                            ${(items.reduce((acc: number, item: any) => acc + (Number(item.price_at_time || item.product?.price || 0) * Number(item.quantity || 1)), 0)).toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                        <span>{locale === 'en' ? 'Freight / Delivery Fee' : 'Flete / Delivery'}</span>
+                                        <span className="font-bold text-foreground font-mono">+${Number(order.delivery_fee_charged || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                        <div className="flex flex-col">
+                                            <span>Processing Fee</span>
+                                            {order.fee_method && (
+                                                <span className="text-[9px] text-slate-500 font-medium">({order.fee_method})</span>
+                                            )}
+                                        </div>
+                                        <span className={`font-bold font-mono ${Number(order.fee_amount || 0) > 0 ? 'text-amber-700' : 'text-emerald-600'}`}>
+                                            {Number(order.fee_amount || 0) > 0 ? `+$${Number(order.fee_amount).toFixed(2)}` : '$0.00'}
+                                        </span>
+                                    </div>
                                     {order.tax_exempt ? (
                                         <div className="flex justify-between items-center text-xs font-bold text-emerald-700 bg-emerald-50/80 px-3 py-2 rounded-xl border border-emerald-200">
                                             <span>NY Sales Tax (ST-120 Exento)</span>
@@ -240,10 +423,9 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                             {order.tax_legend}
                                         </div>
                                     )}
-
-                                    <div className="flex justify-between items-center text-sm font-medium text-muted-foreground pt-1">
+                                    <div className="flex justify-between items-center text-sm font-black pt-2 border-t border-border">
                                         <span>Total</span>
-                                        <span className="text-lg font-black text-primary">${(Number(order.total) || 0).toFixed(2)}</span>
+                                        <span className="text-xl font-black text-primary font-mono">${(Number(order.total) || 0).toFixed(2)}</span>
                                     </div>
 
                                     {/* Financial Status Badges & Settlement Action */}
@@ -343,11 +525,134 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                 <Link href="/orders" className="w-full flex items-center justify-center gap-2 py-4 bg-secondary text-primary hover:bg-primary/10 transition-all rounded-2xl font-bold text-sm">
                                     <Receipt size={18} /> {t.orders.viewMyOrders}
                                 </Link>
+
+                                <button
+                                    data-testid="print-invoice-btn"
+                                    onClick={handlePrintInvoice}
+                                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                                >
+                                    <Printer size={16} className="text-slate-700" />
+                                    {locale === 'en' ? 'Print / Download Official Invoice' : 'Imprimir / Descargar Factura Legal'}
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
+
+            {/* Settlement Payment Method Selection Modal (TASK-47-03) */}
+            {settlementMethodModalOpen && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-[2rem] p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 relative">
+                        <button
+                            onClick={() => setSettlementMethodModalOpen(false)}
+                            className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                <CreditCard size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-slate-900">
+                                    {locale === 'en' ? 'Settle Credit Invoice' : 'Liquidar Factura a Crédito'}
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                    {locale === 'en' ? 'Select settlement payment method (Processing fees apply)' : 'Selecciona método de pago (Comisiones de pasarela aplicables)'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Balance display */}
+                        {(() => {
+                            const bal = Math.max(0, (Number(order.total) || 0) - (Number(order.refunded_amount) || 0));
+                            const fee = calculateProcessingFee(bal, selectedSettlementMethod);
+                            const totalToPay = Math.round((bal + fee) * 100) / 100;
+
+                            return (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {/* Card Option */}
+                                        <div
+                                            data-testid="settle-method-card"
+                                            onClick={() => setSelectedSettlementMethod('STRIPE_CARD')}
+                                            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                                selectedSettlementMethod === 'STRIPE_CARD'
+                                                    ? 'border-primary bg-primary/5 shadow-sm'
+                                                    : 'border-slate-200 hover:border-slate-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                                    <CreditCard size={14} className="text-primary" />
+                                                    {locale === 'en' ? 'Card (Stripe)' : 'Tarjeta de Crédito'}
+                                                </span>
+                                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">+3.5%</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {locale === 'en' ? 'Instant processing fee: 3.5%' : 'Comisión pasarela: 3.5%'}
+                                            </p>
+                                        </div>
+
+                                        {/* ACH Option */}
+                                        <div
+                                            data-testid="settle-method-ach"
+                                            onClick={() => setSelectedSettlementMethod('ACH')}
+                                            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                                selectedSettlementMethod === 'ACH'
+                                                    ? 'border-emerald-600 bg-emerald-50/50 shadow-sm'
+                                                    : 'border-slate-200 hover:border-slate-300'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                                    <Building2 size={14} className="text-emerald-700" />
+                                                    {locale === 'en' ? 'ACH Debit' : 'ACH Bancario'}
+                                                </span>
+                                                <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">0.8% máx $5</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {locale === 'en' ? '0.8% rate capped at $5.00' : '0.8% con tope máximo de $5.00'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Breakdown formula */}
+                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-muted-foreground">{locale === 'en' ? 'Invoice Balance:' : 'Saldo de Factura:'}</span>
+                                            <span className="font-bold font-mono text-slate-900">${bal.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-muted-foreground">{locale === 'en' ? 'Processing Fee:' : 'Processing Fee (Comisión):'}</span>
+                                            <span className="font-bold font-mono text-amber-700">+${fee.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm font-black pt-2 border-t border-slate-200">
+                                            <span className="text-slate-900">{locale === 'en' ? 'Total to Pay:' : 'Total a Pagar:'}</span>
+                                            <span className="text-base text-primary font-mono">${totalToPay.toFixed(2)}</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 font-mono text-center pt-1 border-t border-slate-200/60">
+                                            Saldo (${bal.toFixed(2)}) + Processing Fee (${fee.toFixed(2)}) = Total (${totalToPay.toFixed(2)})
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        data-testid="confirm-settlement-btn"
+                                        onClick={() => executeSettlement(selectedSettlementMethod)}
+                                        disabled={isInitiatingPayment}
+                                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                    >
+                                        {isInitiatingPayment ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                                        {locale === 'en' ? 'Proceed to Payment Gateway' : 'Proceder al Pago con Comisión'}
+                                    </button>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+            )}
 
             {/* In-App Stripe Settlement Modal */}
             {settlementModalOpen && settlementClientSecret && (

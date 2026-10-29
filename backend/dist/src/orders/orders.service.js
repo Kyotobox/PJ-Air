@@ -24,6 +24,7 @@ const address_entity_1 = require("../addresses/address.entity");
 const zones_service_1 = require("../zones/zones.service");
 const mail_service_1 = require("../mail/mail.service");
 const credit_service_1 = require("../credit/credit.service");
+const fee_calculator_service_1 = require("../payments/fee-calculator.service");
 let OrdersService = class OrdersService {
     orderRepository;
     orderItemRepository;
@@ -269,7 +270,17 @@ let OrdersService = class OrdersService {
             appliedPaymentDueDate = null;
         }
         this.validateCutoffTime(appliedDeliveryDate);
-        const packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
+        const feeMethod = (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card')
+            ? 'STRIPE_CARD'
+            : (appliedPaymentMethod === 'ach' || appliedPaymentMethod === 'ach_debit')
+                ? 'ACH'
+                : String(appliedPaymentMethod || '').toUpperCase();
+        let feeAmount = fee_calculator_service_1.FeeCalculatorService.calculateFee(itemsTotal, feeMethod);
+        if (orderData.fee_amount !== undefined && orderData.fee_amount !== null) {
+            feeAmount = Number(orderData.fee_amount);
+        }
+        const appliedFeeMethod = orderData.fee_method || feeMethod;
+        let packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
         let packagingDiscount = 0;
         if (appliedPaymentMethod === 'zelle') {
             if (!appliedZelleReference) {
@@ -285,10 +296,17 @@ let OrdersService = class OrdersService {
             appliedPaymentStatus = 'pending_zelle_verification';
             packagingDiscount = packagingFee;
         }
-        else if (appliedPaymentMethod === 'stripe') {
+        else if (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card') {
+            packagingDiscount = 0;
+        }
+        else if (appliedPaymentMethod === 'ach' || appliedPaymentMethod === 'ach_debit') {
+            packagingFee = feeAmount;
             packagingDiscount = 0;
         }
         else if (appliedPaymentMethod === 'credit') {
+            packagingDiscount = packagingFee;
+        }
+        else if (appliedPaymentMethod === 'check' || appliedPaymentMethod === 'cash') {
             packagingDiscount = packagingFee;
         }
         let deliveryFee = 0;
@@ -403,6 +421,8 @@ let OrdersService = class OrdersService {
                 zelle_reference: appliedZelleReference,
                 packaging_fee: packagingFee,
                 packaging_discount: packagingDiscount,
+                fee_amount: feeAmount,
+                fee_method: appliedFeeMethod,
                 delivery_fee_charged: deliveryFee,
                 payment_status: appliedPaymentStatus,
                 tax_amount: appliedTaxAmount,
@@ -472,6 +492,12 @@ let OrdersService = class OrdersService {
         }
         if (updateData.refund_reason !== undefined) {
             order.refund_reason = updateData.refund_reason;
+        }
+        if (updateData.fee_amount !== undefined) {
+            order.fee_amount = Number(updateData.fee_amount);
+        }
+        if (updateData.fee_method !== undefined) {
+            order.fee_method = updateData.fee_method;
         }
         if (motivo) {
             const originalLines = (order.items || []).map(item => `${item.quantity} Unidades de ${item.product?.name || 'Producto'}, precio unitario: ${item.price_at_time}, subtotal: ${(item.quantity * item.price_at_time).toFixed(2)}`).join('; ');

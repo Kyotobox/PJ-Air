@@ -4,6 +4,7 @@ import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '../config';
 import { OrdersService } from '../orders/orders.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { FeeCalculatorService } from './fee-calculator.service';
 
 @Injectable()
 export class PaymentsService {
@@ -327,6 +328,7 @@ export class PaymentsService {
       }
 
       if (paymentMethodType === 'us_bank_account') {
+        delete (intentParams as any).automatic_payment_methods;
         (intentParams as any).payment_method_types = ['us_bank_account'];
       }
 
@@ -348,17 +350,29 @@ export class PaymentsService {
     orderId?: string;
     clientId?: string;
     clientEmail?: string;
+    paymentMethod?: string;
   }): Promise<{
     url: string;
     clientSecret?: string;
     paymentIntentId?: string;
     amount?: number;
+    balance?: number;
+    feeAmount?: number;
+    feeMethod?: string;
     totalDebt?: number;
     orderId?: string;
     orderCount?: number;
     customerEmail?: string;
   }> {
-    const { orderId, clientId, clientEmail } = data;
+    const { orderId, clientId, clientEmail, paymentMethod } = data;
+
+    // Normalize payment method for fee calculation (TASK-47-03)
+    const rawMethod = (paymentMethod || 'STRIPE_CARD').trim().toUpperCase();
+    const feeMethod = (rawMethod === 'ACH' || rawMethod === 'ACH_DEBIT' || rawMethod === 'US_BANK_ACCOUNT')
+      ? 'ACH'
+      : (rawMethod === 'CARD' || rawMethod === 'STRIPE' || rawMethod === 'STRIPE_CARD' || rawMethod === 'CREDIT_CARD')
+        ? 'STRIPE_CARD'
+        : rawMethod;
 
     // Single order settlement
     if (orderId) {
@@ -373,41 +387,81 @@ export class PaymentsService {
         throw new BadRequestException(`Order ${orderId} is already fully paid or refunded`);
       }
 
+      // TASK-47-03: Calculate processing fee without absorbing it
+      const feeAmount = FeeCalculatorService.calculateFee(balance, feeMethod);
+      const amountToPay = Math.round((balance + feeAmount) * 100) / 100;
+
       const email = order.user?.email || clientEmail || 'client@jhoanes.com';
 
       // Create PaymentIntent for in-app Stripe Elements checkout
       const intent = await this.createPaymentIntent({
-        amount: balance,
+        amount: amountToPay,
         orderId: order.id,
         customerEmail: email,
-        description: `Liquidación Factura #${order.id.slice(0, 8)} - Panadería Jhoanes Wholesale`,
+        description: `Liquidación Factura #${order.id.slice(0, 8)} (Saldo: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Panadería Jhoanes Wholesale`,
+        paymentMethodType: feeMethod === 'ACH' ? 'us_bank_account' : undefined,
       });
+
+      // Update intent metadata to carry fee details
+      if (this.stripe && intent.paymentIntentId) {
+        try {
+          await this.stripe.paymentIntents.update(intent.paymentIntentId, {
+            metadata: {
+              orderId: order.id,
+              type: 'settlement',
+              customerEmail: email,
+              balance: String(balance),
+              feeAmount: String(feeAmount),
+              feeMethod: feeMethod,
+            },
+          });
+        } catch (_) {}
+      }
 
       let checkoutUrl = `https://testing.jhoanes.com/orders/${order.id}`;
 
       if (this.stripe) {
         try {
+          const lineItems: any[] = [
+            {
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: `Liquidación Factura #${order.id.slice(0, 8)}`,
+                  description: `Pago de saldo principal - Pedido #${order.id.slice(0, 8)}`,
+                },
+                unit_amount: Math.round(balance * 100),
+              },
+              quantity: 1,
+            },
+          ];
+
+          if (feeAmount > 0) {
+            lineItems.push({
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, máx $5.00' : '3.5% Tarjeta'})`,
+                  description: `Comisión de procesamiento bancario/pasarela`,
+                },
+                unit_amount: Math.round(feeAmount * 100),
+              },
+              quantity: 1,
+            });
+          }
+
           const session = await this.stripe.checkout.sessions.create({
             mode: 'payment',
             customer_email: email,
             client_reference_id: order.id,
-            line_items: [
-              {
-                price_data: {
-                  currency: 'usd',
-                  product_data: {
-                    name: `Liquidación Factura #${order.id.slice(0, 8)}`,
-                    description: `Pago de cartera B2B - Pedido #${order.id}`,
-                  },
-                  unit_amount: Math.round(balance * 100),
-                },
-                quantity: 1,
-              },
-            ],
+            line_items: lineItems,
             metadata: {
               orderId: order.id,
               type: 'settlement',
               customerEmail: email,
+              balance: String(balance),
+              feeAmount: String(feeAmount),
+              feeMethod: feeMethod,
             },
             success_url: `https://testing.jhoanes.com/orders/${order.id}?settled=true`,
             cancel_url: `https://testing.jhoanes.com/orders/${order.id}?cancelled=true`,
@@ -422,7 +476,10 @@ export class PaymentsService {
         url: checkoutUrl,
         clientSecret: intent.clientSecret,
         paymentIntentId: intent.paymentIntentId,
-        amount: balance,
+        amount: amountToPay,
+        balance: balance,
+        feeAmount: feeAmount,
+        feeMethod: feeMethod,
         orderId: order.id,
         customerEmail: email,
       };
@@ -462,30 +519,52 @@ export class PaymentsService {
       };
     }
 
+    const feeAmount = FeeCalculatorService.calculateFee(roundedDebt, feeMethod);
+    const amountToPay = Math.round((roundedDebt + feeAmount) * 100) / 100;
+
     let checkoutUrl = `https://testing.jhoanes.com/orders?pay_debt=${user.id}`;
     if (this.stripe) {
       try {
+        const lineItems: any[] = [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Liquidación Cartera B2B - ${user.profile?.full_name || user.email}`,
+                description: `Liquidación de ${pendingOrders.length} orden(es) de crédito comercial pendientes`,
+              },
+              unit_amount: Math.round(roundedDebt * 100),
+            },
+            quantity: 1,
+          },
+        ];
+
+        if (feeAmount > 0) {
+          lineItems.push({
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, máx $5.00' : '3.5% Tarjeta'})`,
+                description: `Comisión de procesamiento bancario/pasarela`,
+              },
+              unit_amount: Math.round(feeAmount * 100),
+            },
+            quantity: 1,
+          });
+        }
+
         const session = await this.stripe.checkout.sessions.create({
           mode: 'payment',
           customer_email: user.email,
           client_reference_id: user.id,
-          line_items: [
-            {
-              price_data: {
-                currency: 'usd',
-                product_data: {
-                  name: `Liquidación Cartera B2B - ${user.profile?.full_name || user.email}`,
-                  description: `Liquidación de ${pendingOrders.length} orden(es) de crédito comercial pendientes`,
-                },
-                unit_amount: Math.round(roundedDebt * 100),
-              },
-              quantity: 1,
-            },
-          ],
+          line_items: lineItems,
           metadata: {
             userId: user.id,
             type: 'account_settlement',
             orderIds: pendingOrders.map((o: any) => o.id).join(','),
+            balance: String(roundedDebt),
+            feeAmount: String(feeAmount),
+            feeMethod: feeMethod,
           },
           success_url: `https://testing.jhoanes.com/orders?settled=true`,
           cancel_url: `https://testing.jhoanes.com/orders?cancelled=true`,
@@ -499,6 +578,9 @@ export class PaymentsService {
     return {
       url: checkoutUrl,
       totalDebt: roundedDebt,
+      amount: amountToPay,
+      feeAmount: feeAmount,
+      feeMethod: feeMethod,
       orderCount: pendingOrders.length,
       customerEmail: user.email,
     };
@@ -629,10 +711,17 @@ export class PaymentsService {
       const orderId = paymentIntent?.metadata?.orderId;
       if (orderId) {
         this.logger.log(`Reconciling order ${orderId} as PAID via Webhook.`);
-        await this.ordersService.update(orderId, {
+        const updatePayload: any = {
           payment_status: 'paid',
           stripe_payment_id: paymentIntent.id,
-        }, 'admin');
+        };
+        if (paymentIntent?.metadata?.feeAmount) {
+          updatePayload.fee_amount = Number(paymentIntent.metadata.feeAmount);
+        }
+        if (paymentIntent?.metadata?.feeMethod) {
+          updatePayload.fee_method = paymentIntent.metadata.feeMethod;
+        }
+        await this.ordersService.update(orderId, updatePayload, 'admin');
 
         // TASK-37-01: Disparar recibo de compra tras conciliar webhook payment_intent.succeeded
         const mailSvc = this.mailService;
@@ -663,10 +752,17 @@ export class PaymentsService {
 
       if (orderId && session.metadata?.type === 'settlement') {
         this.logger.log(`Checkout session completed for settlement of order ${orderId}`);
-        await this.ordersService.update(orderId, {
+        const updatePayload: any = {
           payment_status: 'paid',
           stripe_payment_id: paymentIntentId,
-        }, 'admin');
+        };
+        if (session.metadata?.feeAmount) {
+          updatePayload.fee_amount = Number(session.metadata.feeAmount);
+        }
+        if (session.metadata?.feeMethod) {
+          updatePayload.fee_method = session.metadata.feeMethod;
+        }
+        await this.ordersService.update(orderId, updatePayload, 'admin');
 
         if (mailSvc) {
           (async () => {
@@ -707,10 +803,17 @@ export class PaymentsService {
         }
       } else if (orderId) {
         this.logger.log(`Checkout session completed for order ${orderId}`);
-        await this.ordersService.update(orderId, {
+        const updatePayload: any = {
           payment_status: 'paid',
           stripe_payment_id: paymentIntentId,
-        }, 'admin');
+        };
+        if (session.metadata?.feeAmount) {
+          updatePayload.fee_amount = Number(session.metadata.feeAmount);
+        }
+        if (session.metadata?.feeMethod) {
+          updatePayload.fee_method = session.metadata.feeMethod;
+        }
+        await this.ordersService.update(orderId, updatePayload, 'admin');
 
         if (mailSvc) {
           (async () => {

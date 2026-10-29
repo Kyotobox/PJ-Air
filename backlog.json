@@ -3,7 +3,7 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S47",
+  "current_sprint": "S48",
   "current_task": "TASK-44-01",
   "sprints": [
     {
@@ -250,7 +250,7 @@
     {
       "id": "S47",
       "name": "Sprint 47: Processing Fees Transversales",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-01",
       "goal": "Aplicar recargos transparentes por m\u00e9todo de pago (Tarjeta 3.5%, ACH 0.8% tope $5, Zelle/Cheque 0%) tanto en checkout como en liquidaci\u00f3n de facturas a cr\u00e9dito.",
       "tasks": [
@@ -258,50 +258,50 @@
           "id": "TASK-47-01",
           "label": "DOMAIN/FEE-CALCULATOR-SERVICE",
           "desc": "Servicio determinista FeeCalculatorService.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-47-02",
           "label": "UI/CHECKOUT-FEES-BREAKDOWN",
           "desc": "Desglose din\u00e1mico de comisiones en Checkout.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-47-03",
           "label": "DOMAIN/CREDIT-SETTLEMENT-FEE",
           "desc": "Aplicar fee en liquidaci\u00f3n diferida de facturas a cr\u00e9dito.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-47-04",
           "label": "DOMAIN/FEE-PERSISTENCE-AUDIT",
           "desc": "Persistir fee_amount y fee_method en Order.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-47-05",
           "label": "UI/INVOICE-DOWNLOAD-BREAKDOWN",
           "desc": "Invoices descargables con desglose legal contable.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-47-06",
           "label": "TEST/FEE-CALCULATOR-SUITE",
           "desc": "Suite de pruebas unitarias para FeeCalculatorService.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-47-07",
           "label": "DEPLOY/TESTING-SYNC",
           "desc": "Compilaci\u00f3n limpia de frontend y backend, verificaci\u00f3n de integridad y sincronizaci\u00f3n de backlog.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     },
     {
       "id": "S48",
       "name": "Sprint 48: Dashboard B2B y Motor de Fletes por Millas desde Astoria",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "start_date": "2026-11-02",
       "goal": "Dashboard comercial para clientes mayoristas en /orders y motor de fletes por millas de van comercial desde Astoria NY.",
       "tasks": [

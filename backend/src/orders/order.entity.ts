@@ -35,6 +35,12 @@ export class Order {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   delivery_fee_charged: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  fee_amount: number;
+
+  @Column({ nullable: true })
+  fee_method: string;
+
   @Column({ nullable: true })
   stripe_payment_id: string;
 

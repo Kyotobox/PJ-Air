@@ -6,7 +6,7 @@ import {
     Calendar, MapPin, CreditCard, ChevronRight, ShoppingBag,
     Loader2, Plus, Clock, Minus, Store, Truck, Home,
     ChevronDown, Check, AlertCircle, BookmarkPlus, Bookmark,
-    Map as MapIcon, RotateCcw, Search, X
+    Map as MapIcon, RotateCcw, Search, X, Building2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -16,6 +16,7 @@ import { api } from '@/lib/api';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
+import { calculateProcessingFee } from '@/lib/fee-calculator';
 
 // MIN_ORDER_AMOUNT was migrated to dynamic configuration loaded from the backend API
 
@@ -290,7 +291,7 @@ export default function CheckoutPage() {
     const [termsAccepted, setTermsAccepted] = useState(false);
 
     // Payment method state
-    const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'zelle' | 'credit'>('stripe');
+    const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'ach' | 'zelle' | 'credit'>('stripe');
     const [zelleReference, setZelleReference] = useState('');
 
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -460,11 +461,13 @@ export default function CheckoutPage() {
         ? Math.round((Number(resolvedZone.min_free_delivery_amount) - discountedSubtotal + Number.EPSILON) * 100) / 100
         : 0;
 
-    // Packaging & Handling Fee (3.5%) & Direct Payment (Zelle) / Credit Bonus
-    const packagingFee = Math.round(discountedSubtotal * 0.035 * 100) / 100;
-    const packagingDiscount = (paymentMethod === 'zelle' || paymentMethod === 'credit') ? packagingFee : 0;
+    // TASK-47-02: Processing Fee calculation via pure calculateProcessingFee
+    const feeMethod = paymentMethod === 'stripe' ? 'STRIPE_CARD' : paymentMethod === 'ach' ? 'ACH' : paymentMethod.toUpperCase();
+    const processingFee = calculateProcessingFee(discountedSubtotal, feeMethod);
+    const packagingFee = processingFee;
+    const packagingDiscount = 0;
 
-    const finalTotal = Math.round((discountedSubtotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
+    const finalTotal = Math.round((discountedSubtotal + processingFee + deliveryFee + Number.EPSILON) * 100) / 100;
     const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + Number.EPSILON) * 100) / 100;
     const subtotal = rawSubtotal;
 
@@ -616,6 +619,8 @@ export default function CheckoutPage() {
                 deliveryDate: rawDeliveryDate || deliveryDate,
                 paymentDueDate: paymentDate,
                 payment_method: paymentMethod,
+                fee_amount: processingFee,
+                fee_method: feeMethod,
                 zelle_reference: paymentMethod === 'zelle' ? zelleReference.trim() : null,
                 items: cart.map(item => ({
                     productId: item.id,
@@ -627,16 +632,17 @@ export default function CheckoutPage() {
             if (paymentMethod === 'zelle') {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
-            } else if (paymentMethod === 'credit' || (isCreditAccount && paymentMethod !== 'stripe')) {
+            } else if (paymentMethod === 'credit' || (isCreditAccount && paymentMethod !== 'stripe' && paymentMethod !== 'ach')) {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
             } else {
-                // Cash customer: launch Stripe payment modal
+                // Cash / Card / ACH customer: launch Stripe payment modal
                 try {
                     const intentRes = await api.post('/payments/create-intent', {
                         amount: finalTotal,
                         orderId: order.id,
                         customerEmail: user.email,
+                        paymentMethodType: paymentMethod === 'ach' ? 'us_bank_account' : undefined,
                     }) as any;
 
                     if (intentRes && intentRes.clientSecret) {
@@ -943,8 +949,9 @@ export default function CheckoutPage() {
                             </p>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                {/* Stripe option */}
+                                {/* Stripe Card option */}
                                 <div 
+                                    data-testid="payment-method-stripe"
                                     onClick={() => setPaymentMethod('stripe')}
                                     className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
                                         paymentMethod === 'stripe'
@@ -957,9 +964,14 @@ export default function CheckoutPage() {
                                             <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center font-bold">
                                                 <CreditCard size={18} />
                                             </div>
-                                            <span className="font-bold text-sm text-slate-800">
-                                                {lbl('Tarjeta de Crédito / Débito', 'Credit / Debit Card')}
-                                            </span>
+                                            <div>
+                                                <span className="font-bold text-sm text-slate-800">
+                                                    {lbl('Tarjeta de Crédito / Débito', 'Credit / Debit Card')}
+                                                </span>
+                                                <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-800 text-[9px] font-black uppercase rounded-full">
+                                                    +3.5% Fee
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                                             paymentMethod === 'stripe' ? 'border-primary' : 'border-slate-300'
@@ -968,12 +980,48 @@ export default function CheckoutPage() {
                                         </div>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                        {lbl('Pasarela Stripe instantánea (+3.5% Cargo de empaque y logística).', 'Instant Stripe gateway (+3.5% Packaging & logistics fee).')}
+                                        {lbl('Pasarela instantánea Stripe (+3.5% Processing Fee).', 'Instant Stripe gateway (+3.5% Processing Fee).')}
+                                    </p>
+                                </div>
+
+                                {/* ACH Direct Debit option */}
+                                <div 
+                                    data-testid="payment-method-ach"
+                                    onClick={() => setPaymentMethod('ach')}
+                                    className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        paymentMethod === 'ach'
+                                            ? 'border-emerald-600 bg-emerald-50/50 shadow-sm'
+                                            : 'border-border/70 hover:border-border bg-white'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                                                <Building2 size={18} />
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-sm text-slate-800">
+                                                    {lbl('Transferencia ACH Direct Debit', 'ACH Direct Debit')}
+                                                </span>
+                                                <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full">
+                                                    0.8% (Tope $5.00)
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                            paymentMethod === 'ach' ? 'border-emerald-600' : 'border-slate-300'
+                                        }`}>
+                                            {paymentMethod === 'ach' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />}
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        {lbl('Débito directo en cuenta bancaria comercial (Tarifa plana de 0.8%, tope máx $5.00).', 'Direct bank account debit (0.8% fee, maximum $5.00 cap).')}
                                     </p>
                                 </div>
 
                                 {/* Zelle option */}
                                 <div 
+                                    data-testid="payment-method-zelle"
                                     onClick={() => setPaymentMethod('zelle')}
                                     className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
                                         paymentMethod === 'zelle'
@@ -991,7 +1039,7 @@ export default function CheckoutPage() {
                                                     {lbl('Transferencia Zelle B2B', 'Zelle B2B Transfer')}
                                                 </span>
                                                 <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-[9px] font-black uppercase rounded-full">
-                                                    -3.5% Bonificación
+                                                    $0.00 Fee (0%)
                                                 </span>
                                             </div>
                                         </div>
@@ -1002,7 +1050,7 @@ export default function CheckoutPage() {
                                         </div>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                        {lbl('Pago directo interbancario con bonificación del 3.5% (Cero recargo).', 'Direct bank transfer with 3.5% bonus (Zero surcharge).')}
+                                        {lbl('Pago directo interbancario sin comisiones de procesamiento ($0.00).', 'Direct bank transfer with zero processing fees ($0.00).')}
                                     </p>
                                 </div>
                             </div>
@@ -1253,33 +1301,36 @@ export default function CheckoutPage() {
                                         </div>
                                     )}
 
-                                    {/* Packaging & Handling Fee (3.5%) */}
-                                    {packagingFee > 0 && (
-                                        <div className="flex justify-between items-center text-xs mb-1">
-                                            <span className="text-muted-foreground">{lbl('Cargo de Empaque y Logística (3.5%)', 'Packaging & Handling Fee (3.5%)')}</span>
-                                            <span className="font-bold text-slate-700">+${packagingFee.toFixed(2)}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Direct Payment (Zelle) Bonus */}
-                                    {paymentMethod === 'zelle' && packagingDiscount > 0 && (
-                                        <div className="flex justify-between items-center text-xs mb-1 text-green-700 bg-green-50 p-2 rounded-xl border border-green-200">
-                                            <span className="font-black uppercase tracking-widest text-[9px]">
-                                                {lbl('Bonificación Pago Directo Zelle (-3.5%)', 'Zelle Direct Payment Bonus (-3.5%)')}
+                                    {/* Processing Fee Line */}
+                                    <div className="flex justify-between items-center text-xs mb-1">
+                                        <div className="flex flex-col">
+                                            <span className="text-muted-foreground">{lbl('Processing Fee', 'Processing Fee')}</span>
+                                            <span className="text-[10px] text-slate-500 font-semibold">
+                                                {paymentMethod === 'stripe'
+                                                    ? lbl('Tarjeta de Crédito/Débito (3.5%)', 'Credit/Debit Card (3.5%)')
+                                                    : paymentMethod === 'ach'
+                                                        ? lbl('ACH Direct Debit (0.8%, máx $5.00)', 'ACH Direct Debit (0.8%, max $5.00)')
+                                                        : lbl(`${paymentMethod.toUpperCase()} (0.0% Exento)`, `${paymentMethod.toUpperCase()} (0.0% Exempt)`)}
                                             </span>
-                                            <span className="font-black">-${packagingDiscount.toFixed(2)}</span>
                                         </div>
-                                    )}
+                                        <span className={`font-bold font-mono ${processingFee > 0 ? 'text-slate-800' : 'text-emerald-600'}`}>
+                                            {processingFee > 0 ? `+$${processingFee.toFixed(2)}` : '$0.00'}
+                                        </span>
+                                    </div>
 
-                                    {/* Commercial Credit Exemption */}
-                                    {paymentMethod === 'credit' && packagingDiscount > 0 && (
-                                        <div className="flex justify-between items-center text-xs mb-1 text-blue-700 bg-blue-50 p-2 rounded-xl border border-blue-200">
-                                            <span className="font-black uppercase tracking-widest text-[9px]">
-                                                {lbl('Exención Línea de Crédito (-3.5%)', 'Credit Line Exemption (-3.5%)')}
-                                            </span>
-                                            <span className="font-black">-${packagingDiscount.toFixed(2)}</span>
+                                    {/* Real-time Dynamic Fees Breakdown: Subtotal + Flete + Processing Fee ($X.XX) = Total (TASK-47-02) */}
+                                    <div
+                                        data-testid="checkout-fee-breakdown-formula"
+                                        className="my-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-sm"
+                                    >
+                                        <div className="text-[10px] uppercase tracking-wider font-black text-slate-500 mb-1 flex items-center justify-between">
+                                            <span>{lbl('Desglose Transversal de Pagos', 'Dynamic Fees Breakdown')}</span>
+                                            <span className="text-[9px] text-primary lowercase font-mono">live</span>
                                         </div>
-                                    )}
+                                        <div className="text-[11px] font-mono font-bold text-slate-800 tracking-tight leading-relaxed">
+                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Flete (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)}) = Total (${finalTotal.toFixed(2)})</span>
+                                        </div>
+                                    </div>
 
                                     {totalDiscount > 0 && (
                                         <div className="flex justify-between items-center text-xs mb-3 text-green-600 bg-green-50/50 p-2 rounded-xl border border-green-100/50">

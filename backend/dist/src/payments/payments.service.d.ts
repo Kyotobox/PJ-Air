@@ -44,11 +44,15 @@ export declare class PaymentsService {
         orderId?: string;
         clientId?: string;
         clientEmail?: string;
+        paymentMethod?: string;
     }): Promise<{
         url: string;
         clientSecret?: string;
         paymentIntentId?: string;
         amount?: number;
+        balance?: number;
+        feeAmount?: number;
+        feeMethod?: string;
         totalDebt?: number;
         orderId?: string;
         orderCount?: number;

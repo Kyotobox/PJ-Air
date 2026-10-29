@@ -594,5 +594,68 @@ describe('OrdersService', () => {
       );
     });
   });
+
+  describe('Sprint 47: Processing Fees Persistence and Audit (TASK-47-04)', () => {
+    it('should calculate and persist fee_amount and fee_method for stripe card orders', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'client-fee-stripe',
+        account_type: 'cash',
+        orders: [],
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
+
+      const createdOrder = { id: 'order-fee-stripe-01', total: 103.50 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      await service.create('client-fee-stripe', {
+        items: [{ productId: 1, quantity: 1 }],
+        delivery_type: 'pickup',
+        payment_method: 'stripe',
+      });
+
+      expect(mockManager.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          payment_method: 'stripe',
+          fee_amount: 3.50,
+          fee_method: 'STRIPE_CARD',
+        }),
+      );
+    });
+
+    it('should calculate and persist fee_amount = 0 and fee_method = "CREDIT" for credit orders', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'client-fee-credit',
+        account_type: 'credit',
+        credit_limit: 1000,
+        orders: [],
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 200 }]);
+
+      const createdOrder = { id: 'order-fee-credit-01', total: 200 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      await service.create('client-fee-credit', {
+        items: [{ productId: 1, quantity: 1 }],
+        delivery_type: 'pickup',
+        payment_method: 'credit',
+      });
+
+      expect(mockManager.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          payment_method: 'credit',
+          fee_amount: 0.00,
+          fee_method: 'CREDIT',
+        }),
+      );
+    });
+  });
 });
 

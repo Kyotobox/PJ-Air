@@ -12,6 +12,8 @@ export declare class Order {
     packaging_fee: number;
     packaging_discount: number;
     delivery_fee_charged: number;
+    fee_amount: number;
+    fee_method: string;
     stripe_payment_id: string;
     refunded_amount: number;
     refund_reason: string;

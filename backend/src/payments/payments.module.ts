@@ -4,6 +4,7 @@ import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { CheckPaymentsController } from './check-payments.controller';
 import { CheckPaymentsService } from './check-payments.service';
+import { FeeCalculatorService } from './fee-calculator.service';
 import { CheckPayment } from './check-payment.entity';
 import { Order } from '../orders/order.entity';
 import { User } from '../users/user.entity';
@@ -21,7 +22,7 @@ import { CreditModule } from '../credit/credit.module';
     CreditModule,
   ],
   controllers: [PaymentsController, CheckPaymentsController],
-  providers: [PaymentsService, CheckPaymentsService],
-  exports: [PaymentsService, CheckPaymentsService],
+  providers: [PaymentsService, CheckPaymentsService, FeeCalculatorService],
+  exports: [PaymentsService, CheckPaymentsService, FeeCalculatorService],
 })
 export class PaymentsModule {}

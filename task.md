@@ -1,10 +1,11 @@
-# SPRINT S47 - Processing Fees Transversales
-**Objetivo**: Implementar estructura unificada de Processing Fees por método de pago (Stripe 3.5%, ACH 0.8% tope $5.00, otros 0%), desglose dinámico en checkout, facturas y liquidación diferida de crédito.
+# SPRINT S48 - Dashboard B2B y Motor de Fletes por Millas desde Astoria
+**Objetivo**: Dashboard comercial para clientes mayoristas en /orders y motor de fletes por millas de van comercial desde Astoria NY.
 **Estado**: En ejecución por Worker Automa (slot 1)
 
-- [/] **TASK-47-01** [DOMAIN/FEE-CALCULATOR-SERVICE] Servicio determinista FeeCalculatorService con función pura calculateFee.
-- [/] **TASK-47-02** [UI/CHECKOUT-FEES-BREAKDOWN] Desglose dinámico de comisiones en Checkout en tiempo real.
-- [/] **TASK-47-03** [DOMAIN/CREDIT-SETTLEMENT-FEE] Aplicar fee en liquidación diferida de facturas a crédito.
-- [/] **TASK-47-04** [DOMAIN/FEE-PERSISTENCE-AUDIT] Persistir fee_amount y fee_method en Order.
-- [/] **TASK-47-05** [UI/INVOICE-DOWNLOAD-BREAKDOWN] Invoices descargables con desglose legal contable.
-- [/] **TASK-47-06** [TEST/FEE-CALCULATOR-SUITE] Suite de pruebas unitarias para FeeCalculatorService (happy y sad paths).
+- [/] **TASK-48-01** [UI/DASHBOARD-HERO-CREDIT] Tarjetas de Salud Financiera en /orders.
+- [/] **TASK-48-02** [UI/DASHBOARD-METRICS-CARDS] Widgets de consumo y actividad comercial.
+- [/] **TASK-48-03** [UI/MULTI-ORDER-SETTLEMENT-SELECTOR] Selector multi-orden con checkboxes para saldar facturas.
+- [/] **TASK-48-04** [DOMAIN/BATCH-SETTLEMENT-ENDPOINT] Endpoint POST /orders/settle-batch.
+- [/] **TASK-48-05** [UI/FREQUENT-PRODUCTS-CAROUSEL] Carrusel de productos frecuentes con reorden 1-clic.
+- [/] **TASK-48-06** [DOMAIN/FEEDBACK-SUGGESTION-BOX] Entidad Feedback y buzón de sugerencias.
+- [/] **TASK-48-07** [DOMAIN/MILEAGE-FREIGHT-ASTORIA] Motor MileageFreightService con origen en 3304 Broadway, Astoria, NY 11106.

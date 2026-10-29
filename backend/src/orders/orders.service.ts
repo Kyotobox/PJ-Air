@@ -9,6 +9,7 @@ import { Address } from '../addresses/address.entity';
 import { ZonesService } from '../zones/zones.service';
 import { MailService } from '../mail/mail.service';
 import { CreditService } from '../credit/credit.service';
+import { FeeCalculatorService } from '../payments/fee-calculator.service';
 
 @Injectable()
 export class OrdersService {
@@ -305,8 +306,21 @@ export class OrdersService {
     // Validate 12:00 PM cutoff time for next-day deliveries
     this.validateCutoffTime(appliedDeliveryDate);
 
+    // TASK-47-04: Calculate processing fee via FeeCalculatorService
+    const feeMethod = (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card')
+      ? 'STRIPE_CARD'
+      : (appliedPaymentMethod === 'ach' || appliedPaymentMethod === 'ach_debit')
+        ? 'ACH'
+        : String(appliedPaymentMethod || '').toUpperCase();
+
+    let feeAmount = FeeCalculatorService.calculateFee(itemsTotal, feeMethod);
+    if ((orderData as any).fee_amount !== undefined && (orderData as any).fee_amount !== null) {
+      feeAmount = Number((orderData as any).fee_amount);
+    }
+    const appliedFeeMethod = (orderData as any).fee_method || feeMethod;
+
     // Packaging & Handling Fee (3.5%) & Direct Payment Bonus
-    const packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
+    let packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
     let packagingDiscount = 0;
 
     if (appliedPaymentMethod === 'zelle') {
@@ -326,10 +340,15 @@ export class OrdersService {
 
       appliedPaymentStatus = 'pending_zelle_verification';
       packagingDiscount = packagingFee; // Direct payment discount completely offsets fee
-    } else if (appliedPaymentMethod === 'stripe') {
+    } else if (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card') {
       packagingDiscount = 0; // Gateway fee protection
+    } else if (appliedPaymentMethod === 'ach' || appliedPaymentMethod === 'ach_debit') {
+      packagingFee = feeAmount;
+      packagingDiscount = 0;
     } else if (appliedPaymentMethod === 'credit') {
       packagingDiscount = packagingFee; // Credit orders do not pay gateway surcharge
+    } else if (appliedPaymentMethod === 'check' || appliedPaymentMethod === 'cash') {
+      packagingDiscount = packagingFee;
     }
 
     // Precedence Matrix for Delivery Fee:
@@ -455,6 +474,8 @@ export class OrdersService {
         zelle_reference: appliedZelleReference,
         packaging_fee: packagingFee,
         packaging_discount: packagingDiscount,
+        fee_amount: feeAmount,
+        fee_method: appliedFeeMethod,
         delivery_fee_charged: deliveryFee,
         payment_status: appliedPaymentStatus,
         tax_amount: appliedTaxAmount,
@@ -546,6 +567,12 @@ export class OrdersService {
     }
     if (updateData.refund_reason !== undefined) {
       order.refund_reason = updateData.refund_reason;
+    }
+    if (updateData.fee_amount !== undefined) {
+      order.fee_amount = Number(updateData.fee_amount);
+    }
+    if (updateData.fee_method !== undefined) {
+      order.fee_method = updateData.fee_method;
     }
 
     if (motivo) {

@@ -34,11 +34,15 @@ export declare class PaymentsController {
         orderId?: string;
         clientId?: string;
         clientEmail?: string;
+        paymentMethod?: string;
     }, req: any): Promise<{
         url: string;
         clientSecret?: string;
         paymentIntentId?: string;
         amount?: number;
+        balance?: number;
+        feeAmount?: number;
+        feeMethod?: string;
         totalDebt?: number;
         orderId?: string;
         orderCount?: number;

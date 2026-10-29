@@ -64,7 +64,7 @@ export class PaymentsController {
   @Post('create-settlement-link')
   @UseGuards(AuthGuard)
   async createSettlementLink(
-    @Body() body: { orderId?: string; clientId?: string; clientEmail?: string },
+    @Body() body: { orderId?: string; clientId?: string; clientEmail?: string; paymentMethod?: string },
     @Req() req: any,
   ) {
     if (req.user?.role !== 'admin' && body.clientId && body.clientId !== req.user.id) {

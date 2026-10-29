@@ -25,6 +25,8 @@ let Order = class Order {
     packaging_fee;
     packaging_discount;
     delivery_fee_charged;
+    fee_amount;
+    fee_method;
     stripe_payment_id;
     refunded_amount;
     refund_reason;
@@ -86,6 +88,14 @@ __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)
 ], Order.prototype, "delivery_fee_charged", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "fee_amount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Order.prototype, "fee_method", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

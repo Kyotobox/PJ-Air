@@ -41,6 +41,9 @@ interface Order {
     delivery_user?: { id: string; profile?: { full_name?: string; }; };
     address?: { address: string; city: string; };
     delivery_type?: string;
+    fee_amount?: number;
+    fee_method?: string;
+    delivery_fee_charged?: number;
     items?: OrderItem[];
 }
 
@@ -460,6 +463,12 @@ export default function AdminOrdersPage() {
             deliveryLabel = 'Dirección';
             addressInfo = addr;
         }
+        const subtotal = items.reduce((acc, i: any) => acc + (Number(i.price_at_time || i.product?.price || 0) * Number(i.quantity || 1)), 0);
+        const deliveryFee = Number(order.delivery_fee_charged || 0);
+        const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? subtotal * 0.035 : 0));
+        const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXENTO');
+        const grandTotal = Number(order.total) || (subtotal + deliveryFee + feeAmount);
+
         const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Pedido #${order.id.slice(0,8)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -481,20 +490,39 @@ td:nth-child(2){text-align:right}
 .tot{border-top:2px double #333;padding-top:4px;display:flex;justify-content:space-between;font-size:12px;font-weight:900}
 .ft{text-align:center;margin-top:6px;padding-top:3px;border-top:1px dashed #ccc;font-size:7px;color:#999}
 </style></head><body>
-<div class="hd"><h1>JHOANES BAKERY</h1><p>Sistema de Pedidos</p><p>PEDIDO #${order.id.slice(0,8).toUpperCase()}</p><p>${fecha}</p></div>
+<div class="hd"><h1>JHOANES BAKERY & WHOLESALE</h1><p>Sistema de Pedidos y Facturación Legal</p><p>PEDIDO #${order.id.slice(0,8).toUpperCase()}</p><p>${fecha}</p></div>
 <div class="info">
 <div><span class="lb">Cliente:</span><span>${clientName}</span></div>
 ${clientPhone ? `<div><span class="lb">Tel:</span><span>${clientPhone}</span></div>` : ''}
 <div><span class="lb">Entrega:</span><span>${deliveryLabel}</span></div>
 ${addressInfo ? `<div><span class="lb">${deliveryLabel}:</span><span>${addressInfo}</span></div>` : ''}
 <div><span class="lb">Estado:</span><span>${order.status}</span></div>
+<div><span class="lb">Método de Pago:</span><span>${order.payment_method?.toUpperCase() || 'STRIPE'}</span></div>
 </div>
 <table><thead><tr><th>Producto</th><th style="text-align:right">Cant</th></tr></thead><tbody>${categoryRows}</tbody></table>
-<div style="border-top:1px solid #333; margin-top:7px; padding-top:4px; text-align:right; font-weight:bold; font-size:11px">
-    Total productos: ${items.reduce((acc, i) => acc + i.quantity, 0)}
+<div style="border-top:1px solid #333; margin-top:7px; padding-top:4px; text-align:right; font-weight:bold; font-size:10px">
+    Total unidades: ${items.reduce((acc, i) => acc + i.quantity, 0)}
+</div>
+<div style="border-top:1px dashed #333; margin-top:8px; padding-top:6px; font-size:9px">
+    <div style="display:flex; justify-content:space-between; padding:1px 0">
+        <span>Subtotal:</span>
+        <b>$${subtotal.toFixed(2)}</b>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:1px 0">
+        <span>Flete / Delivery:</span>
+        <b>+$${deliveryFee.toFixed(2)}</b>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:1px 0">
+        <span>Processing Fee (${feeMethod}):</span>
+        <b>+$${feeAmount.toFixed(2)}</b>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #333; margin-top:4px; font-size:11px; font-weight:900">
+        <span>TOTAL FACTURA:</span>
+        <b>$${grandTotal.toFixed(2)}</b>
+    </div>
 </div>
 ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Notas:</b> ${order.notes.replace(/\n/g, ' | ')}</div>` : ''}
-<div class="ft" style="font-size:8px; margin-top:4px; padding-top:2px">Gracias por tu compra</div>
+<div class="ft" style="font-size:8px; margin-top:4px; padding-top:2px">Gracias por tu compra • Jhoanes Bakery Wholesale</div>
 <script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);}<\/script>
 </body></html>`;
         const w = window.open('', '_blank', 'width=900,height=700');

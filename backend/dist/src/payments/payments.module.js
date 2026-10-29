@@ -13,6 +13,7 @@ const payments_controller_1 = require("./payments.controller");
 const payments_service_1 = require("./payments.service");
 const check_payments_controller_1 = require("./check-payments.controller");
 const check_payments_service_1 = require("./check-payments.service");
+const fee_calculator_service_1 = require("./fee-calculator.service");
 const check_payment_entity_1 = require("./check-payment.entity");
 const order_entity_1 = require("../orders/order.entity");
 const user_entity_1 = require("../users/user.entity");
@@ -33,8 +34,8 @@ exports.PaymentsModule = PaymentsModule = __decorate([
             credit_module_1.CreditModule,
         ],
         controllers: [payments_controller_1.PaymentsController, check_payments_controller_1.CheckPaymentsController],
-        providers: [payments_service_1.PaymentsService, check_payments_service_1.CheckPaymentsService],
-        exports: [payments_service_1.PaymentsService, check_payments_service_1.CheckPaymentsService],
+        providers: [payments_service_1.PaymentsService, check_payments_service_1.CheckPaymentsService, fee_calculator_service_1.FeeCalculatorService],
+        exports: [payments_service_1.PaymentsService, check_payments_service_1.CheckPaymentsService, fee_calculator_service_1.FeeCalculatorService],
     })
 ], PaymentsModule);
 //# sourceMappingURL=payments.module.js.map
