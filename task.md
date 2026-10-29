@@ -1,6 +1,6 @@
 # SPRINT S43 - Sprint 43: Purga de Pedidos Futuros y Fundación de Crédito a 7 Días
 **Objetivo**: Eliminar el subsistema obsoleto de pedidos futuros/recurrentes y establecer el modelo de datos y lógica base de crédito a 7 días calendario con métodos de consulta de saldo y límites.
-**Fecha**: 2026-10-28
+**Fecha**: 2026-10-29
 
 - [ ] **TASK-43-01** [CLEAN/CHECKOUT-PURGE] Eliminar checkbox de pedido recurrente y estados asociados en checkout/page.tsx.
 - [ ] **TASK-43-02** [CLEAN/ROUTES-PURGE] Eliminar vistas obsoletas /orders/scheduled y /admin/standing-orders y sus enlaces de navegación.
