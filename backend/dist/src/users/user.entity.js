@@ -30,6 +30,10 @@ let User = class User {
     credit_override;
     credit_blocked;
     stripe_customer_id;
+    tax_id;
+    st120_status;
+    st120_document_url;
+    tax_exempt;
     productDiscounts;
 };
 exports.User = User;
@@ -89,6 +93,22 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "stripe_customer_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "tax_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', default: 'NONE' }),
+    __metadata("design:type", String)
+], User.prototype, "st120_status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "st120_document_url", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "tax_exempt", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

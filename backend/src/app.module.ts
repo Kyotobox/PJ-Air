@@ -19,6 +19,7 @@ import { ZonesModule } from './zones/zones.module';
 import { CreditModule } from './credit/credit.module';
 import { SmsModule } from './sms/sms.module';
 import { CollectionCronModule } from './cron/collection-cron.module';
+import { TaxModule } from './tax/tax.module';
 
 // Entities
 import { Product } from './products/product.entity';
@@ -57,6 +58,7 @@ import { CheckPayment } from './payments/check-payment.entity';
     ScheduleModule.forRoot(),
     SmsModule,
     CollectionCronModule,
+    TaxModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -103,6 +105,18 @@ export class AppModule implements OnModuleInit {
       if (!userColNames.includes('credit_blocked')) {
         await qr.query(`ALTER TABLE users ADD COLUMN credit_blocked BOOLEAN DEFAULT 0;`);
       }
+      if (!userColNames.includes('tax_id')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN tax_id VARCHAR;`);
+      }
+      if (!userColNames.includes('st120_status')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN st120_status VARCHAR DEFAULT 'NONE';`);
+      }
+      if (!userColNames.includes('st120_document_url')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN st120_document_url VARCHAR;`);
+      }
+      if (!userColNames.includes('tax_exempt')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
+      }
 
       await qr.query(`
         CREATE TABLE IF NOT EXISTS check_payments (
@@ -129,6 +143,31 @@ export class AppModule implements OnModuleInit {
       const profileColNames = profileCols.map((c: any) => c.name);
       if (!profileColNames.includes('phone_verified')) {
         await qr.query(`ALTER TABLE profiles ADD COLUMN phone_verified BOOLEAN DEFAULT 0;`);
+      }
+      if (!profileColNames.includes('tax_id')) {
+        await qr.query(`ALTER TABLE profiles ADD COLUMN tax_id VARCHAR;`);
+      }
+      if (!profileColNames.includes('st120_status')) {
+        await qr.query(`ALTER TABLE profiles ADD COLUMN st120_status VARCHAR DEFAULT 'NONE';`);
+      }
+      if (!profileColNames.includes('st120_document_url')) {
+        await qr.query(`ALTER TABLE profiles ADD COLUMN st120_document_url VARCHAR;`);
+      }
+      if (!profileColNames.includes('tax_exempt')) {
+        await qr.query(`ALTER TABLE profiles ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
+      }
+
+      if (!orderColNames.includes('tax_amount')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN tax_amount DECIMAL(10,2) DEFAULT 0;`);
+      }
+      if (!orderColNames.includes('tax_rate')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN tax_rate DECIMAL(5,2) DEFAULT 0;`);
+      }
+      if (!orderColNames.includes('tax_exempt')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
+      }
+      if (!orderColNames.includes('tax_legend')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN tax_legend TEXT;`);
       }
 
       // TASK-43-03: Purgar tabla obsoleta scheduled_orders

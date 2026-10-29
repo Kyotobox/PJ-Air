@@ -420,6 +420,27 @@ export class OrdersService {
       }
     }
 
+    // TASK-46-06: Tax Exemption Engine (0% Sales Tax for ST-120 certified users & Official NYS DTF Legend)
+    const isUserTaxExempt = Boolean(user?.tax_exempt || user?.profile?.tax_exempt || (orderData as any).tax_exempt);
+    const taxId = user?.profile?.tax_id || user?.tax_id || (orderData as any).tax_id || null;
+
+    let appliedTaxAmount = 0.00;
+    let appliedTaxRate = 0.00;
+    let appliedTaxExempt = false;
+    let appliedTaxLegend: string | null = null;
+
+    if (isUserTaxExempt) {
+      appliedTaxAmount = 0.00;
+      appliedTaxRate = 0.00;
+      appliedTaxExempt = true;
+      appliedTaxLegend = `Exempt from NY State and Local Sales and Use Tax under NYS DTF Form ST-120 (Resale Certificate) - Purchases are exclusively for resale in the regular course of business. NY Resale / Tax ID: ${taxId || 'N/A'}`;
+    } else {
+      appliedTaxAmount = Number((orderData as any).tax_amount || 0);
+      appliedTaxRate = Number((orderData as any).tax_rate || 0);
+      appliedTaxExempt = false;
+      appliedTaxLegend = null;
+    }
+
     const savedOrderId = await this.dataSource.transaction(async (manager) => {
       const orderToCreate = manager.create(Order, {
         ...otherData,
@@ -436,6 +457,10 @@ export class OrdersService {
         packaging_discount: packagingDiscount,
         delivery_fee_charged: deliveryFee,
         payment_status: appliedPaymentStatus,
+        tax_amount: appliedTaxAmount,
+        tax_rate: appliedTaxRate,
+        tax_exempt: appliedTaxExempt,
+        tax_legend: appliedTaxLegend,
       });
 
       const savedResult = await manager.save(Order, orderToCreate);

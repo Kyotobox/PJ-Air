@@ -44,6 +44,18 @@ export class Order {
   @Column({ nullable: true })
   refund_reason: string;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  tax_amount: number;
+
+  @Column('decimal', { precision: 5, scale: 2, default: 0 })
+  tax_rate: number;
+
+  @Column({ default: false })
+  tax_exempt: boolean;
+
+  @Column({ nullable: true, type: 'text' })
+  tax_legend: string;
+
   @Column({ nullable: true })
   address_id: string;
 

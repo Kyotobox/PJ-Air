@@ -32,6 +32,7 @@ const zones_module_1 = require("./zones/zones.module");
 const credit_module_1 = require("./credit/credit.module");
 const sms_module_1 = require("./sms/sms.module");
 const collection_cron_module_1 = require("./cron/collection-cron.module");
+const tax_module_1 = require("./tax/tax.module");
 const product_entity_1 = require("./products/product.entity");
 const category_entity_1 = require("./products/category.entity");
 const user_entity_1 = require("./users/user.entity");
@@ -83,6 +84,18 @@ let AppModule = AppModule_1 = class AppModule {
             if (!userColNames.includes('credit_blocked')) {
                 await qr.query(`ALTER TABLE users ADD COLUMN credit_blocked BOOLEAN DEFAULT 0;`);
             }
+            if (!userColNames.includes('tax_id')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN tax_id VARCHAR;`);
+            }
+            if (!userColNames.includes('st120_status')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN st120_status VARCHAR DEFAULT 'NONE';`);
+            }
+            if (!userColNames.includes('st120_document_url')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN st120_document_url VARCHAR;`);
+            }
+            if (!userColNames.includes('tax_exempt')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
+            }
             await qr.query(`
         CREATE TABLE IF NOT EXISTS check_payments (
           id VARCHAR PRIMARY KEY NOT NULL,
@@ -107,6 +120,30 @@ let AppModule = AppModule_1 = class AppModule {
             const profileColNames = profileCols.map((c) => c.name);
             if (!profileColNames.includes('phone_verified')) {
                 await qr.query(`ALTER TABLE profiles ADD COLUMN phone_verified BOOLEAN DEFAULT 0;`);
+            }
+            if (!profileColNames.includes('tax_id')) {
+                await qr.query(`ALTER TABLE profiles ADD COLUMN tax_id VARCHAR;`);
+            }
+            if (!profileColNames.includes('st120_status')) {
+                await qr.query(`ALTER TABLE profiles ADD COLUMN st120_status VARCHAR DEFAULT 'NONE';`);
+            }
+            if (!profileColNames.includes('st120_document_url')) {
+                await qr.query(`ALTER TABLE profiles ADD COLUMN st120_document_url VARCHAR;`);
+            }
+            if (!profileColNames.includes('tax_exempt')) {
+                await qr.query(`ALTER TABLE profiles ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
+            }
+            if (!orderColNames.includes('tax_amount')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN tax_amount DECIMAL(10,2) DEFAULT 0;`);
+            }
+            if (!orderColNames.includes('tax_rate')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN tax_rate DECIMAL(5,2) DEFAULT 0;`);
+            }
+            if (!orderColNames.includes('tax_exempt')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
+            }
+            if (!orderColNames.includes('tax_legend')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN tax_legend TEXT;`);
             }
             await qr.query(`DROP TABLE IF EXISTS scheduled_orders;`);
             await qr.query(`
@@ -168,6 +205,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             schedule_1.ScheduleModule.forRoot(),
             sms_module_1.SmsModule,
             collection_cron_module_1.CollectionCronModule,
+            tax_module_1.TaxModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

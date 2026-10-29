@@ -93,6 +93,13 @@ let UsersController = class UsersController {
             throw new common_1.BadRequestException('Failed to update profile with avatar');
         }
     }
+    async uploadSt120(id, file, taxId) {
+        if (!file) {
+            throw new common_1.BadRequestException('No file uploaded or file type not allowed');
+        }
+        const documentUrl = `/uploads/st120/${file.filename}`;
+        return this.usersService.updateSt120Document(id, documentUrl, taxId);
+    }
     async updateGeneralDiscount(id, body) {
         return this.usersService.updateGeneralDiscount(id, body.discount);
     }
@@ -189,6 +196,46 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "uploadAvatar", null);
+__decorate([
+    (0, common_1.Post)(':id/st120'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: (0, multer_1.diskStorage)({
+            destination: (req, file, cb) => {
+                const uploadPath = (0, path_1.join)((0, path_1.resolve)(config_1.UPLOAD_PATH), 'st120');
+                if (!fs.existsSync(uploadPath)) {
+                    fs.mkdirSync(uploadPath, { recursive: true });
+                }
+                cb(null, uploadPath);
+            },
+            filename: (req, file, cb) => {
+                const randomName = Array(32)
+                    .fill(null)
+                    .map(() => Math.round(Math.random() * 16).toString(16))
+                    .join('');
+                cb(null, `${randomName}${(0, path_1.extname)(file.originalname).toLowerCase()}`);
+            },
+        }),
+        limits: {
+            fileSize: 5 * 1024 * 1024,
+        },
+        fileFilter: (req, file, cb) => {
+            const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+            const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+            const ext = (0, path_1.extname)(file.originalname).toLowerCase();
+            const mime = file.mimetype;
+            if (!allowedExtensions.includes(ext) || !allowedMimeTypes.includes(mime)) {
+                return cb(new common_1.BadRequestException('Only PDF and image files (.pdf, .jpg, .jpeg, .png, .webp) are allowed'), false);
+            }
+            cb(null, true);
+        },
+    })),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Body)('tax_id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "uploadSt120", null);
 __decorate([
     (0, common_1.Patch)(':id/general-discount'),
     __param(0, (0, common_1.Param)('id')),

@@ -28,6 +28,10 @@ let Order = class Order {
     stripe_payment_id;
     refunded_amount;
     refund_reason;
+    tax_amount;
+    tax_rate;
+    tax_exempt;
+    tax_legend;
     address_id;
     delivery_date;
     payment_due_date;
@@ -94,6 +98,22 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Order.prototype, "refund_reason", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "tax_amount", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 5, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "tax_rate", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Order.prototype, "tax_exempt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'text' }),
+    __metadata("design:type", String)
+], Order.prototype, "tax_legend", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

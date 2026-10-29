@@ -64,7 +64,7 @@ let AuthService = class AuthService {
         this.systemConfigRepository = systemConfigRepository;
     }
     async signup(body) {
-        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken } = body;
+        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared } = body;
         const userRole = role || 'client';
         const cleanCompany = (company_name || '').trim();
         if (userRole === 'client' && !cleanCompany) {
@@ -85,11 +85,16 @@ let AuthService = class AuthService {
         const existingUser = await this.usersService.findByEmail(email);
         if (existingUser)
             throw new common_1.ConflictException('Email already registered');
+        const cleanTaxId = tax_id && typeof tax_id === 'string' ? tax_id.trim() : undefined;
+        const initialSt120Status = st120_declared || cleanTaxId ? 'PENDING' : 'NONE';
         const hashedPassword = (0, crypto_util_1.hashPassword)(password);
         const userResult = await this.usersService.create({
             email,
             password: hashedPassword,
             role: userRole,
+            tax_id: cleanTaxId,
+            st120_status: initialSt120Status,
+            tax_exempt: false,
         });
         const user = Array.isArray(userResult) ? userResult[0] : userResult;
         await this.usersService.createProfile({
@@ -99,6 +104,9 @@ let AuthService = class AuthService {
             phone,
             company_name: cleanCompany,
             phone_verified: userRole === 'client' ? true : Boolean(phone_verified),
+            tax_id: cleanTaxId,
+            st120_status: initialSt120Status,
+            tax_exempt: false,
         });
         const payload = { id: user.id, email: user.email, role: user.role };
         const access_token = (0, crypto_util_1.signJwt)(payload);

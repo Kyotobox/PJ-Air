@@ -88,6 +88,31 @@ let UsersService = class UsersService {
         profile.avatar_url = avatarUrl;
         return this.profileRepository.save(profile);
     }
+    async updateSt120Document(userId, documentUrl, taxId) {
+        const profile = await this.profileRepository.findOne({ where: { id: userId } });
+        if (!profile) {
+            const newProfile = this.profileRepository.create({
+                id: userId,
+                st120_document_url: documentUrl,
+                st120_status: 'PENDING',
+                ...(taxId ? { tax_id: taxId } : {}),
+            });
+            await this.profileRepository.save(newProfile);
+        }
+        else {
+            profile.st120_document_url = documentUrl;
+            profile.st120_status = 'PENDING';
+            if (taxId)
+                profile.tax_id = taxId;
+            await this.profileRepository.save(profile);
+        }
+        await this.userRepository.update(userId, {
+            st120_document_url: documentUrl,
+            st120_status: 'PENDING',
+            ...(taxId ? { tax_id: taxId } : {}),
+        });
+        return (await this.profileRepository.findOne({ where: { id: userId } }));
+    }
     async updateRole(id, role) {
         const user = await this.findOne(id);
         user.role = role;

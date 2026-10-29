@@ -48,6 +48,18 @@ export class User {
   @Column({ nullable: true })
   stripe_customer_id: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  tax_id?: string | null;
+
+  @Column({ type: 'varchar', default: 'NONE' })
+  st120_status: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  st120_document_url?: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  tax_exempt: boolean;
+
   @OneToMany(() => ProductDiscount, (pd) => pd.user)
   productDiscounts: ProductDiscount[];
 }

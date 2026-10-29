@@ -17,5 +17,9 @@ export declare class User {
     credit_override: boolean;
     credit_blocked: boolean;
     stripe_customer_id: string;
+    tax_id?: string | null;
+    st120_status: string;
+    st120_document_url?: string | null;
+    tax_exempt: boolean;
     productDiscounts: ProductDiscount[];
 }

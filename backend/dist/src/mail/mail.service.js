@@ -108,6 +108,16 @@ let MailService = MailService_1 = class MailService {
             const deliveryFeeHtml = Number(order.delivery_fee_charged || 0) > 0
                 ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">Tarifa de Envío:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${Number(order.delivery_fee_charged).toFixed(2)}</td></tr>`
                 : '';
+            const taxLineHtml = order.tax_exempt
+                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold; color: #059669;">Sales Tax NY (ST-120 Exento):</td><td style="padding: 8px 12px; text-align: right; font-weight: bold; color: #059669;">$0.00 (0.00%)</td></tr>`
+                : Number(order.tax_amount || 0) > 0
+                    ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">Sales Tax NY:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${Number(order.tax_amount).toFixed(2)}</td></tr>`
+                    : '';
+            const taxLegendHtml = order.tax_legend
+                ? `<div style="margin-top: 16px; padding: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; font-size: 11px; color: #065f46; line-height: 1.4;">
+             <strong>Certificación Oficial NYS DTF:</strong> ${order.tax_legend}
+           </div>`
+                : '';
             let paymentStatusText = '⏳ Pendiente según condiciones comerciales';
             if (order.payment_status === 'paid') {
                 paymentStatusText = '✅ Pagado vía Stripe';
@@ -138,12 +148,14 @@ let MailService = MailService_1 = class MailService {
             <tbody>
               ${itemsListHtml}
               ${deliveryFeeHtml}
+              ${taxLineHtml}
               <tr style="font-size: 16px; background: #fefce8;">
                 <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">TOTAL FINAL:</td>
                 <td style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">$${Number(order.total || 0).toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
+          ${taxLegendHtml}
           <div style="margin-top: 24px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px; color: #475569;">
             <p style="margin: 0;"><strong>Estado del Pago:</strong> ${paymentStatusText}</p>
           </div>

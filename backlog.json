@@ -3,7 +3,7 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S46",
+  "current_sprint": "S47",
   "current_task": "TASK-44-01",
   "sprints": [
     {
@@ -199,7 +199,7 @@
     {
       "id": "S46",
       "name": "Sprint 46: Cumplimiento Fiscal New York ST-120 & Visi\u00f3n AI",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-10-31",
       "goal": "Cumplimiento fiscal de reventa de NY con captura \u00e1gil de Tax ID, carga de documento ST-120 y validaci\u00f3n autom\u00e1tica inteligente con Visi\u00f3n AI.",
       "tasks": [
@@ -207,50 +207,50 @@
           "id": "TASK-46-01",
           "label": "DOMAIN/TAX-EXEMPT-SCHEMA",
           "desc": "Columnas tax_id, st120_status, st120_doc_url, tax_exempt en User/Profile.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-46-02",
           "label": "UI/REGISTER-LEAN-TAX-ID",
           "desc": "Formulario de registro mayorista con Tax ID / NY Resale Certificate # y checkbox ST-120.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-46-03",
           "label": "UI/PROFILE-ST120-UPLOAD",
           "desc": "Carga de certificado ST-120 (PDF/imagen) en /profile.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-46-04",
           "label": "DOMAIN/VISION-AI-ST120-VALIDATOR",
           "desc": "Servicio VisionValidationService con Gemini Flash Vision API.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-46-05",
           "label": "UI/ADMIN-ST120-APPROVAL",
           "desc": "Panel /admin/clients para auditar y aprobar/rechazar ST-120.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-46-06",
           "label": "DOMAIN/TAX-EXEMPT-0-PERCENT-ENGINE",
           "desc": "L\u00f3gica de 0% Sales Tax en facturas y leyenda oficial NYS DTF.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-46-07",
           "label": "TEST/ST120-AND-VISION-SUITE",
           "desc": "Suite de pruebas unitarias para VisionValidationService y c\u00e1lculo fiscal.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     },
     {
       "id": "S47",
       "name": "Sprint 47: Processing Fees Transversales",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "start_date": "2026-11-01",
       "goal": "Aplicar recargos transparentes por m\u00e9todo de pago (Tarjeta 3.5%, ACH 0.8% tope $5, Zelle/Cheque 0%) tanto en checkout como en liquidaci\u00f3n de facturas a cr\u00e9dito.",
       "tasks": [

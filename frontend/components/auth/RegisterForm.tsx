@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Mail, Lock, User, Phone, Building2, Loader2, ArrowRight, CheckCircle2, Smartphone } from 'lucide-react';
+import { Mail, Lock, User, Phone, Building2, Loader2, ArrowRight, CheckCircle2, Smartphone, FileText, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatPhoneNumber } from '@/lib/firebase';
 
@@ -170,6 +170,45 @@ export const RegisterForm = ({
                             value={formData.company_name}
                             onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                         />
+                    </div>
+                </div>
+
+                {/* Tax ID / NY Resale Certificate # — full width, optional/recommended */}
+                <div className="space-y-3 md:col-span-2 p-4 bg-muted/20 border border-border/80 rounded-2xl">
+                    <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                            <FileText size={14} className="text-primary" />
+                            <span>{locale === 'en' ? 'Tax ID / NY Resale Certificate # (Optional)' : 'Tax ID / N° Certificado de Reventa NY (Opcional)'}</span>
+                        </label>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            {locale === 'en' ? '0% Sales Tax ST-120' : '0% Impuestos ST-120'}
+                        </span>
+                    </div>
+                    <div className="relative">
+                        <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
+                        <input
+                            type="text"
+                            placeholder={locale === 'en' ? 'e.g. 12-3456789 or NY Certificate #' : 'Ej: 12-3456789 o Certificado NY'}
+                            className="premium-input pl-12"
+                            value={formData.tax_id || ''}
+                            onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                        />
+                    </div>
+                    <div className="flex items-start gap-2.5 pt-2">
+                        <input
+                            id="st120_declared"
+                            type="checkbox"
+                            className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                            checked={Boolean(formData.st120_declared)}
+                            onChange={(e) => setFormData({ ...formData, st120_declared: e.target.checked })}
+                        />
+                        <label htmlFor="st120_declared" className="text-[11px] text-foreground/80 leading-snug cursor-pointer">
+                            {locale === 'en' ? (
+                                <>Certify under penalty of perjury that all purchases are for resale under a valid NY Form ST-120 certificate. (Document can be uploaded in your profile).</>
+                            ) : (
+                                <>Certifico bajo pena de perjurio que todas las compras son para reventa amparadas en certificado ST-120 de NY vigente. (El archivo puede subirse en tu perfil).</>
+                            )}
+                        </label>
                     </div>
                 </div>
 

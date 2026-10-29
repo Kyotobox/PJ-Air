@@ -27,6 +27,8 @@ export default function RegisterPage() {
         company_name: '',
         password: '',
         confirm_password: '',
+        tax_id: '',
+        st120_declared: false,
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +73,8 @@ export default function RegisterPage() {
                 phone_verified: true,
                 idToken: phoneIdToken,
                 company_name: formData.company_name,
+                tax_id: formData.tax_id ? formData.tax_id.trim() : undefined,
+                st120_declared: Boolean(formData.st120_declared),
             }) as any;
 
             // 2. Auto-login and Update context

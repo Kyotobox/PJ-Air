@@ -21,6 +21,10 @@ let Profile = class Profile {
     phone_verified;
     company_name;
     avatar_url;
+    tax_id;
+    st120_status;
+    st120_document_url;
+    tax_exempt;
     user;
 };
 exports.Profile = Profile;
@@ -56,6 +60,22 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Profile.prototype, "avatar_url", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], Profile.prototype, "tax_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', default: 'NONE' }),
+    __metadata("design:type", String)
+], Profile.prototype, "st120_status", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], Profile.prototype, "st120_document_url", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], Profile.prototype, "tax_exempt", void 0);
 __decorate([
     (0, typeorm_1.OneToOne)(() => user_entity_1.User, (user) => user.profile),
     (0, typeorm_1.JoinColumn)({ name: 'id' }),

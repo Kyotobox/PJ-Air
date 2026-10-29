@@ -15,6 +15,10 @@ export declare class Order {
     stripe_payment_id: string;
     refunded_amount: number;
     refund_reason: string;
+    tax_amount: number;
+    tax_rate: number;
+    tax_exempt: boolean;
+    tax_legend: string;
     address_id: string;
     delivery_date: string;
     payment_due_date: string;

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
+import { ST120AuditModal } from '@/components/admin/ST120AuditModal';
 
 interface Address { id: string; address: string; city: string; state?: string; zip_code?: string; country?: string; is_default?: boolean; }
 interface OrderItem { 
@@ -32,7 +33,22 @@ interface UserRecord {
     account_type?: 'cash' | 'credit';
     credit_limit?: number;
     credit_override?: boolean;
-    profile?: { full_name?: string; username?: string; phone?: string; avatar_url?: string; nickname?: string; };
+    tax_id?: string;
+    st120_status?: string;
+    st120_document_url?: string;
+    tax_exempt?: boolean;
+    profile?: {
+        full_name?: string;
+        username?: string;
+        phone?: string;
+        avatar_url?: string;
+        nickname?: string;
+        company_name?: string;
+        tax_id?: string;
+        st120_status?: string;
+        st120_document_url?: string;
+        tax_exempt?: boolean;
+    };
     addresses?: Address[];
     orders?: Order[];
 }
@@ -87,6 +103,9 @@ export default function AdminClientsPage() {
     const [resetPasswordModal, setResetPasswordModal] = useState<UserRecord | null>(null);
     const [newPassword, setNewPassword] = useState('');
     const [isResettingPwd, setIsResettingPwd] = useState(false);
+
+    // ST-120 Tax Exemption Audit Modal state
+    const [auditModalUser, setAuditModalUser] = useState<UserRecord | null>(null);
 
     const handleResetPasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -478,15 +497,16 @@ export default function AdminClientsPage() {
                                 <th className="px-8 py-5">Nombre / Usuario</th>
                                 <th className="px-8 py-5">Contacto</th>
                                 <th className="px-6 py-5">Cuenta / Crédito</th>
+                                <th className="px-6 py-5">ST-120 Fiscal</th>
                                 <th className="px-8 py-5 text-center">Info</th>
                                 <th className="px-8 py-5 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan={5} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
+                                <tr><td colSpan={6} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
                             ) : paginatedUsers.length === 0 ? (
-                                <tr><td colSpan={5} className="py-20 text-center text-slate-500 font-medium italic">No se encontraron clientes</td></tr>
+                                <tr><td colSpan={6} className="py-20 text-center text-slate-500 font-medium italic">No se encontraron clientes</td></tr>
                             ) : paginatedUsers.map(u => (
                                 <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-8 py-6">
@@ -527,6 +547,38 @@ export default function AdminClientsPage() {
                                             ) : (
                                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">
                                                     Contado
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-6">
+                                        <div className="flex flex-col gap-1 items-start">
+                                            {u.profile?.tax_exempt || u.tax_exempt ? (
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                    0% Exento ST-120
+                                                </span>
+                                            ) : u.profile?.st120_status === 'PENDING' || u.st120_status === 'PENDING' ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setAuditModalUser(u); }}
+                                                    className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors flex items-center gap-1 cursor-pointer"
+                                                    title="Auditar con Visión AI"
+                                                >
+                                                    <Clock size={11} className="text-amber-700" />
+                                                    <span>Auditar ST-120</span>
+                                                </button>
+                                            ) : u.profile?.st120_status === 'REJECTED' || u.st120_status === 'REJECTED' ? (
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">
+                                                    ST-120 Rechazado
+                                                </span>
+                                            ) : (
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+                                                    No Exento
+                                                </span>
+                                            )}
+                                            {(u.profile?.tax_id || u.tax_id) && (
+                                                <span className="text-[10px] font-mono text-slate-500">
+                                                    {u.profile?.tax_id || u.tax_id}
                                                 </span>
                                             )}
                                         </div>
@@ -651,6 +703,44 @@ export default function AdminClientsPage() {
                                     >
                                         {isSavingNickname ? 'Guardando...' : 'Guardar'}
                                     </button>
+                                </div>
+                            </section>
+
+                            {/* Section: ST-120 Tax Exemption */}
+                            <section>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                                        <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Cumplimiento Fiscal NY ST-120</h3>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAuditModalUser(selectedUser)}
+                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                    >
+                                        <ShieldCheck size={14} className="text-emerald-400" />
+                                        <span>Auditar ST-120</span>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Tax ID / TIN</label>
+                                        <p className="font-mono font-bold text-slate-800">{selectedUser.profile?.tax_id || selectedUser.tax_id || 'No registrado'}</p>
+                                    </div>
+                                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Estado Fiscal ST-120</label>
+                                        <div className="mt-0.5">
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                                                selectedUser.profile?.tax_exempt || selectedUser.tax_exempt
+                                                    ? 'bg-emerald-100 text-emerald-800'
+                                                    : selectedUser.profile?.st120_status === 'PENDING' || selectedUser.st120_status === 'PENDING'
+                                                    ? 'bg-amber-100 text-amber-900'
+                                                    : 'bg-slate-200 text-slate-700'
+                                            }`}>
+                                                {selectedUser.profile?.tax_exempt || selectedUser.tax_exempt ? '0% Exento' : (selectedUser.profile?.st120_status || selectedUser.st120_status || 'NONE')}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
 
@@ -1110,6 +1200,57 @@ export default function AdminClientsPage() {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {/* ST-120 Tax Exemption & Vision AI Audit Modal */}
+            {auditModalUser && (
+                <ST120AuditModal
+                    isOpen={Boolean(auditModalUser)}
+                    user={auditModalUser}
+                    onClose={() => setAuditModalUser(null)}
+                    onStatusUpdated={(userId, newStatus, taxExempt) => {
+                        setUsers(prev => prev.map(u => {
+                            if (u.id === userId) {
+                                return {
+                                    ...u,
+                                    st120_status: newStatus,
+                                    tax_exempt: taxExempt,
+                                    profile: {
+                                        ...(u.profile || {}),
+                                        st120_status: newStatus,
+                                        tax_exempt: taxExempt,
+                                    }
+                                };
+                            }
+                            return u;
+                        }));
+                        if (selectedUser && selectedUser.id === userId) {
+                            setSelectedUser(prev => prev ? {
+                                ...prev,
+                                st120_status: newStatus,
+                                tax_exempt: taxExempt,
+                                profile: {
+                                    ...(prev.profile || {}),
+                                    st120_status: newStatus,
+                                    tax_exempt: taxExempt,
+                                }
+                            } : null);
+                        }
+                        if (auditModalUser && auditModalUser.id === userId) {
+                            setAuditModalUser(prev => prev ? {
+                                ...prev,
+                                st120_status: newStatus,
+                                tax_exempt: taxExempt,
+                                profile: {
+                                    ...(prev.profile || {}),
+                                    st120_status: newStatus,
+                                    tax_exempt: taxExempt,
+                                }
+                            } : null);
+                        }
+                        showToast(`ST-120 ${newStatus === 'APPROVED' ? 'Aprobado (0% Exento)' : 'Rechazado'}`);
+                    }}
+                />
             )}
         </div>
     );

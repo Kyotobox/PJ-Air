@@ -221,8 +221,27 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                     </div>
                                 ))}
 
-                                <div className="pt-6 border-t border-border space-y-4">
-                                    <div className="flex justify-between items-center text-sm font-medium text-muted-foreground">
+                                <div className="pt-6 border-t border-border space-y-3">
+                                    {order.tax_exempt ? (
+                                        <div className="flex justify-between items-center text-xs font-bold text-emerald-700 bg-emerald-50/80 px-3 py-2 rounded-xl border border-emerald-200">
+                                            <span>NY Sales Tax (ST-120 Exento)</span>
+                                            <span>$0.00 (0.00%)</span>
+                                        </div>
+                                    ) : Number(order.tax_amount || 0) > 0 ? (
+                                        <div className="flex justify-between items-center text-xs font-medium text-muted-foreground">
+                                            <span>NY Sales Tax ({order.tax_rate || 8.875}%)</span>
+                                            <span>${Number(order.tax_amount).toFixed(2)}</span>
+                                        </div>
+                                    ) : null}
+
+                                    {order.tax_legend && (
+                                        <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl text-[11px] text-emerald-800 leading-relaxed font-medium">
+                                            <span className="font-bold block text-[10px] uppercase text-emerald-900 tracking-wider mb-0.5">NYS DTF Resale Certification:</span>
+                                            {order.tax_legend}
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between items-center text-sm font-medium text-muted-foreground pt-1">
                                         <span>Total</span>
                                         <span className="text-lg font-black text-primary">${(Number(order.total) || 0).toFixed(2)}</span>
                                     </div>

@@ -371,6 +371,24 @@ let OrdersService = class OrdersService {
                 isOverdraftAlert = false;
             }
         }
+        const isUserTaxExempt = Boolean(user?.tax_exempt || user?.profile?.tax_exempt || orderData.tax_exempt);
+        const taxId = user?.profile?.tax_id || user?.tax_id || orderData.tax_id || null;
+        let appliedTaxAmount = 0.00;
+        let appliedTaxRate = 0.00;
+        let appliedTaxExempt = false;
+        let appliedTaxLegend = null;
+        if (isUserTaxExempt) {
+            appliedTaxAmount = 0.00;
+            appliedTaxRate = 0.00;
+            appliedTaxExempt = true;
+            appliedTaxLegend = `Exempt from NY State and Local Sales and Use Tax under NYS DTF Form ST-120 (Resale Certificate) - Purchases are exclusively for resale in the regular course of business. NY Resale / Tax ID: ${taxId || 'N/A'}`;
+        }
+        else {
+            appliedTaxAmount = Number(orderData.tax_amount || 0);
+            appliedTaxRate = Number(orderData.tax_rate || 0);
+            appliedTaxExempt = false;
+            appliedTaxLegend = null;
+        }
         const savedOrderId = await this.dataSource.transaction(async (manager) => {
             const orderToCreate = manager.create(order_entity_1.Order, {
                 ...otherData,
@@ -387,6 +405,10 @@ let OrdersService = class OrdersService {
                 packaging_discount: packagingDiscount,
                 delivery_fee_charged: deliveryFee,
                 payment_status: appliedPaymentStatus,
+                tax_amount: appliedTaxAmount,
+                tax_rate: appliedTaxRate,
+                tax_exempt: appliedTaxExempt,
+                tax_legend: appliedTaxLegend,
             });
             const savedResult = await manager.save(order_entity_1.Order, orderToCreate);
             const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;

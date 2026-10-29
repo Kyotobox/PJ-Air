@@ -92,6 +92,54 @@ export class UsersController {
     }
   }
 
+  @Post(':id/st120')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const uploadPath = join(resolve(UPLOAD_PATH), 'st120');
+          if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+          }
+          cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname).toLowerCase()}`);
+        },
+      }),
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+      fileFilter: (req, file, cb) => {
+        const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+        const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+        const ext = extname(file.originalname).toLowerCase();
+        const mime = file.mimetype;
+
+        if (!allowedExtensions.includes(ext) || !allowedMimeTypes.includes(mime)) {
+          return cb(new BadRequestException('Only PDF and image files (.pdf, .jpg, .jpeg, .png, .webp) are allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadSt120(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('tax_id') taxId?: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded or file type not allowed');
+    }
+    const documentUrl = `/uploads/st120/${file.filename}`;
+    return this.usersService.updateSt120Document(id, documentUrl, taxId);
+  }
+
   @Patch(':id/general-discount')
   async updateGeneralDiscount(@Param('id') id: string, @Body() body: { discount: number }) {
     return this.usersService.updateGeneralDiscount(id, body.discount);

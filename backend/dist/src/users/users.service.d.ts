@@ -15,6 +15,7 @@ export declare class UsersService {
     create(userData: any): Promise<User>;
     createProfile(profileData: Partial<Profile>): Promise<Profile>;
     updateAvatar(userId: string, avatarUrl: string): Promise<Profile>;
+    updateSt120Document(userId: string, documentUrl: string, taxId?: string): Promise<Profile>;
     updateRole(id: string, role: string): Promise<User>;
     findByEmailWithRole(email: string): Promise<User | null>;
     updatePassword(userId: string, newPassword: string): Promise<void>;

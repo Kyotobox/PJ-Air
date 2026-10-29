@@ -8,5 +8,9 @@ export declare class Profile {
     phone_verified: boolean;
     company_name: string;
     avatar_url: string;
+    tax_id?: string | null;
+    st120_status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+    st120_document_url?: string | null;
+    tax_exempt: boolean;
     user: User;
 }

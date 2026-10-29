@@ -10,6 +10,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { API_URL } from '@/lib/config';
 import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
 import { formatPhoneNumber } from '@/lib/firebase';
+import { ST120UploadCard } from '@/components/profile/ST120UploadCard';
 
 export default function ProfilePage() {
     const { user, isLoading: isAuthLoading } = useAuth();
@@ -490,6 +491,19 @@ export default function ProfilePage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* ST-120 Tax Exemption Certificate Card */}
+                        <ST120UploadCard
+                            userId={user?.id || ''}
+                            taxId={profile?.tax_id || ''}
+                            st120Status={profile?.st120_status || 'NONE'}
+                            st120DocumentUrl={profile?.st120_document_url || null}
+                            taxExempt={Boolean(profile?.tax_exempt)}
+                            locale={locale}
+                            onUpdated={(updated) => {
+                                setProfile((prev: any) => ({ ...prev, ...updated }));
+                            }}
+                        />
 
                         {/* B2B Payment Methods & Stripe Customer Portal */}
                         <div className="bg-card rounded-[32px] border border-border p-8 shadow-sm">

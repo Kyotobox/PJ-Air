@@ -27,6 +27,18 @@ export class Profile {
   @Column({ nullable: true })
   avatar_url: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  tax_id?: string | null;
+
+  @Column({ type: 'varchar', default: 'NONE' })
+  st120_status: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
+  @Column({ type: 'varchar', nullable: true })
+  st120_document_url?: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  tax_exempt: boolean;
+
   @OneToOne(() => User, (user) => user.profile)
   @JoinColumn({ name: 'id' })
   user: User;
