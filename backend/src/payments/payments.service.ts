@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, Logger, Optional } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
 import Stripe from 'stripe';
 import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '../config';
 import { OrdersService } from '../orders/orders.service';
@@ -12,6 +12,7 @@ export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
 
   constructor(
+    @Inject(forwardRef(() => OrdersService))
     private readonly ordersService: OrdersService,
     private readonly usersService: UsersService,
     @Optional()

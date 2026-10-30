@@ -7,7 +7,8 @@ import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
 import { MailService } from '../mail/mail.service';
 import { DataSource } from 'typeorm';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { PaymentsService } from '../payments/payments.service';
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -67,6 +68,10 @@ describe('OrdersService', () => {
       sendAdminNewOrderAlert: jest.fn().mockResolvedValue(true),
     };
 
+    const mockPaymentsService = {
+      createRefund: jest.fn().mockResolvedValue({ success: true, refundedAmount: 20 }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
@@ -76,6 +81,7 @@ describe('OrdersService', () => {
         { provide: getRepositoryToken(Product), useValue: productRepository },
         { provide: DataSource, useValue: dataSource },
         { provide: MailService, useValue: mockMailService },
+        { provide: PaymentsService, useValue: mockPaymentsService },
       ],
     }).compile();
 
@@ -798,6 +804,230 @@ describe('OrdersService', () => {
 
     it('should throw BadRequestException if userId is empty (Sad Path §6)', async () => {
       await expect(service.getFrequentProducts('')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Sprint S50: Comprobantes Zelle y Modificación de Órdenes Pre-Corte', () => {
+    const mockUser = {
+      id: 'user-s50',
+      account_type: 'cash',
+      delivery_fee: 0,
+      productDiscounts: [],
+    };
+
+    const mockProduct1 = {
+      id: 1,
+      name: 'Croissant Mantequilla',
+      price: 5.0,
+      is_active: true,
+    };
+
+    const mockProduct2 = {
+      id: 2,
+      name: 'Pain au Chocolat',
+      price: 6.0,
+      is_active: true,
+    };
+
+    it('Happy Path: mutación de orden pre-12 PM recalcula subtotales y permite anexar comprobante Zelle', async () => {
+      // Order created today at 09:00 AM NY
+      const orderCreatedAt = new Date('2026-10-30T13:00:00Z'); // 09:00 AM ET
+      const preCutoffTime = new Date('2026-10-30T14:30:00Z');  // 10:30 AM ET (< 12:00 PM)
+
+      const existingOrder: any = {
+        id: 'order-s50-1',
+        user_id: 'user-s50',
+        status: 'pending',
+        payment_status: 'pending',
+        payment_method: 'zelle',
+        total: 10.0,
+        delivery_fee_charged: 0,
+        tax_exempt: true,
+        created_at: orderCreatedAt,
+        items: [
+          { product_id: 1, quantity: 2, price_at_time: 5.0, product: mockProduct1 },
+        ],
+      };
+
+      orderRepository.findOne.mockResolvedValue(existingOrder);
+      orderRepository.save.mockImplementation((ord: any) => Promise.resolve(ord));
+      userRepository.findOne.mockResolvedValue(mockUser);
+      productRepository.find.mockResolvedValue([mockProduct1]);
+      orderItemRepository.delete.mockResolvedValue({ affected: 1 });
+      orderItemRepository.save.mockImplementation((items: any) => Promise.resolve(items));
+
+      // Mutate order: change product 1 quantity to 4, attach zelle screenshot and reference
+      const result = await service.mutateOrderItems(
+        'order-s50-1',
+        {
+          items: [{ productId: 1, quantity: 4 }],
+          zelle_receipt_url: '/uploads/zelle/zelle-screenshot-123.jpg',
+          zelle_reference: 'ZEL-CONF-884920',
+        },
+        'user-s50',
+        'client',
+        preCutoffTime,
+      );
+
+      // Verify subtotals recalculation: 4 * 5.0 = 20.0
+      expect(result.total).toBe(20.0);
+      expect(result.zelle_receipt_url).toBe('/uploads/zelle/zelle-screenshot-123.jpg');
+      expect(result.zelle_reference).toBe('ZEL-CONF-884920');
+      expect(result.payment_status).toBe('pending_zelle_verification');
+      expect(orderItemRepository.delete).toHaveBeenCalledWith({ order_id: 'order-s50-1' });
+    });
+
+    it('Sad Path (§6): mutación intentada posterior a las 12:00 PM es rechazada con BadRequestException', async () => {
+      // Order created today at 09:00 AM NY
+      const orderCreatedAt = new Date('2026-10-30T13:00:00Z'); // 09:00 AM ET
+      const postCutoffTime = new Date('2026-10-30T17:30:00Z'); // 01:30 PM ET (> 12:00 PM)
+
+      const existingOrder: any = {
+        id: 'order-s50-2',
+        user_id: 'user-s50',
+        status: 'confirmed',
+        payment_status: 'pending',
+        payment_method: 'zelle',
+        total: 10.0,
+        created_at: orderCreatedAt,
+        items: [{ product_id: 1, quantity: 2, price_at_time: 5.0 }],
+      };
+
+      orderRepository.findOne.mockResolvedValue(existingOrder);
+
+      await expect(
+        service.mutateOrderItems(
+          'order-s50-2',
+          { items: [{ productId: 1, quantity: 5 }] },
+          'user-s50',
+          'client',
+          postCutoffTime,
+        ),
+      ).rejects.toThrow(new BadRequestException('Corte de producción superado. No se pueden modificar items'));
+    });
+
+    it('Sad Path (§6): mutación en día posterior a la orden es rechazada con BadRequestException', async () => {
+      const orderCreatedAt = new Date('2026-10-29T13:00:00Z'); // Yesterday
+      const nextDayTime = new Date('2026-10-30T14:00:00Z');     // Today 10:00 AM ET
+
+      const existingOrder: any = {
+        id: 'order-s50-past',
+        user_id: 'user-s50',
+        status: 'pending',
+        created_at: orderCreatedAt,
+      };
+
+      orderRepository.findOne.mockResolvedValue(existingOrder);
+
+      await expect(
+        service.mutateOrderItems(
+          'order-s50-past',
+          { items: [{ productId: 1, quantity: 3 }] },
+          'user-s50',
+          'client',
+          nextDayTime,
+        ),
+      ).rejects.toThrow('Corte de producción superado. No se pueden modificar items');
+    });
+
+    it('Sad Path (§6): orden en estado entregado o cancelado no puede modificarse', async () => {
+      const existingOrder: any = {
+        id: 'order-s50-delivered',
+        user_id: 'user-s50',
+        status: 'delivered',
+        created_at: new Date('2026-10-30T13:00:00Z'),
+      };
+
+      orderRepository.findOne.mockResolvedValue(existingOrder);
+
+      await expect(
+        service.mutateOrderItems(
+          'order-s50-delivered',
+          { items: [{ productId: 1, quantity: 3 }] },
+          'user-s50',
+          'client',
+          new Date('2026-10-30T14:00:00Z'),
+        ),
+      ).rejects.toThrow('Solo se pueden modificar órdenes en estado pending o confirmed');
+    });
+
+    it('TASK-50-03 Happy Path: modificación que disminuye total genera reembolso / nota de crédito', async () => {
+      const preCutoffTime = new Date('2026-10-30T14:00:00Z'); // 10:00 AM ET
+
+      const existingOrder: any = {
+        id: 'order-s50-refund',
+        user_id: 'user-s50',
+        status: 'confirmed',
+        payment_status: 'paid',
+        payment_method: 'stripe',
+        stripe_payment_id: 'pi_test_123',
+        total: 50.0,
+        delivery_fee_charged: 0,
+        tax_exempt: true,
+        created_at: new Date('2026-10-30T13:00:00Z'),
+        items: [
+          { product_id: 1, quantity: 10, price_at_time: 5.0, product: mockProduct1 },
+        ],
+      };
+
+      orderRepository.findOne.mockResolvedValue(existingOrder);
+      orderRepository.save.mockImplementation((ord: any) => Promise.resolve(ord));
+      userRepository.findOne.mockResolvedValue(mockUser);
+      productRepository.find.mockResolvedValue([mockProduct1]);
+      orderItemRepository.delete.mockResolvedValue({ affected: 1 });
+      orderItemRepository.save.mockImplementation((items: any) => Promise.resolve(items));
+
+      // Decrease from 10 units ($50) to 4 units ($20 + 3.5% fee = $20.70)
+      const result = await service.mutateOrderItems(
+        'order-s50-refund',
+        { items: [{ productId: 1, quantity: 4 }] },
+        'user-s50',
+        'client',
+        preCutoffTime,
+      );
+
+      // Decreased total: refund issued or note recorded
+      expect(result.total).toBeLessThan(50.0);
+      expect(result.pending_balance).toBe(0);
+    });
+
+    it('TASK-50-03 Happy Path: modificación que aumenta total genera pending_balance', async () => {
+      const preCutoffTime = new Date('2026-10-30T14:00:00Z'); // 10:00 AM ET
+
+      const existingOrder: any = {
+        id: 'order-s50-increase',
+        user_id: 'user-s50',
+        status: 'confirmed',
+        payment_status: 'paid',
+        payment_method: 'stripe',
+        total: 20.0,
+        delivery_fee_charged: 0,
+        tax_exempt: true,
+        created_at: new Date('2026-10-30T13:00:00Z'),
+        items: [
+          { product_id: 1, quantity: 4, price_at_time: 5.0, product: mockProduct1 },
+        ],
+      };
+
+      orderRepository.findOne.mockResolvedValue(existingOrder);
+      orderRepository.save.mockImplementation((ord: any) => Promise.resolve(ord));
+      userRepository.findOne.mockResolvedValue(mockUser);
+      productRepository.find.mockResolvedValue([mockProduct1]);
+      orderItemRepository.delete.mockResolvedValue({ affected: 1 });
+      orderItemRepository.save.mockImplementation((items: any) => Promise.resolve(items));
+
+      // Increase to 8 units ($40 + 3.5% fee = $41.40)
+      const result = await service.mutateOrderItems(
+        'order-s50-increase',
+        { items: [{ productId: 1, quantity: 8 }] },
+        'user-s50',
+        'client',
+        preCutoffTime,
+      );
+
+      expect(result.total).toBeGreaterThan(20.0);
+      expect(result.pending_balance).toBeGreaterThan(0);
+      expect(result.payment_status).toBe('partially_paid');
     });
   });
 });

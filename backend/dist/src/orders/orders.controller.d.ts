@@ -34,5 +34,9 @@ export declare class OrdersController {
     approveZelle(id: string): Promise<import("./order.entity").Order>;
     rejectZelle(id: string, reason?: string): Promise<import("./order.entity").Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<import("./order.entity").Order>;
+    uploadReceipt(file: Express.Multer.File): Promise<{
+        url: string;
+    }>;
+    mutateItems(id: string, body: any, req: any): Promise<import("./order.entity").Order>;
     update(id: string, body: any, req: any): Promise<import("./order.entity").Order>;
 }

@@ -18,6 +18,7 @@ describe('OrdersController', () => {
     update: jest.fn(),
     approveZellePayment: jest.fn(),
     rejectZellePayment: jest.fn(),
+    mutateOrderItems: jest.fn(),
   };
 
   const mockExcelService = {
@@ -115,6 +116,25 @@ describe('OrdersController', () => {
       const result = await controller.rejectZelle('order-123', 'Monto incorrecto');
       expect(service.rejectZellePayment).toHaveBeenCalledWith('order-123', 'Monto incorrecto');
       expect(result).toEqual({ id: 'order-123', payment_status: 'unpaid', status: 'Cancelado' });
+    });
+
+    it('should upload Zelle receipt screenshot successfully', async () => {
+      const mockFile: any = { filename: 'zelle-123.jpg' };
+      const result = await controller.uploadReceipt(mockFile);
+      expect(result).toEqual({ url: '/uploads/zelle/zelle-123.jpg' });
+    });
+
+    it('should reject receipt upload if file is missing', async () => {
+      await expect(controller.uploadReceipt(null as any)).rejects.toThrow('No file uploaded');
+    });
+
+    it('should call service.mutateOrderItems on mutateItems', async () => {
+      mockOrdersService.mutateOrderItems.mockResolvedValue({ id: 'order-123', total: 150 });
+      const body = { items: [{ productId: 1, quantity: 3 }] };
+      const req = { user: { id: 'user-1', role: 'client' } };
+      const result = await controller.mutateItems('order-123', body, req as any);
+      expect(service.mutateOrderItems).toHaveBeenCalledWith('order-123', body, 'user-1', 'client');
+      expect(result).toEqual({ id: 'order-123', total: 150 });
     });
   });
 });

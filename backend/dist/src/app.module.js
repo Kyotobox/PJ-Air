@@ -79,6 +79,15 @@ let AppModule = AppModule_1 = class AppModule {
             if (!orderColNames.includes('payment_due_date')) {
                 await qr.query(`ALTER TABLE orders ADD COLUMN payment_due_date VARCHAR;`);
             }
+            if (!orderColNames.includes('zelle_reference')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN zelle_reference TEXT;`);
+            }
+            if (!orderColNames.includes('zelle_receipt_url')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN zelle_receipt_url TEXT;`);
+            }
+            if (!orderColNames.includes('pending_balance')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN pending_balance DECIMAL(10,2) DEFAULT 0;`);
+            }
             const userCols = await qr.query(`PRAGMA table_info(users);`);
             const userColNames = userCols.map((c) => c.name);
             if (!userColNames.includes('stripe_customer_id')) {

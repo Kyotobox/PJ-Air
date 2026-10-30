@@ -765,6 +765,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
 exports.PaymentsService = PaymentsService;
 exports.PaymentsService = PaymentsService = PaymentsService_1 = __decorate([
     (0, common_1.Injectable)(),
+    __param(0, (0, common_1.Inject)((0, common_1.forwardRef)(() => orders_service_1.OrdersService))),
     __param(2, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [orders_service_1.OrdersService,
         users_service_1.UsersService,

@@ -22,6 +22,8 @@ let Order = class Order {
     payment_status;
     payment_method;
     zelle_reference;
+    zelle_receipt_url;
+    pending_balance;
     packaging_fee;
     packaging_discount;
     delivery_fee_charged;
@@ -73,9 +75,17 @@ __decorate([
     __metadata("design:type", String)
 ], Order.prototype, "payment_method", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true, type: 'text' }),
     __metadata("design:type", String)
 ], Order.prototype, "zelle_reference", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'text' }),
+    __metadata("design:type", String)
+], Order.prototype, "zelle_receipt_url", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "pending_balance", void 0);
 __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)

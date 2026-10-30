@@ -28,7 +28,7 @@ exports.PaymentsModule = PaymentsModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([check_payment_entity_1.CheckPayment, order_entity_1.Order, user_entity_1.User]),
-            orders_module_1.OrdersModule,
+            (0, common_1.forwardRef)(() => orders_module_1.OrdersModule),
             users_module_1.UsersModule,
             mail_module_1.MailModule,
             credit_module_1.CreditModule,

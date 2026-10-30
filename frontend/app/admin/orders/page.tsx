@@ -7,7 +7,7 @@ import {
     CheckCircle2, X, User, ChevronRight, Loader2, Save,
     AlertCircle, MapPin, Phone, MessageSquare, History,
     Plus, Minus, Trash2, CalendarDays, Printer, RefreshCcw, ExternalLink,
-    Building2, Hash, DollarSign
+    Building2, Hash, DollarSign, Receipt
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -28,6 +28,8 @@ interface Order {
     payment_status?: string;
     payment_method?: string;
     zelle_reference?: string;
+    zelle_receipt_url?: string;
+    pending_balance?: number;
     packaging_fee?: number;
     packaging_discount?: number;
     refunded_amount?: number;
@@ -1016,6 +1018,41 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                             {selectedOrder.payment_status === 'paid' ? '✓ Pago Aprobado' : selectedOrder.payment_status === 'pending_zelle_verification' ? '⚠️ Verificación Pendiente' : 'No Pagado / Cancelado'}
                                         </span>
                                     </div>
+
+                                    {/* Comprobante Zelle Screenshot */}
+                                    {selectedOrder.zelle_receipt_url && (
+                                        <div className="p-4 bg-white rounded-2xl border border-purple-200 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                                                    <Receipt size={14} className="text-purple-600" />
+                                                    Comprobante / Captura de Transferencia Adjunta
+                                                </span>
+                                                <a
+                                                    href={selectedOrder.zelle_receipt_url.startsWith('http') ? selectedOrder.zelle_receipt_url : `${API_URL}${selectedOrder.zelle_receipt_url}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[11px] font-black text-purple-700 hover:text-purple-900 underline flex items-center gap-1"
+                                                >
+                                                    Abrir comprobante ↗
+                                                </a>
+                                            </div>
+                                            <div className="relative rounded-xl overflow-hidden border border-purple-100 max-h-56 bg-slate-50 flex items-center justify-center p-2">
+                                                {selectedOrder.zelle_receipt_url.toLowerCase().endsWith('.pdf') ? (
+                                                    <iframe
+                                                        src={selectedOrder.zelle_receipt_url.startsWith('http') ? selectedOrder.zelle_receipt_url : `${API_URL}${selectedOrder.zelle_receipt_url}`}
+                                                        className="w-full h-48 border-0"
+                                                        title="Comprobante Zelle PDF"
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={selectedOrder.zelle_receipt_url.startsWith('http') ? selectedOrder.zelle_receipt_url : `${API_URL}${selectedOrder.zelle_receipt_url}`}
+                                                        alt="Comprobante Zelle"
+                                                        className="object-contain max-h-52 rounded-lg"
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {selectedOrder.payment_status === 'pending_zelle_verification' && (
                                         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
