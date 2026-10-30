@@ -93,7 +93,7 @@
     {
       "id": "S52",
       "name": "Sprint 52: Gestor Dinámico de Banners B2B para Temporadas y Ocasiones",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-10-30",
       "goal": "Establecer un módulo administrativo completo para que el negocio pueda subir, editar, activar/pausar y ordenar banners rotativos según la temporada, eventos o promociones especiales, alimentando dinámicamente el carrusel de la Home B2B.",
       "tasks": [
@@ -101,37 +101,43 @@
           "id": "TASK-52-01",
           "label": "DOMAIN/BANNER-CMS-SCHEMA",
           "desc": "Entidad Banner en TypeORM y tabla física SQLite banners con atributos de temporada, títulos ES/EN, imagen, link, orden y estado activo.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-52-02",
           "label": "DOMAIN/BANNERS-SERVICE-API",
           "desc": "Módulo BannersModule en NestJS con CRUD completo, endpoints públicos GET /banners/public y endpoints administrativos con upload en uploads/banners/.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-52-03",
           "label": "UI/ADMIN-BANNERS-MANAGER",
           "desc": "Pantalla /admin/banners con previsualización interactiva de banners, switch activo/inactivo en 1 clic y modal de creación/edición con carga de imágenes.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-52-04",
           "label": "UI/ADMIN-NAV-LINK",
           "desc": "Acceso directo y tarjeta de gestión Banners de Temporada en el panel y menú de navegación de /admin.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-52-05",
           "label": "UI/HOME-DYNAMIC-BANNERS-LINK",
           "desc": "Conexión reactiva del carrusel Hero en frontend/app/page.tsx a GET /banners/public con soporte de fallback gourmet por defecto.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         },
         {
           "id": "TASK-52-06",
           "label": "TEST/S52-BANNERS-CMS-SUITE",
           "desc": "Suite completa de pruebas unitarias para BannersService (happy & sad paths) y validación de compilación limpia de frontend y backend.",
-          "status": "TODO"
+          "status": "DONE",
+          "veracity_hash": null
         }
       ]
     }
@@ -141,7 +147,7 @@
   "active_sprint": {
     "id": "S52",
     "name": "Sprint 52: Gestor Dinámico de Banners B2B para Temporadas y Ocasiones",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "start_date": "2026-10-30",
     "goal": "Establecer un módulo administrativo completo para que el negocio pueda subir, editar, activar/pausar y ordenar banners rotativos según la temporada, eventos o promociones especiales, alimentando dinámicamente el carrusel de la Home B2B.",
     "tasks": [
@@ -149,37 +155,37 @@
         "id": "TASK-52-01",
         "label": "DOMAIN/BANNER-CMS-SCHEMA",
         "desc": "Entidad Banner en TypeORM y tabla física SQLite banners con atributos de temporada, títulos ES/EN, imagen, link, orden y estado activo.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-52-02",
         "label": "DOMAIN/BANNERS-SERVICE-API",
         "desc": "Módulo BannersModule en NestJS con CRUD completo, endpoints públicos GET /banners/public y endpoints administrativos con upload en uploads/banners/.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-52-03",
         "label": "UI/ADMIN-BANNERS-MANAGER",
         "desc": "Pantalla /admin/banners con previsualización interactiva de banners, switch activo/inactivo en 1 clic y modal de creación/edición con carga de imágenes.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-52-04",
         "label": "UI/ADMIN-NAV-LINK",
         "desc": "Acceso directo y tarjeta de gestión Banners de Temporada en el panel y menú de navegación de /admin.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-52-05",
         "label": "UI/HOME-DYNAMIC-BANNERS-LINK",
         "desc": "Conexión reactiva del carrusel Hero en frontend/app/page.tsx a GET /banners/public con soporte de fallback gourmet por defecto.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-52-06",
         "label": "TEST/S52-BANNERS-CMS-SUITE",
         "desc": "Suite completa de pruebas unitarias para BannersService (happy & sad paths) y validación de compilación limpia de frontend y backend.",
-        "status": "TODO"
+        "status": "DONE"
       }
     ]
   }

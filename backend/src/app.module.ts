@@ -22,6 +22,7 @@ import { CollectionCronModule } from './cron/collection-cron.module';
 import { TaxModule } from './tax/tax.module';
 import { LogisticsModule } from './logistics/logistics.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { BannersModule } from './banners/banners.module';
 
 // Entities
 import { Product } from './products/product.entity';
@@ -36,13 +37,14 @@ import { SystemConfig } from './system-configs/system-config.entity';
 import { DeliveryZone } from './zones/delivery-zone.entity';
 import { CheckPayment } from './payments/check-payment.entity';
 import { Feedback } from './feedback/feedback.entity';
+import { Banner } from './banners/banner.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: DATABASE_PATH,
-      entities: [Product, Category, User, Profile, Address, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone, CheckPayment, Feedback],
+      entities: [Product, Category, User, Profile, Address, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone, CheckPayment, Feedback, Banner],
       synchronize: NODE_ENV !== 'production',
       logging: false,
     }),
@@ -64,6 +66,7 @@ import { Feedback } from './feedback/feedback.entity';
     TaxModule,
     LogisticsModule,
     FeedbackModule,
+    BannersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -226,6 +229,29 @@ export class AppModule implements OnModuleInit {
       if (!addressColNames.includes('delivery_photos_json')) {
         await qr.query(`ALTER TABLE addresses ADD COLUMN delivery_photos_json TEXT;`);
       }
+
+      // TASK-52-01: Crear tabla banners si no existe
+      await qr.query(`
+        CREATE TABLE IF NOT EXISTS banners (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title VARCHAR NOT NULL,
+          title_en VARCHAR,
+          subtitle TEXT,
+          subtitle_en TEXT,
+          badge VARCHAR,
+          badge_en VARCHAR,
+          tag VARCHAR,
+          tag_en VARCHAR,
+          image_url VARCHAR NOT NULL,
+          link_url VARCHAR DEFAULT '#catalogo',
+          button_text VARCHAR DEFAULT 'Ver Productos',
+          button_text_en VARCHAR DEFAULT 'Browse Catalog',
+          display_order INTEGER DEFAULT 0,
+          is_active BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT (datetime('now')),
+          updated_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
       await qr.release();
       this.logger.log('Schema verification completed successfully.');
     } catch (e: any) {

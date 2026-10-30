@@ -468,12 +468,48 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {[
-                            { label: lbl('Gestión de Clientes y Crédito', 'Clients & Credit Management'), href: '/admin/clients', icon: Users, color: 'hover:border-blue-400 hover:bg-blue-50/20' },
-                            { label: lbl('Torre y Reportes de Producción', 'Production Reports & Batches'), href: '/admin/reports', icon: FileText, color: 'hover:border-amber-400 hover:bg-amber-50/20' },
-                            { label: lbl('Catálogo de Productos', 'Wholesale Product Catalog'), href: '/admin/products', icon: ShoppingBag, color: 'hover:border-green-400 hover:bg-green-50/20' },
-                            { label: lbl('Configuración y Reglas de Corte', 'Logistics & Cutoff Rules'), href: '/admin/settings', icon: Clock, color: 'hover:border-purple-400 hover:bg-purple-50/20' },
+                            { 
+                                label: lbl('Banners de Temporada', 'Seasonal Banners'), 
+                                desc: lbl('Gestiona los banners rotativos del carrusel Home según temporadas y festividades', 'Manage rotational home carousel banners for seasons and holidays'),
+                                href: '/admin/banners', 
+                                icon: Sparkles, 
+                                color: 'hover:border-amber-400 hover:bg-amber-50/20',
+                                iconBg: 'bg-amber-100 text-amber-700'
+                            },
+                            { 
+                                label: lbl('Gestión de Clientes y Crédito', 'Clients & Credit Management'), 
+                                desc: lbl('Cuentas y límites de crédito', 'Accounts and credit limits'),
+                                href: '/admin/clients', 
+                                icon: Users, 
+                                color: 'hover:border-blue-400 hover:bg-blue-50/20',
+                                iconBg: 'bg-slate-100 text-slate-700'
+                            },
+                            { 
+                                label: lbl('Torre y Reportes de Producción', 'Production Reports & Batches'), 
+                                desc: lbl('Lotes de horneado consolidado', 'Consolidated baking batches'),
+                                href: '/admin/reports', 
+                                icon: FileText, 
+                                color: 'hover:border-amber-400 hover:bg-amber-50/20',
+                                iconBg: 'bg-slate-100 text-slate-700'
+                            },
+                            { 
+                                label: lbl('Catálogo de Productos', 'Wholesale Product Catalog'), 
+                                desc: lbl('Precios y pedidos mínimos', 'Prices and minimum orders'),
+                                href: '/admin/products', 
+                                icon: ShoppingBag, 
+                                color: 'hover:border-green-400 hover:bg-green-50/20',
+                                iconBg: 'bg-slate-100 text-slate-700'
+                            },
+                            { 
+                                label: lbl('Configuración y Reglas de Corte', 'Logistics & Cutoff Rules'), 
+                                desc: lbl('Horarios y logística', 'Schedules and logistics'),
+                                href: '/admin/settings', 
+                                icon: Clock, 
+                                color: 'hover:border-purple-400 hover:bg-purple-50/20',
+                                iconBg: 'bg-slate-100 text-slate-700'
+                            },
                         ].map(item => {
                             const Icon = item.icon;
                             return (
@@ -482,13 +518,18 @@ export default function AdminDashboardPage() {
                                     href={item.href}
                                     className={`p-5 rounded-2xl border border-slate-200 transition-all flex items-center justify-between group ${item.color}`}
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 group-hover:scale-105 transition-transform">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl ${item.iconBg || 'bg-slate-100 text-slate-700'} flex items-center justify-center group-hover:scale-105 transition-transform shrink-0`}>
                                             <Icon size={18} />
                                         </div>
-                                        <span className="font-black text-xs text-slate-800">{item.label}</span>
+                                        <div className="min-w-0">
+                                            <span className="font-black text-xs text-slate-800 block truncate">{item.label}</span>
+                                            {item.desc && (
+                                                <p className="text-[10px] text-slate-400 font-medium line-clamp-1 mt-0.5">{item.desc}</p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <ArrowRight size={16} className="text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all" />
+                                    <ArrowRight size={16} className="text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                                 </Link>
                             );
                         })}

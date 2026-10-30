@@ -465,11 +465,26 @@ export default function Home() {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-    // ── B2B Hero Carousel State (TASK-51-03) ────────────────────────────────
+    // ── B2B Hero Carousel State (TASK-51-03 & TASK-52-05) ───────────────────
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isSlidePaused, setIsSlidePaused] = useState(false);
+    const [dbBanners, setDbBanners] = useState<any[]>([]);
 
-    const heroSlides = useMemo(() => [
+    useEffect(() => {
+        let mounted = true;
+        api.get('/banners/public')
+            .then((data: any) => {
+                if (mounted && Array.isArray(data) && data.length > 0) {
+                    setDbBanners(data);
+                }
+            })
+            .catch(() => {
+                // Keep default fallback slides if backend fails or has no active banners
+            });
+        return () => { mounted = false; };
+    }, []);
+
+    const defaultSlides = useMemo(() => [
         {
             id: 'croissants',
             badgeEn: 'Wholesale Bestseller',
@@ -483,6 +498,9 @@ export default function Home() {
             image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=1200',
             statsEn: 'Over 8,000 croissants delivered weekly to NYC top cafes',
             statsEs: 'Más de 8,000 croissants despachados semanalmente en NYC',
+            linkUrl: '#catalogo',
+            buttonTextEn: 'Browse Catalog',
+            buttonTextEs: 'Ver Productos',
         },
         {
             id: 'pastries',
@@ -497,6 +515,9 @@ export default function Home() {
             image: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?q=80&w=1200',
             statsEn: '30+ gourmet dessert references ready for daily order',
             statsEs: 'Más de 30 referencias gourmet listas para despacho diario',
+            linkUrl: '#catalogo',
+            buttonTextEn: 'Browse Catalog',
+            buttonTextEs: 'Ver Productos',
         },
         {
             id: 'seasonal',
@@ -511,6 +532,9 @@ export default function Home() {
             image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1200',
             statsEn: 'Exclusive seasonal catalogue updated 6 times per year',
             statsEs: 'Catálogo exclusivo de temporada renovado 6 veces al año',
+            linkUrl: '#catalogo',
+            buttonTextEn: 'Browse Catalog',
+            buttonTextEs: 'Ver Productos',
         },
         {
             id: 'fleet',
@@ -525,8 +549,45 @@ export default function Home() {
             image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200',
             statsEn: 'Covering Manhattan, Queens, Brooklyn & Bronx daily',
             statsEs: 'Rutas activas en Manhattan, Queens, Brooklyn y Bronx',
+            linkUrl: '#catalogo',
+            buttonTextEn: 'Browse Catalog',
+            buttonTextEs: 'Ver Productos',
         },
     ], []);
+
+    const heroSlides = useMemo(() => {
+        if (dbBanners.length > 0) {
+            return dbBanners.map(b => {
+                const img = b.image_url?.startsWith('http') || b.image_url?.startsWith('blob:')
+                    ? b.image_url
+                    : `${API_URL}${b.image_url}`;
+                return {
+                    id: `db-banner-${b.id}`,
+                    badgeEn: b.badge_en || b.badge || 'Seasonal Special',
+                    badgeEs: b.badge || b.badge_en || 'Especial de Temporada',
+                    tagEn: b.tag_en || b.tag || 'Jhoanes Bakery Wholesale',
+                    tagEs: b.tag || b.tag_en || 'Jhoanes Bakery Mayorista',
+                    titleEn: b.title_en || b.title,
+                    titleEs: b.title || b.title_en,
+                    descEn: b.subtitle_en || b.subtitle || 'Fresh artisanal bakery & viennoiserie delivered daily across NYC.',
+                    descEs: b.subtitle || b.subtitle_en || 'Bollería y pastelería artesanal horneada cada madrugada para tu vitrina.',
+                    image: img,
+                    statsEn: 'Order fresh wholesale daily before 12:00 PM cutoff',
+                    statsEs: 'Despachos diarios en NYC — Realiza tu pedido antes de las 12 PM',
+                    linkUrl: b.link_url || '#catalogo',
+                    buttonTextEn: b.button_text_en || 'Browse Catalog',
+                    buttonTextEs: b.button_text || 'Ver Productos',
+                };
+            });
+        }
+        return defaultSlides;
+    }, [dbBanners, defaultSlides]);
+
+    useEffect(() => {
+        if (currentSlide >= heroSlides.length) {
+            setCurrentSlide(0);
+        }
+    }, [heroSlides.length, currentSlide]);
 
     useEffect(() => {
         if (isSlidePaused) return;
@@ -764,10 +825,10 @@ export default function Home() {
                                         {/* Action buttons */}
                                         <div className="flex flex-wrap items-center gap-3">
                                             <a 
-                                                href="#catalogo" 
+                                                href={slide.linkUrl || '#catalogo'} 
                                                 className="px-7 py-3.5 rounded-full bg-primary text-white text-xs font-black uppercase tracking-widest shadow-xl hover:bg-white hover:text-foreground transition-all flex items-center gap-2 group/btn"
                                             >
-                                                <span>{locale === 'en' ? 'Browse Catalog' : 'Ver Productos'}</span>
+                                                <span>{locale === 'en' ? (slide.buttonTextEn || 'Browse Catalog') : (slide.buttonTextEs || 'Ver Productos')}</span>
                                                 <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                                             </a>
                                             <button 

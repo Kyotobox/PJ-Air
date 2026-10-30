@@ -35,6 +35,7 @@ const collection_cron_module_1 = require("./cron/collection-cron.module");
 const tax_module_1 = require("./tax/tax.module");
 const logistics_module_1 = require("./logistics/logistics.module");
 const feedback_module_1 = require("./feedback/feedback.module");
+const banners_module_1 = require("./banners/banners.module");
 const product_entity_1 = require("./products/product.entity");
 const category_entity_1 = require("./products/category.entity");
 const user_entity_1 = require("./users/user.entity");
@@ -47,6 +48,7 @@ const system_config_entity_1 = require("./system-configs/system-config.entity");
 const delivery_zone_entity_1 = require("./zones/delivery-zone.entity");
 const check_payment_entity_1 = require("./payments/check-payment.entity");
 const feedback_entity_1 = require("./feedback/feedback.entity");
+const banner_entity_1 = require("./banners/banner.entity");
 let AppModule = AppModule_1 = class AppModule {
     dataSource;
     logger = new common_1.Logger(AppModule_1.name);
@@ -192,6 +194,27 @@ let AppModule = AppModule_1 = class AppModule {
             if (!addressColNames.includes('delivery_photos_json')) {
                 await qr.query(`ALTER TABLE addresses ADD COLUMN delivery_photos_json TEXT;`);
             }
+            await qr.query(`
+        CREATE TABLE IF NOT EXISTS banners (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title VARCHAR NOT NULL,
+          title_en VARCHAR,
+          subtitle TEXT,
+          subtitle_en TEXT,
+          badge VARCHAR,
+          badge_en VARCHAR,
+          tag VARCHAR,
+          tag_en VARCHAR,
+          image_url VARCHAR NOT NULL,
+          link_url VARCHAR DEFAULT '#catalogo',
+          button_text VARCHAR DEFAULT 'Ver Productos',
+          button_text_en VARCHAR DEFAULT 'Browse Catalog',
+          display_order INTEGER DEFAULT 0,
+          is_active BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT (datetime('now')),
+          updated_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
             await qr.release();
             this.logger.log('Schema verification completed successfully.');
         }
@@ -207,7 +230,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'sqlite',
                 database: config_1.DATABASE_PATH,
-                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment, feedback_entity_1.Feedback],
+                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment, feedback_entity_1.Feedback, banner_entity_1.Banner],
                 synchronize: config_1.NODE_ENV !== 'production',
                 logging: false,
             }),
@@ -229,6 +252,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             tax_module_1.TaxModule,
             logistics_module_1.LogisticsModule,
             feedback_module_1.FeedbackModule,
+            banners_module_1.BannersModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
