@@ -3,77 +3,26 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S51",
-  "current_task": "TASK-51-06",
+  "current_sprint": "S52",
+  "current_task": "TASK-52-01",
   "sprints": [
     {
-      "id": "S49",
-      "name": "Sprint 49: Tax ID Obligatorio, Google Maps Real y Lead Time de Despacho 48h",
-      "status": "COMPLETED",
-      "start_date": "2026-10-30",
-      "goal": "Tax ID obligatorio en registro mayorista B2B, integraci\u00f3n real de Google Maps (Maps JS, Geocoding, Places), motor de lead time de 48h para despacho y terminolog\u00eda oficial de Delivery Fee.",
-      "tasks": [
-        {
-          "id": "TASK-49-01",
-          "label": "UI/AUTH-MANDATORY-TAXID",
-          "desc": "Tax ID / NY Resale Certificate # obligatorio en /auth/register y validaci\u00f3n en backend.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-49-02",
-          "label": "INTEGRATION/GOOGLE-MAPS-REAL-KEY",
-          "desc": "Configuraci\u00f3n y verificaci\u00f3n de Google Maps API Key real eliminando error Oops! Something went wrong.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-49-03",
-          "label": "UI/PLACES-AUTOCOMPLETE-NYC",
-          "desc": "Buscador predictivo Google Places Autocomplete en /profile/addresses/new y Checkout inline.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-49-04",
-          "label": "DOMAIN/CUTOFF-LEADTIME-ENGINE",
-          "desc": "Motor de Lead Time 48h (T+2 pre-12 PM, T+3 post-12 PM hora NY) y guardarra\u00edl de fechas en /checkout.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-49-05",
-          "label": "UI/CHECKOUT-TERMINOLOGY-AND-PICKUP",
-          "desc": "Renombrar Flete a Delivery Fee, fijar horario Pick Up (8:00 AM - 10:00 AM) y fix de scroll m\u00f3vil.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-49-06",
-          "label": "DOMAIN/LOGISTICS-CHECKOUT-LINK",
-          "desc": "Conexi\u00f3n de coordenadas geocodificadas con POST /logistics/quote (MileageFreightService).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-49-07",
-          "label": "TEST/S49-INTEGRATION-SUITE",
-          "desc": "Suite de pruebas unitarias para TaxID obligatorio, cutoff 48h, fletes y build clean.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
       "id": "S50",
-      "name": "Sprint 50: Comprobantes Zelle, Pol\u00edticas de Pago y Modificaci\u00f3n de \u00d3rdenes Pre-Corte",
+      "name": "Sprint 50: Comprobantes Zelle, Políticas de Pago y Modificación de Órdenes Pre-Corte",
       "status": "COMPLETED",
       "start_date": "2026-11-03",
-      "goal": "Comprobantes Zelle con screenshot, modificaci\u00f3n de \u00f3rdenes abiertas pre-corte (12 PM) y clarificaci\u00f3n de pol\u00edticas de pago.",
+      "goal": "Comprobantes Zelle con screenshot, modificación de órdenes abiertas pre-corte (12 PM) y clarificación de políticas de pago.",
       "tasks": [
         {
           "id": "TASK-50-01",
           "label": "UI/ZELLE-RECEIPT-UPLOAD",
-          "desc": "Carga de captura/screenshot de transferencia Zelle + referencia bancaria en checkout y \u00f3rdenes.",
+          "desc": "Carga de captura/screenshot de transferencia Zelle + referencia bancaria en checkout y órdenes.",
           "status": "DONE"
         },
         {
           "id": "TASK-50-02",
           "label": "DOMAIN/ORDER-PRE-CUTOFF-MUTATION",
-          "desc": "Modificaci\u00f3n de \u00f3rdenes abiertas antes del corte de las 12:00 PM (agregar items / corregir cantidades).",
+          "desc": "Modificación de órdenes abiertas antes del corte de las 12:00 PM (agregar items / corregir cantidades).",
           "status": "DONE"
         },
         {
@@ -85,28 +34,28 @@
         {
           "id": "TASK-50-04",
           "label": "UI/PAYMENT-POLICIES-CLEANUP",
-          "desc": "Secci\u00f3n de pol\u00edticas de pago en checkout aclarando pago previo a despacho.",
+          "desc": "Sección de políticas de pago en checkout aclarando pago previo a despacho.",
           "status": "DONE"
         },
         {
           "id": "TASK-50-05",
           "label": "TEST/S50-PAYMENTS-MUTATION-SUITE",
-          "desc": "Suite de pruebas unitarias para comprobante Zelle y mutaci\u00f3n de orden pre-corte.",
+          "desc": "Suite de pruebas unitarias para comprobante Zelle y mutación de orden pre-corte.",
           "status": "DONE"
         }
       ]
     },
     {
       "id": "S51",
-      "name": "Sprint 51: Log\u00edstica Nocturna con Fotos de Acceso y Landing B2B Mayorista",
+      "name": "Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista",
       "status": "COMPLETED",
       "start_date": "2026-11-05",
-      "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y redise\u00f1o comercial de Home B2B con CTA prominente.",
+      "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y rediseño comercial de Home B2B con CTA prominente.",
       "tasks": [
         {
           "id": "TASK-51-01",
           "label": "DOMAIN/EARLY-MORNING-ACCESS-SCHEMA",
-          "desc": "Columnas en Address para instrucciones de acceso en madrugada (c\u00f3digos, llaves, neveras).",
+          "desc": "Columnas en Address para instrucciones de acceso en madrugada (códigos, llaves, neveras).",
           "status": "DONE"
         },
         {
@@ -130,7 +79,7 @@
         {
           "id": "TASK-51-05",
           "label": "UI/SIGNUP-B2B-PROMINENT-CTA",
-          "desc": "Bot\u00f3n/Cintillo destacado de registro mayorista (Reg\u00edstrate ahora / Crece con nosotros).",
+          "desc": "Botón/Cintillo destacado de registro mayorista (Regístrate ahora / Crece con nosotros).",
           "status": "DONE"
         },
         {
@@ -140,51 +89,96 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S52",
+      "name": "Sprint 52: Gestor Dinámico de Banners B2B para Temporadas y Ocasiones",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-10-30",
+      "goal": "Establecer un módulo administrativo completo para que el negocio pueda subir, editar, activar/pausar y ordenar banners rotativos según la temporada, eventos o promociones especiales, alimentando dinámicamente el carrusel de la Home B2B.",
+      "tasks": [
+        {
+          "id": "TASK-52-01",
+          "label": "DOMAIN/BANNER-CMS-SCHEMA",
+          "desc": "Entidad Banner en TypeORM y tabla física SQLite banners con atributos de temporada, títulos ES/EN, imagen, link, orden y estado activo.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-52-02",
+          "label": "DOMAIN/BANNERS-SERVICE-API",
+          "desc": "Módulo BannersModule en NestJS con CRUD completo, endpoints públicos GET /banners/public y endpoints administrativos con upload en uploads/banners/.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-52-03",
+          "label": "UI/ADMIN-BANNERS-MANAGER",
+          "desc": "Pantalla /admin/banners con previsualización interactiva de banners, switch activo/inactivo en 1 clic y modal de creación/edición con carga de imágenes.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-52-04",
+          "label": "UI/ADMIN-NAV-LINK",
+          "desc": "Acceso directo y tarjeta de gestión Banners de Temporada en el panel y menú de navegación de /admin.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-52-05",
+          "label": "UI/HOME-DYNAMIC-BANNERS-LINK",
+          "desc": "Conexión reactiva del carrusel Hero en frontend/app/page.tsx a GET /banners/public con soporte de fallback gourmet por defecto.",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-52-06",
+          "label": "TEST/S52-BANNERS-CMS-SUITE",
+          "desc": "Suite completa de pruebas unitarias para BannersService (happy & sad paths) y validación de compilación limpia de frontend y backend.",
+          "status": "TODO"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 2,
+  "archived_sprints_count": 43,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S51",
-    "name": "Sprint 51: Log\u00edstica Nocturna con Fotos de Acceso y Landing B2B Mayorista",
+    "id": "S52",
+    "name": "Sprint 52: Gestor Dinámico de Banners B2B para Temporadas y Ocasiones",
     "status": "IN_PROGRESS",
-    "start_date": "2026-11-05",
-    "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y redise\u00f1o comercial de Home B2B con CTA prominente.",
+    "start_date": "2026-10-30",
+    "goal": "Establecer un módulo administrativo completo para que el negocio pueda subir, editar, activar/pausar y ordenar banners rotativos según la temporada, eventos o promociones especiales, alimentando dinámicamente el carrusel de la Home B2B.",
     "tasks": [
       {
-        "id": "TASK-51-01",
-        "label": "DOMAIN/EARLY-MORNING-ACCESS-SCHEMA",
-        "desc": "Columnas en Address para instrucciones de acceso en madrugada (c\u00f3digos, llaves, neveras).",
-        "status": "IN_PROGRESS"
-      },
-      {
-        "id": "TASK-51-02",
-        "label": "UI/DELIVERY-PHOTOS-UPLOAD",
-        "desc": "Subida de fotos de fachada, puerta de acceso y neveras en direcciones.",
+        "id": "TASK-52-01",
+        "label": "DOMAIN/BANNER-CMS-SCHEMA",
+        "desc": "Entidad Banner en TypeORM y tabla física SQLite banners con atributos de temporada, títulos ES/EN, imagen, link, orden y estado activo.",
         "status": "TODO"
       },
       {
-        "id": "TASK-51-03",
-        "label": "UI/HOME-B2B-HERO-CAROUSEL",
-        "desc": "Banner/carrusel publicitario B2B en Home (croissants, postres, temporadas, camioneta).",
+        "id": "TASK-52-02",
+        "label": "DOMAIN/BANNERS-SERVICE-API",
+        "desc": "Módulo BannersModule en NestJS con CRUD completo, endpoints públicos GET /banners/public y endpoints administrativos con upload en uploads/banners/.",
         "status": "TODO"
       },
       {
-        "id": "TASK-51-04",
-        "label": "UI/SCHEDULE-ORDERS-MODAL",
-        "desc": "Modal informativo del horario y cronograma de horneado y pedidos.",
+        "id": "TASK-52-03",
+        "label": "UI/ADMIN-BANNERS-MANAGER",
+        "desc": "Pantalla /admin/banners con previsualización interactiva de banners, switch activo/inactivo en 1 clic y modal de creación/edición con carga de imágenes.",
         "status": "TODO"
       },
       {
-        "id": "TASK-51-05",
-        "label": "UI/SIGNUP-B2B-PROMINENT-CTA",
-        "desc": "Bot\u00f3n/Cintillo destacado de registro mayorista (Reg\u00edstrate ahora / Crece con nosotros).",
+        "id": "TASK-52-04",
+        "label": "UI/ADMIN-NAV-LINK",
+        "desc": "Acceso directo y tarjeta de gestión Banners de Temporada en el panel y menú de navegación de /admin.",
         "status": "TODO"
       },
       {
-        "id": "TASK-51-06",
-        "label": "TEST/S51-LOGISTICS-AND-LANDING-SUITE",
-        "desc": "Tests unitarios y build clean de frontend y backend.",
+        "id": "TASK-52-05",
+        "label": "UI/HOME-DYNAMIC-BANNERS-LINK",
+        "desc": "Conexión reactiva del carrusel Hero en frontend/app/page.tsx a GET /banners/public con soporte de fallback gourmet por defecto.",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-52-06",
+        "label": "TEST/S52-BANNERS-CMS-SUITE",
+        "desc": "Suite completa de pruebas unitarias para BannersService (happy & sad paths) y validación de compilación limpia de frontend y backend.",
         "status": "TODO"
       }
     ]
