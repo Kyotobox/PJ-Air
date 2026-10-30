@@ -121,26 +121,5 @@ export const api = {
       throw new Error(data.message || 'Error en la petición');
     }
     return true;
-  },
-
-  async upload(path: string, formData: FormData) {
-    const headers: Record<string, string> = {};
-    if (typeof window !== 'undefined') {
-      const savedSession = localStorage.getItem('local_session');
-      if (savedSession) {
-        try {
-          const { session } = JSON.parse(savedSession);
-          if (session?.access_token) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-          }
-        } catch (e) {}
-      }
-    }
-    const response = await fetch(`${API_URL}${path}`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    return handleResponse(response);
   }
 };
