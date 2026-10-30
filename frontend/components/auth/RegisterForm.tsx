@@ -173,12 +173,12 @@ export const RegisterForm = ({
                     </div>
                 </div>
 
-                {/* Tax ID / NY Resale Certificate # — full width, optional/recommended */}
+                {/* Tax ID / NY Resale Certificate # — full width, mandatory */}
                 <div className="space-y-3 md:col-span-2 p-4 bg-muted/20 border border-border/80 rounded-2xl">
                     <div className="flex items-center justify-between">
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
                             <FileText size={14} className="text-primary" />
-                            <span>{locale === 'en' ? 'Tax ID / NY Resale Certificate # (Optional)' : 'Tax ID / N° Certificado de Reventa NY (Opcional)'}</span>
+                            <span>TAX ID / NY RESALE CERTIFICATE # *</span>
                         </label>
                         <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                             {locale === 'en' ? '0% Sales Tax ST-120' : '0% Impuestos ST-120'}
@@ -187,6 +187,7 @@ export const RegisterForm = ({
                     <div className="relative">
                         <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
                         <input
+                            required
                             type="text"
                             placeholder={locale === 'en' ? 'e.g. 12-3456789 or NY Certificate #' : 'Ej: 12-3456789 o Certificado NY'}
                             className="premium-input pl-12"

@@ -48,10 +48,30 @@ describe('AuthService', () => {
   });
 
   describe('signup', () => {
+    it('should throw BadRequestException if tax_id is missing or empty (Sad Path - TASK-49-01)', async () => {
+      await expect(service.signup({
+        email: 'test@example.com',
+        company_name: 'Test Bakery',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+        tax_id: '',
+      })).rejects.toThrow(new BadRequestException('El Tax ID / NY Resale Certificate # es obligatorio para registros mayoristas'));
+
+      await expect(service.register({
+        email: 'test@example.com',
+        company_name: 'Test Bakery',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+      })).rejects.toThrow(new BadRequestException('El Tax ID / NY Resale Certificate # es obligatorio para registros mayoristas'));
+    });
+
     it('should throw BadRequestException if phone number is missing or invalid for wholesale registration', async () => {
       await expect(service.signup({
         email: 'test@example.com',
         company_name: 'Test Bakery',
+        tax_id: '12-3456789',
         phone: '123',
       })).rejects.toThrow(BadRequestException);
     });
@@ -60,6 +80,7 @@ describe('AuthService', () => {
       await expect(service.signup({
         email: 'test@example.com',
         company_name: 'Test Bakery',
+        tax_id: '12-3456789',
         phone: '+13055550100',
         phone_verified: false,
       })).rejects.toThrow(BadRequestException);
@@ -69,6 +90,7 @@ describe('AuthService', () => {
       await expect(service.signup({
         email: 'test@example.com',
         company_name: 'Test Bakery',
+        tax_id: '12-3456789',
         phone: '+13055550100',
         phone_verified: true,
         idToken: 'invalid-token',
@@ -80,13 +102,14 @@ describe('AuthService', () => {
       await expect(service.signup({
         email: 'test@example.com',
         company_name: 'Test Bakery',
+        tax_id: '12-3456789',
         phone: '+13055550100',
         phone_verified: true,
         idToken: 'mock-valid-firebase-token',
       })).rejects.toThrow(ConflictException);
     });
 
-    it('should create user and profile and return session', async () => {
+    it('should create user and profile and return session with mandatory Tax ID (Happy Path - TASK-49-01)', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
       mockUsersService.create.mockResolvedValue({ id: '1', email: 'test@example.com' });
       mockUsersService.createProfile.mockResolvedValue({});
@@ -96,6 +119,7 @@ describe('AuthService', () => {
         password: 'password',
         full_name: 'Test',
         company_name: 'Test Bakery',
+        tax_id: '12-3456789',
         phone: '+13055550100',
         phone_verified: true,
         idToken: 'mock-valid-firebase-token',

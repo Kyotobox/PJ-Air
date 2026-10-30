@@ -14,10 +14,12 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { api } from '@/lib/api';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
 import { calculateProcessingFee } from '@/lib/fee-calculator';
+
+const libraries: ('places')[] = ['places'];
 
 // MIN_ORDER_AMOUNT was migrated to dynamic configuration loaded from the backend API
 
@@ -92,10 +94,36 @@ function InlineAddressForm({
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: GOOGLE_MAPS_KEY || ''
+        googleMapsApiKey: GOOGLE_MAPS_KEY || '',
+        libraries,
     });
 
     const [map, setMap] = useState<google.maps.Map | null>(null);
+    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+
+    const onAutocompleteLoad = React.useCallback((auto: google.maps.places.Autocomplete) => {
+        setAutocomplete(auto);
+    }, []);
+
+    const onPlaceChanged = React.useCallback(() => {
+        if (autocomplete !== null) {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+                const newPos = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+                setMarkerPos(newPos);
+                setGeocodedPos(newPos);
+                setIsManualAdjustment(false);
+                setRefinedPos(null);
+                map?.panTo(newPos);
+                if (place.formatted_address) {
+                    setAddress(place.formatted_address);
+                }
+            }
+        }
+    }, [autocomplete, map]);
 
     useEffect(() => {
         onReady({ 
@@ -218,20 +246,45 @@ function InlineAddressForm({
                     {lbl('Dirección completa', 'Full address')}
                 </label>
                 <div className="relative group">
-                    <textarea
-                        required
-                        rows={2}
-                        placeholder={lbl('Calle, número, ciudad...', 'Street, number, city...')}
-                        value={address}
-                        onChange={e => setAddress(e.target.value)}
-                        onBlur={() => { if (address.length > 5) forwardGeocode(); }}
-                        className="premium-input px-4 py-3 pr-24 resize-none"
-                    />
+                    {isLoaded ? (
+                        <Autocomplete
+                            onLoad={onAutocompleteLoad}
+                            onPlaceChanged={onPlaceChanged}
+                            options={{
+                                componentRestrictions: { country: 'us' },
+                                fields: ['address_components', 'geometry', 'formatted_address'],
+                                types: ['address'],
+                            }}
+                        >
+                            <input
+                                required
+                                type="text"
+                                placeholder={lbl('Calle, número, ciudad...', 'Street, number, city...')}
+                                value={address}
+                                onChange={e => setAddress(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                className="premium-input px-4 py-3 pr-24 w-full"
+                            />
+                        </Autocomplete>
+                    ) : (
+                        <input
+                            required
+                            type="text"
+                            placeholder={lbl('Calle, número, ciudad...', 'Street, number, city...')}
+                            value={address}
+                            onChange={e => setAddress(e.target.value)}
+                            className="premium-input px-4 py-3 pr-24 w-full"
+                        />
+                    )}
                     <button
                         type="button"
                         onClick={forwardGeocode}
                         disabled={isGeocoding}
-                        className="absolute right-3 bottom-3 px-3 py-1.5 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-md hover:bg-primary/90 transition-all flex items-center gap-2"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-md hover:bg-primary/90 transition-all flex items-center gap-2"
                     >
                         {isGeocoding ? <Loader2 size={12} className="animate-spin" /> : <Search size={12} />}
                         {lbl('Ubicar', 'Locate')}
@@ -684,6 +737,65 @@ export default function CheckoutPage() {
         return () => { isMounted = false; };
     }, [currentZip, deliveryType]);
 
+    // ── TASK-49-06: Logistics Quote via MileageFreightService ────────────────
+    const [logisticsQuote, setLogisticsQuote] = useState<any | null>(null);
+    const [isQuotingLogistics, setIsQuotingLogistics] = useState(false);
+
+    const targetLat = deliveryType === 'saved'
+        ? (currentAddress?.refined_lat ?? currentAddress?.lat)
+        : deliveryType === 'other'
+        ? (otherAddrData?.refined_lat ?? otherAddrData?.lat)
+        : null;
+
+    const targetLng = deliveryType === 'saved'
+        ? (currentAddress?.refined_lng ?? currentAddress?.lng)
+        : deliveryType === 'other'
+        ? (otherAddrData?.refined_lng ?? otherAddrData?.lng)
+        : null;
+
+    const targetAddressText = deliveryType === 'saved'
+        ? currentAddress?.address
+        : deliveryType === 'other'
+        ? otherAddrData?.address
+        : undefined;
+
+    useEffect(() => {
+        if (deliveryType === 'pickup') {
+            setLogisticsQuote(null);
+            return;
+        }
+
+        if (
+            targetLat !== null && targetLat !== undefined &&
+            targetLng !== null && targetLng !== undefined &&
+            !isNaN(Number(targetLat)) && !isNaN(Number(targetLng))
+        ) {
+            let isMounted = true;
+            setIsQuotingLogistics(true);
+            api.post('/logistics/quote', {
+                destLat: Number(targetLat),
+                destLng: Number(targetLng),
+                serviceType: 'shared',
+                destinationAddress: targetAddressText,
+            })
+            .then((quote: any) => {
+                if (isMounted && quote) {
+                    setLogisticsQuote(quote);
+                }
+            })
+            .catch(err => {
+                console.warn('Error quoting logistics:', err);
+            })
+            .finally(() => {
+                if (isMounted) setIsQuotingLogistics(false);
+            });
+
+            return () => { isMounted = false; };
+        } else {
+            setLogisticsQuote(null);
+        }
+    }, [deliveryType, targetLat, targetLng, targetAddressText]);
+
     // ── Calculation logic & Precedence Matrix ─────────────────────────────────
     const rawSubtotal = getRawSubtotal();
     const discountedSubtotal = getDiscountedSubtotal();
@@ -692,7 +804,8 @@ export default function CheckoutPage() {
     // 1. Pickup: siempre $0.00
     // 2. Tarifa Especial VIP pactada en perfil (user.delivery_fee > 0): prevalece sobre la zona
     // 3. Zona resuelta por ZIP (si subtotal >= min_free_delivery_amount -> $0.00, sino -> zone.base_fee)
-    // 4. Contingencia fallback ($15.00) si el ZIP no está registrado en zonas activas
+    // 4. Cotización Oficial MileageFreightService por coordenadas (TASK-49-06)
+    // 5. Contingencia fallback ($15.00) si no hay coordenadas ni zona registrada
     const hasVipFee = Number(profile?.delivery_fee) > 0;
     let deliveryFee = 0;
     if (deliveryType === 'pickup') {
@@ -706,6 +819,8 @@ export default function CheckoutPage() {
         } else {
             deliveryFee = Number(resolvedZone.base_fee || 0);
         }
+    } else if (logisticsQuote && typeof logisticsQuote.cost === 'number') {
+        deliveryFee = Number(logisticsQuote.cost);
     } else {
         deliveryFee = 15.00; // Contingency fallback
     }
@@ -732,7 +847,7 @@ export default function CheckoutPage() {
     const hasCreditOverride = Boolean(creditSummary?.credit_override);
     const exceedsCreditLimit = isCreditAccount && paymentMethod === 'credit' && (usedCredit + finalTotal > creditLimit) && !hasCreditOverride;
 
-    // ── Delivery date (NY timezone & 12:00 PM cutoff guard) ───────────────────
+    // ── Delivery date (NY timezone & 12:00 PM cutoff guard - TASK-49-04) ──────
     useEffect(() => {
         const nowNY = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
         const currentHour = nowNY.getHours();
@@ -740,8 +855,8 @@ export default function CheckoutPage() {
         setIsPastCutoff(pastCutoff);
         setIsBeforeCutoff(!pastCutoff);
 
-        // If past cutoff (12:00 PM), next day delivery is prohibited -> min is T+2 days. Before 12 PM -> T+1 day.
-        const daysToAdd = pastCutoff ? 2 : 1;
+        // TASK-49-04: 48h lead time formula: T+2 if pre-12 PM, T+3 if past-12 PM
+        const daysToAdd = pastCutoff ? 3 : 2;
         const minDate = new Date(nowNY);
         minDate.setDate(nowNY.getDate() + daysToAdd);
 
@@ -772,8 +887,8 @@ export default function CheckoutPage() {
         if (minSelectableDate && newDateStr < minSelectableDate) {
             showNotification(
                 lbl(
-                    `Corte de producción a las 12:00 PM superado. Próxima entrega disponible a partir de ${nextAvailableDateFormatted}.`,
-                    `12:00 PM production cutoff exceeded. Next delivery available starting from ${nextAvailableDateFormatted}.`
+                    `Lead time de producción de 48h requerido (corte 12:00 PM). Fecha más temprana disponible: ${nextAvailableDateFormatted}.`,
+                    `48h production lead time required (12:00 PM cutoff). Earliest available date: ${nextAvailableDateFormatted}.`
                 ),
                 'warning'
             );
@@ -934,8 +1049,8 @@ export default function CheckoutPage() {
         {
             value: 'pickup',
             icon: <Store size={20} />,
-            label: lbl('Pick Up', 'Pick Up'),
-            desc: lbl('Retiro en nuestra tienda (Jhoanes)', 'Pick up at our store (Jhoanes)'),
+            label: lbl('Retiro en Tienda (Pick Up)', 'Store Pickup (Pick Up)'),
+            desc: lbl('Horario: 8:00 AM - 10:00 AM (Astoria NY)', 'Hours: 8:00 AM - 10:00 AM (Astoria NY)'),
         },
         {
             value: 'saved',
@@ -1039,16 +1154,20 @@ export default function CheckoutPage() {
 
                             {/* ── Pick Up info ────────────────────────────── */}
                             {deliveryType === 'pickup' && (
-                                <div className="mt-6 flex items-start gap-3 bg-green-50 border border-green-200 rounded-2xl p-5 animate-fade-in">
-                                    <Store size={20} className="text-green-600 shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="font-bold text-green-800 text-sm">
-                                            {lbl('Recoger en tienda', 'Store Pickup')}
+                                <div className="mt-6 flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-5 animate-fade-in shadow-xs">
+                                    <Store size={22} className="text-emerald-600 shrink-0 mt-0.5" />
+                                    <div className="space-y-1.5">
+                                        <p className="font-bold text-emerald-950 text-sm">
+                                            {lbl('Retiro en Tienda (Pick Up)', 'Store Pickup (Pick Up)')}
                                         </p>
-                                        <p className="text-xs text-green-600 mt-0.5">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-black tracking-wide shadow-xs">
+                                            <Clock size={13} />
+                                            <span>Horario de retiro en tienda: 8:00 AM a 10:00 AM (Astoria NY)</span>
+                                        </div>
+                                        <p className="text-xs text-emerald-800 leading-snug">
                                             {lbl(
-                                                'Te avisaremos cuando tu pedido esté listo para recoger en Jhoanes.',
-                                                'We\'ll notify you when your order is ready for pickup at Jhoanes.'
+                                                'Dirección de retiro: 3304 Broadway, Astoria, NY 11106. Te avisaremos cuando tu orden recién horneada esté lista.',
+                                                'Pickup address: 3304 Broadway, Astoria, NY 11106. We\'ll notify you when your freshly baked order is ready.'
                                             )}
                                         </p>
                                     </div>
@@ -1563,10 +1682,20 @@ export default function CheckoutPage() {
                                                 )}
                                             </div>
                                         )
+                                    ) : logisticsQuote ? (
+                                        <div className="flex justify-between items-center text-xs mb-1">
+                                            <div className="flex flex-col">
+                                                <span className="text-muted-foreground">{lbl('Delivery Fee (Por Millas)', 'Delivery Fee (By Mileage)')}</span>
+                                                <span className="text-[10px] text-muted-foreground font-semibold">
+                                                    {lbl(`Distancia: ${logisticsQuote.miles} mi desde Astoria`, `Distance: ${logisticsQuote.miles} mi from Astoria`)}
+                                                </span>
+                                            </div>
+                                            <span className="font-bold text-amber-600 font-mono">+${deliveryFee.toFixed(2)}</span>
+                                        </div>
                                     ) : (
                                         <div className="flex justify-between items-center text-xs mb-1">
                                             <div className="flex flex-col">
-                                                <span className="text-muted-foreground">{lbl('Cargo por Delivery', 'Delivery Fee')}</span>
+                                                <span className="text-muted-foreground">{lbl('Delivery Fee', 'Delivery Fee')}</span>
                                                 <span className="text-[10px] text-muted-foreground">
                                                     {resolvedZip
                                                         ? lbl(`Tarifa General (ZIP ${resolvedZip})`, `Standard Fee (ZIP ${resolvedZip})`)
@@ -1594,7 +1723,7 @@ export default function CheckoutPage() {
                                         </span>
                                     </div>
 
-                                    {/* Real-time Dynamic Fees Breakdown: Subtotal + Flete + Processing Fee ($X.XX) = Total (TASK-47-02) */}
+                                    {/* Real-time Dynamic Fees Breakdown: Subtotal + Delivery Fee + Processing Fee ($X.XX) = Total (TASK-47-02, TASK-49-05) */}
                                     <div
                                         data-testid="checkout-fee-breakdown-formula"
                                         className="my-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-sm"
@@ -1604,7 +1733,7 @@ export default function CheckoutPage() {
                                             <span className="text-[9px] text-primary lowercase font-mono">live</span>
                                         </div>
                                         <div className="text-[11px] font-mono font-bold text-slate-800 tracking-tight leading-relaxed">
-                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Flete (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)}) = Total (${finalTotal.toFixed(2)})</span>
+                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Delivery Fee (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)}) = Total (${finalTotal.toFixed(2)})</span>
                                         </div>
                                     </div>
 
@@ -1803,9 +1932,9 @@ function MinimumAmountModal({ isOpen, onClose, locale, minOrderAmount }: { isOpe
     const lbl = (es: string, en: string) => locale === 'en' ? en : es;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
             <div className="absolute inset-0 bg-foreground/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-card w-full max-w-md rounded-[32px] border border-border shadow-2xl p-8 text-center animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-card w-full max-w-md max-h-[90vh] overflow-y-auto rounded-[32px] border border-border shadow-2xl p-8 text-center animate-in fade-in zoom-in duration-300">
                 <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <ShoppingBag className="text-primary" size={40} />
                 </div>
