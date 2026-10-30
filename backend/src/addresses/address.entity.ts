@@ -42,6 +42,21 @@ export class Address {
   @Column({ default: false })
   is_temporary: boolean;
 
+  @Column({ nullable: true })
+  access_code: string;
+
+  @Column({ default: false })
+  has_key: boolean;
+
+  @Column({ nullable: true })
+  key_location: string;
+
+  @Column({ default: false })
+  fridge_access_required: boolean;
+
+  @Column({ nullable: true })
+  delivery_photos_json: string;
+
   @ManyToOne(() => User, (user) => user.addresses)
   @JoinColumn({ name: 'user_id' })
   user: User;

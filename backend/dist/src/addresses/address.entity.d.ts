@@ -13,5 +13,10 @@ export declare class Address {
     refined_lng: number;
     is_default: boolean;
     is_temporary: boolean;
+    access_code: string;
+    has_key: boolean;
+    key_location: string;
+    fridge_access_required: boolean;
+    delivery_photos_json: string;
     user: User;
 }

@@ -1,11 +1,10 @@
-# SPRINT S49 - Sprint 49: Tax ID Obligatorio, Google Maps Real y Lead Time de Despacho 48h
-**Objetivo**: Tax ID obligatorio en registro mayorista B2B, integración real de Google Maps (Maps JS, Geocoding, Places), motor de lead time de 48h para despacho y terminología oficial de Delivery Fee.
+# SPRINT S51 - Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista
+**Objetivo**: Instrucciones de acceso para entregas en la madrugada con fotos y rediseño comercial de Home B2B con CTA prominente.
 **Fecha**: 2026-10-30
 
-- [ ] **TASK-49-01** [UI/AUTH-MANDATORY-TAXID] Tax ID / NY Resale Certificate # obligatorio en /auth/register y validación en backend.
-- [ ] **TASK-49-02** [INTEGRATION/GOOGLE-MAPS-REAL-KEY] Configuración y verificación de Google Maps API Key real eliminando error Oops! Something went wrong.
-- [ ] **TASK-49-03** [UI/PLACES-AUTOCOMPLETE-NYC] Buscador predictivo Google Places Autocomplete en /profile/addresses/new y Checkout inline.
-- [ ] **TASK-49-04** [DOMAIN/CUTOFF-LEADTIME-ENGINE] Motor de Lead Time 48h (T+2 pre-12 PM, T+3 post-12 PM hora NY) y guardarraíl de fechas en /checkout.
-- [ ] **TASK-49-05** [UI/CHECKOUT-TERMINOLOGY-AND-PICKUP] Renombrar Flete a Delivery Fee, fijar horario Pick Up (8:00 AM - 10:00 AM) y fix de scroll móvil.
-- [ ] **TASK-49-06** [DOMAIN/LOGISTICS-CHECKOUT-LINK] Conexión de coordenadas geocodificadas con POST /logistics/quote (MileageFreightService).
-- [ ] **TASK-49-07** [TEST/S49-INTEGRATION-SUITE] Suite de pruebas unitarias para TaxID obligatorio, cutoff 48h, fletes y build clean.
+- [x] **TASK-51-01** [DOMAIN/EARLY-MORNING-ACCESS-SCHEMA] Columnas en Address para instrucciones de acceso en madrugada (códigos, llaves, neveras).
+- [x] **TASK-51-02** [UI/DELIVERY-PHOTOS-UPLOAD] Subida de fotos de fachada, puerta de acceso y neveras en direcciones.
+- [x] **TASK-51-03** [UI/HOME-B2B-HERO-CAROUSEL] Banner/carrusel publicitario B2B en Home (croissants, postres, temporadas, camioneta).
+- [x] **TASK-51-04** [UI/SCHEDULE-ORDERS-MODAL] Modal informativo del horario y cronograma de horneado y pedidos.
+- [x] **TASK-51-05** [UI/SIGNUP-B2B-PROMINENT-CTA] Botón/Cintillo destacado de registro mayorista (Regístrate ahora / Crece con nosotros).
+- [x] **TASK-51-06** [TEST/S51-LOGISTICS-AND-LANDING-SUITE] Tests unitarios y build clean de frontend y backend.

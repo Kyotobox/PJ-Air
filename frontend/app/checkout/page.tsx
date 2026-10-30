@@ -6,7 +6,8 @@ import {
     Calendar, MapPin, CreditCard, ChevronRight, ShoppingBag,
     Loader2, Plus, Clock, Minus, Store, Truck, Home,
     ChevronDown, Check, AlertCircle, BookmarkPlus, Bookmark,
-    Map as MapIcon, RotateCcw, Search, X, Building2
+    Map as MapIcon, RotateCcw, Search, X, Building2,
+    Moon, Key, Camera, Snowflake, ShieldCheck, ChevronUp, Upload, Trash2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -48,7 +49,21 @@ function InlineAddressForm({
     onReady,
     locale,
 }: {
-    onReady: (data: { alias: string; address: string; notes: string; saveMode: 'save' | 'temporary'; lat: number; lng: number; refined_lat: number | null; refined_lng: number | null }) => void;
+    onReady: (data: { 
+        alias: string; 
+        address: string; 
+        notes: string; 
+        saveMode: 'save' | 'temporary'; 
+        lat: number; 
+        lng: number; 
+        refined_lat: number | null; 
+        refined_lng: number | null;
+        access_code?: string;
+        has_key?: boolean;
+        key_location?: string;
+        fridge_access_required?: boolean;
+        delivery_photos_json?: string;
+    }) => void;
     locale: string;
 }) {
     const [alias, setAlias] = useState('');
@@ -60,6 +75,20 @@ function InlineAddressForm({
     const [refinedPos, setRefinedPos] = useState<{lat: number, lng: number} | null>(null);
     const [isManualAdjustment, setIsManualAdjustment] = useState(false);
     const [isGeocoding, setIsGeocoding] = useState(false);
+
+    // Early Morning Delivery state (Sprint S51)
+    const [showEarlyMorning, setShowEarlyMorning] = useState(false);
+    const [accessCode, setAccessCode] = useState('');
+    const [hasKey, setHasKey] = useState(false);
+    const [keyLocation, setKeyLocation] = useState('');
+    const [fridgeAccessRequired, setFridgeAccessRequired] = useState(false);
+    const [photos, setPhotos] = useState<string[]>([]);
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [photoError, setPhotoError] = useState('');
+
+    const fileRef0 = React.useRef<HTMLInputElement>(null);
+    const fileRef1 = React.useRef<HTMLInputElement>(null);
+    const fileRef2 = React.useRef<HTMLInputElement>(null);
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
@@ -77,9 +106,63 @@ function InlineAddressForm({
             lat: geocodedPos?.lat || markerPos.lat,
             lng: geocodedPos?.lng || markerPos.lng,
             refined_lat: isManualAdjustment ? refinedPos?.lat || null : null,
-            refined_lng: isManualAdjustment ? refinedPos?.lng || null : null
+            refined_lng: isManualAdjustment ? refinedPos?.lng || null : null,
+            access_code: accessCode.trim() || undefined,
+            has_key: hasKey,
+            key_location: hasKey ? keyLocation.trim() || undefined : undefined,
+            fridge_access_required: fridgeAccessRequired,
+            delivery_photos_json: photos.length > 0 ? JSON.stringify(photos) : undefined,
         });
-    }, [alias, address, notes, saveMode, markerPos, geocodedPos, refinedPos, isManualAdjustment, locale]);
+    }, [alias, address, notes, saveMode, markerPos, geocodedPos, refinedPos, isManualAdjustment, accessCode, hasKey, keyLocation, fridgeAccessRequired, photos, locale]);
+
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, slotIndex: number) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingPhoto(true);
+        setPhotoError('');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            let photoUrl = '';
+            try {
+                const res = await api.upload('/addresses/upload-photo', formData) as any;
+                if (res?.url) {
+                    photoUrl = res.url;
+                }
+            } catch (netErr) {
+                photoUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            if (photoUrl) {
+                setPhotos(prev => {
+                    const next = [...prev];
+                    if (slotIndex < next.length) {
+                        next[slotIndex] = photoUrl;
+                    } else {
+                        next.push(photoUrl);
+                    }
+                    return next.slice(0, 3);
+                });
+            }
+        } catch (err: any) {
+            setPhotoError(err.message || (locale === 'en' ? 'Error uploading photo' : 'Error al subir la fotografía'));
+        } finally {
+            setIsUploadingPhoto(false);
+            if (e.target) e.target.value = '';
+        }
+    };
+
+    const handleRemovePhoto = (index: number) => {
+        setPhotos(prev => prev.filter((_, i) => i !== index));
+    };
 
     const lbl = (es: string, en: string) => locale === 'en' ? en : es;
 
@@ -222,6 +305,175 @@ function InlineAddressForm({
                 />
             </div>
 
+            {/* Early Morning Delivery Instructions Collapsible */}
+            <div className="rounded-2xl border-2 border-primary/20 bg-primary/[0.02] overflow-hidden transition-all">
+                <button
+                    type="button"
+                    onClick={() => setShowEarlyMorning(v => !v)}
+                    className="w-full p-4 flex items-center justify-between text-left hover:bg-primary/[0.04] transition-colors"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm">
+                            <Moon size={18} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-xs sm:text-sm text-foreground">
+                                    {lbl('Instrucciones de Despacho en Madrugada', 'Early Morning Delivery Instructions')}
+                                </h4>
+                                <span className="bg-amber-100 text-amber-800 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">
+                                    B2B
+                                </span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {lbl('4:00 AM - 7:00 AM: Códigos de acceso, llaves y neveras', '4:00 AM - 7:00 AM: Access codes, keys & coolers')}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-white border border-border/70 flex items-center justify-center text-primary shrink-0">
+                        {showEarlyMorning ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </div>
+                </button>
+
+                {showEarlyMorning && (
+                    <div className="p-4 pt-2 border-t border-primary/10 space-y-4 animate-fade-in text-xs">
+                        {photoError && (
+                            <div className="p-2 bg-red-50 text-red-600 rounded-lg text-[10px] font-bold">
+                                {photoError}
+                            </div>
+                        )}
+
+                        {/* Access Code */}
+                        <div className="space-y-1.5">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                                <ShieldCheck size={12} className="text-primary" />
+                                {lbl('Código de acceso (Alarma/Puerta/Elevador)', 'Access code (Alarm/Door/Elevator)')}
+                            </label>
+                            <input
+                                type="text"
+                                placeholder={lbl('Ej: Puerta #4589, Alarma 1234', 'e.g. Door #4589, Alarm 1234')}
+                                value={accessCode}
+                                onChange={e => setAccessCode(e.target.value)}
+                                className="premium-input px-3 py-2 text-xs font-bold"
+                            />
+                        </div>
+
+                        {/* Key location */}
+                        <div className="p-3 rounded-xl bg-white border border-border/70 space-y-2">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={hasKey}
+                                    onChange={e => setHasKey(e.target.checked)}
+                                    className="w-4 h-4 rounded text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                                />
+                                <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                                    <Key size={13} className="text-primary" />
+                                    {lbl('Se requiere llave física para entrar', 'Physical key required for entry')}
+                                </span>
+                            </label>
+
+                            {hasKey && (
+                                <div className="pt-1 pl-6 space-y-1 animate-fade-in">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground block">
+                                        {lbl('Ubicación de la llave', 'Key location')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder={lbl('Ej: Negocio 24h al frente, lockbox código 1234', 'e.g. 24h store across the street, lockbox code 1234')}
+                                        value={keyLocation}
+                                        onChange={e => setKeyLocation(e.target.value)}
+                                        className="premium-input px-3 py-2 text-xs"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Fridge Access Required */}
+                        <div className="p-3 rounded-xl bg-white border border-border/70 space-y-1">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={fridgeAccessRequired}
+                                    onChange={e => setFridgeAccessRequired(e.target.checked)}
+                                    className="w-4 h-4 rounded text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                                />
+                                <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                                    <Snowflake size={13} className="text-primary" />
+                                    {lbl('Acceso directo a Neveras / Cámaras de refrigeración', 'Direct access to Refrigerators / Coolers')}
+                                </span>
+                            </label>
+                            <p className="pl-6 text-[10px] text-muted-foreground">
+                                {lbl('Mantener espacio despejado para resguardo inmediato de productos frescos.', 'Please keep space clear inside coolers for immediate fresh product storage.')}
+                            </p>
+                        </div>
+
+                        {/* Delivery Photos (Up to 3) */}
+                        <div className="space-y-2 pt-1">
+                            <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                                    <Camera size={13} className="text-primary" />
+                                    {lbl('Fotos de fachada, acceso y neveras (Hasta 3)', 'Access & cooler photos (Up to 3)')}
+                                </label>
+                                <span className="text-[9px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                    {photos.length}/3
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                                {[0, 1, 2].map((idx) => (
+                                    <div key={idx} className="p-2 rounded-xl bg-white border border-border/80 flex flex-col items-center justify-center min-h-[90px] text-center relative group">
+                                        {photos[idx] ? (
+                                            <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
+                                                <img
+                                                    src={photos[idx]}
+                                                    alt={`Photo ${idx + 1}`}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemovePhoto(idx)}
+                                                    className="absolute top-1 right-1 p-0.5 bg-red-600 text-white rounded-full shadow hover:bg-red-700"
+                                                >
+                                                    <Trash2 size={10} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (idx === 0) fileRef0.current?.click();
+                                                    else if (idx === 1) fileRef1.current?.click();
+                                                    else fileRef2.current?.click();
+                                                }}
+                                                className="w-full h-full py-3 border border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary hover:border-primary/40"
+                                            >
+                                                <Upload size={14} />
+                                                <span className="text-[8px] font-black uppercase">
+                                                    {idx === 0 ? lbl('Fachada', 'Door') : idx === 1 ? lbl('Punto', 'Spot') : lbl('Nevera', 'Cooler')}
+                                                </span>
+                                            </button>
+                                        )}
+                                        <input
+                                            ref={idx === 0 ? fileRef0 : idx === 1 ? fileRef1 : fileRef2}
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={e => handlePhotoUpload(e, idx)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            {isUploadingPhoto && (
+                                <p className="text-[9px] text-primary font-bold animate-pulse text-center">
+                                    {lbl('Subiendo fotografía...', 'Uploading photo...')}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Save mode */}
             <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
@@ -304,9 +556,11 @@ export default function CheckoutPage() {
     const [otherAddrData, setOtherAddrData] = useState<{
         alias: string; address: string; notes: string; saveMode: 'save' | 'temporary';
         lat: number; lng: number; refined_lat: number | null; refined_lng: number | null;
+        access_code?: string; has_key?: boolean; key_location?: string; fridge_access_required?: boolean; delivery_photos_json?: string;
     }>({ 
         alias: '', address: '', notes: '', saveMode: 'save',
-        lat: centerNY.lat, lng: centerNY.lng, refined_lat: null, refined_lng: null
+        lat: centerNY.lat, lng: centerNY.lng, refined_lat: null, refined_lng: null,
+        access_code: '', has_key: false, key_location: '', fridge_access_required: false, delivery_photos_json: ''
     });
 
     // Delivery zone resolution state
@@ -596,6 +850,11 @@ export default function CheckoutPage() {
                     lng: otherAddrData.lng,
                     refined_lat: otherAddrData.refined_lat,
                     refined_lng: otherAddrData.refined_lng,
+                    access_code: otherAddrData.access_code || null,
+                    has_key: !!otherAddrData.has_key,
+                    key_location: otherAddrData.key_location || null,
+                    fridge_access_required: !!otherAddrData.fridge_access_required,
+                    delivery_photos_json: otherAddrData.delivery_photos_json || null,
                 }) as any;
                 finalAddressId = newAddr.id;
                 deliveryAddressText = otherAddrData.address;
@@ -842,6 +1101,23 @@ export default function CheckoutPage() {
                                                     <p className="text-xs text-muted-foreground">{addr.address}</p>
                                                     {addr.notes && (
                                                         <p className="text-[10px] text-muted-foreground/60 mt-1 italic">{addr.notes}</p>
+                                                    )}
+                                                    {(addr.access_code || addr.has_key || addr.fridge_access_required || addr.delivery_photos_json) && (
+                                                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                                            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                                                <Moon size={9} /> {lbl('Despacho Madrugada OK', 'Early Morning Ready')}
+                                                            </span>
+                                                            {addr.access_code && (
+                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                                    <ShieldCheck size={9} /> {addr.access_code}
+                                                                </span>
+                                                            )}
+                                                            {addr.fridge_access_required && (
+                                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                                                    <Snowflake size={9} /> {lbl('Neveras', 'Coolers')}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </button>
                                             ))}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { MapPin, Plus, Trash2, Home, Briefcase, Edit2, Loader2, AlertCircle } from 'lucide-react';
+import { MapPin, Plus, Trash2, Home, Briefcase, Edit2, Loader2, AlertCircle, Moon, Key, Snowflake, Camera, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 
@@ -14,6 +14,11 @@ interface Address {
     address: string;
     zone: string;
     notes?: string;
+    access_code?: string;
+    has_key?: boolean;
+    key_location?: string;
+    fridge_access_required?: boolean;
+    delivery_photos_json?: string;
 }
 
 interface AddressForm {
@@ -138,6 +143,28 @@ export default function AddressesPage() {
                                             <span className="text-xs font-bold bg-accent/10 text-accent px-2 py-1 rounded">Zona: {addr.zone}</span>
                                             {addr.notes && <span className="text-xs text-muted-foreground italic">"{addr.notes}"</span>}
                                         </div>
+                                        {(addr.access_code || addr.has_key || addr.fridge_access_required || addr.delivery_photos_json) && (
+                                            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+                                                    <Moon size={11} /> Despacho Madrugada
+                                                </span>
+                                                {addr.access_code && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-foreground/80 bg-muted px-2 py-1 rounded-md">
+                                                        <ShieldCheck size={11} className="text-primary" /> Código: {addr.access_code}
+                                                    </span>
+                                                )}
+                                                {addr.has_key && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-foreground/80 bg-muted px-2 py-1 rounded-md">
+                                                        <Key size={11} className="text-amber-600" /> {addr.key_location ? `Llave: ${addr.key_location}` : 'Llave requerida'}
+                                                    </span>
+                                                )}
+                                                {addr.fridge_access_required && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
+                                                        <Snowflake size={11} /> Acceso a Neveras
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

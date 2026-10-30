@@ -3,8 +3,8 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S49",
-  "current_task": "TASK-49-01",
+  "current_sprint": "S51",
+  "current_task": "TASK-51-01",
   "sprints": [
     {
       "id": "S47",
@@ -208,7 +208,7 @@
     {
       "id": "S51",
       "name": "Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista",
-      "status": "PLANNED",
+      "status": "COMPLETED",
       "start_date": "2026-11-05",
       "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y rediseño comercial de Home B2B con CTA prominente.",
       "tasks": [
@@ -216,37 +216,37 @@
           "id": "TASK-51-01",
           "label": "DOMAIN/EARLY-MORNING-ACCESS-SCHEMA",
           "desc": "Columnas en Address para instrucciones de acceso en madrugada (códigos, llaves, neveras).",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-51-02",
           "label": "UI/DELIVERY-PHOTOS-UPLOAD",
           "desc": "Subida de fotos de fachada, puerta de acceso y neveras en direcciones.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-51-03",
           "label": "UI/HOME-B2B-HERO-CAROUSEL",
           "desc": "Banner/carrusel publicitario B2B en Home (croissants, postres, temporadas, camioneta).",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-51-04",
           "label": "UI/SCHEDULE-ORDERS-MODAL",
           "desc": "Modal informativo del horario y cronograma de horneado y pedidos.",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-51-05",
           "label": "UI/SIGNUP-B2B-PROMINENT-CTA",
           "desc": "Botón/Cintillo destacado de registro mayorista (Regístrate ahora / Crece con nosotros).",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-51-06",
           "label": "TEST/S51-LOGISTICS-AND-LANDING-SUITE",
           "desc": "Tests unitarios y build clean de frontend y backend.",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     }
@@ -254,52 +254,46 @@
   "archived_sprints_count": 42,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S49",
-    "name": "Sprint 49: Tax ID Obligatorio, Google Maps Real y Lead Time de Despacho 48h",
+    "id": "S51",
+    "name": "Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista",
     "status": "IN_PROGRESS",
-    "start_date": "2026-10-30",
-    "goal": "Tax ID obligatorio en registro mayorista B2B, integración real de Google Maps (Maps JS, Geocoding, Places), motor de lead time de 48h para despacho y terminología oficial de Delivery Fee.",
+    "start_date": "2026-11-05",
+    "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y rediseño comercial de Home B2B con CTA prominente.",
     "tasks": [
       {
-        "id": "TASK-49-01",
-        "label": "UI/AUTH-MANDATORY-TAXID",
-        "desc": "Tax ID / NY Resale Certificate # obligatorio en /auth/register y validación en backend.",
+        "id": "TASK-51-01",
+        "label": "DOMAIN/EARLY-MORNING-ACCESS-SCHEMA",
+        "desc": "Columnas en Address para instrucciones de acceso en madrugada (códigos, llaves, neveras).",
+        "status": "IN_PROGRESS"
+      },
+      {
+        "id": "TASK-51-02",
+        "label": "UI/DELIVERY-PHOTOS-UPLOAD",
+        "desc": "Subida de fotos de fachada, puerta de acceso y neveras en direcciones.",
         "status": "TODO"
       },
       {
-        "id": "TASK-49-02",
-        "label": "INTEGRATION/GOOGLE-MAPS-REAL-KEY",
-        "desc": "Configuración y verificación de Google Maps API Key real eliminando error Oops! Something went wrong.",
+        "id": "TASK-51-03",
+        "label": "UI/HOME-B2B-HERO-CAROUSEL",
+        "desc": "Banner/carrusel publicitario B2B en Home (croissants, postres, temporadas, camioneta).",
         "status": "TODO"
       },
       {
-        "id": "TASK-49-03",
-        "label": "UI/PLACES-AUTOCOMPLETE-NYC",
-        "desc": "Buscador predictivo Google Places Autocomplete en /profile/addresses/new y Checkout inline.",
+        "id": "TASK-51-04",
+        "label": "UI/SCHEDULE-ORDERS-MODAL",
+        "desc": "Modal informativo del horario y cronograma de horneado y pedidos.",
         "status": "TODO"
       },
       {
-        "id": "TASK-49-04",
-        "label": "DOMAIN/CUTOFF-LEADTIME-ENGINE",
-        "desc": "Motor de Lead Time 48h (T+2 pre-12 PM, T+3 post-12 PM hora NY) y guardarraíl de fechas en /checkout.",
+        "id": "TASK-51-05",
+        "label": "UI/SIGNUP-B2B-PROMINENT-CTA",
+        "desc": "Botón/Cintillo destacado de registro mayorista (Regístrate ahora / Crece con nosotros).",
         "status": "TODO"
       },
       {
-        "id": "TASK-49-05",
-        "label": "UI/CHECKOUT-TERMINOLOGY-AND-PICKUP",
-        "desc": "Renombrar Flete a Delivery Fee, fijar horario Pick Up (8:00 AM - 10:00 AM) y fix de scroll móvil.",
-        "status": "TODO"
-      },
-      {
-        "id": "TASK-49-06",
-        "label": "DOMAIN/LOGISTICS-CHECKOUT-LINK",
-        "desc": "Conexión de coordenadas geocodificadas con POST /logistics/quote (MileageFreightService).",
-        "status": "TODO"
-      },
-      {
-        "id": "TASK-49-07",
-        "label": "TEST/S49-INTEGRATION-SUITE",
-        "desc": "Suite de pruebas unitarias para TaxID obligatorio, cutoff 48h, fletes y build clean.",
+        "id": "TASK-51-06",
+        "label": "TEST/S51-LOGISTICS-AND-LANDING-SUITE",
+        "desc": "Tests unitarios y build clean de frontend y backend.",
         "status": "TODO"
       }
     ]

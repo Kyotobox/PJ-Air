@@ -2,24 +2,31 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, ShoppingBag, Plus, LayoutDashboard, Package, Users, ClipboardList, Truck, Map } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, ShoppingBag, Plus, LayoutDashboard, Package, Users, ClipboardList, Truck, Map, Clock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { API_URL } from '@/lib/config';
+import ScheduleOrdersModal from '@/components/modals/ScheduleOrdersModal';
 
 export default function Navbar() {
     const { getCartCount } = useCart();
     const { user, profile, signOut } = useAuth();
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const cartCount = getCartCount();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [showScheduleModal, setShowScheduleModal] = useState(false);
 
     const isAdmin = profile?.role === 'admin' || user?.email === 'admin@test.com';
 
     return (
         <>
+            <ScheduleOrdersModal 
+                isOpen={showScheduleModal} 
+                onClose={() => setShowScheduleModal(false)} 
+            />
+
             <nav className="bg-white/90 backdrop-blur-xl border-b border-border/40 sticky top-0 z-[50]">
                 <div className="max-w-7xl mx-auto px-6 lg:px-12">
                     <div className="flex justify-between items-center h-20">
@@ -32,6 +39,14 @@ export default function Navbar() {
 
                             <div className="hidden lg:flex items-center gap-8 ml-8">
                                 <Link href="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">{t.nav.catalog}</Link>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowScheduleModal(true)}
+                                    className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors cursor-pointer"
+                                >
+                                    <Clock size={13} className="text-primary" />
+                                    <span>{locale === 'en' ? 'Baking Schedule' : 'Horarios de Horneado'}</span>
+                                </button>
                             </div>
                         </div>
 
@@ -139,6 +154,13 @@ export default function Navbar() {
                     <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted transition-all font-bold text-sm">
                         <Package size={18} className="text-primary" /> {t.nav.catalog}
                     </Link>
+                    <button
+                        type="button"
+                        onClick={() => { setIsMenuOpen(false); setShowScheduleModal(true); }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted transition-all font-bold text-sm text-left"
+                    >
+                        <Clock size={18} className="text-primary" /> {locale === 'en' ? 'Baking Schedule' : 'Horarios de Horneado'}
+                    </button>
                     <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted transition-all font-bold text-sm">
                         <ClipboardList size={18} className="text-primary" /> {t.nav.myOrders}
                     </Link>

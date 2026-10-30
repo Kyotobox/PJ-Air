@@ -75,5 +75,23 @@ describe('AddressesController', () => {
       expect(service.delete).toHaveBeenCalledWith('10');
       expect(result).toEqual({ id: '10' });
     });
+
+    describe('uploadPhoto', () => {
+      it('should return uploaded file URL', async () => {
+        const file = {
+          filename: 'facade-photo-123.jpg',
+          originalname: 'facade.jpg',
+        } as Express.Multer.File;
+
+        const result = await controller.uploadPhoto(file);
+        expect(result).toEqual({ url: '/uploads/addresses/facade-photo-123.jpg' });
+      });
+
+      it('sad path: should throw BadRequestException when no file is uploaded', async () => {
+        await expect(
+          controller.uploadPhoto(undefined as any),
+        ).rejects.toThrow('No file uploaded or file type not allowed');
+      });
+    });
   });
 });

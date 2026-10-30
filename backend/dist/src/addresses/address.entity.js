@@ -26,6 +26,11 @@ let Address = class Address {
     refined_lng;
     is_default;
     is_temporary;
+    access_code;
+    has_key;
+    key_location;
+    fridge_access_required;
+    delivery_photos_json;
     user;
 };
 exports.Address = Address;
@@ -81,6 +86,26 @@ __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], Address.prototype, "is_temporary", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Address.prototype, "access_code", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Address.prototype, "has_key", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Address.prototype, "key_location", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Address.prototype, "fridge_access_required", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Address.prototype, "delivery_photos_json", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (user) => user.addresses),
     (0, typeorm_1.JoinColumn)({ name: 'user_id' }),

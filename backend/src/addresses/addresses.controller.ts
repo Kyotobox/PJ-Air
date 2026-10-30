@@ -1,4 +1,9 @@
-import { Controller, Post, Body, Get, Param, Delete, Patch, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, Patch, UseGuards, Req, ForbiddenException, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join, resolve } from 'path';
+import * as fs from 'fs';
+import { UPLOAD_PATH } from '../config';
 import { AddressesService } from './addresses.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { ResourceOwnershipGuard } from '../auth/resource-ownership.guard';
@@ -7,6 +12,29 @@ import { ResourceOwnershipGuard } from '../auth/resource-ownership.guard';
 @UseGuards(AuthGuard)
 export class AddressesController {
   constructor(private readonly addressesService: AddressesService) {}
+
+  @Post('upload-photo')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const uploadPath = join(resolve(UPLOAD_PATH), 'addresses');
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+      }
+    })
+  }))
+  async uploadPhoto(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded or file type not allowed');
+    }
+    return { url: `/uploads/addresses/${file.filename}` };
+  }
 
   @Post()
   async create(@Body() body: any, @Req() req: any) {

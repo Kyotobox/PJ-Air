@@ -166,6 +166,23 @@ let AppModule = AppModule_1 = class AppModule {
           created_at DATETIME DEFAULT (datetime('now'))
         );
       `);
+            const addressCols = await qr.query(`PRAGMA table_info(addresses);`);
+            const addressColNames = addressCols.map((c) => c.name);
+            if (!addressColNames.includes('access_code')) {
+                await qr.query(`ALTER TABLE addresses ADD COLUMN access_code TEXT;`);
+            }
+            if (!addressColNames.includes('has_key')) {
+                await qr.query(`ALTER TABLE addresses ADD COLUMN has_key BOOLEAN DEFAULT 0;`);
+            }
+            if (!addressColNames.includes('key_location')) {
+                await qr.query(`ALTER TABLE addresses ADD COLUMN key_location TEXT;`);
+            }
+            if (!addressColNames.includes('fridge_access_required')) {
+                await qr.query(`ALTER TABLE addresses ADD COLUMN fridge_access_required BOOLEAN DEFAULT 0;`);
+            }
+            if (!addressColNames.includes('delivery_photos_json')) {
+                await qr.query(`ALTER TABLE addresses ADD COLUMN delivery_photos_json TEXT;`);
+            }
             await qr.release();
             this.logger.log('Schema verification completed successfully.');
         }

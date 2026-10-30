@@ -12,9 +12,11 @@ import {
     ShoppingCart, Check, Plus, Minus, Info,
     ChevronLeft, ChevronRight,
     LogIn, UserPlus, Lock, User as UserIcon, Loader2, Eye, EyeOff, X,
+    Clock, Truck, Calendar, Store, Moon, ShieldCheck, CheckCircle2, Award, Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { API_URL } from '@/lib/config';
+import ScheduleOrdersModal from '@/components/modals/ScheduleOrdersModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Login Modal — shown when user requests authentication
@@ -461,6 +463,78 @@ export default function Home() {
 
     // Login modal controlled by user action
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+    // ── B2B Hero Carousel State (TASK-51-03) ────────────────────────────────
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isSlidePaused, setIsSlidePaused] = useState(false);
+
+    const heroSlides = useMemo(() => [
+        {
+            id: 'croissants',
+            badgeEn: 'Wholesale Bestseller',
+            badgeEs: 'Bestseller Mayorista',
+            tagEn: 'Artisanal French Viennoiserie',
+            tagEs: 'Bollería Francesa Artesanal',
+            titleEn: '100% European Butter Artisanal Croissants',
+            titleEs: 'Croissants Artesanales 100% Mantequilla Europea',
+            descEn: 'Traditional 72-layer European butter lamination baked fresh every night. Elevate your cafe display with authentic flaky golden texture and irresistible morning aroma.',
+            descEs: 'Laminado tradicional con 72 capas de masa madre y mantequilla europea. Horneados durante la madrugada para que despierten con aroma y frescura inigualable en tu vitrina.',
+            image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=1200',
+            statsEn: 'Over 8,000 croissants delivered weekly to NYC top cafes',
+            statsEs: 'Más de 8,000 croissants despachados semanalmente en NYC',
+        },
+        {
+            id: 'pastries',
+            badgeEn: 'High Margin & Table-Ready',
+            badgeEs: 'Alta Rentabilidad y Presentación',
+            tagEn: 'Gourmet Pastry & Desserts',
+            tagEs: 'Pastelería & Repostería Fina',
+            titleEn: 'Signature Individual Desserts & Tarts',
+            titleEs: 'Postres Selectos y Tartas Individuales',
+            descEn: 'Ready-to-serve individual portions crafted by master pastry chefs. Guaranteed commercial margins for high-end restaurants, boutique hotels, and specialty coffee shops.',
+            descEs: 'Porciones individuales y postres premium listos para servicio en mesa. Eleva el ticket promedio de tu negocio con margen mayorista garantizado y sin mermas.',
+            image: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?q=80&w=1200',
+            statsEn: '30+ gourmet dessert references ready for daily order',
+            statsEs: 'Más de 30 referencias gourmet listas para despacho diario',
+        },
+        {
+            id: 'seasonal',
+            badgeEn: 'Bi-Monthly Innovation',
+            badgeEs: 'Innovación Bimensual',
+            tagEn: 'Seasonal Collections & Rustic Sourdough',
+            tagEs: 'Colecciones de Temporada y Panes Rústicos',
+            titleEn: 'Seasonal Specials, Fruit Brioches & Country Loaves',
+            titleEs: 'Especiales de Temporada y Panes de Masa Madre',
+            descEn: 'Delight returning patrons with rotational seasonal specials: fruit-glazed brioches, holiday viennoiserie, and 36-hour slow-fermented crusty rustic boules.',
+            descEs: 'Novedades bimensuales que fidelizan a tus comensales: brioches rellenos de frutas, bollería navideña y hogazas rústicas de 36 horas de fermentación.',
+            image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1200',
+            statsEn: 'Exclusive seasonal catalogue updated 6 times per year',
+            statsEs: 'Catálogo exclusivo de temporada renovado 6 veces al año',
+        },
+        {
+            id: 'fleet',
+            badgeEn: '4:00 AM - 7:00 AM Delivery',
+            badgeEs: 'Despacho 4:00 AM - 7:00 AM',
+            tagEn: 'NYC Direct Fleet Distribution',
+            tagEs: 'Flota Propia de Distribución en NYC',
+            titleEn: 'Direct Overnight Delivery to Your Walk-In Coolers',
+            titleEs: 'Camioneta de Distribución Directa en Madrugada',
+            descEn: 'Dedicated temperature-controlled vans departing from our Astoria bakery. Silent entry with access codes/keys so your fresh order is inside before opening.',
+            descEs: 'Flota refrigerada propia saliendo desde Astoria, Queens. Acceso silencioso con código o llave y depósito en tus neveras antes de que subas la santamaría.',
+            image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200',
+            statsEn: 'Covering Manhattan, Queens, Brooklyn & Bronx daily',
+            statsEs: 'Rutas activas en Manhattan, Queens, Brooklyn y Bronx',
+        },
+    ], []);
+
+    useEffect(() => {
+        if (isSlidePaused) return;
+        const timer = setInterval(() => {
+            setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+        }, 6000);
+        return () => clearInterval(timer);
+    }, [isSlidePaused, heroSlides.length]);
 
     const [products, setProducts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -615,31 +689,204 @@ export default function Home() {
                 />
             )}
 
+            {/* Schedule modal — accessible from Hero & Navbar */}
+            <ScheduleOrdersModal 
+                isOpen={showScheduleModal} 
+                onClose={() => setShowScheduleModal(false)} 
+            />
+
             <Navbar />
 
             <main className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-14 py-10">
 
-                {/* ── Wholesale Welcome Hero Banner ─── */}
-                <div className="mb-12 bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 sm:p-12 border border-border/60 shadow-sm relative overflow-hidden">
-                    <div className="max-w-3xl">
-                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-4">
-                            <Sparkles size={14} /> {locale === 'en' ? 'Artisanal Wholesale Bakery' : 'Distribución Mayorista Artesanal'}
+                {/* ── TASK-51-03: Dynamic B2B Hero Carousel ─── */}
+                <div 
+                    className="mb-10 relative overflow-hidden rounded-[2.5rem] shadow-xl border border-border/80 group"
+                    onMouseEnter={() => setIsSlidePaused(true)}
+                    onMouseLeave={() => setIsSlidePaused(false)}
+                >
+                    {/* Slides Container */}
+                    <div className="relative min-h-[460px] sm:min-h-[500px] flex items-center bg-slate-950 text-white">
+                        {heroSlides.map((slide, idx) => {
+                            const isActive = idx === currentSlide;
+                            return (
+                                <div
+                                    key={slide.id}
+                                    className={`absolute inset-0 transition-opacity duration-1000 ease-in-out flex items-center ${
+                                        isActive ? 'opacity-100 pointer-events-auto z-10' : 'opacity-0 pointer-events-none z-0'
+                                    }`}
+                                >
+                                    {/* Background Image with Gradient Overlay */}
+                                    <div 
+                                        className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-[8000ms] ease-out"
+                                        style={{ 
+                                            backgroundImage: `url(${slide.image})`,
+                                            transform: isActive ? 'scale(1.05)' : 'scale(1.0)'
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/30" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+
+                                    {/* Content inside slide */}
+                                    <div className="relative z-20 max-w-2xl px-8 sm:px-14 py-12 flex flex-col justify-center">
+                                        {/* Institutional Header tag */}
+                                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-amber-300 text-[10px] font-black uppercase tracking-widest border border-white/10">
+                                                <Sparkles size={11} />
+                                                {locale === 'en' ? slide.tagEn : slide.tagEs}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/80 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-wider shadow-sm">
+                                                {locale === 'en' ? slide.badgeEn : slide.badgeEs}
+                                            </span>
+                                        </div>
+
+                                        {/* Institutional Title */}
+                                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60 mb-2">
+                                            Jhoanes Bakery Wholesale — Fresh Daily B2B Distribution
+                                        </p>
+
+                                        {/* Main Slide Title */}
+                                        <h1 className="text-3xl sm:text-5xl font-black font-serif text-white tracking-tight mb-4 leading-[1.15]">
+                                            {locale === 'en' ? slide.titleEn : slide.titleEs}
+                                        </h1>
+
+                                        {/* Description */}
+                                        <p className="text-sm sm:text-base text-white/80 font-medium leading-relaxed mb-6 max-w-xl">
+                                            {locale === 'en' ? slide.descEn : slide.descEs}
+                                        </p>
+
+                                        {/* Stats badge */}
+                                        <div className="inline-flex items-center gap-2 mb-8 text-xs font-bold text-amber-200/90 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 w-fit">
+                                            <Award size={14} className="text-amber-400 shrink-0" />
+                                            <span>{locale === 'en' ? slide.statsEn : slide.statsEs}</span>
+                                        </div>
+
+                                        {/* Action buttons */}
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <a 
+                                                href="#catalogo" 
+                                                className="px-7 py-3.5 rounded-full bg-primary text-white text-xs font-black uppercase tracking-widest shadow-xl hover:bg-white hover:text-foreground transition-all flex items-center gap-2 group/btn"
+                                            >
+                                                <span>{locale === 'en' ? 'Browse Catalog' : 'Ver Productos'}</span>
+                                                <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                                            </a>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setShowScheduleModal(true)}
+                                                className="px-6 py-3.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all flex items-center gap-2"
+                                            >
+                                                <Clock size={14} />
+                                                <span>{locale === 'en' ? 'Baking Schedule' : 'Horarios de Horneado'}</span>
+                                            </button>
+                                            <Link 
+                                                href="/auth/register"
+                                                className="px-6 py-3.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-widest hover:bg-amber-400 hover:text-black transition-all flex items-center gap-2"
+                                            >
+                                                <UserPlus size={14} />
+                                                <span>{locale === 'en' ? 'Sign Up Wholesale' : 'Registro Mayorista'}</span>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Navigation Controls: Arrows */}
+                    <button
+                        type="button"
+                        onClick={() => setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-30"
+                        aria-label="Previous slide"
+                    >
+                        <ChevronLeft size={20} strokeWidth={2.5} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setCurrentSlide(prev => (prev + 1) % heroSlides.length)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md border border-white/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-30"
+                        aria-label="Next slide"
+                    >
+                        <ChevronRight size={20} strokeWidth={2.5} />
+                    </button>
+
+                    {/* Navigation Dots Indicator */}
+                    <div className="absolute bottom-6 right-8 sm:right-14 z-30 flex items-center gap-2">
+                        {heroSlides.map((_, i) => (
+                            <button
+                                key={i}
+                                type="button"
+                                onClick={() => setCurrentSlide(i)}
+                                className={`h-2 rounded-full transition-all ${
+                                    i === currentSlide 
+                                        ? 'w-8 bg-amber-400 shadow-lg' 
+                                        : 'w-2 bg-white/40 hover:bg-white/70'
+                                }`}
+                                aria-label={`Go to slide ${i + 1}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* ── TASK-51-05: Prominent Wholesale Signup CTA Banner ─── */}
+                <div 
+                    className="mb-12 relative overflow-hidden rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl border border-white/10"
+                    style={{ background: 'linear-gradient(135deg, #110d0a 0%, #1e130a 50%, #2f1906 100%)' }}
+                >
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+                    <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                        <div className="max-w-2xl">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest mb-3 border border-amber-400/30">
+                                <Sparkles size={12} />
+                                {locale === 'en' ? 'B2B Wholesale Accounts' : 'Cuentas Comerciales B2B'}
+                            </div>
+
+                            <h2 className="text-2xl sm:text-4xl font-black font-serif tracking-tight leading-tight mb-3">
+                                {locale === 'en' 
+                                    ? 'Register Now / Place Your First Wholesale Order / Grow With Us'
+                                    : 'Regístrate ahora / Realiza tu primera compra mayorista / Crece con nosotros'}
+                            </h2>
+
+                            <p className="text-sm text-white/75 font-medium leading-relaxed mb-6">
+                                {locale === 'en'
+                                    ? 'Get access to tier-1 wholesale pricing, 30-day commercial credit terms, and direct early-morning drop-offs before your establishment opens. Ideal for specialty cafes, restaurants, bakeries, and gourmet markets.'
+                                    : 'Accede a precios mayoristas preferenciales, línea de crédito comercial a 30 días y despacho directo en madrugada antes de la apertura de tu negocio. Diseñado para cafeterías, restaurantes, hoteles y minimarkets gourmet.'}
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-bold text-white/90">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                                    <span>{locale === 'en' ? '30-Day Net Credit' : 'Crédito a 30 días'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                                    <span>{locale === 'en' ? 'Early 4-7 AM Delivery' : 'Despacho 4 - 7 AM'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                                    <span>{locale === 'en' ? 'Dedicated B2B Support' : 'Atención B2B Directa'}</span>
+                                </div>
+                            </div>
                         </div>
-                        <h1 className="text-3xl sm:text-5xl font-black font-serif text-foreground tracking-tight mb-4 leading-tight">
-                            {locale === 'en' ? 'Fresh Daily B2B Distribution' : 'Catálogo Mayorista de Panadería y Pastelería'}
-                        </h1>
-                        <p className="text-sm sm:text-base text-muted-foreground font-medium leading-relaxed mb-8">
-                            {locale === 'en' 
-                                ? 'Orders placed before 12:00 PM are prepared fresh for next-cycle delivery. Transparent wholesale pricing, automated delivery fees, and flexible payment terms for restaurants, cafes, and supermarkets.'
-                                : 'Pedidos recibidos antes de las 12:00 p. m. preparados frescos para entrega en el siguiente ciclo. Precios mayoristas transparentes, cálculo logístico de delivery y facilidades de pago para cafeterías y restaurantes.'}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <a href="#catalogo" className="px-6 py-3 rounded-full bg-primary text-white text-xs font-black uppercase tracking-widest shadow-md hover:bg-black transition-all">
-                                {locale === 'en' ? 'Browse Catalog' : 'Ver Productos'}
-                            </a>
-                            <Link href="/terms" className="px-6 py-3 rounded-full bg-white border border-border text-foreground text-xs font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm">
-                                {locale === 'en' ? 'Commercial Policies' : 'Términos y Horarios'}
+
+                        <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto shrink-0">
+                            <Link
+                                href="/auth/register"
+                                className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-amber-400 text-black font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-amber-300 hover:scale-[1.02] active:scale-95 transition-all text-center"
+                            >
+                                <UserPlus size={16} />
+                                <span>{locale === 'en' ? 'Create Wholesale Account' : 'Crear Cuenta Mayorista'}</span>
+                                <ChevronRight size={16} />
                             </Link>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowScheduleModal(true)}
+                                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest border border-white/20 transition-all text-center"
+                            >
+                                <Clock size={15} />
+                                <span>{locale === 'en' ? 'View Schedule' : 'Ver Horarios'}</span>
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -32,21 +32,14 @@ describe('AddressesService', () => {
   });
 
   describe('Business constraints (simulated unit tests)', () => {
-    // Note: The limit/default address logic might be implemented in the future,
-    // but the test specifications require these exact tests.
-    
     it('should limit the maximum number of addresses a user can have (simulated)', async () => {
-      // Setup mock to return maximum allowed addresses (e.g., 5)
       mockAddressRepository.find.mockResolvedValue([1, 2, 3, 4, 5]);
       
-      // If logic were in service to prevent > 5 addresses, we would test that here.
       const addresses = await service.findByUser('1');
       expect(addresses.length).toBe(5);
-      // In a real implementation we would expect `service.create` to throw if length >= limit
     });
 
     it('should set a default address (simulated)', async () => {
-      // Simulated logic where one address has is_default set to true
       const mockAddress = { id: '1', user_id: '1', is_default: false };
       mockAddressRepository.findOne.mockResolvedValue(mockAddress);
       mockAddressRepository.save.mockResolvedValue({ ...mockAddress, is_default: true });
@@ -80,6 +73,106 @@ describe('AddressesService', () => {
         where: { user_id: userId, is_temporary: false },
       });
       expect(result[0].user_id).toBe(userId);
+    });
+  });
+
+  describe('Sprint S51: Early Morning Access Instructions & Delivery Photos', () => {
+    const earlyMorningPayload = {
+      alias: 'Queens Coffee Lab',
+      address: '3304 Broadway, Astoria, NY 11106',
+      notes: 'Unload at rear delivery gate',
+      access_code: 'GATE-9842#',
+      has_key: true,
+      key_location: '24h deli across the street with cashier',
+      fridge_access_required: true,
+      delivery_photos_json: JSON.stringify([
+        '/uploads/addresses/facade-gate.jpg',
+        '/uploads/addresses/corridor-spot.jpg',
+        '/uploads/addresses/walk-in-cooler.jpg',
+      ]),
+    };
+
+    it('should persist early morning access instructions and delivery photos upon creation', async () => {
+      const userId = 'b2b-client-777';
+      const createdEntity = {
+        id: 'addr-s51-001',
+        user_id: userId,
+        ...earlyMorningPayload,
+      };
+
+      mockAddressRepository.create.mockReturnValue(createdEntity);
+      mockAddressRepository.save.mockResolvedValue(createdEntity);
+
+      const result = await service.create(userId, earlyMorningPayload);
+
+      expect(mockAddressRepository.create).toHaveBeenCalledWith({
+        ...earlyMorningPayload,
+        user_id: userId,
+      });
+      expect(mockAddressRepository.save).toHaveBeenCalledWith(createdEntity);
+      expect(result.access_code).toBe('GATE-9842#');
+      expect(result.has_key).toBe(true);
+      expect(result.key_location).toBe('24h deli across the street with cashier');
+      expect(result.fridge_access_required).toBe(true);
+      expect(JSON.parse(result.delivery_photos_json)).toHaveLength(3);
+    });
+
+    it('should update existing address with new early morning delivery photos and access instructions', async () => {
+      const existingAddr = {
+        id: 'addr-s51-002',
+        user_id: 'b2b-client-777',
+        alias: 'Cafe Old Name',
+        address: '100 Main St',
+        access_code: null,
+        has_key: false,
+        key_location: null,
+        fridge_access_required: false,
+        delivery_photos_json: null,
+      };
+
+      const updatePayload = {
+        access_code: 'DOOR-1234',
+        has_key: true,
+        key_location: 'Lockbox 8899 on left pipe',
+        fridge_access_required: true,
+        delivery_photos_json: JSON.stringify(['/uploads/addresses/door.jpg']),
+      };
+
+      mockAddressRepository.findOne.mockResolvedValue({ ...existingAddr });
+      mockAddressRepository.save.mockImplementation(async (entity) => entity);
+
+      const updated = await service.update('addr-s51-002', updatePayload);
+
+      expect(mockAddressRepository.findOne).toHaveBeenCalledWith({ where: { id: 'addr-s51-002' } });
+      expect(updated.access_code).toBe('DOOR-1234');
+      expect(updated.has_key).toBe(true);
+      expect(updated.key_location).toBe('Lockbox 8899 on left pipe');
+      expect(updated.fridge_access_required).toBe(true);
+      expect(updated.delivery_photos_json).toBe(JSON.stringify(['/uploads/addresses/door.jpg']));
+    });
+
+    it('sad path: should throw NotFoundException when updating an address that does not exist', async () => {
+      mockAddressRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.update('non-existent-id', { access_code: '9999' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('sad path: should throw NotFoundException when finding an address by id that does not exist', async () => {
+      mockAddressRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.findOne('non-existent-id'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('sad path: should throw NotFoundException when deleting an address that does not exist', async () => {
+      mockAddressRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.delete('non-existent-id'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
