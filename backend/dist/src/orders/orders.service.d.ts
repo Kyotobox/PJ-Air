@@ -9,6 +9,7 @@ import { MailService } from '../mail/mail.service';
 import { CreditService } from '../credit/credit.service';
 import { FeeCalculatorService } from './fee-calculator.service';
 import { MileageFreightService } from '../logistics/mileage-freight.service';
+import { PaymentsService } from '../payments/payments.service';
 export declare class OrdersService {
     private orderRepository;
     private orderItemRepository;
@@ -21,7 +22,8 @@ export declare class OrdersService {
     private creditService?;
     private feeCalculatorService?;
     private mileageFreightService?;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined);
+    private paymentsService?;
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined, paymentsService?: PaymentsService | undefined);
     validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour?: number): void;
     private validateStatusTransition;
     private calculateOrderPricesAndTotal;
@@ -52,4 +54,13 @@ export declare class OrdersService {
         used_credit: number;
     }>;
     getFrequentProducts(userId: string): Promise<any[]>;
+    validateMutationCutoff(order: Order, referenceDate?: Date): void;
+    mutateOrderItems(id: string, body: {
+        items?: any[];
+        zelle_receipt_url?: string;
+        zelle_reference?: string;
+        reason?: string;
+        replaceItems?: boolean;
+        referenceDate?: Date | string;
+    }, userId?: string, userRole?: string, referenceDateOverride?: Date): Promise<Order>;
 }

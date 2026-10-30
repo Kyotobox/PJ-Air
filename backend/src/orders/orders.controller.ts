@@ -1,4 +1,9 @@
-import { Controller, Post, Get, Body, Param, Patch, Query, Res, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Patch, Query, Res, UseGuards, Req, ForbiddenException, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join, resolve } from 'path';
+import * as fs from 'fs';
+import { UPLOAD_PATH } from '../config';
 import { OrdersService } from './orders.service';
 import { ExcelService } from './excel.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -161,6 +166,44 @@ export class OrdersController {
   @Roles('admin', 'produccion')
   async assignDelivery(@Param('id') id: string, @Body('deliveryUserId') deliveryUserId: string) {
     return this.ordersService.assignDelivery(id, deliveryUserId);
+  }
+
+  @Post('upload-receipt')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const uploadPath = join(resolve(UPLOAD_PATH), 'zelle');
+          if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+          }
+          cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `zelle-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|pdf)$/)) {
+          return cb(new BadRequestException('Solo se permiten archivos de imagen (JPG, PNG, WebP) o PDF'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async uploadReceipt(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    return { url: `/uploads/zelle/${file.filename}` };
+  }
+
+  @Patch(':id/mutate-items')
+  @UseGuards(AuthGuard)
+  async mutateItems(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    return this.ordersService.mutateOrderItems(id, body, req.user?.id, req.user?.role);
   }
 
   @Patch(':id')

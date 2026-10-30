@@ -598,6 +598,9 @@ export default function CheckoutPage() {
     // Payment method state
     const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'ach' | 'zelle' | 'credit'>('stripe');
     const [zelleReference, setZelleReference] = useState('');
+    const [zelleReceiptFile, setZelleReceiptFile] = useState<File | null>(null);
+    const [zelleReceiptUrl, setZelleReceiptUrl] = useState<string | null>(null);
+    const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
 
     const [addresses, setAddresses] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -903,6 +906,27 @@ export default function CheckoutPage() {
         setPaymentDate(payDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
     };
 
+    const handleReceiptFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setZelleReceiptFile(file);
+        setIsUploadingReceipt(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.upload('/orders/upload-receipt', formData) as any;
+            if (res?.url) {
+                setZelleReceiptUrl(res.url);
+                showNotification(lbl('Comprobante subido con éxito.', 'Receipt uploaded successfully.'), 'info');
+            }
+        } catch (err: any) {
+            console.error('Error uploading zelle receipt:', err);
+            showNotification(err?.message || lbl('Error al subir el comprobante', 'Error uploading receipt'), 'error');
+        } finally {
+            setIsUploadingReceipt(false);
+        }
+    };
+
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         if (!user || cart.length === 0) return;
@@ -996,6 +1020,7 @@ export default function CheckoutPage() {
                 fee_amount: processingFee,
                 fee_method: feeMethod,
                 zelle_reference: paymentMethod === 'zelle' ? zelleReference.trim() : null,
+                zelle_receipt_url: paymentMethod === 'zelle' ? zelleReceiptUrl : null,
                 items: cart.map(item => ({
                     productId: item.id,
                     quantity: item.quantity,
@@ -1525,28 +1550,60 @@ export default function CheckoutPage() {
                                             )}
                                         </p>
                                     </div>
+
+                                    {/* Upload Screenshot / Comprobante Zelle */}
+                                    <div className="space-y-2 pt-2 border-t border-purple-200/70">
+                                        <label className="text-xs font-bold text-purple-950 flex items-center justify-between">
+                                            <span>{lbl('Comprobante / Captura de Transferencia (Screenshot)', 'Transfer Screenshot / Receipt')}</span>
+                                            {isUploadingReceipt && (
+                                                <span className="text-[10px] text-purple-600 flex items-center gap-1 font-normal">
+                                                    <Loader2 size={12} className="animate-spin" /> {lbl('Subiendo...', 'Uploading...')}
+                                                </span>
+                                            )}
+                                        </label>
+                                        <input
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/webp,application/pdf"
+                                            onChange={handleReceiptFileChange}
+                                            className="w-full text-xs text-purple-900 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
+                                        />
+                                        {zelleReceiptUrl && (
+                                            <div className="flex items-center gap-2 p-2 bg-purple-100/80 rounded-lg text-[11px] text-purple-900 font-medium">
+                                                <Check size={14} className="text-emerald-600" />
+                                                <span>{lbl('Comprobante adjuntado correctamente', 'Receipt attached successfully')}</span>
+                                            </div>
+                                        )}
+                                        <p className="text-[10px] text-purple-700 italic">
+                                            {lbl(
+                                                'Adjunta la captura de pantalla de la confirmación bancaria para acelerar la verificación manual.',
+                                                'Attach your banking confirmation screenshot to expedite manual verification.'
+                                            )}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </section>
 
-                        {/* ── Payment note ─────────────────────────────────── */}
+                        {/* ── Payment Policies Section (TASK-50-04) ─────────────────────── */}
                         <section className="bg-accent/5 rounded-3xl border border-accent/20 p-8 text-black">
                             <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
                                 <CreditCard size={20} />
-                                {lbl('Política de Pago', 'Payment Policy')}
+                                {lbl('Políticas de Pago y Despacho', 'Payment and Dispatch Policy')}
                             </h3>
-                            <p className="text-sm">
+                            <p className="text-sm leading-relaxed text-slate-800">
                                 {lbl(
-                                    'El producto será cobrado ',
-                                    'The product will be charged '
+                                    'Regla operativa comercial: El pedido debe quedar cancelado a más tardar el día previo a la entrega para programar el despacho (ej. entrega domingo → pago sábado).',
+                                    'Operational commercial policy: The order must be paid at the latest the day before delivery to schedule dispatch (e.g. Sunday delivery → Saturday payment).'
                                 )}
-                                <strong>{lbl('6 días después', '6 days after')}</strong>
-                                {lbl(' de haber sido recibido. ', ' of being received. ')}
                             </p>
-                            <p className="text-sm mt-2">
-                                {lbl('Tu fecha límite de pago para este pedido será: ', 'Your payment deadline for this order will be: ')}
-                                <strong className="text-foreground capitalize underline">{paymentDate}</strong>
-                            </p>
+                            <div className="mt-3 p-3.5 bg-white/80 rounded-xl border border-accent/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                <span className="text-slate-600 font-medium">
+                                    {lbl('Entrega programada para:', 'Scheduled delivery for:')}
+                                </span>
+                                <strong className="text-primary font-bold capitalize text-sm">
+                                    {deliveryDate || lbl('Pendiente de selección', 'Pending selection')}
+                                </strong>
+                            </div>
                         </section>
                     </div>
 

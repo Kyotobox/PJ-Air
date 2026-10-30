@@ -26,6 +26,7 @@ const mail_service_1 = require("../mail/mail.service");
 const credit_service_1 = require("../credit/credit.service");
 const fee_calculator_service_1 = require("./fee-calculator.service");
 const mileage_freight_service_1 = require("../logistics/mileage-freight.service");
+const payments_service_1 = require("../payments/payments.service");
 let OrdersService = class OrdersService {
     orderRepository;
     orderItemRepository;
@@ -38,7 +39,8 @@ let OrdersService = class OrdersService {
     creditService;
     feeCalculatorService;
     mileageFreightService;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService) {
+    paymentsService;
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService, paymentsService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -50,6 +52,7 @@ let OrdersService = class OrdersService {
         this.creditService = creditService;
         this.feeCalculatorService = feeCalculatorService;
         this.mileageFreightService = mileageFreightService;
+        this.paymentsService = paymentsService;
     }
     validateCutoffTime(deliveryDateStr, referenceDate, cutoffHour = 12) {
         if (!deliveryDateStr)
@@ -260,6 +263,8 @@ let OrdersService = class OrdersService {
         const appliedPaymentMethod = rest.payment_method || orderData.payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
         const rawZelleRef = rest.zelle_reference || orderData.zelle_reference;
         const appliedZelleReference = rawZelleRef ? String(rawZelleRef).trim() : null;
+        const rawZelleReceipt = rest.zelle_receipt_url || orderData.zelle_receipt_url;
+        const appliedZelleReceiptUrl = rawZelleReceipt ? String(rawZelleReceipt).trim() : null;
         let appliedPaymentDueDate = null;
         if (appliedPaymentMethod === 'credit') {
             if (this.creditService) {
@@ -435,6 +440,7 @@ let OrdersService = class OrdersService {
                 total: finalTotal,
                 payment_method: appliedPaymentMethod,
                 zelle_reference: appliedZelleReference,
+                zelle_receipt_url: appliedZelleReceiptUrl,
                 packaging_fee: packagingFee,
                 packaging_discount: packagingDiscount,
                 fee_amount: feeAmount,
@@ -514,6 +520,15 @@ let OrdersService = class OrdersService {
         }
         if (updateData.fee_method !== undefined) {
             order.fee_method = updateData.fee_method;
+        }
+        if (updateData.zelle_receipt_url !== undefined) {
+            order.zelle_receipt_url = updateData.zelle_receipt_url;
+        }
+        if (updateData.zelle_reference !== undefined) {
+            order.zelle_reference = updateData.zelle_reference;
+        }
+        if (updateData.pending_balance !== undefined) {
+            order.pending_balance = Number(updateData.pending_balance);
         }
         if (motivo) {
             const originalLines = (order.items || []).map(item => `${item.quantity} Unidades de ${item.product?.name || 'Producto'}, precio unitario: ${item.price_at_time}, subtotal: ${(item.quantity * item.price_at_time).toFixed(2)}`).join('; ');
@@ -693,6 +708,188 @@ let OrdersService = class OrdersService {
         }
         return results;
     }
+    validateMutationCutoff(order, referenceDate) {
+        const now = referenceDate || new Date();
+        const allowedStatuses = ['pending', 'confirmed', 'pedido enviado'];
+        const currentStatus = (order.status || '').toLowerCase().trim();
+        if (!allowedStatuses.includes(currentStatus)) {
+            throw new common_1.BadRequestException('Solo se pueden modificar órdenes en estado pending o confirmed');
+        }
+        const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        });
+        const nyTimeFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            hour: 'numeric',
+            hour12: false,
+        });
+        const nowParts = nyDateFormatter.formatToParts(now);
+        const yrNow = nowParts.find(p => p.type === 'year')?.value || '1970';
+        const moNow = nowParts.find(p => p.type === 'month')?.value || '01';
+        const daNow = nowParts.find(p => p.type === 'day')?.value || '01';
+        const nyNowDateStr = `${yrNow}-${moNow}-${daNow}`;
+        const nowTimeParts = nyTimeFormatter.formatToParts(now);
+        const nyNowHour = parseInt(nowTimeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        const orderCreatedAt = order.created_at ? new Date(order.created_at) : now;
+        const orderParts = nyDateFormatter.formatToParts(orderCreatedAt);
+        const yrOrd = orderParts.find(p => p.type === 'year')?.value || '1970';
+        const moOrd = orderParts.find(p => p.type === 'month')?.value || '01';
+        const daOrd = orderParts.find(p => p.type === 'day')?.value || '01';
+        const nyOrderDateStr = `${yrOrd}-${moOrd}-${daOrd}`;
+        if (nyNowDateStr > nyOrderDateStr) {
+            throw new common_1.BadRequestException('Corte de producción superado. No se pueden modificar items');
+        }
+        if (nyNowHour >= 12) {
+            throw new common_1.BadRequestException('Corte de producción superado. No se pueden modificar items');
+        }
+    }
+    async mutateOrderItems(id, body, userId, userRole, referenceDateOverride) {
+        const order = await this.findOne(id);
+        if (!order) {
+            throw new common_1.NotFoundException(`Order ${id} not found`);
+        }
+        if (userRole !== 'admin' && userId && order.user_id !== userId) {
+            throw new common_1.ForbiddenException('No tienes permiso para modificar esta orden');
+        }
+        const refDate = body.referenceDate
+            ? new Date(body.referenceDate)
+            : (referenceDateOverride || new Date());
+        this.validateMutationCutoff(order, refDate);
+        if (body.zelle_receipt_url !== undefined) {
+            order.zelle_receipt_url = body.zelle_receipt_url;
+            if (order.payment_method === 'zelle') {
+                order.payment_status = 'pending_zelle_verification';
+            }
+        }
+        if (body.zelle_reference !== undefined) {
+            order.zelle_reference = body.zelle_reference;
+        }
+        if (body.items && Array.isArray(body.items)) {
+            let itemsToCalculate = [];
+            if (body.replaceItems === true) {
+                itemsToCalculate = body.items.map((i) => ({
+                    productId: Number(i.productId || i.product_id),
+                    quantity: Number(i.quantity),
+                })).filter(i => i.quantity > 0);
+            }
+            else {
+                const itemMap = new Map();
+                if (order.items && Array.isArray(order.items)) {
+                    for (const existingItem of order.items) {
+                        const pid = Number(existingItem.product_id || existingItem.product?.id);
+                        if (pid) {
+                            itemMap.set(pid, Number(existingItem.quantity) || 0);
+                        }
+                    }
+                }
+                for (const updateItem of body.items) {
+                    const pid = Number(updateItem.productId || updateItem.product_id);
+                    const qty = Number(updateItem.quantity);
+                    if (qty <= 0) {
+                        itemMap.delete(pid);
+                    }
+                    else {
+                        itemMap.set(pid, qty);
+                    }
+                }
+                itemsToCalculate = Array.from(itemMap.entries()).map(([productId, quantity]) => ({
+                    productId,
+                    quantity,
+                }));
+            }
+            if (itemsToCalculate.length === 0) {
+                throw new common_1.BadRequestException('La orden debe contener al menos un producto');
+            }
+            const result = await this.calculateOrderPricesAndTotal(order.user_id, itemsToCalculate);
+            await this.orderItemRepository.delete({ order_id: order.id });
+            const newOrderItems = result.validatedItems.map((item) => ({
+                product_id: item.product_id,
+                price_at_time: item.price_at_time,
+                quantity: item.quantity,
+                order_id: order.id,
+            }));
+            order.items = await this.orderItemRepository.save(newOrderItems);
+            const itemsTotal = result.total;
+            const oldTotal = Number(order.total) || 0;
+            const packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
+            let packagingDiscount = 0;
+            if (order.payment_method === 'zelle' ||
+                order.payment_method === 'credit' ||
+                order.payment_method === 'check' ||
+                order.payment_method === 'cash') {
+                packagingDiscount = packagingFee;
+            }
+            const feeMethod = (order.payment_method === 'stripe' || order.payment_method === 'card')
+                ? 'STRIPE_CARD'
+                : (order.payment_method === 'ach' || order.payment_method === 'ach_debit')
+                    ? 'ACH'
+                    : String(order.payment_method || '').toUpperCase();
+            const feeAmount = fee_calculator_service_1.FeeCalculatorService.calculateFee(itemsTotal, feeMethod);
+            let appliedTaxAmount = 0.00;
+            if (order.tax_exempt) {
+                appliedTaxAmount = 0.00;
+            }
+            else if (order.tax_rate && Number(order.tax_rate) > 0) {
+                appliedTaxAmount = Math.round(itemsTotal * (Number(order.tax_rate) / 100) * 100) / 100;
+            }
+            const deliveryFee = Number(order.delivery_fee_charged) || 0;
+            const newTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
+            order.packaging_fee = packagingFee;
+            order.packaging_discount = packagingDiscount;
+            order.fee_amount = feeAmount;
+            order.fee_method = order.fee_method || feeMethod;
+            order.tax_amount = appliedTaxAmount;
+            order.total = newTotal;
+            const delta = Math.round((newTotal - oldTotal) * 100) / 100;
+            if (delta < 0) {
+                const refundAmount = Math.abs(delta);
+                if ((order.payment_method === 'stripe' || order.payment_method === 'card') &&
+                    (order.payment_status === 'paid' || order.stripe_payment_id)) {
+                    if (this.paymentsService && typeof this.paymentsService.createRefund === 'function') {
+                        try {
+                            await this.paymentsService.createRefund({
+                                orderId: order.id,
+                                amount: refundAmount,
+                                reason: body.reason || 'Ajuste de orden pre-corte (disminución de items)',
+                            });
+                        }
+                        catch (refErr) {
+                            console.warn(`[OrdersService] createRefund error: ${refErr?.message || refErr}. Fallback a nota de crédito.`);
+                            order.refunded_amount = Math.round(((Number(order.refunded_amount) || 0) + refundAmount) * 100) / 100;
+                            order.refund_reason = `Saldo a favor / Nota de crédito: $${refundAmount.toFixed(2)}`;
+                        }
+                    }
+                    else {
+                        order.refunded_amount = Math.round(((Number(order.refunded_amount) || 0) + refundAmount) * 100) / 100;
+                        order.refund_reason = `Saldo a favor / Nota de crédito: $${refundAmount.toFixed(2)}`;
+                    }
+                }
+                else {
+                    const creditNote = `[SALDO A FAVOR] Crédito de $${refundAmount.toFixed(2)} registrado por ajuste de orden.`;
+                    order.notes = order.notes ? `${order.notes}\n${creditNote}` : creditNote;
+                    order.refund_reason = creditNote;
+                    order.refunded_amount = Math.round(((Number(order.refunded_amount) || 0) + refundAmount) * 100) / 100;
+                }
+                order.pending_balance = 0;
+            }
+            else if (delta > 0) {
+                if (order.payment_status === 'paid') {
+                    order.pending_balance = delta;
+                    order.payment_status = 'partially_paid';
+                    const balanceNote = `[BALANCE PENDIENTE] Saldo pendiente de pago por ajuste: $${delta.toFixed(2)}.`;
+                    order.notes = order.notes ? `${order.notes}\n${balanceNote}` : balanceNote;
+                }
+                else {
+                    order.pending_balance = newTotal;
+                }
+            }
+        }
+        await this.orderRepository.save(order);
+        return this.findOne(order.id);
+    }
 };
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([
@@ -708,6 +905,8 @@ exports.OrdersService = OrdersService = __decorate([
     __param(8, (0, common_1.Optional)()),
     __param(9, (0, common_1.Optional)()),
     __param(10, (0, common_1.Optional)()),
+    __param(11, (0, common_1.Optional)()),
+    __param(11, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -718,6 +917,7 @@ exports.OrdersService = OrdersService = __decorate([
         mail_service_1.MailService,
         credit_service_1.CreditService,
         fee_calculator_service_1.FeeCalculatorService,
-        mileage_freight_service_1.MileageFreightService])
+        mileage_freight_service_1.MileageFreightService,
+        payments_service_1.PaymentsService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

@@ -9,6 +9,8 @@ export declare class Order {
     payment_status: string;
     payment_method: string;
     zelle_reference: string;
+    zelle_receipt_url: string;
+    pending_balance: number;
     packaging_fee: number;
     packaging_discount: number;
     delivery_fee_charged: number;

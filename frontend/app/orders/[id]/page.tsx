@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
 import { calculateProcessingFee } from '@/lib/fee-calculator';
+import { API_URL } from '@/lib/config';
 
 export default function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: orderId } = use(params);
@@ -427,6 +428,42 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                         <span>Total</span>
                                         <span className="text-xl font-black text-primary font-mono">${(Number(order.total) || 0).toFixed(2)}</span>
                                     </div>
+
+                                    {/* Zelle Receipt Link */}
+                                    {order.zelle_receipt_url && (
+                                        <div className="p-3 bg-purple-50 rounded-2xl border border-purple-200 flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2 text-purple-900 font-bold">
+                                                <Receipt size={16} className="text-purple-600" />
+                                                <span>{locale === 'en' ? 'Zelle Receipt Attached' : 'Comprobante Zelle Adjunto'}</span>
+                                            </div>
+                                            <a
+                                                href={order.zelle_receipt_url.startsWith('http') ? order.zelle_receipt_url : `${API_URL}${order.zelle_receipt_url}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[11px] font-bold text-purple-700 underline"
+                                            >
+                                                {locale === 'en' ? 'View file' : 'Ver archivo'} ↗
+                                            </a>
+                                        </div>
+                                    )}
+
+                                    {/* Pending Balance Payment Section (TASK-50-03) */}
+                                    {Number(order.pending_balance) > 0 && (
+                                        <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
+                                            <div className="flex justify-between items-center text-xs font-bold text-amber-950">
+                                                <span>{locale === 'en' ? 'Pending Balance to Settle:' : 'Saldo Pendiente por Ajuste:'}</span>
+                                                <span className="font-mono text-sm font-black text-amber-900">${Number(order.pending_balance).toFixed(2)}</span>
+                                            </div>
+                                            <button
+                                                onClick={handlePayOnline}
+                                                disabled={isInitiatingPayment}
+                                                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2"
+                                            >
+                                                {isInitiatingPayment ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                                                {locale === 'en' ? `Pay Balance ($${Number(order.pending_balance).toFixed(2)})` : `Pagar Diferencia ($${Number(order.pending_balance).toFixed(2)})`}
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {/* Financial Status Badges & Settlement Action */}
                                     {order.payment_status === 'paid' && (

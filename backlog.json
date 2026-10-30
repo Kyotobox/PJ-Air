@@ -7,131 +7,22 @@
   "current_task": "TASK-51-06",
   "sprints": [
     {
-      "id": "S47",
-      "name": "Sprint 47: Processing Fees Transversales",
-      "status": "COMPLETED",
-      "start_date": "2026-11-01",
-      "goal": "Aplicar recargos transparentes por método de pago (Tarjeta 3.5%, ACH 0.8% tope $5, Zelle/Cheque 0%) tanto en checkout como en liquidación de facturas a crédito.",
-      "tasks": [
-        {
-          "id": "TASK-47-01",
-          "label": "DOMAIN/FEE-CALCULATOR-SERVICE",
-          "desc": "Servicio determinista FeeCalculatorService.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-47-02",
-          "label": "UI/CHECKOUT-FEES-BREAKDOWN",
-          "desc": "Desglose dinámico de comisiones en Checkout.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-47-03",
-          "label": "DOMAIN/CREDIT-SETTLEMENT-FEE",
-          "desc": "Aplicar fee en liquidación diferida de facturas a crédito.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-47-04",
-          "label": "DOMAIN/FEE-PERSISTENCE-AUDIT",
-          "desc": "Persistir fee_amount y fee_method en Order.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-47-05",
-          "label": "UI/INVOICE-DOWNLOAD-BREAKDOWN",
-          "desc": "Invoices descargables con desglose legal contable.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-47-06",
-          "label": "TEST/FEE-CALCULATOR-SUITE",
-          "desc": "Suite de pruebas unitarias para FeeCalculatorService.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-47-07",
-          "label": "DEPLOY/TESTING-SYNC",
-          "desc": "Compilación limpia de frontend y backend, verificación de integridad y sincronización de backlog.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S48",
-      "name": "Sprint 48: Dashboard B2B y Motor de Fletes por Millas desde Astoria",
-      "status": "COMPLETED",
-      "start_date": "2026-11-02",
-      "goal": "Dashboard comercial para clientes mayoristas en /orders y motor de fletes por millas de van comercial desde Astoria NY.",
-      "tasks": [
-        {
-          "id": "TASK-48-01",
-          "label": "UI/DASHBOARD-HERO-CREDIT",
-          "desc": "Tarjetas de Salud Financiera en /orders.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-48-02",
-          "label": "UI/DASHBOARD-METRICS-CARDS",
-          "desc": "Widgets de consumo y actividad comercial.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-48-03",
-          "label": "UI/MULTI-ORDER-SETTLEMENT-SELECTOR",
-          "desc": "Selector multi-orden con checkboxes para saldar facturas.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-48-04",
-          "label": "DOMAIN/BATCH-SETTLEMENT-ENDPOINT",
-          "desc": "Endpoint POST /orders/settle-batch.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-48-05",
-          "label": "UI/FREQUENT-PRODUCTS-CAROUSEL",
-          "desc": "Carrusel de productos frecuentes con reorden 1-clic.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-48-06",
-          "label": "DOMAIN/FEEDBACK-SUGGESTION-BOX",
-          "desc": "Entidad Feedback y buzón de sugerencias.",
-          "status": "DONE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-48-07",
-          "label": "DOMAIN/MILEAGE-FREIGHT-ASTORIA",
-          "desc": "Motor MileageFreightService con origen en 3304 Broadway, Astoria, NY 11106.",
-          "status": "DONE",
-          "veracity_hash": null
-        }
-      ]
-    },
-    {
       "id": "S49",
       "name": "Sprint 49: Tax ID Obligatorio, Google Maps Real y Lead Time de Despacho 48h",
       "status": "COMPLETED",
       "start_date": "2026-10-30",
-      "goal": "Tax ID obligatorio en registro mayorista B2B, integración real de Google Maps (Maps JS, Geocoding, Places), motor de lead time de 48h para despacho y terminología oficial de Delivery Fee.",
+      "goal": "Tax ID obligatorio en registro mayorista B2B, integraci\u00f3n real de Google Maps (Maps JS, Geocoding, Places), motor de lead time de 48h para despacho y terminolog\u00eda oficial de Delivery Fee.",
       "tasks": [
         {
           "id": "TASK-49-01",
           "label": "UI/AUTH-MANDATORY-TAXID",
-          "desc": "Tax ID / NY Resale Certificate # obligatorio en /auth/register y validación en backend.",
+          "desc": "Tax ID / NY Resale Certificate # obligatorio en /auth/register y validaci\u00f3n en backend.",
           "status": "DONE"
         },
         {
           "id": "TASK-49-02",
           "label": "INTEGRATION/GOOGLE-MAPS-REAL-KEY",
-          "desc": "Configuración y verificación de Google Maps API Key real eliminando error Oops! Something went wrong.",
+          "desc": "Configuraci\u00f3n y verificaci\u00f3n de Google Maps API Key real eliminando error Oops! Something went wrong.",
           "status": "DONE"
         },
         {
@@ -143,19 +34,19 @@
         {
           "id": "TASK-49-04",
           "label": "DOMAIN/CUTOFF-LEADTIME-ENGINE",
-          "desc": "Motor de Lead Time 48h (T+2 pre-12 PM, T+3 post-12 PM hora NY) y guardarraíl de fechas en /checkout.",
+          "desc": "Motor de Lead Time 48h (T+2 pre-12 PM, T+3 post-12 PM hora NY) y guardarra\u00edl de fechas en /checkout.",
           "status": "DONE"
         },
         {
           "id": "TASK-49-05",
           "label": "UI/CHECKOUT-TERMINOLOGY-AND-PICKUP",
-          "desc": "Renombrar Flete a Delivery Fee, fijar horario Pick Up (8:00 AM - 10:00 AM) y fix de scroll móvil.",
+          "desc": "Renombrar Flete a Delivery Fee, fijar horario Pick Up (8:00 AM - 10:00 AM) y fix de scroll m\u00f3vil.",
           "status": "DONE"
         },
         {
           "id": "TASK-49-06",
           "label": "DOMAIN/LOGISTICS-CHECKOUT-LINK",
-          "desc": "Conexión de coordenadas geocodificadas con POST /logistics/quote (MileageFreightService).",
+          "desc": "Conexi\u00f3n de coordenadas geocodificadas con POST /logistics/quote (MileageFreightService).",
           "status": "DONE"
         },
         {
@@ -168,54 +59,54 @@
     },
     {
       "id": "S50",
-      "name": "Sprint 50: Comprobantes Zelle, Políticas de Pago y Modificación de Órdenes Pre-Corte",
-      "status": "PLANNED",
+      "name": "Sprint 50: Comprobantes Zelle, Pol\u00edticas de Pago y Modificaci\u00f3n de \u00d3rdenes Pre-Corte",
+      "status": "COMPLETED",
       "start_date": "2026-11-03",
-      "goal": "Comprobantes Zelle con screenshot, modificación de órdenes abiertas pre-corte (12 PM) y clarificación de políticas de pago.",
+      "goal": "Comprobantes Zelle con screenshot, modificaci\u00f3n de \u00f3rdenes abiertas pre-corte (12 PM) y clarificaci\u00f3n de pol\u00edticas de pago.",
       "tasks": [
         {
           "id": "TASK-50-01",
           "label": "UI/ZELLE-RECEIPT-UPLOAD",
-          "desc": "Carga de captura/screenshot de transferencia Zelle + referencia bancaria en checkout y órdenes.",
-          "status": "TODO"
+          "desc": "Carga de captura/screenshot de transferencia Zelle + referencia bancaria en checkout y \u00f3rdenes.",
+          "status": "DONE"
         },
         {
           "id": "TASK-50-02",
           "label": "DOMAIN/ORDER-PRE-CUTOFF-MUTATION",
-          "desc": "Modificación de órdenes abiertas antes del corte de las 12:00 PM (agregar items / corregir cantidades).",
-          "status": "TODO"
+          "desc": "Modificaci\u00f3n de \u00f3rdenes abiertas antes del corte de las 12:00 PM (agregar items / corregir cantidades).",
+          "status": "DONE"
         },
         {
           "id": "TASK-50-03",
           "label": "DOMAIN/ORDER-BALANCE-ADJUSTMENT",
           "desc": "Ajuste contable de saldo (reverso/saldo a favor o checkout remanente).",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-50-04",
           "label": "UI/PAYMENT-POLICIES-CLEANUP",
-          "desc": "Sección de políticas de pago en checkout aclarando pago previo a despacho.",
-          "status": "TODO"
+          "desc": "Secci\u00f3n de pol\u00edticas de pago en checkout aclarando pago previo a despacho.",
+          "status": "DONE"
         },
         {
           "id": "TASK-50-05",
           "label": "TEST/S50-PAYMENTS-MUTATION-SUITE",
-          "desc": "Suite de pruebas unitarias para comprobante Zelle y mutación de orden pre-corte.",
-          "status": "TODO"
+          "desc": "Suite de pruebas unitarias para comprobante Zelle y mutaci\u00f3n de orden pre-corte.",
+          "status": "DONE"
         }
       ]
     },
     {
       "id": "S51",
-      "name": "Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista",
+      "name": "Sprint 51: Log\u00edstica Nocturna con Fotos de Acceso y Landing B2B Mayorista",
       "status": "COMPLETED",
       "start_date": "2026-11-05",
-      "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y rediseño comercial de Home B2B con CTA prominente.",
+      "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y redise\u00f1o comercial de Home B2B con CTA prominente.",
       "tasks": [
         {
           "id": "TASK-51-01",
           "label": "DOMAIN/EARLY-MORNING-ACCESS-SCHEMA",
-          "desc": "Columnas en Address para instrucciones de acceso en madrugada (códigos, llaves, neveras).",
+          "desc": "Columnas en Address para instrucciones de acceso en madrugada (c\u00f3digos, llaves, neveras).",
           "status": "DONE"
         },
         {
@@ -239,7 +130,7 @@
         {
           "id": "TASK-51-05",
           "label": "UI/SIGNUP-B2B-PROMINENT-CTA",
-          "desc": "Botón/Cintillo destacado de registro mayorista (Regístrate ahora / Crece con nosotros).",
+          "desc": "Bot\u00f3n/Cintillo destacado de registro mayorista (Reg\u00edstrate ahora / Crece con nosotros).",
           "status": "DONE"
         },
         {
@@ -251,19 +142,19 @@
       ]
     }
   ],
-  "archived_sprints_count": 42,
+  "archived_sprints_count": 2,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S51",
-    "name": "Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista",
+    "name": "Sprint 51: Log\u00edstica Nocturna con Fotos de Acceso y Landing B2B Mayorista",
     "status": "IN_PROGRESS",
     "start_date": "2026-11-05",
-    "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y rediseño comercial de Home B2B con CTA prominente.",
+    "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y redise\u00f1o comercial de Home B2B con CTA prominente.",
     "tasks": [
       {
         "id": "TASK-51-01",
         "label": "DOMAIN/EARLY-MORNING-ACCESS-SCHEMA",
-        "desc": "Columnas en Address para instrucciones de acceso en madrugada (códigos, llaves, neveras).",
+        "desc": "Columnas en Address para instrucciones de acceso en madrugada (c\u00f3digos, llaves, neveras).",
         "status": "IN_PROGRESS"
       },
       {
@@ -287,7 +178,7 @@
       {
         "id": "TASK-51-05",
         "label": "UI/SIGNUP-B2B-PROMINENT-CTA",
-        "desc": "Botón/Cintillo destacado de registro mayorista (Regístrate ahora / Crece con nosotros).",
+        "desc": "Bot\u00f3n/Cintillo destacado de registro mayorista (Reg\u00edstrate ahora / Crece con nosotros).",
         "status": "TODO"
       },
       {

@@ -23,8 +23,14 @@ export class Order {
   @Column({ default: 'stripe' })
   payment_method: string; // 'stripe' | 'zelle' | 'credit'
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'text' })
   zelle_reference: string;
+
+  @Column({ nullable: true, type: 'text' })
+  zelle_receipt_url: string;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  pending_balance: number;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   packaging_fee: number;
