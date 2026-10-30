@@ -64,27 +64,30 @@ export class OrdersService {
     const timeParts = nyTimeFormatter.formatToParts(now);
     const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
 
-    const todayNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
-    const tomorrowNY = new Date(todayNY);
-    tomorrowNY.setUTCDate(tomorrowNY.getUTCDate() + 1);
+    const pastCutoff = nyHour >= cutoffHour;
+    const daysToAdd = pastCutoff ? 3 : 2;
 
-    const yrT = tomorrowNY.getUTCFullYear();
-    const moT = String(tomorrowNY.getUTCMonth() + 1).padStart(2, '0');
-    const daT = String(tomorrowNY.getUTCDate()).padStart(2, '0');
-    const tomorrowStr = `${yrT}-${moT}-${daT}`;
+    const minDateNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
+    minDateNY.setUTCDate(minDateNY.getUTCDate() + daysToAdd);
+
+    const yrMin = minDateNY.getUTCFullYear();
+    const moMin = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
+    const daMin = String(minDateNY.getUTCDate()).padStart(2, '0');
+    const minDeliveryDateStr = `${yrMin}-${moMin}-${daMin}`;
 
     const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
 
-    if (targetDate < nyDateStr) {
-      throw new BadRequestException('La fecha de entrega no puede ser en el pasado.');
-    }
-    if (targetDate === nyDateStr) {
-      throw new BadRequestException('No se permiten entregas para el mismo día de la orden.');
-    }
-
-    if (nyHour >= cutoffHour && targetDate <= tomorrowStr) {
+    if (targetDate < minDeliveryDateStr) {
+      if (targetDate < nyDateStr) {
+        throw new BadRequestException('La fecha de entrega no puede ser en el pasado.');
+      }
+      if (targetDate === nyDateStr) {
+        throw new BadRequestException('No se permiten entregas para el mismo día de la orden. Lead time mínimo de 48 horas requerido.');
+      }
       throw new BadRequestException(
-        `Corte de producción superado (${cutoffHour}:00 PM ET). No se permiten pedidos para entrega el día siguiente (${tomorrowStr}). Próxima entrega disponible a partir de 2 días hábiles.`
+        pastCutoff
+          ? `Corte de producción superado (${cutoffHour}:00 PM ET). Para pedidos después de las 12 PM, la fecha de entrega más temprana es ${minDeliveryDateStr} (T+3).`
+          : `Lead time de producción de 48h requerido. La fecha de entrega más temprana es ${minDeliveryDateStr} (T+2).`
       );
     }
   }

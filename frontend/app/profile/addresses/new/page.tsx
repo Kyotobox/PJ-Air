@@ -4,13 +4,13 @@ import React, { useState, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MapPin, ChevronRight, Loader2, Map as MapIcon, RotateCcw } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
 
-
+const libraries: ('places')[] = ['places'];
 
 const mapContainerStyle = {
     width: '100%',
@@ -47,10 +47,36 @@ function NewAddressContent() {
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: GOOGLE_MAPS_KEY || ''
+        googleMapsApiKey: GOOGLE_MAPS_KEY || '',
+        libraries,
     });
 
     const [map, setMap] = useState<google.maps.Map | null>(null);
+    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+
+    const onAutocompleteLoad = useCallback((auto: google.maps.places.Autocomplete) => {
+        setAutocomplete(auto);
+    }, []);
+
+    const onPlaceChanged = useCallback(() => {
+        if (autocomplete !== null) {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+                const newPos = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+                setMarkerPos(newPos);
+                setGeocodedPos(newPos);
+                setIsManualAdjustment(false);
+                setRefinedPos(null);
+                map?.panTo(newPos);
+                if (place.formatted_address) {
+                    setAddress(place.formatted_address);
+                }
+            }
+        }
+    }, [autocomplete, map]);
 
     const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
         if (e.latLng) {
@@ -193,19 +219,44 @@ function NewAddressContent() {
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase text-muted-foreground ml-2 tracking-widest">{s.addressLabel}</label>
                             <div className="relative group">
-                                <textarea
-                                    required
-                                    rows={3}
-                                    placeholder={s.addressPlaceholder}
-                                    className="premium-input px-6 py-4 font-bold pr-32"
-                                    value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
-                                    onBlur={() => { if (address.length > 5) forwardGeocode(); }}
-                                />
+                                {isLoaded ? (
+                                    <Autocomplete
+                                        onLoad={onAutocompleteLoad}
+                                        onPlaceChanged={onPlaceChanged}
+                                        options={{
+                                            componentRestrictions: { country: 'us' },
+                                            fields: ['address_components', 'geometry', 'formatted_address'],
+                                            types: ['address'],
+                                        }}
+                                    >
+                                        <input
+                                            required
+                                            type="text"
+                                            placeholder={s.addressPlaceholder}
+                                            className="premium-input px-6 py-4 font-bold pr-32 w-full"
+                                            value={address}
+                                            onChange={(e) => setAddress(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                        />
+                                    </Autocomplete>
+                                ) : (
+                                    <input
+                                        required
+                                        type="text"
+                                        placeholder={s.addressPlaceholder}
+                                        className="premium-input px-6 py-4 font-bold pr-32 w-full"
+                                        value={address}
+                                        onChange={(e) => setAddress(e.target.value)}
+                                    />
+                                )}
                                 <button
                                     type="button"
                                     onClick={forwardGeocode}
-                                    className="absolute right-4 bottom-4 px-4 py-2 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:shadow-primary/30 transition-all flex items-center gap-2"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 px-4 py-2 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:shadow-primary/30 transition-all flex items-center gap-2"
                                 >
                                     <MapPin size={12} /> {s.locateBtn}
                                 </button>

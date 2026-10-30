@@ -45,6 +45,11 @@ export default function RegisterPage() {
             return;
         }
 
+        if (!formData.tax_id || !formData.tax_id.trim()) {
+            setError(locale === 'en' ? 'Tax ID / NY Resale Certificate # is required for wholesale accounts' : 'El Tax ID / NY Resale Certificate # es obligatorio para cuentas mayoristas');
+            return;
+        }
+
         if (!isPhoneVerified || !phoneIdToken) {
             setError(locale === 'en' ? 'You must verify your phone number via SMS before proceeding' : 'Debes verificar tu número de teléfono por SMS antes de continuar');
             return;

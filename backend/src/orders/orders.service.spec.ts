@@ -502,30 +502,48 @@ describe('OrdersService', () => {
       expect(updated.notes).toContain('Referencia inválida');
     });
 
-    it('should reject order if delivery_date violates cutoff hour (>12 PM ET for next day)', () => {
-      // Create a reference date at 1:30 PM (13:30) in New York
-      const afternoonInNY = new Date('2026-10-25T17:30:00Z'); // 17:30 UTC is 13:30 EDT (America/New_York)
-      // Tomorrow is 2026-10-26
+    it('Cutoff Time Happy Path: Jueves 10 AM permite Sábado (T+2) y Jueves 3:15 PM exige Domingo (T+3)', () => {
+      // Jueves 22 Octubre 2026 a las 10:00 AM NY (14:00 UTC)
+      const thursday10AM = new Date('2026-10-22T14:00:00Z');
+      // Sábado 24 Octubre 2026 es T+2
       expect(() => {
-        service.validateCutoffTime('2026-10-26', afternoonInNY, 12);
-      }).toThrow(BadRequestException);
-    });
+        service.validateCutoffTime('2026-10-24', thursday10AM, 12);
+      }).not.toThrow();
 
-    it('should allow next day delivery if placed before 12 PM ET', () => {
-      // 10:00 AM in NY (14:00 UTC)
-      const morningInNY = new Date('2026-10-25T14:00:00Z');
+      // Domingo 25 Octubre 2026 (posterior a T+2) también es permitido
       expect(() => {
-        service.validateCutoffTime('2026-10-26', morningInNY, 12);
+        service.validateCutoffTime('2026-10-25', thursday10AM, 12);
+      }).not.toThrow();
+
+      // Jueves 22 Octubre 2026 a las 3:15 PM NY (15:15 EDT -> 19:15 UTC)
+      const thursday315PM = new Date('2026-10-22T19:15:00Z');
+      // Domingo 25 Octubre 2026 es T+3
+      expect(() => {
+        service.validateCutoffTime('2026-10-25', thursday315PM, 12);
       }).not.toThrow();
     });
 
-    it('should reject past delivery dates or same-day delivery', () => {
-      const morningInNY = new Date('2026-10-25T14:00:00Z');
+    it('Cutoff Time Sad Path (§6): Jueves 3:15 PM pidiendo entrega Sábado arroja BadRequestException', () => {
+      // Jueves 22 Octubre 2026 a las 3:15 PM NY (15:15 EDT -> 19:15 UTC)
+      const thursday315PM = new Date('2026-10-22T19:15:00Z');
+      // Sábado 24 Octubre 2026 es T+2, pero corte de 12 PM ya pasó -> debe arrojar BadRequestException
       expect(() => {
-        service.validateCutoffTime('2026-10-24', morningInNY, 12);
+        service.validateCutoffTime('2026-10-24', thursday315PM, 12);
+      }).toThrow(BadRequestException);
+
+      // Viernes 23 Octubre (T+1) también arroja BadRequestException
+      expect(() => {
+        service.validateCutoffTime('2026-10-23', thursday315PM, 12);
+      }).toThrow(BadRequestException);
+    });
+
+    it('should reject past delivery dates or same-day delivery', () => {
+      const thursday10AM = new Date('2026-10-22T14:00:00Z');
+      expect(() => {
+        service.validateCutoffTime('2026-10-21', thursday10AM, 12);
       }).toThrow(BadRequestException);
       expect(() => {
-        service.validateCutoffTime('2026-10-25', morningInNY, 12);
+        service.validateCutoffTime('2026-10-22', thursday10AM, 12);
       }).toThrow(BadRequestException);
     });
   });
