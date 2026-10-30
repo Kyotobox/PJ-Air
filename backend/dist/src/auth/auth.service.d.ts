@@ -28,6 +28,29 @@ export declare class AuthService {
             };
         };
     }>;
+    register(body: any): Promise<{
+        message: string;
+        user: {
+            id: any;
+            email: any;
+            app_metadata: {};
+            user_metadata: {
+                full_name: any;
+            };
+            aud: string;
+            created_at: string;
+        };
+        session: {
+            access_token: string;
+            refresh_token: string;
+            expires_in: number;
+            token_type: string;
+            user: {
+                id: any;
+                email: any;
+            };
+        };
+    }>;
     login(identifierInput: string, password: string): Promise<any>;
     recoverPassword(identifier: string): Promise<{
         message: string;

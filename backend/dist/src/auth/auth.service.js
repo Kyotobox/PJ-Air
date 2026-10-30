@@ -71,6 +71,10 @@ let AuthService = class AuthService {
             throw new common_1.BadRequestException('Company or store name is required for wholesale registration');
         }
         if (userRole === 'client') {
+            const cleanTax = tax_id && typeof tax_id === 'string' ? tax_id.trim() : '';
+            if (!cleanTax) {
+                throw new common_1.BadRequestException('El Tax ID / NY Resale Certificate # es obligatorio para registros mayoristas');
+            }
             if (!phone || typeof phone !== 'string' || phone.replace(/\D/g, '').length < 10) {
                 throw new common_1.BadRequestException('Valid phone number (minimum 10 digits) is required for wholesale registration');
             }
@@ -128,6 +132,9 @@ let AuthService = class AuthService {
                 user: { id: user.id, email: user.email },
             }
         };
+    }
+    async register(body) {
+        return this.signup(body);
     }
     async login(identifierInput, password) {
         const identifier = identifierInput.trim().toLowerCase();
