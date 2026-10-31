@@ -51,17 +51,20 @@ const testingDeployCommands = [
     // 1. Sanity Check & Isolation Verification
     `echo "=== 1. Verificando aislamiento de ruta ==="`,
     `[ -d "${TESTING_DIR}" ] || mkdir -p "${TESTING_DIR}"`,
+    `chmod -R u+w "${TESTING_DIR}" 2>/dev/null || true`,
     `cd "${TESTING_DIR}"`,
     `[ "$(pwd)" = "${TESTING_DIR}" ] || { echo "ERROR CRÍTICO: No se encuentra en directorio testing"; exit 1; }`,
     `[ "$(pwd)" != "${PROD_DIR}" ] || { echo "ERROR CRÍTICO: Intento de ejecución en directorio de producción"; exit 1; }`,
 
-    // 2. Pre-deploy backup of testing database
+    // 2. Pre-deploy backup of testing database & env
     `echo "=== 2. Respaldo preventivo de testing db ==="`,
     `if [ -f "database-testing.sqlite" ]; then cp "database-testing.sqlite" "database-testing.sqlite.bak_$(date +%Y%m%d_%H%M%S)"; echo "Backup testing creado."; fi`,
+    `if [ -f ".env" ]; then cp ".env" ".env.deploy_bak"; fi`,
 
     // 3. Git synchronization
     `echo "=== 3. Sincronizando código desde origen (${targetBranch}) ==="`,
     `if [ ! -d ".git" ]; then git clone -b ${targetBranch} https://github.com/jhpanes/pj-air.git . ; else git fetch origin && git checkout ${targetBranch} && git reset --hard origin/${targetBranch}; fi`,
+    `if [ -f ".env.deploy_bak" ] && [ ! -f ".env" ]; then cp ".env.deploy_bak" ".env"; fi`,
 
     // 4. Backend build
     `echo "=== 4. Construyendo Backend Testing ==="`,
@@ -81,7 +84,7 @@ const testingDeployCommands = [
     `pm2 delete ${TESTING_BACKEND_PM2} || true`,
     `pm2 delete ${TESTING_FRONTEND_PM2} || true`,
     `BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name ${TESTING_BACKEND_PM2} --cwd "${TESTING_DIR}/backend"`,
-    `PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start node_modules/next/dist/bin/next --name ${TESTING_FRONTEND_PM2} --cwd "${TESTING_DIR}/frontend" -- start`,
+    `PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start node_modules/next/dist/bin/next --name ${TESTING_FRONTEND_PM2} --cwd "${TESTING_DIR}/frontend" -- start -p 3200`,
     `pm2 save`,
     `echo "=== 7. TESTING.JHOANES.COM EN LÍNEA ==="`
 ];
