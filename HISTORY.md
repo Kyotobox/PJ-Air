@@ -1,11 +1,5 @@
 | Timestamp | Role | SessionID | PrevHash | Type | Task | Detail |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-  - TASK-12-02: IN_PROGRESS -> DONE |
-| 2026-10-22 03:29 | AI | BACKLOG_SYNC | 2b3c5a9 | STATE_MUTATION | SYNC | Mutations applied:
-  - TASK-12-03: TODO -> IN_PROGRESS |
-| 2026-10-22 03:29 | AI | BACKLOG_SYNC | 136c01d | STATE_MUTATION | SYNC | Mutations applied:
-  - TASK-12-03: IN_PROGRESS -> DONE |
-| 2026-10-22 03:29 | AI | BACKLOG_SYNC | ba29f57 | STATE_MUTATION | SYNC | Mutations applied:
   - TASK-12-04: TODO -> IN_PROGRESS |
 | 2026-10-22 03:31 | AI | BACKLOG_SYNC | f6070da | STATE_MUTATION | SYNC | Mutations applied:
   - TASK-12-04: IN_PROGRESS -> DONE |
@@ -200,3 +194,9 @@
   - TASK-52-06: TODO -> DONE |
 | 2026-10-31 01:16 | AI | GATE | 4ef94e5 | WARNING | Handover con Drift | Handover ejecutado con drift del 100.0%. warm_start_eligible será false. |
 | 2026-10-31 01:16 | AI | 1793409366061 | 29b6616 | HANDOVER | Session Transfer | Automated Fast-Handover completed. Status: DNA-DRIFTED. |
+| 2026-10-31 01:16 | AGENT | 617e2090041717fcd02ce9f008323d23 | 911aed5 | ODOMETER_RESET | TAKEOVER | Odómetro reiniciado. Nueva sesión UUID: 617e2090041717fcd02ce9f008323d23 |
+| 2026-10-31 01:16 | AI | S52 | 518cc76 | SNAP | HOOKS | Git Hooks (pre-commit, pre-push) instalados exitosamente. |
+| 2026-10-31 03:59 | AGENT | 617e2090041717fcd02ce9f008323d23 | 520baa7 | ODOMETER_RESET | TAKEOVER | Odómetro reiniciado. Nueva sesión UUID: 617e2090041717fcd02ce9f008323d23 |
+| 2026-10-31 03:59 | AI | GENERAL | 1bea0b4 | SNAP | HOOKS | Git Hooks (pre-commit, pre-push) instalados exitosamente. |
+| 2026-10-31 12:35 | AI | GATE | cc11ae5 | WARNING | Handover con Drift | Handover ejecutado con drift del 100.0%. warm_start_eligible será false. |
+| 2026-10-31 12:35 | AI | 1793450140969 | 8a73c3f | HANDOVER | Session Transfer | Automated Fast-Handover completed. Status: DNA-DRIFTED. |
