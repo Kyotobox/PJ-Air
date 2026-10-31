@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import {
     Users, Search, Loader2, AlertCircle, User, Mail, Phone,
     CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Clock, Edit, Trash2,
-    ChevronLeft, ListFilter, Percent, Tag, DollarSign, CreditCard, ShieldCheck, ShieldAlert
+    ChevronLeft, ListFilter, Percent, Tag, DollarSign, CreditCard, ShieldCheck, ShieldAlert,
+    ExternalLink, FileText
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
@@ -1095,6 +1097,88 @@ export default function AdminClientsPage() {
                                         </div>
                                     </div>
                                 </div>
+                            </section>
+
+                            {/* Section: Complete Order History */}
+                            <section className="pt-10 border-t border-slate-100">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-6 bg-slate-900 rounded-full" />
+                                        <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Historial Completo de Pedidos</h3>
+                                    </div>
+                                    <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">
+                                        {selectedUser.orders?.length || 0} {selectedUser.orders?.length === 1 ? 'pedido' : 'pedidos'}
+                                    </span>
+                                </div>
+
+                                {selectedUser.orders && selectedUser.orders.length > 0 ? (
+                                    <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                                        {[...selectedUser.orders]
+                                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                                            .map((order) => {
+                                                const isPaid = order.payment_status === 'paid';
+                                                const isCancelled = order.status === 'cancelled' || order.status === 'Cancelado';
+                                                return (
+                                                    <div 
+                                                        key={order.id} 
+                                                        className="p-5 bg-slate-50 hover:bg-slate-100/80 rounded-3xl border border-slate-200/80 transition-all space-y-3"
+                                                    >
+                                                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                                                            <div className="flex items-center gap-2.5">
+                                                                <span className="font-mono font-black text-sm text-slate-900">
+                                                                    #{order.id.slice(0, 8)}
+                                                                </span>
+                                                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                                    STATUS_COLORS[order.status?.toLowerCase()] || 'bg-slate-200 text-slate-700'
+                                                                }`}>
+                                                                    {order.status}
+                                                                </span>
+                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                                                    isPaid 
+                                                                        ? 'bg-emerald-100 text-emerald-800' 
+                                                                        : isCancelled
+                                                                        ? 'bg-slate-200 text-slate-600'
+                                                                        : 'bg-amber-100 text-amber-800'
+                                                                }`}>
+                                                                    {isPaid ? 'Pagado' : isCancelled ? 'Cancelado' : 'Pago Pendiente'}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-base font-black text-slate-900">
+                                                                ${(Number(order.total) || 0).toFixed(2)}
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Items Preview */}
+                                                        {order.items && order.items.length > 0 && (
+                                                            <div className="text-xs text-slate-600 bg-white/80 rounded-xl p-2.5 border border-slate-200/50">
+                                                                <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Productos:</p>
+                                                                <p className="line-clamp-2 font-medium">
+                                                                    {order.items.map((it: any) => `${it.quantity}x ${it.product?.name || 'Ítem'}`).join(', ')}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium pt-1 border-t border-slate-200/50">
+                                                            <span>Fecha: {new Date(order.created_at).toLocaleDateString()}{order.delivery_date ? ` · Entrega: ${order.delivery_date}` : ''}</span>
+                                                            <Link
+                                                                href={`/admin/orders/${order.id}`}
+                                                                target="_blank"
+                                                                className="inline-flex items-center gap-1 text-primary hover:underline font-bold"
+                                                            >
+                                                                <span>Ver Pedido</span>
+                                                                <ExternalLink size={12} />
+                                                            </Link>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                        <ShoppingBag size={32} className="mx-auto text-slate-300 mb-2" />
+                                        <p className="text-xs font-bold text-slate-500">Este cliente aún no registra pedidos.</p>
+                                    </div>
+                                )}
                             </section>
                         </div>
                     </aside>

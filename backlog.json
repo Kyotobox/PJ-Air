@@ -149,7 +149,7 @@
     "name": "Sprint 53: Armonización de Plantilla de Diseño Gourmet en Portal de Pedidos y Cabecera B2B",
     "status": "COMPLETED",
     "start_date": "2026-10-31",
-    "goal": "Armonizar la cabecera de la página de órdenes con la plantilla de diseño de Jhoanes (Opción A), restaurando el título institucional, badges dinámicos B2B y contenedor glass/jhoanes-card.",
+    "goal": "Armonizar la cabecera de la página de órdenes con la plantilla de diseño de Jhoanes (Opción A), restaurando el título institucional, badges dinámicos B2B y contenedor glass/jhoanes-card. Incorporar historial completo de órdenes en el expediente del cliente en /admin/clients.",
     "tasks": [
       {
         "id": "TASK-53-01",
@@ -161,6 +161,12 @@
         "id": "TASK-53-02",
         "label": "TEST/S53-UI-VERIFICATION",
         "desc": "Validación de compilación y suite de pruebas de frontend y backend.",
+        "status": "DONE"
+      },
+      {
+        "id": "TASK-53-03",
+        "label": "UI/ADMIN-CLIENT-ORDER-HISTORY",
+        "desc": "Sección de Historial Completo de Pedidos en la ficha de cliente en /admin/clients con desglose de ítems, estados y acceso directo a /admin/orders/[id].",
         "status": "DONE"
       }
     ]
