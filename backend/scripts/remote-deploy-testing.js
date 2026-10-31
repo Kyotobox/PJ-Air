@@ -83,7 +83,7 @@ const testingDeployCommands = [
     `cd "${TESTING_DIR}"`,
     `pm2 delete ${TESTING_BACKEND_PM2} || true`,
     `pm2 delete ${TESTING_FRONTEND_PM2} || true`,
-    `BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name ${TESTING_BACKEND_PM2} --cwd "${TESTING_DIR}/backend"`,
+    `NODE_PATH="${TESTING_DIR}/backend/node_modules" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name ${TESTING_BACKEND_PM2} --cwd "${TESTING_DIR}/backend"`,
     `PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start node_modules/next/dist/bin/next --name ${TESTING_FRONTEND_PM2} --cwd "${TESTING_DIR}/frontend" -- start -p 3200`,
     `pm2 save`,
     `echo "=== 7. TESTING.JHOANES.COM EN LÍNEA ==="`

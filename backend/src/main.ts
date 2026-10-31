@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import { NestExpressApplication, ExpressAdapter } from '@nestjs/platform-express';
 import { resolve } from 'path';
 import { initialize, PORT, UPLOAD_PATH } from './config';
 import { ValidationPipe } from '@nestjs/common';
@@ -13,7 +13,7 @@ try {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter());
   app.enableCors(); // Enable CORS for development
   
   app.useGlobalPipes(
