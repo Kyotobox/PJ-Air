@@ -1,6 +1,6 @@
 # SPRINT S52 - Sprint 52: Gestor Dinámico de Banners B2B para Temporadas y Ocasiones
 **Objetivo**: Establecer un módulo administrativo completo para que el negocio pueda subir, editar, activar/pausar y ordenar banners rotativos según la temporada, eventos o promociones especiales, alimentando dinámicamente el carrusel de la Home B2B.
-**Fecha**: 2026-10-30
+**Fecha**: 2026-10-31
 
 - [x] **TASK-52-01** [DOMAIN/BANNER-CMS-SCHEMA] Entidad Banner en TypeORM y tabla física SQLite banners con atributos de temporada, títulos ES/EN, imagen, link, orden y estado activo.
 - [x] **TASK-52-02** [DOMAIN/BANNERS-SERVICE-API] Módulo BannersModule en NestJS con CRUD completo, endpoints públicos GET /banners/public y endpoints administrativos con upload en uploads/banners/.
