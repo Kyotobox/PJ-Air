@@ -206,7 +206,7 @@
         "id": "TASK-55-04",
         "label": "ADMIN/PRODUCTION-PRINT-AND-REPORTS-STABILIZATION",
         "desc": "Hoja de Producción para cocina sin precios ni fletes en /admin/orders y estabilización de generación de reportes con Bearer token y alineación de fechas en /admin/reports.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-55-05",

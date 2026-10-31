@@ -433,7 +433,8 @@ export default function AdminOrdersPage() {
 
     const isModified = (order: Order) => order.notes && order.notes.includes('modificado');
 
-    const handlePrintOrder = (order: Order) => {
+    const handlePrintOrder = (order: Order, mode: 'production' | 'invoice' = 'production') => {
+        const isKitchen = mode === 'production';
         const items = order.items || [];
         const grouped: Record<string, OrderItem[]> = {};
         items.forEach(item => {
@@ -452,6 +453,9 @@ export default function AdminOrdersPage() {
         const clientName = order.user?.profile?.full_name || 'Anónimo';
         const clientPhone = order.user?.profile?.phone || '';
         const addr = order.address?.address || '';
+        const deliveryDateStr = order.delivery_date 
+            ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+            : 'No programada';
         
         let deliveryLabel = '';
         let addressInfo = '';
@@ -465,46 +469,14 @@ export default function AdminOrdersPage() {
             deliveryLabel = 'Dirección';
             addressInfo = addr;
         }
+
         const subtotal = items.reduce((acc, i: any) => acc + (Number(i.price_at_time || i.product?.price || 0) * Number(i.quantity || 1)), 0);
         const deliveryFee = Number(order.delivery_fee_charged || 0);
         const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? subtotal * 0.035 : 0));
         const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXENTO');
         const grandTotal = Number(order.total) || (subtotal + deliveryFee + feeAmount);
 
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Pedido #${order.id.slice(0,8)}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Arial,sans-serif;padding:20px;width:80%;margin:0 auto;font-size:10px}
-@media print{@page{size:letter;margin:15mm}body{width:80%;max-width:none;margin:0 auto}}
-.hd{text-align:center;border-bottom:2px double #333;padding-bottom:6px;margin-bottom:8px}
-.hd h1{font-size:14px;font-weight:900;letter-spacing:1px}
-.hd p{font-size:9px;color:#666;margin-top:1px}
-.info{font-size:9px;margin-bottom:6px;padding:3px 0;border-bottom:1px dashed #ccc}
-.info div{display:flex;justify-content:space-between;padding:1px 0}
-.info .lb{font-weight:700;color:#555}
-table{width:100%;border-collapse:collapse;margin-bottom:6px}
-th{font-size:8px;text-transform:uppercase;color:#999;padding:1px 4px 3px 4px;text-align:left}
-th:nth-child(2){text-align:right}
-td{padding:2px 4px;font-size:9px;border-top:1px dotted #eee}
-tr.first-row td{border-top:none}
-td:nth-child(2){text-align:right}
-.cat td{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:#555;background:#f0f0f0;border-top:1px solid #333;padding:2px}
-.tot{border-top:2px double #333;padding-top:4px;display:flex;justify-content:space-between;font-size:12px;font-weight:900}
-.ft{text-align:center;margin-top:6px;padding-top:3px;border-top:1px dashed #ccc;font-size:7px;color:#999}
-</style></head><body>
-<div class="hd"><h1>JHOANES BAKERY & WHOLESALE</h1><p>Sistema de Pedidos y Facturación Legal</p><p>PEDIDO #${order.id.slice(0,8).toUpperCase()}</p><p>${fecha}</p></div>
-<div class="info">
-<div><span class="lb">Cliente:</span><span>${clientName}</span></div>
-${clientPhone ? `<div><span class="lb">Tel:</span><span>${clientPhone}</span></div>` : ''}
-<div><span class="lb">Entrega:</span><span>${deliveryLabel}</span></div>
-${addressInfo ? `<div><span class="lb">${deliveryLabel}:</span><span>${addressInfo}</span></div>` : ''}
-<div><span class="lb">Estado:</span><span>${order.status}</span></div>
-<div><span class="lb">Método de Pago:</span><span>${order.payment_method?.toUpperCase() || 'STRIPE'}</span></div>
-</div>
-<table><thead><tr><th>Producto</th><th style="text-align:right">Cant</th></tr></thead><tbody>${categoryRows}</tbody></table>
-<div style="border-top:1px solid #333; margin-top:7px; padding-top:4px; text-align:right; font-weight:bold; font-size:10px">
-    Total unidades: ${items.reduce((acc, i) => acc + i.quantity, 0)}
-</div>
+        const financialBreakdownHtml = isKitchen ? '' : `
 <div style="border-top:1px dashed #333; margin-top:8px; padding-top:6px; font-size:9px">
     <div style="display:flex; justify-content:space-between; padding:1px 0">
         <span>Subtotal:</span>
@@ -522,9 +494,51 @@ ${addressInfo ? `<div><span class="lb">${deliveryLabel}:</span><span>${addressIn
         <span>TOTAL FACTURA:</span>
         <b>$${grandTotal.toFixed(2)}</b>
     </div>
+</div>`;
+
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${isKitchen ? 'Hoja de Producción' : 'Factura Contable'} #${order.id.slice(0,8)}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;padding:20px;width:80%;margin:0 auto;font-size:10px}
+@media print{@page{size:letter;margin:15mm}body{width:80%;max-width:none;margin:0 auto}}
+.hd{text-align:center;border-bottom:2px double #333;padding-bottom:6px;margin-bottom:8px}
+.hd h1{font-size:14px;font-weight:900;letter-spacing:1px}
+.hd p{font-size:9px;color:#666;margin-top:1px}
+.hd .sheet-tag{font-size:11px;font-weight:900;letter-spacing:1px;color:#111;margin-top:3px;text-transform:uppercase}
+.info{font-size:9px;margin-bottom:6px;padding:3px 0;border-bottom:1px dashed #ccc}
+.info div{display:flex;justify-content:space-between;padding:1px 0}
+.info .lb{font-weight:700;color:#555}
+table{width:100%;border-collapse:collapse;margin-bottom:6px}
+th{font-size:8px;text-transform:uppercase;color:#999;padding:1px 4px 3px 4px;text-align:left}
+th:nth-child(2){text-align:right}
+td{padding:2px 4px;font-size:9px;border-top:1px dotted #eee}
+tr.first-row td{border-top:none}
+td:nth-child(2){text-align:right}
+.cat td{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:#555;background:#f0f0f0;border-top:1px solid #333;padding:2px}
+.ft{text-align:center;margin-top:6px;padding-top:3px;border-top:1px dashed #ccc;font-size:7px;color:#999}
+</style></head><body>
+<div class="hd">
+    <h1>JHOANES BAKERY & WHOLESALE</h1>
+    <p class="sheet-tag">${isKitchen ? 'HOJA DE PRODUCCIÓN (COCINA)' : 'SISTEMA DE FACTURACIÓN CONTABLE'}</p>
+    <p>PEDIDO #${order.id.slice(0,8).toUpperCase()}</p>
+    <p>Fecha Creación: ${fecha}</p>
 </div>
+<div class="info">
+    <div><span class="lb">Cliente:</span><span>${clientName}</span></div>
+    <div><span class="lb">Fecha de Entrega:</span><span style="font-weight:bold">${deliveryDateStr}</span></div>
+    ${clientPhone ? `<div><span class="lb">Tel:</span><span>${clientPhone}</span></div>` : ''}
+    <div><span class="lb">Entrega:</span><span>${deliveryLabel}</span></div>
+    ${addressInfo ? `<div><span class="lb">${deliveryLabel}:</span><span>${addressInfo}</span></div>` : ''}
+    <div><span class="lb">Estado:</span><span>${order.status}</span></div>
+    ${!isKitchen ? `<div><span class="lb">Método de Pago:</span><span>${order.payment_method?.toUpperCase() || 'STRIPE'}</span></div>` : ''}
+</div>
+<table><thead><tr><th>Producto</th><th style="text-align:right">Cant</th></tr></thead><tbody>${categoryRows}</tbody></table>
+<div style="border-top:1px solid #333; margin-top:7px; padding-top:4px; text-align:right; font-weight:bold; font-size:10px">
+    Total unidades: ${items.reduce((acc, i) => acc + i.quantity, 0)}
+</div>
+${financialBreakdownHtml}
 ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Notas:</b> ${order.notes.replace(/\n/g, ' | ')}</div>` : ''}
-<div class="ft" style="font-size:8px; margin-top:4px; padding-top:2px">Gracias por tu compra • Jhoanes Bakery Wholesale</div>
+<div class="ft" style="font-size:8px; margin-top:4px; padding-top:2px">${isKitchen ? 'Hoja de Producción • Jhoanes Bakery Wholesale' : 'Gracias por tu compra • Jhoanes Bakery Wholesale'}</div>
 <script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);}<\/script>
 </body></html>`;
         const w = window.open('', '_blank', 'width=900,height=700');
@@ -954,8 +968,19 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 >
                                     <ExternalLink size={14} /> Detalle
                                 </Link>
-                                <button onClick={() => handlePrintOrder(selectedOrder)} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center gap-2">
-                                    <Printer size={14} /> Imprimir
+                                <button 
+                                    onClick={() => handlePrintOrder(selectedOrder, 'production')} 
+                                    className="px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center gap-2"
+                                    title="Imprimir Hoja de Producción (Cocina)"
+                                >
+                                    <Printer size={14} /> Hoja Cocina
+                                </button>
+                                <button 
+                                    onClick={() => handlePrintOrder(selectedOrder, 'invoice')} 
+                                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                                    title="Imprimir Factura Contable"
+                                >
+                                    <Receipt size={14} /> Factura Contable
                                 </button>
                                 <button 
                                     onClick={() => setSelectedOrder(null)} 

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import InteractiveBatchManager from '@/components/reports/InteractiveBatchManager';
+import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { 
     Calendar as CalendarIcon, 
@@ -122,10 +123,8 @@ function ReportsPageContent() {
             start.setFullYear(end.getFullYear() - 1);
             const endStr = end.toISOString().split('T')[0] + ' 23:59:59';
             const startStr = start.toISOString().split('T')[0] + ' 00:00:00';
-            const url = `${API_URL}/orders/reports/range?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
+            const url = `/orders/reports/range?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}`;
+            const data = await api.get(url);
             setHistoryOrders(Array.isArray(data) ? data : []);
         } catch { console.error('Error fetching history'); }
         finally { setLoadingHistory(false); }
@@ -133,10 +132,8 @@ function ReportsPageContent() {
 
     const fetchClients = async () => {
         try {
-            const res = await fetch(`${API_URL}/users`);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            setClients(data.filter((u: any) => u.role === 'client'));
+            const data = await api.get('/users');
+            setClients(Array.isArray(data) ? data.filter((u: any) => u.role === 'client') : []);
         } catch { console.error('Error fetching clients'); }
     };
 
@@ -158,15 +155,22 @@ function ReportsPageContent() {
             const startParam = encodeURIComponent(startD.toISOString().split('T')[0] + ' 00:00:00');
             const endParam = encodeURIComponent(endD.toISOString().split('T')[0] + ' 23:59:59');
 
-            let url = `${API_URL}/orders/reports/range?startDate=${startParam}&endDate=${endParam}`;
+            let url = `/orders/reports/range?startDate=${startParam}&endDate=${endParam}`;
             if (viewMode === 'specific-client' && cid) url += `&userId=${cid}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Error al obtener datos del reporte');
-            const rawData = await res.json();
+            const rawData = await api.get(url);
             
             const validOrders = (Array.isArray(rawData) ? rawData : []).filter(order => {
-                const prodDate = getProductionDate(order.delivery_date || order.created_at || '');
-                return prodDate >= s && prodDate <= e;
+                const deliveryDate = order.delivery_date ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0]) : '';
+                const deliveryProdDate = getProductionDate(order.delivery_date || '');
+                const createdProdDate = getProductionDate(order.created_at || '');
+                const createdDate = order.created_at ? (order.created_at.includes('T') ? order.created_at.split('T')[0] : order.created_at.split(' ')[0]) : '';
+
+                const matchesDelivery = (deliveryDate && deliveryDate >= s && deliveryDate <= e) || 
+                                       (deliveryProdDate && deliveryProdDate >= s && deliveryProdDate <= e);
+                const matchesCreated = (createdProdDate && createdProdDate >= s && createdProdDate <= e) || 
+                                       (createdDate && createdDate >= s && createdDate <= e);
+
+                return Boolean(matchesDelivery || matchesCreated);
             });
             
             setOrders(validOrders);
