@@ -7,7 +7,8 @@ import {
     Package, Truck, CheckCircle2, AlertCircle, Clock, Eye, Loader2,
     ShoppingBag, ChevronDown, CreditCard, Wallet, TrendingUp, Calendar,
     CheckSquare, Square, ShoppingCart, MessageSquare, ArrowRight,
-    RefreshCw, X, ShieldAlert, Sparkles, Check, ChevronLeft, ChevronRight
+    RefreshCw, X, ShieldAlert, Sparkles, Check, ChevronLeft, ChevronRight,
+    Building2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -313,33 +314,51 @@ export default function ClientOrdersPage() {
         return Math.min(100, Math.round((displayCredit.used_credit / displayCredit.credit_limit) * 100));
     }, [displayCredit]);
 
+    // Determine if the current session corresponds to a B2B Wholesale account
+    const isB2BWholesale = useMemo(() => {
+        return (
+            (displayCredit && displayCredit.credit_limit > 0) ||
+            profile?.account_type === 'credit' ||
+            Boolean(profile?.company_name) ||
+            Boolean(profile?.tax_id)
+        );
+    }, [displayCredit, profile]);
+
     return (
         <div className="min-h-screen bg-[#f8f9fa]">
             <Navbar />
 
-            <main className="max-w-6xl mx-auto px-4 py-8 md:py-12 space-y-8">
-                {/* Header with Title and Suggestion Box Button */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl md:text-4xl font-bold font-serif text-primary">
-                                {locale === 'en' ? 'B2B Wholesale Portal & Orders' : 'Portal Mayorista B2B y Pedidos'}
+            <main className="max-w-6xl mx-auto px-4 py-8 md:py-12 space-y-8 animate-fade-in">
+                {/* Header Banner Aligned with Jhoanes Gourmet Design System */}
+                <div className="bg-card rounded-[2rem] border border-border/70 p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all">
+                    <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <h1 className="text-3xl md:text-4xl font-bold font-serif text-primary tracking-tight">
+                                {t.orders.title}
                             </h1>
+                            {isB2BWholesale && (
+                                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                    <Building2 size={13} className="text-primary" />
+                                    <span>{locale === 'en' ? 'Wholesale B2B' : 'Cuenta Mayorista B2B'}</span>
+                                </span>
+                            )}
                         </div>
-                        <p className="text-muted-foreground text-sm mt-1">
-                            {locale === 'en'
-                                ? 'Real-time financial health, 1-click batch invoice settlement, and fast reordering.'
-                                : 'Salud financiera en tiempo real, liquidación de facturas en 1-clic y reorden ágil.'}
+                        <p className="text-muted-foreground text-sm font-medium">
+                            {isB2BWholesale
+                                ? (locale === 'en'
+                                    ? 'Wholesale order tracking, real-time Net-7 credit monitoring, and 1-click reorder.'
+                                    : 'Seguimiento de pedidos comerciales, línea de crédito Net-7 y reposición ágil en 1-clic.')
+                                : t.orders.subtitleTracking}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 shrink-0">
                         <button
                             onClick={() => setIsFeedbackOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary/20 text-primary hover:bg-primary/5 rounded-2xl text-xs font-bold transition-all shadow-sm"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-primary/5 border border-primary/20 text-primary rounded-2xl text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer"
                         >
-                            <MessageSquare size={16} />
-                            {locale === 'en' ? 'Suggestion Box' : 'Buzón de Sugerencias'}
+                            <MessageSquare size={16} className="text-primary" />
+                            <span>{locale === 'en' ? 'B2B Feedback' : 'Buzón de Sugerencias'}</span>
                         </button>
                     </div>
                 </div>
@@ -347,105 +366,107 @@ export default function ClientOrdersPage() {
                 {/* ======================================================== */}
                 {/* TASK-48-01: HERO CREDIT HEALTH CARDS (Crédito en Vivo)   */}
                 {/* ======================================================== */}
-                <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-primary rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+                {isB2BWholesale && (
+                    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-primary rounded-[2rem] p-6 md:p-8 text-white shadow-xl relative overflow-hidden border border-slate-700/50">
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm">
-                                <Wallet size={24} className="text-emerald-400" />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-lg font-black tracking-wide uppercase">
-                                        {locale === 'en' ? 'Financial Credit Health' : 'Salud Financiera de Crédito'}
-                                    </h2>
-                                    {displayCredit.credit_blocked && (
-                                        <span className="px-2 py-0.5 bg-red-500/80 text-white rounded text-[10px] font-black uppercase">
-                                            {locale === 'en' ? 'Blocked' : 'Bloqueado'}
-                                        </span>
-                                    )}
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm">
+                                    <Wallet size={24} className="text-emerald-400" />
                                 </div>
-                                <p className="text-xs text-slate-300">
-                                    {locale === 'en' ? '7-day net terms authorized limit' : 'Línea de crédito autorizada a 7 días calendario'}
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-lg font-black tracking-wide uppercase font-serif">
+                                            {locale === 'en' ? 'Financial Credit Health' : 'Salud Financiera de Crédito'}
+                                        </h2>
+                                        {displayCredit.credit_blocked && (
+                                            <span className="px-2 py-0.5 bg-red-500/80 text-white rounded text-[10px] font-black uppercase">
+                                                {locale === 'en' ? 'Blocked' : 'Bloqueado'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-300">
+                                        {locale === 'en' ? '7-day net terms authorized limit' : 'Línea de crédito autorizada a 7 días calendario'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={fetchCreditStatus}
+                                disabled={isRefreshingCredit}
+                                className="self-start md:self-auto flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-all text-slate-200"
+                            >
+                                <RefreshCw size={13} className={isRefreshingCredit ? 'animate-spin' : ''} />
+                                {locale === 'en' ? 'Refresh' : 'Actualizar'}
+                            </button>
+                        </div>
+
+                        {/* 3 Main Credit Metric Cards */}
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+                            {/* 1. Límite Total */}
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-slate-300 mb-1">
+                                    {locale === 'en' ? 'Total Credit Limit' : 'Límite Total Autorizado'}
+                                </p>
+                                <p className="text-3xl font-black text-white">
+                                    ${displayCredit.credit_limit.toFixed(2)}
+                                </p>
+                                <p className="text-[11px] text-slate-400 mt-2">
+                                    {displayCredit.credit_override ? '⭐ Cupo con excepción autorizada' : 'Línea estándar mayorista'}
+                                </p>
+                            </div>
+
+                            {/* 2. Crédito Usado / Pendiente */}
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-amber-300 mb-1">
+                                    {locale === 'en' ? 'Used / Pending Credit' : 'Crédito Utilizado'}
+                                </p>
+                                <p className="text-3xl font-black text-amber-300">
+                                    ${displayCredit.used_credit.toFixed(2)}
+                                </p>
+                                <p className="text-[11px] text-slate-300 mt-2">
+                                    {unpaidCreditOrders.length} {locale === 'en' ? 'invoice(s) awaiting payment' : 'factura(s) pendiente(s)'}
+                                </p>
+                            </div>
+
+                            {/* 3. Crédito Disponible */}
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
+                                <p className="text-[11px] font-black uppercase tracking-wider text-emerald-400 mb-1">
+                                    {locale === 'en' ? 'Available Credit' : 'Cupo Disponible'}
+                                </p>
+                                <p className="text-3xl font-black text-emerald-400">
+                                    ${displayCredit.available_credit.toFixed(2)}
+                                </p>
+                                <p className="text-[11px] text-slate-300 mt-2">
+                                    {displayCredit.available_credit > 0
+                                        ? (locale === 'en' ? 'Ready for new orders' : 'Disponible para nuevos pedidos')
+                                        : (locale === 'en' ? 'Credit exhausted' : 'Cupo agotado')}
                                 </p>
                             </div>
                         </div>
 
-                        <button
-                            onClick={fetchCreditStatus}
-                            disabled={isRefreshingCredit}
-                            className="self-start md:self-auto flex items-center gap-2 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-all text-slate-200"
-                        >
-                            <RefreshCw size={13} className={isRefreshingCredit ? 'animate-spin' : ''} />
-                            {locale === 'en' ? 'Refresh' : 'Actualizar'}
-                        </button>
-                    </div>
-
-                    {/* 3 Main Credit Metric Cards */}
-                    <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-                        {/* 1. Límite Total */}
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-slate-300 mb-1">
-                                {locale === 'en' ? 'Total Credit Limit' : 'Límite Total Autorizado'}
-                            </p>
-                            <p className="text-3xl font-black text-white">
-                                ${displayCredit.credit_limit.toFixed(2)}
-                            </p>
-                            <p className="text-[11px] text-slate-400 mt-2">
-                                {displayCredit.credit_override ? '⭐ Cupo con excepción autorizada' : 'Línea estándar mayorista'}
-                            </p>
-                        </div>
-
-                        {/* 2. Crédito Usado / Pendiente */}
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-amber-300 mb-1">
-                                {locale === 'en' ? 'Used / Pending Credit' : 'Crédito Utilizado'}
-                            </p>
-                            <p className="text-3xl font-black text-amber-300">
-                                ${displayCredit.used_credit.toFixed(2)}
-                            </p>
-                            <p className="text-[11px] text-slate-300 mt-2">
-                                {unpaidCreditOrders.length} {locale === 'en' ? 'invoice(s) awaiting payment' : 'factura(s) pendiente(s)'}
-                            </p>
-                        </div>
-
-                        {/* 3. Crédito Disponible */}
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-400 mb-1">
-                                {locale === 'en' ? 'Available Credit' : 'Cupo Disponible'}
-                            </p>
-                            <p className="text-3xl font-black text-emerald-400">
-                                ${displayCredit.available_credit.toFixed(2)}
-                            </p>
-                            <p className="text-[11px] text-slate-300 mt-2">
-                                {displayCredit.available_credit > 0
-                                    ? (locale === 'en' ? 'Ready for new orders' : 'Disponible para nuevos pedidos')
-                                    : (locale === 'en' ? 'Credit exhausted' : 'Cupo agotado')}
-                            </p>
+                        {/* Utilization Progress Bar */}
+                        <div className="relative z-10 mt-6 pt-4 border-t border-white/10">
+                            <div className="flex justify-between items-center text-xs font-bold mb-2">
+                                <span className="text-slate-300">
+                                    {locale === 'en' ? 'Credit Utilization' : 'Utilización de Cupo'}
+                                </span>
+                                <span className={creditUtilizationPct > 80 ? 'text-amber-400 font-black' : 'text-slate-200'}>
+                                    {creditUtilizationPct}%
+                                </span>
+                            </div>
+                            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full transition-all duration-500 rounded-full ${
+                                        creditUtilizationPct > 85 ? 'bg-red-500' : creditUtilizationPct > 65 ? 'bg-amber-400' : 'bg-emerald-400'
+                                    }`}
+                                    style={{ width: `${creditUtilizationPct}%` }}
+                                />
+                            </div>
                         </div>
                     </div>
-
-                    {/* Utilization Progress Bar */}
-                    <div className="relative z-10 mt-6 pt-4 border-t border-white/10">
-                        <div className="flex justify-between items-center text-xs font-bold mb-2">
-                            <span className="text-slate-300">
-                                {locale === 'en' ? 'Credit Utilization' : 'Utilización de Cupo'}
-                            </span>
-                            <span className={creditUtilizationPct > 80 ? 'text-amber-400 font-black' : 'text-slate-200'}>
-                                {creditUtilizationPct}%
-                            </span>
-                        </div>
-                        <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full transition-all duration-500 rounded-full ${
-                                    creditUtilizationPct > 85 ? 'bg-red-500' : creditUtilizationPct > 65 ? 'bg-amber-400' : 'bg-emerald-400'
-                                }`}
-                                style={{ width: `${creditUtilizationPct}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                )}
 
                 {/* ======================================================== */}
                 {/* TASK-48-02: ACTIVITY & CONSUMPTION WIDGETS CARDS         */}
