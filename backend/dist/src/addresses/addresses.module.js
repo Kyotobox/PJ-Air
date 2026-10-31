@@ -12,15 +12,17 @@ const typeorm_1 = require("@nestjs/typeorm");
 const addresses_service_1 = require("./addresses.service");
 const addresses_controller_1 = require("./addresses.controller");
 const address_entity_1 = require("./address.entity");
+const address_geocache_entity_1 = require("./address-geocache.entity");
+const address_validation_service_1 = require("./address-validation.service");
 let AddressesModule = class AddressesModule {
 };
 exports.AddressesModule = AddressesModule;
 exports.AddressesModule = AddressesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([address_entity_1.Address])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([address_entity_1.Address, address_geocache_entity_1.AddressGeocache])],
         controllers: [addresses_controller_1.AddressesController],
-        providers: [addresses_service_1.AddressesService],
-        exports: [addresses_service_1.AddressesService],
+        providers: [addresses_service_1.AddressesService, address_validation_service_1.AddressValidationService],
+        exports: [addresses_service_1.AddressesService, address_validation_service_1.AddressValidationService, typeorm_1.TypeOrmModule],
     })
 ], AddressesModule);
 //# sourceMappingURL=addresses.module.js.map

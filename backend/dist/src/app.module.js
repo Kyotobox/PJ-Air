@@ -49,6 +49,7 @@ const delivery_zone_entity_1 = require("./zones/delivery-zone.entity");
 const check_payment_entity_1 = require("./payments/check-payment.entity");
 const feedback_entity_1 = require("./feedback/feedback.entity");
 const banner_entity_1 = require("./banners/banner.entity");
+const address_geocache_entity_1 = require("./addresses/address-geocache.entity");
 let AppModule = AppModule_1 = class AppModule {
     dataSource;
     logger = new common_1.Logger(AppModule_1.name);
@@ -230,7 +231,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'sqlite',
                 database: config_1.DATABASE_PATH,
-                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment, feedback_entity_1.Feedback, banner_entity_1.Banner],
+                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, address_geocache_entity_1.AddressGeocache, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment, feedback_entity_1.Feedback, banner_entity_1.Banner],
                 synchronize: config_1.NODE_ENV !== 'production',
                 logging: false,
             }),

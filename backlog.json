@@ -149,31 +149,31 @@
         "id": "TASK-54-01",
         "label": "CORE/ADDRESS-VALIDATION-INGESTION",
         "desc": "Servicio backend de validación y normalización de direcciones en tiempo de ingestión (POST /addresses, /profile/addresses/new, /checkout) con validación de código postal, componentes estructurados y rechazo de direcciones ambiguas o inexistentes.",
-        "status": "READY"
+        "status": "DONE"
       },
       {
         "id": "TASK-54-02",
         "label": "DOMAIN/GEOCODING-CACHE-MILEAGE",
         "desc": "Geocodificación backend resiliente con caché local SQLite en MileageFreightService y fallback de coordenadas para cálculo de millaje desde el obrador de Astoria (3304 Broadway, Astoria, NY 11106).",
-        "status": "READY"
+        "status": "DONE"
       },
       {
         "id": "TASK-54-03",
         "label": "UI/DELIVERY-STREETVIEW-FACADE",
         "desc": "Componente de visualización de fachada a nivel de calle (Street View Static API con lazy-load) y mini-mapa estático en la Guía de Entrega nocturna del Chofer (frontend/app/delivery/page.tsx).",
-        "status": "READY"
+        "status": "DONE"
       },
       {
         "id": "TASK-54-04",
         "label": "UI/ADMIN-ORDER-DISPATCH-SHEET",
         "desc": "Cuadrante de Despacho y Logística en el Expediente de la Orden (frontend/app/admin/orders/[id]/page.tsx) con trazabilidad de millaje Astoria, visualización de ruta y conciliación del flete cobrado vs matriz oficial.",
-        "status": "READY"
+        "status": "DONE"
       },
       {
         "id": "TASK-54-05",
         "label": "TEST/S54-LOGISTICS-E2E-SUITE",
         "desc": "Suite exhaustiva de pruebas unitarias y de integración (Happy path y Sad paths: dirección inválida, timeout de red, cuota de API excedida y cálculo de flete > 250 millas).",
-        "status": "READY"
+        "status": "DONE"
       }
     ]
   }

@@ -1,17 +1,22 @@
-import { Controller, Post, Body, Get, Param, Delete, Patch, UseGuards, Req, ForbiddenException, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Delete, Patch, UseGuards, Req, ForbiddenException, UseInterceptors, UploadedFile, BadRequestException, Optional } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, resolve } from 'path';
 import * as fs from 'fs';
 import { UPLOAD_PATH } from '../config';
 import { AddressesService } from './addresses.service';
+import { AddressValidationService } from './address-validation.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { ResourceOwnershipGuard } from '../auth/resource-ownership.guard';
 
 @Controller('addresses')
 @UseGuards(AuthGuard)
 export class AddressesController {
-  constructor(private readonly addressesService: AddressesService) {}
+  constructor(
+    private readonly addressesService: AddressesService,
+    @Optional()
+    private readonly addressValidationService?: AddressValidationService,
+  ) {}
 
   @Post('upload-photo')
   @UseInterceptors(FileInterceptor('file', {
@@ -34,6 +39,22 @@ export class AddressesController {
       throw new BadRequestException('No file uploaded or file type not allowed');
     }
     return { url: `/uploads/addresses/${file.filename}` };
+  }
+
+  @Post('validate')
+  async validateAddress(@Body() body: any) {
+    if (!body?.address) {
+      throw new BadRequestException('El campo "address" es obligatorio para la validación.');
+    }
+    if (!this.addressValidationService) {
+      return { valid: true, address: body.address };
+    }
+    const result = await this.addressValidationService.validateAndGeocode(
+      body.address,
+      body.lat,
+      body.lng,
+    );
+    return { valid: true, ...result };
   }
 
   @Post()

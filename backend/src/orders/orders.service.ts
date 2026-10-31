@@ -12,6 +12,7 @@ import { CreditService } from '../credit/credit.service';
 import { FeeCalculatorService } from './fee-calculator.service';
 import { MileageFreightService } from '../logistics/mileage-freight.service';
 import { PaymentsService } from '../payments/payments.service';
+import { AddressValidationService } from '../addresses/address-validation.service';
 
 @Injectable()
 export class OrdersService {
@@ -41,6 +42,8 @@ export class OrdersService {
     @Optional()
     @Inject(forwardRef(() => PaymentsService))
     private paymentsService?: PaymentsService,
+    @Optional()
+    private addressValidationService?: AddressValidationService,
   ) {}
 
   validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour = 12): void {
@@ -289,7 +292,29 @@ export class OrdersService {
     const appliedDeliveryType = deliveryType || (rest as any).delivery_type || 'saved';
     const appliedDeliveryDate = deliveryDate || (rest as any).delivery_date;
     const appliedAddressId = addressId || (rest as any).address_id || null;
-    const appliedDeliveryAddressText = deliveryAddressText || (rest as any).delivery_address_text || null;
+    let appliedDeliveryAddressText = deliveryAddressText || (rest as any).delivery_address_text || null;
+
+    // TASK-54-01: Validar dirección ad-hoc si viene en checkout
+    if (appliedDeliveryAddressText && this.addressValidationService) {
+      try {
+        const validated = await this.addressValidationService.validateAndGeocode(appliedDeliveryAddressText);
+        appliedDeliveryAddressText = validated.formatted_address;
+        if (!(orderData as any).dest_lat) (orderData as any).dest_lat = validated.lat;
+        if (!(orderData as any).dest_lng) (orderData as any).dest_lng = validated.lng;
+      } catch (err) {
+        if (err instanceof BadRequestException) throw err;
+      }
+    }
+
+    if (appliedAddressId && this.addressRepository && (!(orderData as any).dest_lat || !(orderData as any).dest_lng)) {
+      try {
+        const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
+        if (addr && addr.lat && addr.lng) {
+          (orderData as any).dest_lat = addr.refined_lat || addr.lat;
+          (orderData as any).dest_lng = addr.refined_lng || addr.lng;
+        }
+      } catch (_) {}
+    }
     let appliedPaymentStatus = paymentStatus || (rest as any).payment_status || 'pending';
 
     const appliedPaymentMethod = (rest as any).payment_method || (orderData as any).payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');

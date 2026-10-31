@@ -5,10 +5,11 @@ export declare class FreightQuoteDto {
     destLng?: number;
     serviceType?: DeliveryServiceType;
     destinationAddress?: string;
+    address?: string;
 }
 export declare class LogisticsController {
     private readonly freightService;
     constructor(freightService: MileageFreightService);
     getOrigin(): import("./mileage-freight.service").LocationPoint;
-    calculateQuote(body: any): import("./mileage-freight.service").FreightQuoteResult;
+    calculateQuote(body: any): Promise<import("./mileage-freight.service").FreightQuoteResult>;
 }

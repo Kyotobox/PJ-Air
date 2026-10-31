@@ -11,6 +11,7 @@ import {
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { RegisterCheckModal } from '@/components/admin/RegisterCheckModal';
+import AdminOrderDispatchSheet from '@/components/admin/AdminOrderDispatchSheet';
 
 interface OrderItem {
     id: string;
@@ -30,6 +31,8 @@ interface OrderDetail {
     pending_balance?: number;
     packaging_fee?: number;
     packaging_discount?: number;
+    delivery_fee_charged?: number;
+    delivery_address_text?: string;
     created_at: string;
     delivery_date?: string;
     payment_due_date?: string;
@@ -42,7 +45,20 @@ interface OrderDetail {
         email: string;
         profile?: { full_name?: string; phone?: string; nickname?: string };
     };
-    address?: { address: string; city?: string; zone?: string };
+    address?: {
+        address: string;
+        city?: string;
+        zone?: string;
+        state?: string;
+        lat?: number;
+        lng?: number;
+        refined_lat?: number;
+        refined_lng?: number;
+        access_code?: string;
+        has_key?: boolean;
+        key_location?: string;
+        fridge_access_required?: boolean;
+    };
     delivery_type?: string;
     items?: OrderItem[];
 }
@@ -594,6 +610,9 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                         )}
                     </section>
                 </div>
+
+                {/* Logistics & Dispatch Sheet (TASK-54-04) */}
+                <AdminOrderDispatchSheet order={order as any} />
 
                 {/* Products Table */}
                 <section className="bg-white rounded-[2rem] p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-6">

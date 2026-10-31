@@ -5,9 +5,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MileageFreightService = exports.ASTORIA_ORIGIN = void 0;
 const common_1 = require("@nestjs/common");
+const address_validation_service_1 = require("../addresses/address-validation.service");
 exports.ASTORIA_ORIGIN = {
     address: '3304 Broadway, Astoria, NY 11106',
     lat: 40.761032,
@@ -15,7 +22,52 @@ exports.ASTORIA_ORIGIN = {
     zip: '11106',
 };
 let MileageFreightService = class MileageFreightService {
+    addressValidationService;
     origin = exports.ASTORIA_ORIGIN;
+    constructor(addressValidationService) {
+        this.addressValidationService = addressValidationService;
+    }
+    async resolveCoordinatesFromAddress(address) {
+        if (!address || !address.trim())
+            return null;
+        if (!this.addressValidationService) {
+            return { lat: this.origin.lat, lng: this.origin.lng, formatted_address: address, zip: this.origin.zip };
+        }
+        try {
+            const geo = await this.addressValidationService.validateAndGeocode(address);
+            return {
+                lat: geo.lat,
+                lng: geo.lng,
+                formatted_address: geo.formatted_address,
+                zip: geo.zip,
+            };
+        }
+        catch (_) {
+            return { lat: this.origin.lat, lng: this.origin.lng, formatted_address: address, zip: this.origin.zip };
+        }
+    }
+    async calculateDistanceByAddress(address, applyRoadFactor = true) {
+        const coords = await this.resolveCoordinatesFromAddress(address);
+        if (!coords) {
+            throw new common_1.BadRequestException('No se pudo resolver la dirección para calcular la distancia');
+        }
+        return this.calculateDistanceMiles(coords.lat, coords.lng, applyRoadFactor);
+    }
+    async quoteByAddress(address, serviceType = 'shared') {
+        const coords = await this.resolveCoordinatesFromAddress(address);
+        const destLat = coords?.lat ?? this.origin.lat;
+        const destLng = coords?.lng ?? this.origin.lng;
+        const miles = this.calculateDistanceMiles(destLat, destLng);
+        const quote = this.calculateFreight(miles, serviceType);
+        return {
+            ...quote,
+            destination: {
+                lat: destLat,
+                lng: destLng,
+                address: coords?.formatted_address || address,
+            },
+        };
+    }
     calculateDistanceMiles(destLat, destLng, applyRoadFactor = true) {
         if (destLat === null || destLat === undefined || typeof destLat !== 'number' || isNaN(destLat)) {
             throw new common_1.BadRequestException('Latitud de destino inválida');
@@ -140,6 +192,8 @@ let MileageFreightService = class MileageFreightService {
 };
 exports.MileageFreightService = MileageFreightService;
 exports.MileageFreightService = MileageFreightService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __param(0, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [address_validation_service_1.AddressValidationService])
 ], MileageFreightService);
 //# sourceMappingURL=mileage-freight.service.js.map

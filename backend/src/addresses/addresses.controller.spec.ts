@@ -93,5 +93,29 @@ describe('AddressesController', () => {
         ).rejects.toThrow('No file uploaded or file type not allowed');
       });
     });
+
+    describe('validateAddress', () => {
+      it('should validate an address using addressValidationService', async () => {
+        const mockValidation = {
+          validateAndGeocode: jest.fn().mockResolvedValue({
+            lat: 40.761032,
+            lng: -73.923714,
+            formatted_address: '33-04 Broadway, Astoria, NY 11106, USA',
+            cached: false,
+          }),
+        };
+
+        const ctrl = new AddressesController(mockAddressesService as any, mockValidation as any);
+        const result = await ctrl.validateAddress({ address: '3304 Broadway, Astoria, NY 11106' });
+        expect(result.valid).toBe(true);
+        expect(result.lat).toBe(40.761032);
+        expect(result.formatted_address).toBe('33-04 Broadway, Astoria, NY 11106, USA');
+      });
+
+      it('sad path: should throw BadRequestException if address field is missing', async () => {
+        const ctrl = new AddressesController(mockAddressesService as any);
+        await expect(ctrl.validateAddress({})).rejects.toThrow('El campo "address" es obligatorio para la validación.');
+      });
+    });
   });
 });

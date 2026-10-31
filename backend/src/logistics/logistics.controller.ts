@@ -7,6 +7,7 @@ export class FreightQuoteDto {
   destLng?: number;
   serviceType?: DeliveryServiceType;
   destinationAddress?: string;
+  address?: string;
 }
 
 @Controller('logistics')
@@ -19,7 +20,7 @@ export class LogisticsController {
   }
 
   @Post('quote')
-  calculateQuote(@Body() body: any) {
+  async calculateQuote(@Body() body: any) {
     const serviceType = body.serviceType || 'shared';
 
     if (body.destLat !== undefined && body.destLng !== undefined) {
@@ -27,7 +28,14 @@ export class LogisticsController {
         Number(body.destLat),
         Number(body.destLng),
         serviceType,
-        body.destinationAddress,
+        body.destinationAddress || body.address,
+      );
+    }
+
+    if (body.address || body.destinationAddress) {
+      return this.freightService.quoteByAddress(
+        body.address || body.destinationAddress,
+        serviceType,
       );
     }
 
@@ -39,6 +47,6 @@ export class LogisticsController {
       return this.freightService.calculateFreight(0, 'pickup');
     }
 
-    throw new BadRequestException('Debe proporcionar "miles" o ("destLat" y "destLng") para cotizar');
+    throw new BadRequestException('Debe proporcionar "miles", "address" o ("destLat" y "destLng") para cotizar');
   }
 }

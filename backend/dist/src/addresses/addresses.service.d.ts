@@ -1,8 +1,10 @@
 import { Repository } from 'typeorm';
 import { Address } from './address.entity';
+import { AddressValidationService } from './address-validation.service';
 export declare class AddressesService {
     private addressRepository;
-    constructor(addressRepository: Repository<Address>);
+    private addressValidationService?;
+    constructor(addressRepository: Repository<Address>, addressValidationService?: AddressValidationService | undefined);
     findAll(): Promise<Address[]>;
     findByUser(userId: string): Promise<Address[]>;
     findOne(id: string): Promise<Address>;

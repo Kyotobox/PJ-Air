@@ -21,6 +21,7 @@ class FreightQuoteDto {
     destLng;
     serviceType;
     destinationAddress;
+    address;
 }
 exports.FreightQuoteDto = FreightQuoteDto;
 let LogisticsController = class LogisticsController {
@@ -31,10 +32,13 @@ let LogisticsController = class LogisticsController {
     getOrigin() {
         return this.freightService.origin;
     }
-    calculateQuote(body) {
+    async calculateQuote(body) {
         const serviceType = body.serviceType || 'shared';
         if (body.destLat !== undefined && body.destLng !== undefined) {
-            return this.freightService.quoteByCoordinates(Number(body.destLat), Number(body.destLng), serviceType, body.destinationAddress);
+            return this.freightService.quoteByCoordinates(Number(body.destLat), Number(body.destLng), serviceType, body.destinationAddress || body.address);
+        }
+        if (body.address || body.destinationAddress) {
+            return this.freightService.quoteByAddress(body.address || body.destinationAddress, serviceType);
         }
         if (body.miles !== undefined) {
             return this.freightService.calculateFreight(Number(body.miles), serviceType);
@@ -42,7 +46,7 @@ let LogisticsController = class LogisticsController {
         if (serviceType === 'pickup') {
             return this.freightService.calculateFreight(0, 'pickup');
         }
-        throw new common_1.BadRequestException('Debe proporcionar "miles" o ("destLat" y "destLng") para cotizar');
+        throw new common_1.BadRequestException('Debe proporcionar "miles", "address" o ("destLat" y "destLng") para cotizar');
     }
 };
 exports.LogisticsController = LogisticsController;
@@ -57,7 +61,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], LogisticsController.prototype, "calculateQuote", null);
 exports.LogisticsController = LogisticsController = __decorate([
     (0, common_1.Controller)('logistics'),

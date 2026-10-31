@@ -14,6 +14,7 @@ import { ZonesModule } from '../zones/zones.module';
 import { CreditModule } from '../credit/credit.module';
 import { LogisticsModule } from '../logistics/logistics.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { AddressesModule } from '../addresses/addresses.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PaymentsModule } from '../payments/payments.module';
     CreditModule,
     LogisticsModule,
     forwardRef(() => PaymentsModule),
+    forwardRef(() => AddressesModule),
   ],
   providers: [OrdersService, ExcelService, FeeCalculatorService],
   controllers: [OrdersController],

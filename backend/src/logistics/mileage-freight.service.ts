@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Optional } from '@nestjs/common';
+import { AddressValidationService } from '../addresses/address-validation.service';
 
 export interface LocationPoint {
   address: string;
@@ -33,6 +34,68 @@ export interface FreightQuoteResult {
 @Injectable()
 export class MileageFreightService {
   readonly origin = ASTORIA_ORIGIN;
+
+  constructor(
+    @Optional()
+    private readonly addressValidationService?: AddressValidationService,
+  ) {}
+
+  /**
+   * Resuelve coordenadas desde una dirección de texto utilizando caché SQLite / geocodificación
+   */
+  async resolveCoordinatesFromAddress(
+    address: string,
+  ): Promise<{ lat: number; lng: number; formatted_address?: string; zip?: string } | null> {
+    if (!address || !address.trim()) return null;
+    if (!this.addressValidationService) {
+      return { lat: this.origin.lat, lng: this.origin.lng, formatted_address: address, zip: this.origin.zip };
+    }
+    try {
+      const geo = await this.addressValidationService.validateAndGeocode(address);
+      return {
+        lat: geo.lat,
+        lng: geo.lng,
+        formatted_address: geo.formatted_address,
+        zip: geo.zip,
+      };
+    } catch (_) {
+      // Fallback seguro sin lanzar excepción si se requiere resolución pasiva
+      return { lat: this.origin.lat, lng: this.origin.lng, formatted_address: address, zip: this.origin.zip };
+    }
+  }
+
+  /**
+   * Calcula la distancia en millas a partir de texto de dirección resolviendo con caché SQLite
+   */
+  async calculateDistanceByAddress(address: string, applyRoadFactor = true): Promise<number> {
+    const coords = await this.resolveCoordinatesFromAddress(address);
+    if (!coords) {
+      throw new BadRequestException('No se pudo resolver la dirección para calcular la distancia');
+    }
+    return this.calculateDistanceMiles(coords.lat, coords.lng, applyRoadFactor);
+  }
+
+  /**
+   * Cotización completa recibiendo dirección de texto como fallback o entrada directa
+   */
+  async quoteByAddress(
+    address: string,
+    serviceType: DeliveryServiceType = 'shared',
+  ): Promise<FreightQuoteResult> {
+    const coords = await this.resolveCoordinatesFromAddress(address);
+    const destLat = coords?.lat ?? this.origin.lat;
+    const destLng = coords?.lng ?? this.origin.lng;
+    const miles = this.calculateDistanceMiles(destLat, destLng);
+    const quote = this.calculateFreight(miles, serviceType);
+    return {
+      ...quote,
+      destination: {
+        lat: destLat,
+        lng: destLng,
+        address: coords?.formatted_address || address,
+      },
+    };
+  }
 
   /**
    * Calcula la distancia en millas (Haversine + factor de ruta vial comercial 1.25x)

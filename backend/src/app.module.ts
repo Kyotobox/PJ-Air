@@ -38,13 +38,14 @@ import { DeliveryZone } from './zones/delivery-zone.entity';
 import { CheckPayment } from './payments/check-payment.entity';
 import { Feedback } from './feedback/feedback.entity';
 import { Banner } from './banners/banner.entity';
+import { AddressGeocache } from './addresses/address-geocache.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: DATABASE_PATH,
-      entities: [Product, Category, User, Profile, Address, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone, CheckPayment, Feedback, Banner],
+      entities: [Product, Category, User, Profile, Address, AddressGeocache, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone, CheckPayment, Feedback, Banner],
       synchronize: NODE_ENV !== 'production',
       logging: false,
     }),

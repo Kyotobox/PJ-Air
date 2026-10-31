@@ -10,11 +10,13 @@ exports.LogisticsModule = void 0;
 const common_1 = require("@nestjs/common");
 const mileage_freight_service_1 = require("./mileage-freight.service");
 const logistics_controller_1 = require("./logistics.controller");
+const addresses_module_1 = require("../addresses/addresses.module");
 let LogisticsModule = class LogisticsModule {
 };
 exports.LogisticsModule = LogisticsModule;
 exports.LogisticsModule = LogisticsModule = __decorate([
     (0, common_1.Module)({
+        imports: [(0, common_1.forwardRef)(() => addresses_module_1.AddressesModule)],
         controllers: [logistics_controller_1.LogisticsController],
         providers: [mileage_freight_service_1.MileageFreightService],
         exports: [mileage_freight_service_1.MileageFreightService],

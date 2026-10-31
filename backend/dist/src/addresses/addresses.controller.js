@@ -53,18 +53,31 @@ const path_1 = require("path");
 const fs = __importStar(require("fs"));
 const config_1 = require("../config");
 const addresses_service_1 = require("./addresses.service");
+const address_validation_service_1 = require("./address-validation.service");
 const auth_guard_1 = require("../auth/auth.guard");
 const resource_ownership_guard_1 = require("../auth/resource-ownership.guard");
 let AddressesController = class AddressesController {
     addressesService;
-    constructor(addressesService) {
+    addressValidationService;
+    constructor(addressesService, addressValidationService) {
         this.addressesService = addressesService;
+        this.addressValidationService = addressValidationService;
     }
     async uploadPhoto(file) {
         if (!file) {
             throw new common_1.BadRequestException('No file uploaded or file type not allowed');
         }
         return { url: `/uploads/addresses/${file.filename}` };
+    }
+    async validateAddress(body) {
+        if (!body?.address) {
+            throw new common_1.BadRequestException('El campo "address" es obligatorio para la validación.');
+        }
+        if (!this.addressValidationService) {
+            return { valid: true, address: body.address };
+        }
+        const result = await this.addressValidationService.validateAndGeocode(body.address, body.lat, body.lng);
+        return { valid: true, ...result };
     }
     async create(body, req) {
         const targetUserId = (req.user?.role === 'admin' && body.userId) ? body.userId : req.user.id;
@@ -117,6 +130,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AddressesController.prototype, "uploadPhoto", null);
 __decorate([
+    (0, common_1.Post)('validate'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AddressesController.prototype, "validateAddress", null);
+__decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
@@ -153,6 +173,8 @@ __decorate([
 exports.AddressesController = AddressesController = __decorate([
     (0, common_1.Controller)('addresses'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
-    __metadata("design:paramtypes", [addresses_service_1.AddressesService])
+    __param(1, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [addresses_service_1.AddressesService,
+        address_validation_service_1.AddressValidationService])
 ], AddressesController);
 //# sourceMappingURL=addresses.controller.js.map

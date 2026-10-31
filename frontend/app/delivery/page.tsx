@@ -10,11 +10,27 @@ import {
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/lib/config';
+import StreetViewFacadeCard from '@/components/delivery/StreetViewFacadeCard';
 
 interface OrderItem {
     id: string;
     quantity: number;
     product?: { name: string; image?: string; };
+}
+
+interface DeliveryAddress {
+    address: string;
+    city: string;
+    state?: string;
+    lat?: number;
+    lng?: number;
+    refined_lat?: number;
+    refined_lng?: number;
+    access_code?: string;
+    has_key?: boolean;
+    key_location?: string;
+    fridge_access_required?: boolean;
+    delivery_photos_json?: string;
 }
 
 interface Order {
@@ -25,7 +41,7 @@ interface Order {
     notes?: string;
     delivery_user_id?: string;
     user?: { profile?: { full_name?: string; phone?: string; }; };
-    address?: { address: string; city: string; state?: string; };
+    address?: DeliveryAddress;
     items?: OrderItem[];
 }
 
@@ -224,6 +240,14 @@ export default function DeliveryPage() {
                                     </div>
                                 </div>
 
+                                {activeDelivery.address && (
+                                    <StreetViewFacadeCard 
+                                        address={activeDelivery.address} 
+                                        autoLoad={true} 
+                                        title="Fachada y Acceso Nocturno (En Camino)" 
+                                    />
+                                )}
+
                                 <div className="space-y-4">
                                     <h3 className="text-[10px] font-black text-slate-400 uppercase text-center tracking-widest mb-6">Protocolo de Entrega</h3>
                                     
@@ -330,6 +354,14 @@ export default function DeliveryPage() {
                                                 </a>
                                             )}
                                         </div>
+
+                                        {selectedOrder.address && (
+                                            <StreetViewFacadeCard 
+                                                address={selectedOrder.address} 
+                                                autoLoad={false} 
+                                                title="Fachada y Acceso Nocturno (3:00 AM)" 
+                                            />
+                                        )}
                                     </div>
                                 </div>
 

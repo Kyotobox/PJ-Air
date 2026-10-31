@@ -27,6 +27,7 @@ const credit_service_1 = require("../credit/credit.service");
 const fee_calculator_service_1 = require("./fee-calculator.service");
 const mileage_freight_service_1 = require("../logistics/mileage-freight.service");
 const payments_service_1 = require("../payments/payments.service");
+const address_validation_service_1 = require("../addresses/address-validation.service");
 let OrdersService = class OrdersService {
     orderRepository;
     orderItemRepository;
@@ -40,7 +41,8 @@ let OrdersService = class OrdersService {
     feeCalculatorService;
     mileageFreightService;
     paymentsService;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService, paymentsService) {
+    addressValidationService;
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService, paymentsService, addressValidationService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -53,6 +55,7 @@ let OrdersService = class OrdersService {
         this.feeCalculatorService = feeCalculatorService;
         this.mileageFreightService = mileageFreightService;
         this.paymentsService = paymentsService;
+        this.addressValidationService = addressValidationService;
     }
     validateCutoffTime(deliveryDateStr, referenceDate, cutoffHour = 12) {
         if (!deliveryDateStr)
@@ -258,7 +261,31 @@ let OrdersService = class OrdersService {
         const appliedDeliveryType = deliveryType || rest.delivery_type || 'saved';
         const appliedDeliveryDate = deliveryDate || rest.delivery_date;
         const appliedAddressId = addressId || rest.address_id || null;
-        const appliedDeliveryAddressText = deliveryAddressText || rest.delivery_address_text || null;
+        let appliedDeliveryAddressText = deliveryAddressText || rest.delivery_address_text || null;
+        if (appliedDeliveryAddressText && this.addressValidationService) {
+            try {
+                const validated = await this.addressValidationService.validateAndGeocode(appliedDeliveryAddressText);
+                appliedDeliveryAddressText = validated.formatted_address;
+                if (!orderData.dest_lat)
+                    orderData.dest_lat = validated.lat;
+                if (!orderData.dest_lng)
+                    orderData.dest_lng = validated.lng;
+            }
+            catch (err) {
+                if (err instanceof common_1.BadRequestException)
+                    throw err;
+            }
+        }
+        if (appliedAddressId && this.addressRepository && (!orderData.dest_lat || !orderData.dest_lng)) {
+            try {
+                const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
+                if (addr && addr.lat && addr.lng) {
+                    orderData.dest_lat = addr.refined_lat || addr.lat;
+                    orderData.dest_lng = addr.refined_lng || addr.lng;
+                }
+            }
+            catch (_) { }
+        }
         let appliedPaymentStatus = paymentStatus || rest.payment_status || 'pending';
         const appliedPaymentMethod = rest.payment_method || orderData.payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
         const rawZelleRef = rest.zelle_reference || orderData.zelle_reference;
@@ -907,6 +934,7 @@ exports.OrdersService = OrdersService = __decorate([
     __param(10, (0, common_1.Optional)()),
     __param(11, (0, common_1.Optional)()),
     __param(11, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
+    __param(12, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -918,6 +946,7 @@ exports.OrdersService = OrdersService = __decorate([
         credit_service_1.CreditService,
         fee_calculator_service_1.FeeCalculatorService,
         mileage_freight_service_1.MileageFreightService,
-        payments_service_1.PaymentsService])
+        payments_service_1.PaymentsService,
+        address_validation_service_1.AddressValidationService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

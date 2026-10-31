@@ -23,6 +23,7 @@ const zones_module_1 = require("../zones/zones.module");
 const credit_module_1 = require("../credit/credit.module");
 const logistics_module_1 = require("../logistics/logistics.module");
 const payments_module_1 = require("../payments/payments.module");
+const addresses_module_1 = require("../addresses/addresses.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
@@ -35,6 +36,7 @@ exports.OrdersModule = OrdersModule = __decorate([
             credit_module_1.CreditModule,
             logistics_module_1.LogisticsModule,
             (0, common_1.forwardRef)(() => payments_module_1.PaymentsModule),
+            (0, common_1.forwardRef)(() => addresses_module_1.AddressesModule),
         ],
         providers: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService],
         controllers: [orders_controller_1.OrdersController],

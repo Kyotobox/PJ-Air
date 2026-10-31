@@ -130,4 +130,54 @@ describe('MileageFreightService', () => {
       expect(() => service.calculateDistanceMiles(40.76, undefined as any)).toThrow(BadRequestException);
     });
   });
+
+  describe('Sprint S54: Address Resolution & Geocache Integration', () => {
+    let serviceWithValidation: MileageFreightService;
+    const mockValidationService = {
+      validateAndGeocode: jest.fn(),
+    };
+
+    beforeEach(() => {
+      serviceWithValidation = new MileageFreightService(mockValidationService as any);
+      jest.clearAllMocks();
+    });
+
+    it('should quote by address resolving coordinates via address validation service', async () => {
+      mockValidationService.validateAndGeocode.mockResolvedValue({
+        lat: 40.748817,
+        lng: -73.985428,
+        formatted_address: '350 5th Ave, New York, NY 10118',
+        zip: '10118',
+      });
+
+      const quote = await serviceWithValidation.quoteByAddress('350 5th Ave, New York, NY', 'shared');
+      expect(mockValidationService.validateAndGeocode).toHaveBeenCalledWith('350 5th Ave, New York, NY');
+      expect(quote.miles).toBeGreaterThan(0);
+      expect(quote.cost).toBeGreaterThanOrEqual(40);
+      expect(quote.destination?.address).toBe('350 5th Ave, New York, NY 10118');
+    });
+
+    it('should quote distances > 250 miles with requiresSpecialQuote = true for far destinations (e.g., Buffalo)', async () => {
+      mockValidationService.validateAndGeocode.mockResolvedValue({
+        lat: 42.8864,
+        lng: -78.8784,
+        formatted_address: 'Buffalo, NY',
+        zip: '14201',
+      });
+
+      const quote = await serviceWithValidation.quoteByAddress('Buffalo, NY', 'shared');
+      expect(quote.miles).toBeGreaterThan(250);
+      expect(quote.requiresSpecialQuote).toBe(true);
+      expect(quote.cost).toBe(0);
+    });
+
+    it('should safely fallback to origin coordinates if address resolution fails without throwing unhandled exception', async () => {
+      mockValidationService.validateAndGeocode.mockRejectedValue(new Error('Network offline'));
+
+      const quote = await serviceWithValidation.quoteByAddress('Some fallback street', 'shared');
+      expect(quote).toBeDefined();
+      expect(quote.miles).toBe(0);
+      expect(quote.cost).toBe(40); // 0 mi shared = $40
+    });
+  });
 });

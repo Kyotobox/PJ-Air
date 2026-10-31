@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AddressesService } from './addresses.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Address } from './address.entity';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('AddressesService', () => {
   let service: AddressesService;
@@ -173,6 +173,61 @@ describe('AddressesService', () => {
       await expect(
         service.delete('non-existent-id'),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('Sprint S54: Address Ingestion Validation & Normalization', () => {
+    it('should validate and normalize address when addressValidationService is present', async () => {
+      const mockValidation = {
+        validateAndGeocode: jest.fn().mockResolvedValue({
+          lat: 40.761032,
+          lng: -73.923714,
+          city: 'Astoria',
+          state: 'NY',
+          formatted_address: '33-04 Broadway, Astoria, NY 11106, USA',
+        }),
+      };
+
+      const customService = new AddressesService(
+        mockAddressRepository as any,
+        mockValidation as any,
+      );
+
+      mockAddressRepository.create.mockImplementation((dto) => dto);
+      mockAddressRepository.save.mockImplementation(async (entity) => entity);
+
+      const result = await customService.create('user-1', {
+        alias: 'Main Bakery',
+        address: '3304 Broadway, Astoria, NY 11106',
+      });
+
+      expect(mockValidation.validateAndGeocode).toHaveBeenCalledWith(
+        '3304 Broadway, Astoria, NY 11106',
+        undefined,
+        undefined,
+      );
+      expect(result.lat).toBe(40.761032);
+      expect(result.lng).toBe(-73.923714);
+      expect(result.city).toBe('Astoria');
+      expect(result.address).toBe('33-04 Broadway, Astoria, NY 11106, USA');
+    });
+
+    it('should throw BadRequestException if address is invalid', async () => {
+      const mockValidation = {
+        validateAndGeocode: jest.fn().mockRejectedValue(new BadRequestException('Dirección inválida')),
+      };
+
+      const customService = new AddressesService(
+        mockAddressRepository as any,
+        mockValidation as any,
+      );
+
+      await expect(
+        customService.create('user-1', {
+          alias: 'Bad Address',
+          address: 'xyz987invalidstreet',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });
