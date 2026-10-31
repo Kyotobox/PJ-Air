@@ -850,6 +850,15 @@ export default function CheckoutPage() {
     const hasCreditOverride = Boolean(creditSummary?.credit_override);
     const exceedsCreditLimit = isCreditAccount && paymentMethod === 'credit' && (usedCredit + finalTotal > creditLimit) && !hasCreditOverride;
 
+    // S55: Restringir opción 'Transferencia ACH Direct Debit' a cuentas autorizadas o VIP
+    const isAchAvailable = Boolean(profile?.ach_enabled || user?.is_vip);
+
+    useEffect(() => {
+        if (!isAchAvailable && paymentMethod === 'ach') {
+            setPaymentMethod('stripe');
+        }
+    }, [isAchAvailable, paymentMethod]);
+
     // ── Delivery date (NY timezone & 12:00 PM cutoff guard - TASK-49-04) ──────
     useEffect(() => {
         const nowNY = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -862,6 +871,12 @@ export default function CheckoutPage() {
         const daysToAdd = pastCutoff ? 3 : 2;
         const minDate = new Date(nowNY);
         minDate.setDate(nowNY.getDate() + daysToAdd);
+
+        // Regla de corte S55: La panadería NO despacha los martes (getDay() === 2)
+        // Si minDate cae en martes, saltar automáticamente al miércoles (+1 día)
+        if (minDate.getDay() === 2) {
+            minDate.setDate(minDate.getDate() + 1);
+        }
 
         const yyyy = minDate.getFullYear();
         const mm = String(minDate.getMonth() + 1).padStart(2, '0');
@@ -887,6 +902,21 @@ export default function CheckoutPage() {
 
     const handleDeliveryDateChange = (newDateStr: string) => {
         if (!newDateStr) return;
+
+        // Regla de corte S55: Impedir la selección de cualquier martes
+        const [y, m, d] = newDateStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        if (dateObj.getDay() === 2) {
+            showNotification(
+                lbl(
+                    'Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles',
+                    'Jhoanes Bakery does not make deliveries on Tuesdays. Please select from Wednesday onwards'
+                ),
+                'warning'
+            );
+            return;
+        }
+
         if (minSelectableDate && newDateStr < minSelectableDate) {
             showNotification(
                 lbl(
@@ -898,8 +928,6 @@ export default function CheckoutPage() {
             return;
         }
         setRawDeliveryDate(newDateStr);
-        const [y, m, d] = newDateStr.split('-').map(Number);
-        const dateObj = new Date(y, m - 1, d);
         setDeliveryDate(dateObj.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
         const payDate = new Date(dateObj);
         payDate.setDate(dateObj.getDate() + 6);
@@ -936,12 +964,58 @@ export default function CheckoutPage() {
             return;
         }
 
+        if (paymentMethod === 'ach' && !isAchAvailable) {
+            showNotification(
+                lbl(
+                    'La opción de transferencia ACH está disponible únicamente para cuentas autorizadas o clientes VIP.',
+                    'ACH transfer option is only available for authorized accounts or VIP clients.'
+                ),
+                'error'
+            );
+            return;
+        }
+
         if (paymentMethod === 'zelle') {
             if (!zelleReference.trim()) {
                 showNotification(
                     lbl(
                         'Por favor ingresa el Número de Confirmación / Referencia de tu transferencia Zelle.',
                         'Please enter the Confirmation Number / Reference of your Zelle transfer.'
+                    ),
+                    'warning'
+                );
+                return;
+            }
+            if (isUploadingReceipt) {
+                showNotification(
+                    lbl(
+                        'El comprobante de pago se está subiendo. Por favor espera un momento.',
+                        'The payment receipt is uploading. Please wait a moment.'
+                    ),
+                    'info'
+                );
+                return;
+            }
+            if (!zelleReceiptUrl) {
+                showNotification(
+                    lbl(
+                        'Es obligatorio adjuntar el comprobante o captura de pantalla de la transferencia Zelle',
+                        'It is required to attach the receipt or screenshot of the Zelle transfer'
+                    ),
+                    'warning'
+                );
+                return;
+            }
+        }
+
+        const [yVal, mVal, dVal] = (rawDeliveryDate || '').split('-').map(Number);
+        if (yVal && mVal && dVal) {
+            const dateObj = new Date(yVal, mVal - 1, dVal);
+            if (dateObj.getDay() === 2) {
+                showNotification(
+                    lbl(
+                        'Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles',
+                        'Jhoanes Bakery does not make deliveries on Tuesdays. Please select from Wednesday onwards'
                     ),
                     'warning'
                 );
@@ -1083,12 +1157,6 @@ export default function CheckoutPage() {
             label: lbl('Dirección Guardada', 'Saved Address'),
             desc: lbl('Usar una de mis direcciones registradas', 'Use one of my saved addresses'),
         },
-        {
-            value: 'other',
-            icon: <Truck size={20} />,
-            label: lbl('Otra Dirección', 'Other Address'),
-            desc: lbl('Entregar en una dirección diferente', 'Deliver to a different address'),
-        },
     ];
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1154,7 +1222,7 @@ export default function CheckoutPage() {
                                 {lbl('Tipo de Entrega', 'Delivery Type')}
                             </h2>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {typeOptions.map(opt => (
                                     <button
                                         key={opt.value}
@@ -1353,6 +1421,12 @@ export default function CheckoutPage() {
                                             />
                                             <p className="text-2xl font-black text-white capitalize">{deliveryDate}</p>
                                         </div>
+                                        <p className="text-[11px] text-white/75 font-medium">
+                                            {lbl(
+                                                'Nota operativa: Panadería Jhoanes no realiza entregas los días martes. Selecciona a partir del miércoles.',
+                                                'Operational note: Jhoanes Bakery does not make deliveries on Tuesdays. Please select from Wednesday onwards.'
+                                            )}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -1368,7 +1442,7 @@ export default function CheckoutPage() {
                                 {lbl('Selecciona tu método de pago preferido para completar la orden.', 'Choose your preferred payment method to complete the order.')}
                             </p>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className={`grid grid-cols-1 ${isAchAvailable ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 mb-6`}>
                                 {/* Stripe Card option */}
                                 <div 
                                     data-testid="payment-method-stripe"
@@ -1404,40 +1478,42 @@ export default function CheckoutPage() {
                                     </p>
                                 </div>
 
-                                {/* ACH Direct Debit option */}
-                                <div 
-                                    data-testid="payment-method-ach"
-                                    onClick={() => setPaymentMethod('ach')}
-                                    className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
-                                        paymentMethod === 'ach'
-                                            ? 'border-emerald-600 bg-emerald-50/50 shadow-sm'
-                                            : 'border-border/70 hover:border-border bg-white'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                                                <Building2 size={18} />
+                                {/* ACH Direct Debit option - Only for authorized or VIP accounts */}
+                                {isAchAvailable && (
+                                    <div 
+                                        data-testid="payment-method-ach"
+                                        onClick={() => setPaymentMethod('ach')}
+                                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                            paymentMethod === 'ach'
+                                                ? 'border-emerald-600 bg-emerald-50/50 shadow-sm'
+                                                : 'border-border/70 hover:border-border bg-white'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                                                    <Building2 size={18} />
+                                                </div>
+                                                <div>
+                                                    <span className="font-bold text-sm text-slate-800">
+                                                        {lbl('Transferencia ACH Direct Debit', 'ACH Direct Debit')}
+                                                    </span>
+                                                    <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full">
+                                                        0.8% (Tope $5.00)
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className="font-bold text-sm text-slate-800">
-                                                    {lbl('Transferencia ACH Direct Debit', 'ACH Direct Debit')}
-                                                </span>
-                                                <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full">
-                                                    0.8% (Tope $5.00)
-                                                </span>
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                paymentMethod === 'ach' ? 'border-emerald-600' : 'border-slate-300'
+                                            }`}>
+                                                {paymentMethod === 'ach' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />}
                                             </div>
                                         </div>
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                            paymentMethod === 'ach' ? 'border-emerald-600' : 'border-slate-300'
-                                        }`}>
-                                            {paymentMethod === 'ach' && <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />}
-                                        </div>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                            {lbl('Débito directo en cuenta bancaria comercial (Tarifa plana de 0.8%, tope máx $5.00).', 'Direct bank account debit (0.8% fee, maximum $5.00 cap).')}
+                                        </p>
                                     </div>
-                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                        {lbl('Débito directo en cuenta bancaria comercial (Tarifa plana de 0.8%, tope máx $5.00).', 'Direct bank account debit (0.8% fee, maximum $5.00 cap).')}
-                                    </p>
-                                </div>
+                                )}
 
                                 {/* Zelle option */}
                                 <div 
@@ -1523,11 +1599,11 @@ export default function CheckoutPage() {
                                     <div className="bg-white p-4 rounded-xl border border-purple-200 space-y-1.5 text-xs">
                                         <div className="flex justify-between items-center py-1 border-b border-purple-100">
                                             <span className="text-purple-700 font-medium">{lbl('Correo Zelle:', 'Zelle Email:')}</span>
-                                            <span className="font-black text-purple-950 select-all">pedidos@jhoanes.com</span>
+                                            <span className="font-black text-purple-950 select-all">Chefjhoanes@gmail.com</span>
                                         </div>
                                         <div className="flex justify-between items-center py-1">
                                             <span className="text-purple-700 font-medium">{lbl('Beneficiario / Razón:', 'Payee / Business Name:')}</span>
-                                            <span className="font-black text-purple-950">Pedidos Jhoanes LLC</span>
+                                            <span className="font-black text-purple-950">Jhoanes Bakery & Coffee</span>
                                         </div>
                                     </div>
 
@@ -1554,7 +1630,7 @@ export default function CheckoutPage() {
                                     {/* Upload Screenshot / Comprobante Zelle */}
                                     <div className="space-y-2 pt-2 border-t border-purple-200/70">
                                         <label className="text-xs font-bold text-purple-950 flex items-center justify-between">
-                                            <span>{lbl('Comprobante / Captura de Transferencia (Screenshot)', 'Transfer Screenshot / Receipt')}</span>
+                                            <span>{lbl('Comprobante / Captura de Transferencia (Screenshot) *', 'Transfer Screenshot / Receipt *')}</span>
                                             {isUploadingReceipt && (
                                                 <span className="text-[10px] text-purple-600 flex items-center gap-1 font-normal">
                                                     <Loader2 size={12} className="animate-spin" /> {lbl('Subiendo...', 'Uploading...')}

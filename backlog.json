@@ -188,7 +188,7 @@
         "id": "TASK-55-01",
         "label": "DOMAIN/CHECKOUT-OPERATIONAL-TRUTH",
         "desc": "Actualización oficial de Zelle (Chefjhoanes@gmail.com / Jhoanes Bakery & Coffee), subida obligatoria de comprobante, exclusión de martes en calendario y restricción ACH a VIP en frontend/app/checkout/page.tsx.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-55-02",
