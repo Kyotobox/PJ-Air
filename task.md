@@ -1,8 +1,9 @@
-# SPRINT S53 - Sprint 53: Armonización de Plantilla de Diseño Gourmet en Portal de Pedidos y Cabecera B2B
-**Objetivo**: Armonizar la cabecera de la página de órdenes con la plantilla de diseño de Jhoanes (Opción A), restaurando el título institucional, badges dinámicos B2B y contenedor glass/jhoanes-card. Incorporar historial completo de órdenes y bloque gerencial 360° en el expediente del cliente en /admin/clients.
+# SPRINT S54 - Sprint 54: Validación de Direcciones en Origen, Geocodificación Resiliente con Caché y Despacho Inteligente con Street View
+**Objetivo**: Blindar el ciclo de entrega desde el origen: validación y normalización física de direcciones en el registro (checkout/perfil/admin), geocodificación backend resiliente con caché SQLite en MileageFreightService para cálculo exacto de millaje y flete desde Astoria, y visualización operativa de Street View y ficha de despacho para chofer y administración.
 **Fecha**: 2026-10-31
 
-- [x] **TASK-53-01** [UI/ORDERS-HEADER-DESIGN-ALIGNMENT] Refactorización de la cabecera en frontend/app/orders/page.tsx con plantilla de diseño institucional, badge condicional B2B y contenedor cohesionado.
-- [x] **TASK-53-02** [TEST/S53-UI-VERIFICATION] Validación de compilación y suite de pruebas de frontend y backend.
-- [x] **TASK-53-03** [UI/ADMIN-CLIENT-ORDER-HISTORY] Sección de Historial Completo de Pedidos en la ficha de cliente en /admin/clients con desglose de ítems, estados y acceso directo a /admin/orders/[id].
-- [x] **TASK-53-04** [UI/ADMIN-CLIENT-EXECUTIVE-SUMMARY-CARD] Bloque gerencial 360° en la cabecera del expediente de cliente en /admin/clients con LTV, semáforo de puntualidad de pagos, saldo de crédito, productos favoritos y alertas de servicio.
+- [ ] **TASK-54-01** [CORE/ADDRESS-VALIDATION-INGESTION] Servicio backend de validación y normalización de direcciones en tiempo de ingestión (POST /addresses, /profile/addresses/new, /checkout) con validación de código postal, componentes estructurados y rechazo de direcciones ambiguas o inexistentes.
+- [ ] **TASK-54-02** [DOMAIN/GEOCODING-CACHE-MILEAGE] Geocodificación backend resiliente con caché local SQLite en MileageFreightService y fallback de coordenadas para cálculo de millaje desde el obrador de Astoria (3304 Broadway, Astoria, NY 11106).
+- [ ] **TASK-54-03** [UI/DELIVERY-STREETVIEW-FACADE] Componente de visualización de fachada a nivel de calle (Street View Static API con lazy-load) y mini-mapa estático en la Guía de Entrega nocturna del Chofer (frontend/app/delivery/page.tsx).
+- [ ] **TASK-54-04** [UI/ADMIN-ORDER-DISPATCH-SHEET] Cuadrante de Despacho y Logística en el Expediente de la Orden (frontend/app/admin/orders/[id]/page.tsx) con trazabilidad de millaje Astoria, visualización de ruta y conciliación del flete cobrado vs matriz oficial.
+- [ ] **TASK-54-05** [TEST/S54-LOGISTICS-E2E-SUITE] Suite exhaustiva de pruebas unitarias y de integración (Happy path y Sad paths: dirección inválida, timeout de red, cuota de API excedida y cálculo de flete > 250 millas).

@@ -3,48 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S53",
-  "current_task": "TASK-53-01",
+  "current_sprint": "S54",
+  "current_task": "TASK-54-01",
   "sprints": [
-    {
-      "id": "S50",
-      "name": "Sprint 50: Comprobantes Zelle, Políticas de Pago y Modificación de Órdenes Pre-Corte",
-      "status": "COMPLETED",
-      "start_date": "2026-11-03",
-      "goal": "Comprobantes Zelle con screenshot, modificación de órdenes abiertas pre-corte (12 PM) y clarificación de políticas de pago.",
-      "tasks": [
-        {
-          "id": "TASK-50-01",
-          "label": "UI/ZELLE-RECEIPT-UPLOAD",
-          "desc": "Carga de captura/screenshot de transferencia Zelle + referencia bancaria en checkout y órdenes.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-50-02",
-          "label": "DOMAIN/ORDER-PRE-CUTOFF-MUTATION",
-          "desc": "Modificación de órdenes abiertas antes del corte de las 12:00 PM (agregar items / corregir cantidades).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-50-03",
-          "label": "DOMAIN/ORDER-BALANCE-ADJUSTMENT",
-          "desc": "Ajuste contable de saldo (reverso/saldo a favor o checkout remanente).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-50-04",
-          "label": "UI/PAYMENT-POLICIES-CLEANUP",
-          "desc": "Sección de políticas de pago en checkout aclarando pago previo a despacho.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-50-05",
-          "label": "TEST/S50-PAYMENTS-MUTATION-SUITE",
-          "desc": "Suite de pruebas unitarias para comprobante Zelle y mutación de orden pre-corte.",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S51",
       "name": "Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista",
@@ -140,40 +101,79 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S53",
+      "name": "Sprint 53: Armonización de Plantilla de Diseño Gourmet en Portal de Pedidos y Cabecera B2B",
+      "status": "COMPLETED",
+      "start_date": "2026-10-31",
+      "goal": "Armonizar la cabecera de la página de órdenes con la plantilla de diseño de Jhoanes (Opción A), restaurando el título institucional, badges dinámicos B2B y contenedor glass/jhoanes-card. Incorporar historial completo de órdenes y bloque gerencial 360° en el expediente del cliente en /admin/clients.",
+      "tasks": [
+        {
+          "id": "TASK-53-01",
+          "label": "UI/ORDERS-HEADER-DESIGN-ALIGNMENT",
+          "desc": "Refactorización de la cabecera en frontend/app/orders/page.tsx con plantilla de diseño institucional, badge condicional B2B y contenedor cohesionado.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-53-02",
+          "label": "TEST/S53-UI-VERIFICATION",
+          "desc": "Validación de compilación y suite de pruebas de frontend y backend.",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-53-03",
+          "label": "UI/ADMIN-CLIENT-ORDER-HISTORY",
+          "desc": "Sección de Historial Completo de Pedidos en la ficha de cliente en /admin/clients con desglose de ítems, estados y acceso directo a /admin/orders/[id].",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-53-04",
+          "label": "UI/ADMIN-CLIENT-EXECUTIVE-SUMMARY-CARD",
+          "desc": "Bloque gerencial 360° en la cabecera del expediente de cliente en /admin/clients con LTV, semáforo de puntualidad de pagos, saldo de crédito, productos favoritos y alertas de servicio.",
+          "status": "DONE"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 43,
+  "archived_sprints_count": 44,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S53",
-    "name": "Sprint 53: Armonización de Plantilla de Diseño Gourmet en Portal de Pedidos y Cabecera B2B",
+    "id": "S54",
+    "name": "Sprint 54: Validación de Direcciones en Origen, Geocodificación Resiliente con Caché y Despacho Inteligente con Street View",
     "status": "IN_PROGRESS",
     "start_date": "2026-10-31",
-    "goal": "Armonizar la cabecera de la página de órdenes con la plantilla de diseño de Jhoanes (Opción A), restaurando el título institucional, badges dinámicos B2B y contenedor glass/jhoanes-card. Incorporar historial completo de órdenes y bloque gerencial 360° en el expediente del cliente en /admin/clients.",
+    "goal": "Blindar el ciclo de entrega desde el origen: validación y normalización física de direcciones en el registro (checkout/perfil/admin), geocodificación backend resiliente con caché SQLite en MileageFreightService para cálculo exacto de millaje y flete desde Astoria, y visualización operativa de Street View y ficha de despacho para chofer y administración.",
     "tasks": [
       {
-        "id": "TASK-53-01",
-        "label": "UI/ORDERS-HEADER-DESIGN-ALIGNMENT",
-        "desc": "Refactorización de la cabecera en frontend/app/orders/page.tsx con plantilla de diseño institucional, badge condicional B2B y contenedor cohesionado.",
-        "status": "DONE"
+        "id": "TASK-54-01",
+        "label": "CORE/ADDRESS-VALIDATION-INGESTION",
+        "desc": "Servicio backend de validación y normalización de direcciones en tiempo de ingestión (POST /addresses, /profile/addresses/new, /checkout) con validación de código postal, componentes estructurados y rechazo de direcciones ambiguas o inexistentes.",
+        "status": "READY"
       },
       {
-        "id": "TASK-53-02",
-        "label": "TEST/S53-UI-VERIFICATION",
-        "desc": "Validación de compilación y suite de pruebas de frontend y backend.",
-        "status": "DONE"
+        "id": "TASK-54-02",
+        "label": "DOMAIN/GEOCODING-CACHE-MILEAGE",
+        "desc": "Geocodificación backend resiliente con caché local SQLite en MileageFreightService y fallback de coordenadas para cálculo de millaje desde el obrador de Astoria (3304 Broadway, Astoria, NY 11106).",
+        "status": "READY"
       },
       {
-        "id": "TASK-53-03",
-        "label": "UI/ADMIN-CLIENT-ORDER-HISTORY",
-        "desc": "Sección de Historial Completo de Pedidos en la ficha de cliente en /admin/clients con desglose de ítems, estados y acceso directo a /admin/orders/[id].",
-        "status": "DONE"
+        "id": "TASK-54-03",
+        "label": "UI/DELIVERY-STREETVIEW-FACADE",
+        "desc": "Componente de visualización de fachada a nivel de calle (Street View Static API con lazy-load) y mini-mapa estático en la Guía de Entrega nocturna del Chofer (frontend/app/delivery/page.tsx).",
+        "status": "READY"
       },
       {
-        "id": "TASK-53-04",
-        "label": "UI/ADMIN-CLIENT-EXECUTIVE-SUMMARY-CARD",
-        "desc": "Bloque gerencial 360° en la cabecera del expediente de cliente en /admin/clients con LTV, semáforo de puntualidad de pagos, saldo de crédito, productos favoritos y alertas de servicio.",
-        "status": "DONE"
+        "id": "TASK-54-04",
+        "label": "UI/ADMIN-ORDER-DISPATCH-SHEET",
+        "desc": "Cuadrante de Despacho y Logística en el Expediente de la Orden (frontend/app/admin/orders/[id]/page.tsx) con trazabilidad de millaje Astoria, visualización de ruta y conciliación del flete cobrado vs matriz oficial.",
+        "status": "READY"
+      },
+      {
+        "id": "TASK-54-05",
+        "label": "TEST/S54-LOGISTICS-E2E-SUITE",
+        "desc": "Suite exhaustiva de pruebas unitarias y de integración (Happy path y Sad paths: dirección inválida, timeout de red, cuota de API excedida y cálculo de flete > 250 millas).",
+        "status": "READY"
       }
     ]
   }
