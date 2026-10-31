@@ -1,19 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import {
     Users, Search, Loader2, AlertCircle, User, Mail, Phone,
     CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Clock, Edit, Trash2,
     ChevronLeft, ListFilter, Percent, Tag, DollarSign, CreditCard, ShieldCheck, ShieldAlert,
-    ExternalLink, FileText
+    ExternalLink, FileText, Activity, TrendingUp, Sparkles, AlertTriangle, Key, Truck, Heart, Calendar
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { ST120AuditModal } from '@/components/admin/ST120AuditModal';
 
-interface Address { id: string; address: string; city: string; state?: string; zip_code?: string; country?: string; is_default?: boolean; }
+interface Address { 
+    id: string; 
+    address: string; 
+    city: string; 
+    state?: string; 
+    zip_code?: string; 
+    country?: string; 
+    is_default?: boolean; 
+    access_code?: string;
+    has_key?: boolean;
+    key_location?: string;
+    fridge_access_required?: boolean;
+    notes?: string;
+}
 interface OrderItem { 
     id: string; 
     quantity: number; 
@@ -26,7 +39,9 @@ interface Order {
     status: string; 
     created_at: string; 
     delivery_date?: string; 
+    payment_due_date?: string;
     payment_status?: string;
+    refunded_amount?: number;
     delivery_fee_charged?: number;
     items?: OrderItem[]; 
 }
@@ -272,6 +287,116 @@ export default function AdminClientsPage() {
         } catch (err: any) { showToast(`❌ ${err.message}`); }
         finally { setIsSavingNickname(false); }
     };
+
+    // Executive Metrics Calculation (Visión Gerencial 360°)
+    const executiveMetrics = useMemo(() => {
+        if (!selectedUser) return null;
+
+        const allOrders = selectedUser.orders || [];
+        const validOrders = allOrders.filter(o => o.status !== 'cancelled' && o.status !== 'Cancelado');
+        
+        // 1. Total Volumen Facturado (LTV)
+        const totalLtv = validOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+        const orderCount = validOrders.length;
+        const avgTicket = orderCount > 0 ? totalLtv / orderCount : 0;
+
+        // 2. Última Compra y Días transcurridos
+        const sortedOrders = [...validOrders].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        const lastOrder = sortedOrders[0] || null;
+        let daysSinceLastOrder: number | null = null;
+        if (lastOrder) {
+            const diffMs = Date.now() - new Date(lastOrder.created_at).getTime();
+            daysSinceLastOrder = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+        }
+
+        // 3. Semáforo de Pagos y Puntualidad (Health Score)
+        const unpaidCreditOrders = allOrders.filter(
+            o => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.status !== 'Cancelado'
+        );
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const overdueOrders = unpaidCreditOrders.filter(
+            o => o.payment_due_date && o.payment_due_date < todayStr
+        );
+        const totalPendingDebt = unpaidCreditOrders.reduce(
+            (sum, o) => sum + Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0)), 0
+        );
+
+        let paymentPunctuality: {
+            status: 'ontime' | 'warning' | 'overdue';
+            label: string;
+            badgeBg: string;
+            description: string;
+        } = {
+            status: 'ontime',
+            label: 'Al Día / Puntual',
+            badgeBg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
+            description: 'Sin deudas vencidas'
+        };
+
+        if (overdueOrders.length > 0) {
+            paymentPunctuality = {
+                status: 'overdue',
+                label: 'Facturas Vencidas',
+                badgeBg: 'bg-rose-500/20 text-rose-300 border border-rose-500/40',
+                description: `${overdueOrders.length} factura(s) con mora`
+            };
+        } else if (totalPendingDebt > 0) {
+            paymentPunctuality = {
+                status: 'warning',
+                label: 'Crédito en Plazo',
+                badgeBg: 'bg-amber-500/10 text-amber-300 border border-amber-500/30',
+                description: `$${totalPendingDebt.toFixed(2)} pendiente (vigente)`
+            };
+        } else if (orderCount === 0) {
+            paymentPunctuality = {
+                status: 'ontime',
+                label: 'Sin Operaciones',
+                badgeBg: 'bg-slate-500/20 text-slate-300 border border-slate-500/30',
+                description: 'Aún no registra compras'
+            };
+        }
+
+        // 4. Productos Favoritos (Top 3)
+        const productCounts: Record<string, { name: string; qty: number }> = {};
+        allOrders.forEach(o => {
+            (o.items || []).forEach((it: any) => {
+                const name = it.product?.name || 'Producto';
+                if (!productCounts[name]) productCounts[name] = { name, qty: 0 };
+                productCounts[name].qty += Number(it.quantity) || 0;
+            });
+        });
+        const topProducts = Object.values(productCounts)
+            .sort((a, b) => b.qty - a.qty)
+            .slice(0, 3);
+
+        // 5. Alertas de Servicio y Logística Clave
+        const defaultAddress = selectedUser.addresses?.find((a: any) => a.is_default) || selectedUser.addresses?.[0];
+        const accessInstruction = defaultAddress?.access_code 
+            ? `Clave: ${defaultAddress.access_code}`
+            : defaultAddress?.key_location 
+            ? `Lockbox: ${defaultAddress.key_location}`
+            : null;
+        const isTaxExempt = Boolean(selectedUser.profile?.tax_exempt || selectedUser.tax_exempt);
+        const isWholesaleCredit = selectedUser.account_type === 'credit';
+
+        return {
+            totalLtv,
+            orderCount,
+            avgTicket,
+            lastOrderDate: lastOrder?.created_at ? new Date(lastOrder.created_at).toLocaleDateString() : null,
+            daysSinceLastOrder,
+            paymentPunctuality,
+            totalPendingDebt,
+            topProducts,
+            accessInstruction,
+            isTaxExempt,
+            isWholesaleCredit,
+            creditLimit: Number(selectedUser.credit_limit) || 0,
+            availableCredit: creditSummary ? creditSummary.available_credit : Math.max(0, (Number(selectedUser.credit_limit) || 0) - totalPendingDebt),
+        };
+    }, [selectedUser, creditSummary]);
 
     const handleUpdateGeneralDiscount = async () => {
         if (!selectedUser) return;
@@ -662,6 +787,163 @@ export default function AdminClientsPage() {
                         {/* Scrollable Content */}
                         <div className="flex-1 overflow-y-auto p-10 space-y-12 pb-32">
                             {loadingDetail && <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>}
+
+                            {/* Executive Summary Block: Gerencia 360° */}
+                            {executiveMetrics && (
+                                <section className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 rounded-[2rem] p-7 text-white shadow-xl border border-slate-800 space-y-6">
+                                    <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-white/10">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+                                                <Sparkles size={18} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xs font-black uppercase tracking-[.25em] text-amber-400">
+                                                    Resumen Gerencial 360°
+                                                </h3>
+                                                <p className="text-[11px] text-slate-400">
+                                                    Salud comercial y operativa para atención prioritaria
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Semáforo de Puntualidad */}
+                                        <div className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-2 ${executiveMetrics.paymentPunctuality.badgeBg}`}>
+                                            <span className={`w-2 h-2 rounded-full ${
+                                                executiveMetrics.paymentPunctuality.status === 'overdue' ? 'bg-rose-400 animate-pulse' : executiveMetrics.paymentPunctuality.status === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'
+                                            }`} />
+                                            <span>{executiveMetrics.paymentPunctuality.label}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* 3 Metric Cards */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        {/* 1. Volumen Facturado (LTV) */}
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                                                Volumen Facturado (LTV)
+                                            </p>
+                                            <p className="text-2xl font-black text-white">
+                                                ${executiveMetrics.totalLtv.toFixed(2)}
+                                            </p>
+                                            <p className="text-[11px] text-slate-400 mt-1">
+                                                {executiveMetrics.orderCount} pedido(s) · Prom: ${executiveMetrics.avgTicket.toFixed(2)}
+                                            </p>
+                                        </div>
+
+                                        {/* 2. Crédito y Saldo */}
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                                                Línea de Crédito & Saldo
+                                            </p>
+                                            {executiveMetrics.isWholesaleCredit ? (
+                                                <>
+                                                    <p className="text-2xl font-black text-emerald-400">
+                                                        ${executiveMetrics.availableCredit.toFixed(2)}
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-300 mt-1">
+                                                        Disp. de ${executiveMetrics.creditLimit.toFixed(2)} (Deuda: ${executiveMetrics.totalPendingDebt.toFixed(2)})
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="text-lg font-black text-slate-200 mt-1">
+                                                        Contado (Cash)
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-400 mt-1">
+                                                        Pago en checkout / Sin deuda
+                                                    </p>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* 3. Recencia y Frecuencia */}
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                                                Último Pedido
+                                            </p>
+                                            <p className="text-xl font-black text-white">
+                                                {executiveMetrics.daysSinceLastOrder !== null ? `Hace ${executiveMetrics.daysSinceLastOrder} día(s)` : 'Sin compras'}
+                                            </p>
+                                            <p className="text-[11px] text-slate-400 mt-1">
+                                                {executiveMetrics.daysSinceLastOrder !== null && executiveMetrics.daysSinceLastOrder > 14 ? (
+                                                    <span className="text-amber-400 font-bold">⚠️ Cliente inactivo (+14d)</span>
+                                                ) : executiveMetrics.lastOrderDate ? (
+                                                    `Fecha: ${executiveMetrics.lastOrderDate}`
+                                                ) : (
+                                                    'Nuevo cliente'
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Productos Favoritos & Alertas de Servicio */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                                        {/* Productos Favoritos */}
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                            <div className="flex items-center gap-2 mb-2 text-amber-300">
+                                                <Heart size={14} />
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-300">
+                                                    Productos Más Pedidos
+                                                </p>
+                                            </div>
+                                            {executiveMetrics.topProducts.length > 0 ? (
+                                                <div className="space-y-1.5">
+                                                    {executiveMetrics.topProducts.map((p, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center text-xs">
+                                                            <span className="font-bold text-slate-200 truncate pr-2">{idx + 1}. {p.name}</span>
+                                                            <span className="font-mono text-amber-400 font-bold shrink-0">{p.qty} uds</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-slate-400 italic">Sin datos de productos frecuentes</p>
+                                            )}
+                                        </div>
+
+                                        {/* Alertas Operativas de Servicio */}
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                            <div className="flex items-center gap-2 mb-2 text-blue-400">
+                                                <Truck size={14} />
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-300">
+                                                    Alertas Clave de Servicio
+                                                </p>
+                                            </div>
+                                            <div className="space-y-2 text-xs">
+                                                <div className="flex items-center gap-2">
+                                                    <Key size={13} className="text-slate-400 shrink-0" />
+                                                    <span className="text-slate-300 truncate">
+                                                        {executiveMetrics.accessInstruction ? (
+                                                            <strong className="text-white">{executiveMetrics.accessInstruction}</strong>
+                                                        ) : (
+                                                            'Sin instrucciones de acceso nocturno'
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <ShieldCheck size={13} className="text-emerald-400 shrink-0" />
+                                                    <span className="text-slate-300">
+                                                        {executiveMetrics.isTaxExempt ? (
+                                                            <span className="text-emerald-400 font-bold">ST-120 Aprobado (0% Sales Tax)</span>
+                                                        ) : (
+                                                            <span className="text-amber-400 font-bold">Impuesto Regular NYC (8.875%)</span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Tag size={13} className="text-purple-400 shrink-0" />
+                                                    <span className="text-slate-300">
+                                                        {productDiscounts.length > 0 || generalDiscount > 0 ? (
+                                                            <span className="text-purple-300 font-bold">{productDiscounts.length} tarifa(s) especial(es) activa(s)</span>
+                                                        ) : (
+                                                            'Tarifa de catálogo estándar'
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
 
                             {/* Section: General Info */}
                             <section>
