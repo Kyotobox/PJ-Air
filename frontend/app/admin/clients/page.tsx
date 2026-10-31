@@ -331,7 +331,7 @@ export default function AdminClientsPage() {
         } = {
             status: 'ontime',
             label: 'Al Día / Puntual',
-            badgeBg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30',
+            badgeBg: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
             description: 'Sin deudas vencidas'
         };
 
@@ -339,21 +339,21 @@ export default function AdminClientsPage() {
             paymentPunctuality = {
                 status: 'overdue',
                 label: 'Facturas Vencidas',
-                badgeBg: 'bg-rose-500/20 text-rose-300 border border-rose-500/40',
+                badgeBg: 'bg-rose-50 text-rose-700 border border-rose-200',
                 description: `${overdueOrders.length} factura(s) con mora`
             };
         } else if (totalPendingDebt > 0) {
             paymentPunctuality = {
                 status: 'warning',
                 label: 'Crédito en Plazo',
-                badgeBg: 'bg-amber-500/10 text-amber-300 border border-amber-500/30',
+                badgeBg: 'bg-amber-50 text-amber-800 border border-amber-200',
                 description: `$${totalPendingDebt.toFixed(2)} pendiente (vigente)`
             };
         } else if (orderCount === 0) {
             paymentPunctuality = {
                 status: 'ontime',
                 label: 'Sin Operaciones',
-                badgeBg: 'bg-slate-500/20 text-slate-300 border border-slate-500/30',
+                badgeBg: 'bg-slate-100 text-slate-600 border border-slate-200',
                 description: 'Aún no registra compras'
             };
         }
@@ -790,17 +790,17 @@ export default function AdminClientsPage() {
 
                             {/* Executive Summary Block: Gerencia 360° */}
                             {executiveMetrics && (
-                                <section className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-900 rounded-[2rem] p-7 text-white shadow-xl border border-slate-800 space-y-6">
-                                    <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-white/10">
+                                <section className="bg-gradient-to-br from-amber-50/40 via-white to-slate-50/80 rounded-[2rem] p-7 text-slate-900 shadow-sm border border-amber-900/10 space-y-6">
+                                    <div className="flex items-center justify-between flex-wrap gap-3 pb-4 border-b border-amber-900/10">
                                         <div className="flex items-center gap-2.5">
-                                            <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+                                            <div className="p-2 bg-amber-500/10 text-amber-700 rounded-xl border border-amber-500/20">
                                                 <Sparkles size={18} />
                                             </div>
                                             <div>
-                                                <h3 className="text-xs font-black uppercase tracking-[.25em] text-amber-400">
+                                                <h3 className="text-xs font-black uppercase tracking-[.25em] text-amber-900">
                                                     Resumen Gerencial 360°
                                                 </h3>
-                                                <p className="text-[11px] text-slate-400">
+                                                <p className="text-[11px] text-slate-500 font-medium">
                                                     Salud comercial y operativa para atención prioritaria
                                                 </p>
                                             </div>
@@ -809,7 +809,7 @@ export default function AdminClientsPage() {
                                         {/* Semáforo de Puntualidad */}
                                         <div className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-2 ${executiveMetrics.paymentPunctuality.badgeBg}`}>
                                             <span className={`w-2 h-2 rounded-full ${
-                                                executiveMetrics.paymentPunctuality.status === 'overdue' ? 'bg-rose-400 animate-pulse' : executiveMetrics.paymentPunctuality.status === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'
+                                                executiveMetrics.paymentPunctuality.status === 'overdue' ? 'bg-rose-500 animate-pulse' : executiveMetrics.paymentPunctuality.status === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'
                                             }`} />
                                             <span>{executiveMetrics.paymentPunctuality.label}</span>
                                         </div>
@@ -818,38 +818,38 @@ export default function AdminClientsPage() {
                                     {/* 3 Metric Cards */}
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         {/* 1. Volumen Facturado (LTV) */}
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
                                             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                                                 Volumen Facturado (LTV)
                                             </p>
-                                            <p className="text-2xl font-black text-white">
+                                            <p className="text-2xl font-black text-slate-900">
                                                 ${executiveMetrics.totalLtv.toFixed(2)}
                                             </p>
-                                            <p className="text-[11px] text-slate-400 mt-1">
+                                            <p className="text-[11px] text-slate-500 mt-1 font-medium">
                                                 {executiveMetrics.orderCount} pedido(s) · Prom: ${executiveMetrics.avgTicket.toFixed(2)}
                                             </p>
                                         </div>
 
                                         {/* 2. Crédito y Saldo */}
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
                                             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                                                 Línea de Crédito & Saldo
                                             </p>
                                             {executiveMetrics.isWholesaleCredit ? (
                                                 <>
-                                                    <p className="text-2xl font-black text-emerald-400">
+                                                    <p className="text-2xl font-black text-emerald-600">
                                                         ${executiveMetrics.availableCredit.toFixed(2)}
                                                     </p>
-                                                    <p className="text-[11px] text-slate-300 mt-1">
+                                                    <p className="text-[11px] text-slate-500 mt-1 font-medium">
                                                         Disp. de ${executiveMetrics.creditLimit.toFixed(2)} (Deuda: ${executiveMetrics.totalPendingDebt.toFixed(2)})
                                                     </p>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <p className="text-lg font-black text-slate-200 mt-1">
+                                                    <p className="text-lg font-black text-slate-800 mt-1">
                                                         Contado (Cash)
                                                     </p>
-                                                    <p className="text-[11px] text-slate-400 mt-1">
+                                                    <p className="text-[11px] text-slate-500 mt-1 font-medium">
                                                         Pago en checkout / Sin deuda
                                                     </p>
                                                 </>
@@ -857,16 +857,16 @@ export default function AdminClientsPage() {
                                         </div>
 
                                         {/* 3. Recencia y Frecuencia */}
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
                                             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                                                 Último Pedido
                                             </p>
-                                            <p className="text-xl font-black text-white">
+                                            <p className="text-xl font-black text-slate-900">
                                                 {executiveMetrics.daysSinceLastOrder !== null ? `Hace ${executiveMetrics.daysSinceLastOrder} día(s)` : 'Sin compras'}
                                             </p>
-                                            <p className="text-[11px] text-slate-400 mt-1">
+                                            <p className="text-[11px] text-slate-500 mt-1 font-medium">
                                                 {executiveMetrics.daysSinceLastOrder !== null && executiveMetrics.daysSinceLastOrder > 14 ? (
-                                                    <span className="text-amber-400 font-bold">⚠️ Cliente inactivo (+14d)</span>
+                                                    <span className="text-amber-600 font-bold">⚠️ Cliente inactivo (+14d)</span>
                                                 ) : executiveMetrics.lastOrderDate ? (
                                                     `Fecha: ${executiveMetrics.lastOrderDate}`
                                                 ) : (
@@ -879,10 +879,10 @@ export default function AdminClientsPage() {
                                     {/* Productos Favoritos & Alertas de Servicio */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                                         {/* Productos Favoritos */}
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                            <div className="flex items-center gap-2 mb-2 text-amber-300">
+                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+                                            <div className="flex items-center gap-2 mb-2 text-amber-700">
                                                 <Heart size={14} />
-                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-300">
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                                                     Productos Más Pedidos
                                                 </p>
                                             </div>
@@ -890,8 +890,8 @@ export default function AdminClientsPage() {
                                                 <div className="space-y-1.5">
                                                     {executiveMetrics.topProducts.map((p, idx) => (
                                                         <div key={idx} className="flex justify-between items-center text-xs">
-                                                            <span className="font-bold text-slate-200 truncate pr-2">{idx + 1}. {p.name}</span>
-                                                            <span className="font-mono text-amber-400 font-bold shrink-0">{p.qty} uds</span>
+                                                            <span className="font-bold text-slate-800 truncate pr-2">{idx + 1}. {p.name}</span>
+                                                            <span className="font-mono text-amber-800 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full font-bold text-[11px] shrink-0">{p.qty} uds</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -901,41 +901,41 @@ export default function AdminClientsPage() {
                                         </div>
 
                                         {/* Alertas Operativas de Servicio */}
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                            <div className="flex items-center gap-2 mb-2 text-blue-400">
+                                        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+                                            <div className="flex items-center gap-2 mb-2 text-blue-700">
                                                 <Truck size={14} />
-                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-300">
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                                                     Alertas Clave de Servicio
                                                 </p>
                                             </div>
                                             <div className="space-y-2 text-xs">
                                                 <div className="flex items-center gap-2">
-                                                    <Key size={13} className="text-slate-400 shrink-0" />
-                                                    <span className="text-slate-300 truncate">
+                                                    <Key size={13} className="text-amber-600 shrink-0" />
+                                                    <span className="text-slate-600 truncate">
                                                         {executiveMetrics.accessInstruction ? (
-                                                            <strong className="text-white">{executiveMetrics.accessInstruction}</strong>
+                                                            <strong className="text-slate-900 font-bold">{executiveMetrics.accessInstruction}</strong>
                                                         ) : (
                                                             'Sin instrucciones de acceso nocturno'
                                                         )}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <ShieldCheck size={13} className="text-emerald-400 shrink-0" />
-                                                    <span className="text-slate-300">
+                                                    <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
+                                                    <span className="text-slate-600">
                                                         {executiveMetrics.isTaxExempt ? (
-                                                            <span className="text-emerald-400 font-bold">ST-120 Aprobado (0% Sales Tax)</span>
+                                                            <span className="text-emerald-700 font-bold">ST-120 Aprobado (0% Sales Tax)</span>
                                                         ) : (
-                                                            <span className="text-amber-400 font-bold">Impuesto Regular NYC (8.875%)</span>
+                                                            <span className="text-amber-700 font-bold">Impuesto Regular NYC (8.875%)</span>
                                                         )}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <Tag size={13} className="text-purple-400 shrink-0" />
-                                                    <span className="text-slate-300">
+                                                    <Tag size={13} className="text-purple-600 shrink-0" />
+                                                    <span className="text-slate-600">
                                                         {productDiscounts.length > 0 || generalDiscount > 0 ? (
-                                                            <span className="text-purple-300 font-bold">{productDiscounts.length} tarifa(s) especial(es) activa(s)</span>
+                                                            <span className="text-purple-700 font-bold">{productDiscounts.length} tarifa(s) especial(es) activa(s)</span>
                                                         ) : (
-                                                            'Tarifa de catálogo estándar'
+                                                            <span className="text-slate-700 font-medium">Tarifa de catálogo estándar</span>
                                                         )}
                                                     </span>
                                                 </div>
