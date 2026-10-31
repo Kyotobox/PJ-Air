@@ -366,7 +366,7 @@ export default function ClientOrdersPage() {
                 {/* ======================================================== */}
                 {/* TASK-48-01: HERO CREDIT HEALTH CARDS (Crédito en Vivo)   */}
                 {/* ======================================================== */}
-                {isB2BWholesale && (
+                {Number(displayCredit?.credit_limit || profile?.credit_limit || 0) > 0 && (
                     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-primary rounded-[2rem] p-6 md:p-8 text-white shadow-xl relative overflow-hidden border border-slate-700/50">
                         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 

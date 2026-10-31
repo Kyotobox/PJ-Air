@@ -538,8 +538,8 @@ export default function Home() {
         },
         {
             id: 'fleet',
-            badgeEn: '4:00 AM - 7:00 AM Delivery',
-            badgeEs: 'Despacho 4:00 AM - 7:00 AM',
+            badgeEn: 'Early 4:00 AM - 1:00 PM Delivery',
+            badgeEs: 'Despacho 4:00 AM - 1:00 PM',
             tagEn: 'NYC Direct Fleet Distribution',
             tagEs: 'Flota Propia de Distribución en NYC',
             titleEn: 'Direct Overnight Delivery to Your Walk-In Coolers',
@@ -890,67 +890,69 @@ export default function Home() {
                 </div>
 
                 {/* ── TASK-51-05: Prominent Wholesale Signup CTA Banner ─── */}
-                <div 
-                    className="mb-12 relative overflow-hidden rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl border border-white/10"
-                    style={{ background: 'linear-gradient(135deg, #110d0a 0%, #1e130a 50%, #2f1906 100%)' }}
-                >
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                        <div className="max-w-2xl">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest mb-3 border border-amber-400/30">
-                                <Sparkles size={12} />
-                                {locale === 'en' ? 'B2B Wholesale Accounts' : 'Cuentas Comerciales B2B'}
+                {!user && (
+                    <div 
+                        className="mb-12 relative overflow-hidden rounded-[2.5rem] p-8 sm:p-12 text-white shadow-xl border border-white/10"
+                        style={{ background: 'linear-gradient(135deg, #110d0a 0%, #1e130a 50%, #2f1906 100%)' }}
+                    >
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+                        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                            <div className="max-w-2xl">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-widest mb-3 border border-amber-400/30">
+                                    <Sparkles size={12} />
+                                    {locale === 'en' ? 'B2B Wholesale Accounts' : 'Cuentas Comerciales B2B'}
+                                </div>
+
+                                <h2 className="text-2xl sm:text-4xl font-black font-serif tracking-tight leading-tight mb-3">
+                                    {locale === 'en' 
+                                        ? 'Register Now / Place Your First Wholesale Order / Grow With Us'
+                                        : 'Regístrate ahora / Realiza tu primera compra mayorista / Crece con nosotros'}
+                                </h2>
+
+                                <p className="text-sm text-white/75 font-medium leading-relaxed mb-6">
+                                    {locale === 'en'
+                                        ? 'Get access to tier-1 wholesale pricing, 30-day commercial credit terms, and direct early-morning drop-offs before your establishment opens. Ideal for specialty cafes, restaurants, bakeries, and gourmet markets.'
+                                        : 'Accede a precios mayoristas preferenciales, línea de crédito comercial a 30 días y despacho directo en madrugada antes de la apertura de tu negocio. Diseñado para cafeterías, restaurantes, hoteles y minimarkets gourmet.'}
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-bold text-white/90">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                                        <span>{locale === 'en' ? '30-Day Net Credit' : 'Crédito a 30 días'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                                        <span>{locale === 'en' ? 'Early 4-7 AM Delivery' : 'Despacho 4 - 7 AM'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                                        <span>{locale === 'en' ? 'Dedicated B2B Support' : 'Atención B2B Directa'}</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <h2 className="text-2xl sm:text-4xl font-black font-serif tracking-tight leading-tight mb-3">
-                                {locale === 'en' 
-                                    ? 'Register Now / Place Your First Wholesale Order / Grow With Us'
-                                    : 'Regístrate ahora / Realiza tu primera compra mayorista / Crece con nosotros'}
-                            </h2>
+                            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto shrink-0">
+                                <Link
+                                    href="/auth/register"
+                                    className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-amber-400 text-black font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-amber-300 hover:scale-[1.02] active:scale-95 transition-all text-center"
+                                >
+                                    <UserPlus size={16} />
+                                    <span>{locale === 'en' ? 'Create Wholesale Account' : 'Crear Cuenta Mayorista'}</span>
+                                    <ChevronRight size={16} />
+                                </Link>
 
-                            <p className="text-sm text-white/75 font-medium leading-relaxed mb-6">
-                                {locale === 'en'
-                                    ? 'Get access to tier-1 wholesale pricing, 30-day commercial credit terms, and direct early-morning drop-offs before your establishment opens. Ideal for specialty cafes, restaurants, bakeries, and gourmet markets.'
-                                    : 'Accede a precios mayoristas preferenciales, línea de crédito comercial a 30 días y despacho directo en madrugada antes de la apertura de tu negocio. Diseñado para cafeterías, restaurantes, hoteles y minimarkets gourmet.'}
-                            </p>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-bold text-white/90">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
-                                    <span>{locale === 'en' ? '30-Day Net Credit' : 'Crédito a 30 días'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
-                                    <span>{locale === 'en' ? 'Early 4-7 AM Delivery' : 'Despacho 4 - 7 AM'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
-                                    <span>{locale === 'en' ? 'Dedicated B2B Support' : 'Atención B2B Directa'}</span>
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowScheduleModal(true)}
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest border border-white/20 transition-all text-center"
+                                >
+                                    <Clock size={15} />
+                                    <span>{locale === 'en' ? 'View Schedule' : 'Ver Horarios'}</span>
+                                </button>
                             </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto shrink-0">
-                            <Link
-                                href="/auth/register"
-                                className="inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-amber-400 text-black font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-amber-300 hover:scale-[1.02] active:scale-95 transition-all text-center"
-                            >
-                                <UserPlus size={16} />
-                                <span>{locale === 'en' ? 'Create Wholesale Account' : 'Crear Cuenta Mayorista'}</span>
-                                <ChevronRight size={16} />
-                            </Link>
-
-                            <button
-                                type="button"
-                                onClick={() => setShowScheduleModal(true)}
-                                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-black text-xs uppercase tracking-widest border border-white/20 transition-all text-center"
-                            >
-                                <Clock size={15} />
-                                <span>{locale === 'en' ? 'View Schedule' : 'Ver Horarios'}</span>
-                            </button>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* ── Category Navigation Rail + Search Bar ─── */}
                 <div id="catalogo" className="mb-10 flex flex-col md:flex-row items-stretch md:items-center gap-3 bg-white/70 backdrop-blur-md p-3 sm:p-3.5 rounded-[2rem] border border-border/60 shadow-xs">

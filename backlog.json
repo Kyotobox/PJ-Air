@@ -194,7 +194,7 @@
         "id": "TASK-55-02",
         "label": "UI/ZEN-VISUAL-HYGIENE-HOME-ORDERS",
         "desc": "Ocultar banner de registro para usuarios autenticados, ajustar horarios a 4:00 AM - 1:00 PM con scroll-lock en modal y condicionar tarjeta de Salud Financiera a crédito activo en orders y home.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-55-03",

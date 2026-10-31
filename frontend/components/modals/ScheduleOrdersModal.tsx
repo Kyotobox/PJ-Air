@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
     Clock, Calendar, X, Moon, Truck, Store, 
     Sparkles, AlertCircle, CheckCircle2, ChevronRight, ShieldCheck 
@@ -16,6 +16,14 @@ interface ScheduleOrdersModalProps {
 export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersModalProps) {
     const { locale } = useLanguage();
 
+    useEffect(() => {
+        if (!isOpen) return;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const isEn = locale === 'en';
@@ -26,8 +34,8 @@ export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersM
             dayEs: 'Lunes (antes 12 PM)',
             bakeEn: 'Mon Night',
             bakeEs: 'Lunes Noche',
-            deliveryEn: 'Wednesday Morning (4 - 7 AM)',
-            deliveryEs: 'Miércoles Madrugada (4 - 7 AM)',
+            deliveryEn: 'Wednesday: From 4:00 AM (4:00 AM - 1:00 PM according to route)',
+            deliveryEs: 'Miércoles: A partir de las 4:00 AM (4:00 AM - 1:00 PM según la ruta)',
             pickupEn: 'Wednesday (8 - 10 AM)',
             pickupEs: 'Miércoles (8 - 10 AM)',
         },
@@ -36,8 +44,8 @@ export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersM
             dayEs: 'Martes (antes 12 PM)',
             bakeEn: 'Tue Night',
             bakeEs: 'Martes Noche',
-            deliveryEn: 'Thursday Morning (4 - 7 AM)',
-            deliveryEs: 'Jueves Madrugada (4 - 7 AM)',
+            deliveryEn: 'Thursday: From 4:00 AM (4:00 AM - 1:00 PM according to route)',
+            deliveryEs: 'Jueves: A partir de las 4:00 AM (4:00 AM - 1:00 PM según la ruta)',
             pickupEn: 'Thursday (8 - 10 AM)',
             pickupEs: 'Jueves (8 - 10 AM)',
         },
@@ -46,8 +54,8 @@ export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersM
             dayEs: 'Miércoles (antes 12 PM)',
             bakeEn: 'Wed Night',
             bakeEs: 'Miércoles Noche',
-            deliveryEn: 'Friday Morning (4 - 7 AM)',
-            deliveryEs: 'Viernes Madrugada (4 - 7 AM)',
+            deliveryEn: 'Friday: From 4:00 AM (4:00 AM - 1:00 PM according to route)',
+            deliveryEs: 'Viernes: A partir de las 4:00 AM (4:00 AM - 1:00 PM según la ruta)',
             pickupEn: 'Friday (8 - 10 AM)',
             pickupEs: 'Viernes (8 - 10 AM)',
         },
@@ -56,8 +64,8 @@ export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersM
             dayEs: 'Jueves (antes 12 PM)',
             bakeEn: 'Thu Night',
             bakeEs: 'Jueves Noche',
-            deliveryEn: 'Saturday Morning (4 - 7 AM)',
-            deliveryEs: 'Sábado Madrugada (4 - 7 AM)',
+            deliveryEn: 'Saturday: From 4:00 AM (4:00 AM - 1:00 PM according to route)',
+            deliveryEs: 'Sábado: A partir de las 4:00 AM (4:00 AM - 1:00 PM según la ruta)',
             pickupEn: 'Saturday (8 - 10 AM)',
             pickupEs: 'Sábado (8 - 10 AM)',
         },
@@ -66,8 +74,8 @@ export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersM
             dayEs: 'Viernes (antes 12 PM)',
             bakeEn: 'Sun Night',
             bakeEs: 'Domingo Noche',
-            deliveryEn: 'Monday Morning (4 - 7 AM)',
-            deliveryEs: 'Lunes Madrugada (4 - 7 AM)',
+            deliveryEn: 'Monday: From 4:00 AM (4:00 AM - 1:00 PM according to route)',
+            deliveryEs: 'Lunes: A partir de las 4:00 AM (4:00 AM - 1:00 PM según la ruta)',
             pickupEn: 'Monday (8 - 10 AM)',
             pickupEs: 'Lunes (8 - 10 AM)',
         },
@@ -76,8 +84,8 @@ export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersM
             dayEs: 'Sáb - Dom (Fin de semana)',
             bakeEn: 'Mon Night',
             bakeEs: 'Lunes Noche',
-            deliveryEn: 'Wednesday Morning (4 - 7 AM)',
-            deliveryEs: 'Miércoles Madrugada (4 - 7 AM)',
+            deliveryEn: 'Wednesday: From 4:00 AM (4:00 AM - 1:00 PM according to route)',
+            deliveryEs: 'Miércoles: A partir de las 4:00 AM (4:00 AM - 1:00 PM según la ruta)',
             pickupEn: 'Wednesday (8 - 10 AM)',
             pickupEs: 'Miércoles (8 - 10 AM)',
         },
@@ -184,7 +192,7 @@ export default function ScheduleOrdersModal({ isOpen, onClose }: ScheduleOrdersM
                                     </p>
                                 </div>
                                 <div className="mt-3 text-[10px] font-black text-primary flex items-center gap-1">
-                                    <Truck size={11} /> 4:00 AM - 7:00 AM
+                                    <Truck size={11} /> 4:00 AM - 1:00 PM
                                 </div>
                             </div>
 
