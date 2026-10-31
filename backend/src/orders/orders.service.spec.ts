@@ -1048,5 +1048,96 @@ describe('OrdersService', () => {
       expect(result.payment_status).toBe('partially_paid');
     });
   });
+
+  describe('TASK-55-03: Status Normalization and Transition Fix (§48, §6)', () => {
+    it('normalizeStatus should map variants in Spanish and English to canonical statuses', () => {
+      // Shipped variants
+      expect(service.normalizeStatus('shipped')).toBe('shipped');
+      expect(service.normalizeStatus('pedido enviado')).toBe('shipped');
+      expect(service.normalizeStatus('Pedido Enviado')).toBe('shipped');
+      expect(service.normalizeStatus('en delivery')).toBe('shipped');
+      expect(service.normalizeStatus('En Delivery')).toBe('shipped');
+      expect(service.normalizeStatus('enviado')).toBe('shipped');
+
+      // Delivered variants
+      expect(service.normalizeStatus('delivered')).toBe('delivered');
+      expect(service.normalizeStatus('pedido recibido')).toBe('delivered');
+      expect(service.normalizeStatus('Pedido Recibido')).toBe('delivered');
+      expect(service.normalizeStatus('entregado')).toBe('delivered');
+      expect(service.normalizeStatus('Entregado')).toBe('delivered');
+      expect(service.normalizeStatus('recibido')).toBe('delivered');
+
+      // Pending variants
+      expect(service.normalizeStatus('pending')).toBe('pending');
+      expect(service.normalizeStatus('pendiente')).toBe('pending');
+
+      // Confirmed variants
+      expect(service.normalizeStatus('confirmed')).toBe('confirmed');
+      expect(service.normalizeStatus('confirmado')).toBe('confirmed');
+
+      // Cancelled variants
+      expect(service.normalizeStatus('cancelled')).toBe('cancelled');
+      expect(service.normalizeStatus('cancelado')).toBe('cancelled');
+    });
+
+    it('should allow client transition from "pedido enviado" to "pedido recibido"', async () => {
+      const order = { id: 'ord-1', status: 'pedido enviado' };
+      service.findOne = jest.fn().mockResolvedValue(order);
+      orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+      const updated = await service.updateStatus('ord-1', 'pedido recibido', 'client');
+      expect(updated.status).toBe('delivered');
+    });
+
+    it('should allow client transition from "shipped" to "delivered"', async () => {
+      const order = { id: 'ord-2', status: 'shipped' };
+      service.findOne = jest.fn().mockResolvedValue(order);
+      orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+      const updated = await service.updateStatus('ord-2', 'delivered', 'client');
+      expect(updated.status).toBe('delivered');
+    });
+
+    it('should allow client transition from "en delivery" to "delivered"', async () => {
+      const order = { id: 'ord-3', status: 'en delivery' };
+      service.findOne = jest.fn().mockResolvedValue(order);
+      orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+      const updated = await service.updateStatus('ord-3', 'delivered', 'client');
+      expect(updated.status).toBe('delivered');
+    });
+
+    it('should allow client transition from "shipped" to "Pedido Recibido"', async () => {
+      const order = { id: 'ord-4', status: 'shipped' };
+      service.findOne = jest.fn().mockResolvedValue(order);
+      orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+      const updated = await service.updateStatus('ord-4', 'Pedido Recibido', 'client');
+      expect(updated.status).toBe('delivered');
+    });
+
+    it('should allow client transition from "pedido enviado" to "entregado"', async () => {
+      const order = { id: 'ord-5', status: 'pedido enviado' };
+      service.findOne = jest.fn().mockResolvedValue(order);
+      orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+      const updated = await service.updateStatus('ord-5', 'entregado', 'client');
+      expect(updated.status).toBe('delivered');
+    });
+
+    it('Sad path: should throw BadRequestException if non-admin tries invalid transition (e.g. pending -> delivered)', async () => {
+      const order = { id: 'ord-6', status: 'pending' };
+      service.findOne = jest.fn().mockResolvedValue(order);
+
+      await expect(service.updateStatus('ord-6', 'delivered', 'client')).rejects.toThrow(BadRequestException);
+    });
+
+    it('Sad path: should throw BadRequestException if non-admin tries invalid transition (e.g. delivered -> pending)', async () => {
+      const order = { id: 'ord-7', status: 'delivered' };
+      service.findOne = jest.fn().mockResolvedValue(order);
+
+      await expect(service.updateStatus('ord-7', 'pending', 'client')).rejects.toThrow(BadRequestException);
+    });
+  });
 });
 

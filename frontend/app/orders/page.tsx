@@ -17,9 +17,20 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import FinancialStatusBadge from '@/components/orders/FinancialStatusBadge';
 
+const normalizeClientStatus = (status: string) => {
+    const s = (status || '').toLowerCase().trim();
+    if (s === 'pedido recibido' || s === 'delivered' || s === 'entregado' || s === 'recibido') {
+        return 'delivered';
+    }
+    if (s === 'pedido enviado' || s === 'shipped' || s === 'en delivery' || s === 'enviado' || s === 'camino' || s === 'en camino') {
+        return 'shipped';
+    }
+    return status;
+};
+
 const getClientStatusOptions = (t: any) => [
-    { value: 'Pedido Enviado',  label: t.orders.orderShipped },
-    { value: 'Pedido Recibido', label: t.orders.markAsReceived },
+    { value: 'shipped',   label: t.orders.orderShipped },
+    { value: 'delivered', label: t.orders.markAsReceived },
 ];
 
 export default function ClientOrdersPage() {
@@ -58,6 +69,10 @@ export default function ClientOrdersPage() {
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+    // Order Status Feedback State (TASK-55-03)
+    const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+    const [statusFeedback, setStatusFeedback] = useState<{ id: string; type: 'success' | 'error'; message: string } | null>(null);
 
     const CLIENT_STATUS_OPTIONS = getClientStatusOptions(t);
 
@@ -239,12 +254,32 @@ export default function ClientOrdersPage() {
     };
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
+        const normalized = normalizeClientStatus(newStatus);
+        setUpdatingOrderId(orderId);
+        setStatusFeedback(null);
         try {
-            await api.patch(`/orders/${orderId}/status`, { status: newStatus });
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-        } catch (err) {
+            const res = await api.patch(`/orders/${orderId}/status`, { status: normalized }) as any;
+            const updatedStatus = res?.status || normalized;
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: updatedStatus } : o));
+            setStatusFeedback({
+                id: orderId,
+                type: 'success',
+                message: locale === 'en'
+                    ? (normalized === 'delivered' ? 'Order marked as received successfully.' : 'Order status updated.')
+                    : (normalized === 'delivered' ? 'Pedido marcado como recibido exitosamente.' : 'Estado del pedido actualizado.'),
+            });
+            setTimeout(() => {
+                setStatusFeedback(prev => prev?.id === orderId ? null : prev);
+            }, 4500);
+        } catch (err: any) {
             console.error('Error updating status:', err);
-            alert('Error al actualizar el estado');
+            setStatusFeedback({
+                id: orderId,
+                type: 'error',
+                message: err?.response?.data?.message || err?.message || (locale === 'en' ? 'Could not update status. Please try again.' : 'No se pudo actualizar el estado del pedido.'),
+            });
+        } finally {
+            setUpdatingOrderId(null);
         }
     };
 
@@ -278,17 +313,17 @@ export default function ClientOrdersPage() {
     };
 
     const getStatusIcon = (status: string) => {
-        const s = (status || '').toLowerCase();
-        if (s.includes('enviado')) return <Clock className="text-blue-500" />;
-        if (s.includes('producción') || s.includes('processing')) return <Package className="text-orange-500" />;
+        const s = (status || '').toLowerCase().trim();
+        if (s.includes('enviado') || s.includes('shipped') || s === 'shipped') return <Clock className="text-blue-500" />;
+        if (s.includes('producción') || s.includes('produccion') || s.includes('processing') || s === 'confirmed') return <Package className="text-orange-500" />;
         if (s.includes('delivery') || s.includes('camino')) return <Truck className="text-purple-500" />;
-        if (s.includes('recibido') || s.includes('entregado')) return <CheckCircle2 className="text-green-500" />;
+        if (s.includes('recibido') || s.includes('entregado') || s === 'delivered') return <CheckCircle2 className="text-green-500" />;
         return <AlertCircle className="text-muted-foreground" />;
     };
 
     const isClientEditable = (status: string) => {
-        const s = (status || '').toLowerCase();
-        return s.includes('enviado') || s.includes('delivery') || s.includes('camino');
+        const s = (status || '').toLowerCase().trim();
+        return s.includes('enviado') || s.includes('delivery') || s.includes('camino') || s.includes('shipped');
     };
 
     // Fallback credit calculation if API returned null
@@ -817,11 +852,15 @@ export default function ClientOrdersPage() {
                                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                     <h3 className="text-xl font-bold">{t.orders.orderNumber} #{order.id.slice(0, 8)}</h3>
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
-                                                        (order.status || '').toLowerCase().includes('recibido') || (order.status || '').toLowerCase().includes('entregado')
+                                                        (order.status || '').toLowerCase().includes('recibido') || (order.status || '').toLowerCase().includes('entregado') || (order.status || '').toLowerCase() === 'delivered'
                                                             ? 'bg-green-100 text-green-700'
                                                             : 'bg-primary/10 text-primary'
                                                     }`}>
-                                                        {order.status === 'Pedido Recibido' ? t.orders.delivered : (order.status === 'Pedido Enviado' ? t.orders.shipping : order.status)}
+                                                        {['pedido recibido', 'delivered', 'entregado', 'recibido'].includes((order.status || '').toLowerCase().trim())
+                                                            ? t.orders.delivered
+                                                            : (['pedido enviado', 'shipped', 'en delivery', 'enviado'].includes((order.status || '').toLowerCase().trim())
+                                                                ? t.orders.shipping
+                                                                : order.status)}
                                                     </span>
                                                     {/* Payment Financial Status Badge */}
                                                     <FinancialStatusBadge order={order} locale={locale} size="normal" />
@@ -857,15 +896,20 @@ export default function ClientOrdersPage() {
                                             {isClientEditable(order.status) && (
                                                 <div className="relative flex-1 md:flex-none">
                                                     <select
-                                                        value={order.status}
+                                                        value={normalizeClientStatus(order.status) === 'delivered' ? 'delivered' : 'shipped'}
+                                                        disabled={updatingOrderId === order.id}
                                                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                                        className="appearance-none w-full pl-4 pr-8 py-3 bg-primary/5 border border-primary/20 rounded-xl text-xs font-black uppercase tracking-widest text-primary cursor-pointer hover:bg-primary/10 transition-all outline-none"
+                                                        className="appearance-none w-full pl-4 pr-8 py-3 bg-primary/5 border border-primary/20 rounded-xl text-xs font-black uppercase tracking-widest text-primary cursor-pointer hover:bg-primary/10 transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         {CLIENT_STATUS_OPTIONS.map(opt => (
                                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                         ))}
                                                     </select>
-                                                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                                                    {updatingOrderId === order.id ? (
+                                                        <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary animate-spin pointer-events-none" />
+                                                    ) : (
+                                                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                                                    )}
                                                 </div>
                                             )}
 
@@ -888,7 +932,33 @@ export default function ClientOrdersPage() {
                                         </div>
                                     </div>
 
-                                    {((order.status || '').toLowerCase().includes('recibido') || (order.status || '').toLowerCase().includes('entregado')) && order.payment_due_date && (
+                                    {/* Serene Status Feedback Banner (TASK-55-03) */}
+                                    {statusFeedback && statusFeedback.id === order.id && (
+                                        <div className={`mx-8 mb-4 px-4 py-3 rounded-2xl text-xs font-semibold flex items-center justify-between border transition-all ${
+                                            statusFeedback.type === 'success'
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700'
+                                                : 'bg-rose-500/10 border-rose-500/20 text-rose-700'
+                                        }`}>
+                                            <div className="flex items-center gap-2.5">
+                                                {statusFeedback.type === 'success' ? (
+                                                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                                                ) : (
+                                                    <AlertCircle size={16} className="text-rose-600 shrink-0" />
+                                                )}
+                                                <span>{statusFeedback.message}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setStatusFeedback(null)}
+                                                className="text-muted-foreground hover:text-foreground ml-2 transition-colors p-1"
+                                                aria-label="Cerrar notificación"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {((order.status || '').toLowerCase().includes('recibido') || (order.status || '').toLowerCase().includes('entregado') || (order.status || '').toLowerCase() === 'delivered') && order.payment_due_date && (
                                         <div className="bg-primary/5 px-8 py-4 border-t border-primary/10 flex justify-between items-center">
                                             <p className="text-xs font-bold text-primary flex items-center gap-2">
                                                 <Clock size={14} /> {t.orders.paymentDueNotice} <span className="underline uppercase">{order.payment_due_date}</span>

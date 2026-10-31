@@ -87,6 +87,21 @@ describe('OrdersController', () => {
       expect(service.updateStatus).toHaveBeenCalledWith('order-123', 'shipped', 'admin');
       expect(result).toBe('mock-updated-order');
     });
+
+    it('should allow client owner to update status with "Pedido Recibido" and "delivered"', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'order-123', user_id: 'client-user' });
+      mockOrdersService.updateStatus.mockResolvedValue({ id: 'order-123', status: 'delivered' });
+
+      const req = { user: { id: 'client-user', role: 'client' } };
+
+      const resSpanish = await controller.updateStatus('order-123', 'Pedido Recibido', req as any);
+      expect(service.updateStatus).toHaveBeenCalledWith('order-123', 'Pedido Recibido', 'client');
+      expect(resSpanish).toEqual({ id: 'order-123', status: 'delivered' });
+
+      const resEnglish = await controller.updateStatus('order-123', 'delivered', req as any);
+      expect(service.updateStatus).toHaveBeenCalledWith('order-123', 'delivered', 'client');
+      expect(resEnglish).toEqual({ id: 'order-123', status: 'delivered' });
+    });
   });
 
   describe('update', () => {

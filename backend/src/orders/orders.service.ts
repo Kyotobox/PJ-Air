@@ -99,8 +99,46 @@ export class OrdersService {
     }
   }
 
-  private validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string) {
-    if (userRole === 'admin') return;
+  normalizeStatus(status: string): string {
+    if (!status) return 'pending';
+    const s = status.toLowerCase().trim();
+    switch (s) {
+      case 'pedido enviado':
+      case 'shipped':
+      case 'en delivery':
+      case 'enviado':
+      case 'camino':
+      case 'en camino':
+        return 'shipped';
+      case 'pedido recibido':
+      case 'delivered':
+      case 'entregado':
+      case 'recibido':
+      case 'finalizado':
+        return 'delivered';
+      case 'pending':
+      case 'pendiente':
+      case 'pedido':
+        return 'pending';
+      case 'confirmed':
+      case 'confirmado':
+      case 'en producción':
+      case 'en produccion':
+      case 'processing':
+        return 'confirmed';
+      case 'cancelled':
+      case 'cancelado':
+        return 'cancelled';
+      default:
+        return s;
+    }
+  }
+
+  validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string): string {
+    const current = this.normalizeStatus(currentStatus);
+    const next = this.normalizeStatus(newStatus);
+
+    if (userRole === 'admin') return next;
 
     const validTransitions: Record<string, string[]> = {
       'pending': ['confirmed', 'shipped', 'cancelled'],
@@ -109,16 +147,15 @@ export class OrdersService {
       'delivered': [],
       'cancelled': [],
     };
-    
-    const current = currentStatus?.toLowerCase() || 'pending';
-    const next = newStatus?.toLowerCase() || 'pending';
 
-    if (current === next) return;
+    if (current === next) return next;
 
     const allowed = validTransitions[current];
     if (!allowed || !allowed.includes(next)) {
       throw new BadRequestException(`Invalid status transition from ${currentStatus} to ${newStatus}`);
     }
+
+    return next;
   }
 
   private async calculateOrderPricesAndTotal(userId: string, items: any[]): Promise<{ validatedItems: any[], total: number }> {
@@ -582,8 +619,8 @@ export class OrdersService {
 
   async updateStatus(id: string, status: string, userRole?: string): Promise<Order> {
     const order = await this.findOne(id);
-    this.validateStatusTransition(order.status, status, userRole);
-    order.status = status;
+    const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
+    order.status = normalizedStatus;
     return this.orderRepository.save(order);
   }
 
@@ -598,8 +635,8 @@ export class OrdersService {
     const { status, total, delivery_date, address_id, motivo, items, payment_status, paymentStatus } = updateData;
     
     if (status) {
-      this.validateStatusTransition(order.status, status, userRole);
-      order.status = status;
+      const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
+      order.status = normalizedStatus;
     }
 
     if (payment_status !== undefined || paymentStatus !== undefined) {

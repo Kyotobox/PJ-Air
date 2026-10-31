@@ -4,7 +4,7 @@
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S55",
-  "current_task": "TASK-55-01",
+  "current_task": "TASK-55-03",
   "sprints": [
     {
       "id": "S51",
@@ -200,7 +200,7 @@
         "id": "TASK-55-03",
         "label": "CORE/ORDERS-STATUS-TRANSITION-FIX",
         "desc": "Normalización de transiciones de estado en backend/src/orders/orders.service.ts ('Pedido Enviado' a 'Pedido Recibido') y confirmación reactiva en frontend/app/orders/page.tsx.",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-55-04",
