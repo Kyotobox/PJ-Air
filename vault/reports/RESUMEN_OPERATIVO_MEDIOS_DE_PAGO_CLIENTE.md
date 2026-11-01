@@ -1,17 +1,40 @@
-# MANUAL OPERATIVO ILUSTRADO: MEDIOS DE PAGO, CONCILIACIÓN Y REPORTES CONTABLES
+# MANUAL OPERATIVO ILUSTRADO: POLÍTICAS DE PRODUCCIÓN, MEDIOS DE PAGO Y REPORTES CONTABLES
 **Jhoanes Wholesale & Bakery**  
-**Audiencia**: Gerencia General, Administración, Tesorería, Facturación y Servicio al Cliente  
+**Audiencia**: Gerencia General, Administración, Tesorería, Facturación, Despacho y Clientes Mayoristas  
 **Fecha de Emisión**: Noviembre 2026  
-**Versión**: 2.0 (Ilustrada con Capturas de Producción en Vivo)  
+**Versión**: 3.0 (Manual Operativo 360° Ilustrado con Producción en Vivo)  
 
 ---
 
 ## 1. INTRODUCCIÓN Y ALCANCE
-Este manual operativo ilustrado proporciona a la gerencia y al equipo de operaciones de **Jhoanes Wholesale** una guía visual y práctica sobre el funcionamiento de los canales de cobro, los flujos de validación, la facturación comercial y los reportes contables automáticos, respaldado con las pantallas reales de la plataforma.
+Este manual operativo ilustrado proporciona a la gerencia, al equipo de operaciones y a los clientes de **Jhoanes Wholesale** una guía visual y práctica sobre el funcionamiento integral del servicio: desde las políticas de horneado y calendario de entregas, hasta los canales de cobro, la conciliación de cheques, la facturación comercial con notas de crédito y el cierre contable automático diario.
 
 ---
 
-## 2. POLÍTICA DE CANALES DE PAGO Y EXPERIENCIA DEL CLIENTE EN CHECKOUT
+## 2. POLÍTICAS DE PRODUCCIÓN, HORA DE CORTE Y CALENDARIO DE ENTREGAS
+
+Para garantizar la frescura artesanal de los productos y la puntualidad en las rutas de distribución matutinas, Jhoanes Wholesale opera bajo reglas claras de planificación:
+
+### A. Hora de Corte Diaria (Cutoff Time: 12:00 PM / Mediodía de Nueva York)
+- **Pedidos antes de las 12:00 PM (T+2)**: Todo pedido confirmado antes del mediodía entra al ciclo de horneado regular y se programa para entrega en **48 horas hábiles** (ejemplo: un pedido colocado el miércoles a las 10:00 AM se entrega el viernes).
+- **Pedidos después de las 12:00 PM (T+3)**: Los pedidos confirmados después de las 12:00 PM se consideran extemporáneos para el ciclo inmediato y se programan a **72 horas** (ejemplo: un pedido colocado el miércoles a las 2:00 PM se programa a partir del sábado).
+
+### B. Política de "Martes Sin Despacho" (Mantenimiento Técnico de Hornos)
+- **Día Inhábil de Entrega**: La panadería **NO realiza despachos los días martes**. Este día se destina a la higienización profunda de la planta, mantenimiento preventivo de hornos y calibración de maquinaria.
+- **Salto Automático Inteligente**: Si la fecha calculada por el sistema (T+2 o T+3) coincide en martes, el calendario de checkout salta automáticamente al **miércoles (+1 día)** de forma transparente para el cliente.
+- **Bloqueo Activo en Calendario**: Si el cliente intenta seleccionar manualmente un martes, el sistema bloquea la acción y le informa: *"Panadería Jhoanes no realiza entregas los días martes. Por favor selecciona a partir del miércoles"*.
+
+### C. Monto Mínimo de Pedido Mayorista
+- Para mantener la viabilidad logística de las rutas y ofrecer tarifas de flete preferenciales, el monto mínimo requerido para colocar un pedido mayorista es de **$500.00** (ajustable por administración en `/admin/settings`).
+
+### D. Trazabilidad del Pedido y Confirmación de "Pedido Recibido"
+En el portal del cliente ([`/orders`](file:///home/opc/code/pj-air/frontend/app/orders/page.tsx)), se puede monitorear en tiempo real cada fase:
+$$\text{Pedido Enviado} \longrightarrow \text{En Producción (Horneado)} \longrightarrow \text{En Ruta} \longrightarrow \text{Pedido Recibido}$$
+- Al momento de la entrega física por parte del chofer, el cliente dispone en su pantalla del botón **"Confirmar Pedido Recibido"**, cerrando formalmente el ciclo operativo de entrega.
+
+---
+
+## 3. POLÍTICA DE CANALES DE PAGO Y EXPERIENCIA DEL CLIENTE EN CHECKOUT
 
 Jhoanes Wholesale opera bajo una política de transparencia comercial conforme a la normativa del Estado de Nueva York. Las comisiones bancarias y de pasarela se desglosan de forma individual y no son absorbidas en ventas mayoristas:
 
@@ -28,8 +51,8 @@ Jhoanes Wholesale opera bajo una política de transparencia comercial conforme a
 > **RESTRICCIÓN CORPORATIVA: EL PAGO POR CHEQUE NO ES PÚBLICO**  
 > El pago mediante cheques comerciales está estrictamente restringido y **NO aparece como opción en el checkout público de la tienda web**. Constituye un acuerdo corporativo privado reservado exclusivamente para clientes mayoristas calificados y autorizados por la administración. Los pedidos de estos clientes se liquidan internamente cuando entregan el documento físico al chofer o en el mostrador.
 
-### Pantalla 1: Selector de Métodos de Pago en el Checkout
-El cliente mayorista estándar visualiza en el checkout únicamente los canales de pago directos y autorizados para su cuenta (Stripe, Zelle y Línea de Crédito si aplica), manteniendo los cheques fuera del autoservicio público:
+### Pantalla 1: Selector de Métodos de Pago y Fecha de Entrega en el Checkout
+El cliente mayorista visualiza la nota operativa de exclusión de martes, la primera fecha de entrega disponible según la hora de corte y los métodos de pago autorizados:
 
 ![Selector de Métodos en Checkout](../../ui_screenshots/audit_multichannel_01_checkout_methods.png)
 
@@ -38,7 +61,7 @@ El cliente mayorista estándar visualiza en el checkout únicamente los canales 
 
 ---
 
-## 3. PASARELA STRIPE: PAGOS CON TARJETA Y DÉBITO ACH
+## 4. PASARELA STRIPE: PAGOS CON TARJETA Y DÉBITO ACH
 
 Cuando el cliente selecciona Tarjeta de Crédito/Débito o Débito ACH, el sistema despliega el modal interactivo de pago seguro:
 
@@ -54,7 +77,7 @@ Si una tarjeta es declinada o el banco del cliente exige verificación de seguri
 
 ---
 
-## 4. GESTIÓN Y CONCILIACIÓN DE PAGOS ZELLE B2B
+## 5. GESTIÓN Y CONCILIACIÓN DE PAGOS ZELLE B2B
 
 El canal Zelle está diseñado para clientes que prefieren pagar vía transferencia bancaria sin pagar recargos de pasarela.
 
@@ -81,7 +104,7 @@ La orden entra en el panel como *"Pendiente de Verificación Zelle"*. La adminis
 
 ---
 
-## 5. CONCILIACIÓN DE CHEQUES COMERCIALES (CANAL PRIVADO B2B AUTORIZADO)
+## 6. CONCILIACIÓN DE CHEQUES COMERCIALES (CANAL PRIVADO B2B AUTORIZADO)
 
 > [!CAUTION]
 > **POLÍTICA DE RIESGO: NO DISPONIBLE EN AUTOSERVICIO PÚBLICO**  
@@ -106,7 +129,7 @@ El panel de administración permite supervisar el ciclo de vida del cheque a tra
 
 ---
 
-## 6. LÍNEAS DE CRÉDITO B2B Y SALUD FINANCIERA DEL CLIENTE
+## 7. LÍNEAS DE CRÉDITO B2B Y SALUD FINANCIERA DEL CLIENTE
 
 Los clientes con línea de crédito comercial aprobada pueden monitorear en todo momento el estado de su cuenta corriente desde su portal personal:
 
@@ -121,7 +144,7 @@ Los clientes con línea de crédito comercial aprobada pueden monitorear en todo
 
 ---
 
-## 7. NOTAS DE CRÉDITO Y FACTURACIÓN COMERCIAL LEGAL
+## 8. NOTAS DE CRÉDITO Y FACTURACIÓN COMERCIAL LEGAL
 
 Toda devolución de mercancía, ajuste de precio o anulación genera una **Nota de Crédito oficial con folio correlativo** (`NC-YYYY-XXXX`).
 
@@ -139,7 +162,7 @@ Al imprimir o consultar la factura en `/orders/[id]`, se muestra el desglose com
 
 ---
 
-## 8. INFORMES CONTABLES AUTOMÁTICOS Y CIERRE DIARIO
+## 9. INFORMES CONTABLES AUTOMÁTICOS Y CIERRE DIARIO
 
 ### A. Despacho Diario a las 23:59 NYS
 Para asegurar un cierre contable sin trabajo manual nocturno, el sistema compila automáticamente todas las noches a las **11:59 PM (hora de Nueva York)** las ventas del día y despacha un archivo **Excel estructurado** por correo electrónico.
@@ -156,10 +179,10 @@ La administración puede agregar, editar o remover los correos contables en cual
 
 ---
 
-## 9. RESUMEN DE BENEFICIOS OPERATIVOS PARA JHOANES WHOLESALE
+## 10. RESUMEN DE BENEFICIOS OPERATIVOS PARA JHOANES WHOLESALE
 
-1. **Blindaje de Cobros**: Cero pérdidas en Zelle gracias a la obligatoriedad del comprobante y el visor de tesorería.
-2. **Comunicación Ágil con el Cliente**: Notificaciones claras con botón de reintento ante comprobantes no conciliados.
-3. **Conciliación de Cheques Controlada**: Trazabilidad completa desde la recepción física hasta la confirmación bancaria a 3 días.
+1. **Previsibilidad en Cocina**: Regla estricta del corte a las 12:00 PM y exclusión de martes eliminan la improvisación y los pedidos de último minuto.
+2. **Blindaje de Cobros**: Cero pérdidas en Zelle gracias a la obligatoriedad del comprobante y el visor de tesorería.
+3. **Control Total de Cheques y Créditos**: Trazabilidad completa desde la recepción física del cheque hasta la compensación a 3 días, con bloqueo automático ante rebotes.
 4. **Cierre Contable Sin Esfuerzo**: Reporte consolidado en Excel en la bandeja de entrada cada mañana a primera hora.
-5. **Transparencia Fiscal Total**: Facturas con desglose legal conforme a las leyes del Estado de Nueva York.
+5. **Transparencia Fiscal Total**: Facturas con desglose legal y notas de crédito correlativas conforme a las leyes del Estado de Nueva York.
