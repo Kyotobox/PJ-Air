@@ -3,36 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S58",
+  "current_sprint": "S55",
   "current_task": "TASK-56-07",
   "sprints": [
-    {
-      "id": "S56",
-      "title": "Auditoría Multicanal de Pagos, Conciliación Contable y Evidencia Visual",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-56-01",
-          "title": "Auditoría técnica y seguridad de pasarelas y canales",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-56-02",
-          "title": "Runner Playwright automatizado en vivo y evidencia visual",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-56-03",
-          "title": "Compilación y sello del Informe Forense de Pagos",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-56-04",
-          "title": "Certificación final y build clean",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S57",
       "title": "Automatización de Reportes Contables, Notificación Zelle y Folio de Notas de Crédito",
@@ -105,9 +78,18 @@
         }
       ],
       "title": "Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1"
+    },
+    {
+      "id": "S55",
+      "name": "Sprint S55: [RECONCILED] Auto-reconciled from git history",
+      "dag_id": "SPRINT-S55-RECONCILED",
+      "status": "IN_PROGRESS",
+      "reconciled_at": "2026-11-01T21:02:51.677409+00:00",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
+      "tasks": []
     }
   ],
-  "archived_sprints_count": 50,
+  "archived_sprints_count": 51,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S58",
