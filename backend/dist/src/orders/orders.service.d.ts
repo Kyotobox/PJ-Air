@@ -26,8 +26,10 @@ export declare class OrdersService {
     private paymentsService?;
     private addressValidationService?;
     constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined, paymentsService?: PaymentsService | undefined, addressValidationService?: AddressValidationService | undefined);
+    calculateMinDeliveryDate(referenceDate?: Date, cutoffHour?: number): string;
     validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour?: number): void;
-    private validateStatusTransition;
+    normalizeStatus(status: string): string;
+    validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string): string;
     private calculateOrderPricesAndTotal;
     findInRange(startDate: string, endDate: string, userId?: string): Promise<Order[]>;
     findAll(): Promise<Order[]>;

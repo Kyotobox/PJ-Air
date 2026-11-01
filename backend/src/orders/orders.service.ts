@@ -46,8 +46,61 @@ export class OrdersService {
     private addressValidationService?: AddressValidationService,
   ) {}
 
+  calculateMinDeliveryDate(referenceDate?: Date, cutoffHour = 12): string {
+    const now = referenceDate || new Date();
+    const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const nyTimeFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      hour12: false,
+    });
+
+    const dateParts = nyDateFormatter.formatToParts(now);
+    const yr = dateParts.find(p => p.type === 'year')?.value || '1970';
+    const mo = dateParts.find(p => p.type === 'month')?.value || '01';
+    const da = dateParts.find(p => p.type === 'day')?.value || '01';
+
+    const timeParts = nyTimeFormatter.formatToParts(now);
+    const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+
+    const pastCutoff = nyHour >= cutoffHour;
+    const daysToAdd = pastCutoff ? 3 : 2;
+
+    const minDateNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
+    minDateNY.setUTCDate(minDateNY.getUTCDate() + daysToAdd);
+
+    // Regla de corte S55: La panadería NO despacha los martes (getUTCDay() === 2)
+    // Si minDate cae en martes, saltar automáticamente al miércoles (+1 día)
+    if (minDateNY.getUTCDay() === 2) {
+      minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+    }
+
+    const yrMin = minDateNY.getUTCFullYear();
+    const moMin = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
+    const daMin = String(minDateNY.getUTCDate()).padStart(2, '0');
+    return `${yrMin}-${moMin}-${daMin}`;
+  }
+
   validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour = 12): void {
     if (!deliveryDateStr) return;
+
+    const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
+
+    // Regla de corte S55: La panadería no realiza entregas los martes
+    const [tYr, tMo, tDa] = targetDate.split('-').map(Number);
+    const targetDateObj = new Date(Date.UTC(tYr, tMo - 1, tDa));
+    if (targetDateObj.getUTCDay() === 2) {
+      throw new BadRequestException(
+        'Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles.'
+      );
+    }
+
+    const minDeliveryDateStr = this.calculateMinDeliveryDate(referenceDate, cutoffHour);
 
     const now = referenceDate || new Date();
     const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -70,19 +123,7 @@ export class OrdersService {
 
     const timeParts = nyTimeFormatter.formatToParts(now);
     const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
-
     const pastCutoff = nyHour >= cutoffHour;
-    const daysToAdd = pastCutoff ? 3 : 2;
-
-    const minDateNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
-    minDateNY.setUTCDate(minDateNY.getUTCDate() + daysToAdd);
-
-    const yrMin = minDateNY.getUTCFullYear();
-    const moMin = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
-    const daMin = String(minDateNY.getUTCDate()).padStart(2, '0');
-    const minDeliveryDateStr = `${yrMin}-${moMin}-${daMin}`;
-
-    const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
 
     if (targetDate < minDeliveryDateStr) {
       if (targetDate < nyDateStr) {

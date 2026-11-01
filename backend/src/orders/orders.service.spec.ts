@@ -1139,5 +1139,136 @@ describe('OrdersService', () => {
       await expect(service.updateStatus('ord-7', 'pending', 'client')).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('TASK-55-05: [TEST/S55-E2E-CERTIFICATION-SUITE] Business Rules Certification (§48, §6)', () => {
+    describe('Status Transitions: Happy Paths', () => {
+      it('Happy path: valid transition from "shipped" to "Pedido Recibido" persists as "delivered"', async () => {
+        const order = { id: 's55-order-1', status: 'shipped' };
+        service.findOne = jest.fn().mockResolvedValue(order);
+        orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+        const result = await service.updateStatus('s55-order-1', 'Pedido Recibido', 'client');
+        expect(result.status).toBe('delivered');
+        expect(orderRepository.save).toHaveBeenCalledWith(expect.objectContaining({ status: 'delivered' }));
+      });
+
+      it('Happy path: valid transition from "pedido enviado" to "delivered" persists as "delivered"', async () => {
+        const order = { id: 's55-order-2', status: 'pedido enviado' };
+        service.findOne = jest.fn().mockResolvedValue(order);
+        orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+        const result = await service.updateStatus('s55-order-2', 'delivered', 'client');
+        expect(result.status).toBe('delivered');
+        expect(orderRepository.save).toHaveBeenCalledWith(expect.objectContaining({ status: 'delivered' }));
+      });
+
+      it('Happy path: valid transition from "en delivery" to "Pedido Recibido" normalizes and persists', async () => {
+        const order = { id: 's55-order-3', status: 'en delivery' };
+        service.findOne = jest.fn().mockResolvedValue(order);
+        orderRepository.save = jest.fn().mockImplementation((o: any) => Promise.resolve(o));
+
+        const result = await service.updateStatus('s55-order-3', 'Pedido Recibido', 'client');
+        expect(result.status).toBe('delivered');
+      });
+    });
+
+    describe('Status Transitions: Sad Paths (Unauthorized from "delivered")', () => {
+      it('Sad path: client cannot transition from "delivered" back to "pending" (throws BadRequestException)', async () => {
+        const order = { id: 's55-order-4', status: 'delivered' };
+        service.findOne = jest.fn().mockResolvedValue(order);
+
+        await expect(service.updateStatus('s55-order-4', 'pending', 'client'))
+          .rejects.toThrow(BadRequestException);
+      });
+
+      it('Sad path: client cannot transition from "delivered" back to "shipped" (throws BadRequestException)', async () => {
+        const order = { id: 's55-order-5', status: 'delivered' };
+        service.findOne = jest.fn().mockResolvedValue(order);
+
+        await expect(service.updateStatus('s55-order-5', 'shipped', 'client'))
+          .rejects.toThrow(BadRequestException);
+      });
+
+      it('Sad path: client cannot transition from "delivered" to "cancelled" (throws BadRequestException)', async () => {
+        const order = { id: 's55-order-6', status: 'delivered' };
+        service.findOne = jest.fn().mockResolvedValue(order);
+
+        await expect(service.updateStatus('s55-order-6', 'cancelled', 'client'))
+          .rejects.toThrow(BadRequestException);
+      });
+
+      it('Sad path: client cannot transition from "delivered" to arbitrary invalid status (throws BadRequestException)', async () => {
+        const order = { id: 's55-order-7', status: 'delivered' };
+        service.findOne = jest.fn().mockResolvedValue(order);
+
+        await expect(service.updateStatus('s55-order-7', 'en_preparacion', 'client'))
+          .rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe('Lead Time & Tuesday Exclusion Rules', () => {
+      it('Happy path: Sunday pre-cutoff (10:00 AM NY) normally T+2 is Tuesday, skips to Wednesday (+1 day)', () => {
+        // Domingo 25 Octubre 2026 a las 10:00 AM NY (14:00 UTC)
+        const sunday10AM = new Date('2026-10-25T14:00:00Z');
+        
+        // Lead time T+2 normalmente caería el Martes 27 de Octubre,
+        // pero la regla S55 excluye los martes y salta automáticamente al Miércoles 28
+        const minDate = service.calculateMinDeliveryDate(sunday10AM, 12);
+        expect(minDate).toBe('2026-10-28');
+
+        // Miércoles 28 de Octubre es aceptado sin excepciones
+        expect(() => {
+          service.validateCutoffTime('2026-10-28', sunday10AM, 12);
+        }).not.toThrow();
+
+        // Jueves 29 de Octubre (posterior) también es aceptado
+        expect(() => {
+          service.validateCutoffTime('2026-10-29', sunday10AM, 12);
+        }).not.toThrow();
+      });
+
+      it('Happy path: Saturday post-cutoff (3:15 PM NY) normally T+3 is Tuesday, skips to Wednesday (+1 day)', () => {
+        // Sábado 24 Octubre 2026 a las 3:15 PM NY (19:15 UTC)
+        const saturday315PM = new Date('2026-10-24T19:15:00Z');
+
+        // Lead time T+3 normalmente caería el Martes 27 de Octubre,
+        // pero la regla S55 excluye los martes y salta automáticamente al Miércoles 28
+        const minDate = service.calculateMinDeliveryDate(saturday315PM, 12);
+        expect(minDate).toBe('2026-10-28');
+
+        expect(() => {
+          service.validateCutoffTime('2026-10-28', saturday315PM, 12);
+        }).not.toThrow();
+      });
+
+      it('Sad path: selecting any Tuesday throws BadRequestException indicating bakery does not deliver on Tuesdays', () => {
+        const thursday10AM = new Date('2026-10-22T14:00:00Z');
+
+        // Martes 27 de Octubre 2026 (es posterior a T+2, pero es Martes)
+        expect(() => {
+          service.validateCutoffTime('2026-10-27', thursday10AM, 12);
+        }).toThrow(BadRequestException);
+
+        try {
+          service.validateCutoffTime('2026-10-27', thursday10AM, 12);
+        } catch (err: any) {
+          expect(err.message).toMatch(/no realiza entregas los martes/i);
+        }
+
+        // Martes 3 de Noviembre 2026
+        expect(() => {
+          service.validateCutoffTime('2026-11-03', thursday10AM, 12);
+        }).toThrow(BadRequestException);
+      });
+
+      it('Sad path: Sunday 10 AM ordering for Tuesday (T+2) is rejected because Tuesday is non-working day', () => {
+        const sunday10AM = new Date('2026-10-25T14:00:00Z');
+
+        expect(() => {
+          service.validateCutoffTime('2026-10-27', sunday10AM, 12);
+        }).toThrow(BadRequestException);
+      });
+    });
+  });
 });
 

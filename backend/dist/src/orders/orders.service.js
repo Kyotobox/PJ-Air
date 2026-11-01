@@ -57,9 +57,47 @@ let OrdersService = class OrdersService {
         this.paymentsService = paymentsService;
         this.addressValidationService = addressValidationService;
     }
+    calculateMinDeliveryDate(referenceDate, cutoffHour = 12) {
+        const now = referenceDate || new Date();
+        const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        });
+        const nyTimeFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            hour: 'numeric',
+            hour12: false,
+        });
+        const dateParts = nyDateFormatter.formatToParts(now);
+        const yr = dateParts.find(p => p.type === 'year')?.value || '1970';
+        const mo = dateParts.find(p => p.type === 'month')?.value || '01';
+        const da = dateParts.find(p => p.type === 'day')?.value || '01';
+        const timeParts = nyTimeFormatter.formatToParts(now);
+        const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        const pastCutoff = nyHour >= cutoffHour;
+        const daysToAdd = pastCutoff ? 3 : 2;
+        const minDateNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
+        minDateNY.setUTCDate(minDateNY.getUTCDate() + daysToAdd);
+        if (minDateNY.getUTCDay() === 2) {
+            minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+        }
+        const yrMin = minDateNY.getUTCFullYear();
+        const moMin = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
+        const daMin = String(minDateNY.getUTCDate()).padStart(2, '0');
+        return `${yrMin}-${moMin}-${daMin}`;
+    }
     validateCutoffTime(deliveryDateStr, referenceDate, cutoffHour = 12) {
         if (!deliveryDateStr)
             return;
+        const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
+        const [tYr, tMo, tDa] = targetDate.split('-').map(Number);
+        const targetDateObj = new Date(Date.UTC(tYr, tMo - 1, tDa));
+        if (targetDateObj.getUTCDay() === 2) {
+            throw new common_1.BadRequestException('Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles.');
+        }
+        const minDeliveryDateStr = this.calculateMinDeliveryDate(referenceDate, cutoffHour);
         const now = referenceDate || new Date();
         const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/New_York',
@@ -80,14 +118,6 @@ let OrdersService = class OrdersService {
         const timeParts = nyTimeFormatter.formatToParts(now);
         const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
         const pastCutoff = nyHour >= cutoffHour;
-        const daysToAdd = pastCutoff ? 3 : 2;
-        const minDateNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
-        minDateNY.setUTCDate(minDateNY.getUTCDate() + daysToAdd);
-        const yrMin = minDateNY.getUTCFullYear();
-        const moMin = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
-        const daMin = String(minDateNY.getUTCDate()).padStart(2, '0');
-        const minDeliveryDateStr = `${yrMin}-${moMin}-${daMin}`;
-        const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
         if (targetDate < minDeliveryDateStr) {
             if (targetDate < nyDateStr) {
                 throw new common_1.BadRequestException('La fecha de entrega no puede ser en el pasado.');
@@ -100,9 +130,46 @@ let OrdersService = class OrdersService {
                 : `Lead time de producción de 48h requerido. La fecha de entrega más temprana es ${minDeliveryDateStr} (T+2).`);
         }
     }
+    normalizeStatus(status) {
+        if (!status)
+            return 'pending';
+        const s = status.toLowerCase().trim();
+        switch (s) {
+            case 'pedido enviado':
+            case 'shipped':
+            case 'en delivery':
+            case 'enviado':
+            case 'camino':
+            case 'en camino':
+                return 'shipped';
+            case 'pedido recibido':
+            case 'delivered':
+            case 'entregado':
+            case 'recibido':
+            case 'finalizado':
+                return 'delivered';
+            case 'pending':
+            case 'pendiente':
+            case 'pedido':
+                return 'pending';
+            case 'confirmed':
+            case 'confirmado':
+            case 'en producción':
+            case 'en produccion':
+            case 'processing':
+                return 'confirmed';
+            case 'cancelled':
+            case 'cancelado':
+                return 'cancelled';
+            default:
+                return s;
+        }
+    }
     validateStatusTransition(currentStatus, newStatus, userRole) {
+        const current = this.normalizeStatus(currentStatus);
+        const next = this.normalizeStatus(newStatus);
         if (userRole === 'admin')
-            return;
+            return next;
         const validTransitions = {
             'pending': ['confirmed', 'shipped', 'cancelled'],
             'confirmed': ['shipped', 'cancelled'],
@@ -110,14 +177,13 @@ let OrdersService = class OrdersService {
             'delivered': [],
             'cancelled': [],
         };
-        const current = currentStatus?.toLowerCase() || 'pending';
-        const next = newStatus?.toLowerCase() || 'pending';
         if (current === next)
-            return;
+            return next;
         const allowed = validTransitions[current];
         if (!allowed || !allowed.includes(next)) {
             throw new common_1.BadRequestException(`Invalid status transition from ${currentStatus} to ${newStatus}`);
         }
+        return next;
     }
     async calculateOrderPricesAndTotal(userId, items) {
         const user = await this.userRepository.findOne({
@@ -514,8 +580,8 @@ let OrdersService = class OrdersService {
     }
     async updateStatus(id, status, userRole) {
         const order = await this.findOne(id);
-        this.validateStatusTransition(order.status, status, userRole);
-        order.status = status;
+        const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
+        order.status = normalizedStatus;
         return this.orderRepository.save(order);
     }
     async assignDelivery(id, deliveryUserId) {
@@ -527,8 +593,8 @@ let OrdersService = class OrdersService {
         const order = await this.findOne(id);
         const { status, total, delivery_date, address_id, motivo, items, payment_status, paymentStatus } = updateData;
         if (status) {
-            this.validateStatusTransition(order.status, status, userRole);
-            order.status = status;
+            const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
+            order.status = normalizedStatus;
         }
         if (payment_status !== undefined || paymentStatus !== undefined) {
             order.payment_status = payment_status || paymentStatus;

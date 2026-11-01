@@ -48,6 +48,7 @@ scratch/
 **/.next/
 dist/
 out/
+ui_screenshots/audit/
 *.xlsx
 /.meta/
 .env

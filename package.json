@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "dotenv -e .env -- npm run dev --workspace=frontend & dotenv -e .env -- npm run start:dev --workspace=backend",
     "build": "dotenv -e .env -- npm run build --workspace=backend && dotenv -e .env -- npm run build --workspace=frontend",
+    "test": "npm run test:unit --workspace=backend && npm run test --workspace=frontend",
     "seed": "ts-node scripts/seed-admin.ts",
     "check-images": "node check-db-images.js",
     "test:config": "node scripts/test-startup-config.js"
