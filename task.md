@@ -1,9 +1,11 @@
-# SPRINT S55 - Sprint 55: Armonía Zen y Operatividad Real Dropzone B2B
-**Objetivo**: Implementar los 16 requerimientos operativos del cliente en Dropzone: Zelle oficial, regla de exclusión de martes, comprobante obligatorio, restricción ACH a VIP, supresión de precios en hoja de horneado, corrección del flujo de estado recibido, estabilización de reportes y simplificación visual bajo estética Zen (Kanso, Ma, Shibui, Danshari, Seijaku, Wabi-Sabi).
-**Fecha**: 2026-10-31
+# SPRINT S56 - Sprint 56: Auditoría Multicanal de Pagos, Conciliación Contable y Automatización de Reportes
+**Objetivo**: Auditar integralmente los canales de pago (Stripe, Zelle, Cheques, Crédito B2B y Notas de Crédito) con suite Playwright en vivo e informe forense, e implementar las 3 brechas operativas: notificación de rechazo Zelle, formalización correlativa de Notas de Crédito y Cron de despacho automático de reportes contables en Excel.
+**Fecha**: 2026-11-01
 
-- [x] **TASK-55-01** [DOMAIN/CHECKOUT-OPERATIONAL-TRUTH] Actualización oficial de Zelle (Chefjhoanes@gmail.com / Jhoanes Bakery & Coffee), subida obligatoria de comprobante, exclusión de martes en calendario y restricción ACH a VIP en frontend/app/checkout/page.tsx.
-- [x] **TASK-55-02** [UI/ZEN-VISUAL-HYGIENE-HOME-ORDERS] Ocultar banner de registro para usuarios autenticados, ajustar horarios a 4:00 AM - 1:00 PM con scroll-lock en modal y condicionar tarjeta de Salud Financiera a crédito activo en orders y home.
-- [x] **TASK-55-03** [CORE/ORDERS-STATUS-TRANSITION-FIX] Normalización de transiciones de estado en backend/src/orders/orders.service.ts ('Pedido Enviado' a 'Pedido Recibido') y confirmación reactiva en frontend/app/orders/page.tsx.
-- [x] **TASK-55-04** [ADMIN/PRODUCTION-PRINT-AND-REPORTS-STABILIZATION] Hoja de Producción para cocina sin precios ni fletes en /admin/orders y estabilización de generación de reportes con Bearer token y alineación de fechas en /admin/reports.
-- [x] **TASK-55-05** [TEST/S55-E2E-CERTIFICATION-SUITE] Suite de pruebas automatizadas happy y sad path para corte sin martes, validación Zelle, transiciones de orden y compilación limpia.
+- [x] **TASK-56-01** [AUDIT/MULTICHANNEL-PAYMENTS-CORE] Auditoría estática y de seguridad de los 4 canales de pago (Stripe, Zelle, Cheques, Crédito B2B) y Notas de Crédito, verificando secrets, comisiones (3.5%, 0.8%, exenciones) y suite unitaria.
+- [x] **TASK-56-02** [UI/PLAYWRIGHT-LIVE-EVIDENCE-GALLERY] Runner Playwright automatizado en vivo en https://testing.jhoanes.com capturando la galería oficial de 9 pantallas (Checkout, Stripe, 3DS, Fondos, Visor Zelle, Cheques, Factura y Reportes).
+- [x] **TASK-56-03** [DOC/EXECUTIVE-AUDIT-REPORT] Compilación y sello del Informe Forense de Auditoría Multicanal con evidencias visuales, análisis de flujo de caja y diagnóstico contable.
+- [x] **TASK-56-04** [CORE/ZELLE-REJECTION-NOTIFICATION] Implementación en orders.service.ts y mail.service.ts del email automático al cliente ante rechazo de Zelle con motivo y botón de reintento.
+- [x] **TASK-56-05** [DOMAIN/CREDIT-NOTE-FORMALIZATION] Folio correlativo formal para Notas de Crédito (NC-YYYY-XXXX), persistencia y renderizado en la Factura Comercial imprimible.
+- [x] **TASK-56-06** [CRON/AUTOMATIC-FINANCIAL-REPORT-DISPATCH] Cron desatendido FinancialReportsCron para consolidación diaria de ventas multicanal en Excel y envío automático por correo a accounting@jhoanes.com.
+- [x] **TASK-56-07** [TEST/S56-E2E-CERTIFICATION-SUITE] Suite de pruebas automatizadas happy & sad path para rechazo Zelle, folio de nota de crédito, cron de reportes y validación de build clean.

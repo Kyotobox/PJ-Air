@@ -86,6 +86,11 @@ Order adjustments or cancellations must be requested prior to the 12:00 PM produ
             await this.repo.save({ key: 'terms_and_conditions_en', value: defaultTermsEn });
             console.log('[CONFIG] Seeded default terms_and_conditions_en');
         }
+        const accountingEmails = await this.repo.findOne({ where: { key: 'accounting_report_emails' } });
+        if (!accountingEmails) {
+            await this.repo.save({ key: 'accounting_report_emails', value: 'accounting@jhoanes.com' });
+            console.log('[CONFIG] Seeded default accounting_report_emails = accounting@jhoanes.com');
+        }
     }
     async get(key, defaultValue = '') {
         const config = await this.repo.findOne({ where: { key } });

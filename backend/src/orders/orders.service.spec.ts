@@ -7,7 +7,7 @@ import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
 import { MailService } from '../mail/mail.service';
 import { DataSource } from 'typeorm';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PaymentsService } from '../payments/payments.service';
 
 describe('OrdersService', () => {
@@ -66,6 +66,7 @@ describe('OrdersService', () => {
       sendCreditAlert: jest.fn().mockResolvedValue(true),
       sendOrderReceipt: jest.fn().mockResolvedValue(true),
       sendAdminNewOrderAlert: jest.fn().mockResolvedValue(true),
+      sendZelleRejectionAlert: jest.fn().mockResolvedValue(true),
     };
 
     const mockPaymentsService = {
@@ -491,7 +492,7 @@ describe('OrdersService', () => {
       );
     });
 
-    it('should reject Zelle payment, mark payment_status unpaid and order status Cancelado', async () => {
+    it('should reject Zelle payment, mark payment_status unpaid, order status Cancelado and trigger sendZelleRejectionAlert', async () => {
       const existingOrder = {
         id: 'order-zelle-rej',
         user_id: 'user-zelle-rej',
@@ -501,11 +502,43 @@ describe('OrdersService', () => {
       };
       service.findOne = jest.fn().mockResolvedValue(existingOrder);
       orderRepository.save = jest.fn().mockImplementation(o => Promise.resolve(o));
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-rej', email: 'zelle-reject@test.com' });
 
       const updated = await service.rejectZellePayment('order-zelle-rej', 'Referencia inválida o no recibida');
       expect(updated.payment_status).toBe('unpaid');
       expect(updated.status).toBe('Cancelado');
       expect(updated.notes).toContain('Referencia inválida');
+      expect(mockMailService.sendZelleRejectionAlert).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_status: 'unpaid' }),
+        'zelle-reject@test.com',
+        'Referencia inválida o no recibida',
+      );
+    });
+
+    it('rejectZellePayment sad path: should throw NotFoundException if order does not exist (§6)', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValueOnce(null as any);
+      await expect(service.rejectZellePayment('non-existent-order', 'Reason')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should assign a formal consecutive credit_note_number (NC-YYYY-XXXX) when refunded_amount > 0', async () => {
+      const existingOrder = {
+        id: 'order-refund-folio-abc123',
+        status: 'delivered',
+        payment_status: 'paid',
+        total: 500,
+        refunded_amount: 0,
+      };
+      service.findOne = jest.fn().mockResolvedValue(existingOrder);
+      orderRepository.save = jest.fn().mockImplementation(o => Promise.resolve(o));
+
+      const updated = await service.update('order-refund-folio-abc123', {
+        refunded_amount: 150,
+        refund_reason: 'Devolución de mercancía dañada',
+      }, 'admin');
+
+      expect(updated.refunded_amount).toBe(150);
+      expect(updated.credit_note_number).toBeDefined();
+      expect(updated.credit_note_number).toMatch(/^NC-\d{4}-[A-Z0-9]{4}$/);
     });
 
     it('Cutoff Time Happy Path: Jueves 10 AM permite Sábado (T+2) y Jueves 3:15 PM exige Domingo (T+3)', () => {

@@ -605,6 +605,14 @@ let OrdersService = class OrdersService {
         if (updateData.refunded_amount !== undefined) {
             order.refunded_amount = Number(updateData.refunded_amount);
         }
+        if (updateData.credit_note_number !== undefined) {
+            order.credit_note_number = updateData.credit_note_number;
+        }
+        if (((updateData.refunded_amount !== undefined && Number(updateData.refunded_amount) > 0) || Number(order.refunded_amount) > 0) && !order.credit_note_number) {
+            const year = new Date().getFullYear();
+            const shortId = (order.id || '').toString().replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase();
+            order.credit_note_number = `NC-${year}-${shortId.padStart(4, '0')}`;
+        }
         if (updateData.refund_reason !== undefined) {
             order.refund_reason = updateData.refund_reason;
         }
@@ -678,7 +686,17 @@ let OrdersService = class OrdersService {
         if (reason) {
             order.notes = `[Rechazo Zelle]: ${reason}\n${order.notes || ''}`;
         }
-        return this.orderRepository.save(order);
+        const saved = await this.orderRepository.save(order);
+        if (this.mailService && typeof this.mailService.sendZelleRejectionAlert === 'function') {
+            const user = await this.userRepository.findOne({ where: { id: order.user_id } });
+            const customerEmail = user?.email || order.user?.email;
+            if (customerEmail) {
+                this.mailService.sendZelleRejectionAlert(saved, customerEmail, reason || 'Comprobante no coincide con el depósito bancario').catch(err => {
+                    console.error('[OrdersService] Error sending zelle rejection email:', err?.message || err);
+                });
+            }
+        }
+        return saved;
     }
     async settleBatch(userId, userRole, dto) {
         if (!dto || !Array.isArray(dto.order_ids) || dto.order_ids.length === 0) {

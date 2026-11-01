@@ -56,6 +56,9 @@ export class Order {
   @Column({ nullable: true })
   refund_reason: string;
 
+  @Column({ nullable: true })
+  credit_note_number: string;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   tax_amount: number;
 

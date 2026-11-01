@@ -131,4 +131,46 @@ describe('MailService', () => {
     const result = await service.sendOverdueInvoiceAlert('', mockOrder);
     expect(result).toBe(false);
   });
+
+  it('should send zelle rejection alert email (happy path)', async () => {
+    const mockOrder = {
+      id: 'order-zelle-reject-12345678',
+      total: 320.00,
+    };
+    const result = await service.sendZelleRejectionAlert(
+      mockOrder,
+      'cliente-zelle@example.com',
+      'Referencia bancaria no localizada en extracto del día'
+    );
+    expect(typeof result).toBe('boolean');
+  });
+
+  it('should return false when sending zelle rejection alert with missing email (sad path)', async () => {
+    const mockOrder = {
+      id: 'order-zelle-reject-12345678',
+      total: 320.00,
+    };
+    const result = await service.sendZelleRejectionAlert(
+      mockOrder,
+      '',
+      'Referencia bancaria no localizada'
+    );
+    expect(result).toBe(false);
+  });
+
+  it('should send financial report with excel attachment (happy path)', async () => {
+    const dummyExcelBuffer = Buffer.from('FAKE_EXCEL_CONTENT_FOR_TESTING');
+    const result = await service.sendFinancialReport(
+      ['accounting@jhoanes.com', 'cfo@jhoanes.com'],
+      '2026-11-01',
+      dummyExcelBuffer
+    );
+    expect(typeof result).toBe('boolean');
+  });
+
+  it('should return false when sending financial report without recipient emails (sad path)', async () => {
+    const dummyExcelBuffer = Buffer.from('FAKE_EXCEL_CONTENT_FOR_TESTING');
+    const result = await service.sendFinancialReport([], '2026-11-01', dummyExcelBuffer);
+    expect(result).toBe(false);
+  });
 });

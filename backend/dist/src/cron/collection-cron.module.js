@@ -10,9 +10,12 @@ exports.CollectionCronModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const collection_cron_1 = require("./collection.cron");
+const financial_reports_cron_1 = require("./financial-reports.cron");
 const order_entity_1 = require("../orders/order.entity");
 const mail_module_1 = require("../mail/mail.module");
 const sms_module_1 = require("../sms/sms.module");
+const excel_service_1 = require("../orders/excel.service");
+const system_configs_module_1 = require("../system-configs/system-configs.module");
 let CollectionCronModule = class CollectionCronModule {
 };
 exports.CollectionCronModule = CollectionCronModule;
@@ -22,9 +25,10 @@ exports.CollectionCronModule = CollectionCronModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order]),
             mail_module_1.MailModule,
             sms_module_1.SmsModule,
+            system_configs_module_1.SystemConfigsModule,
         ],
-        providers: [collection_cron_1.CollectionCron],
-        exports: [collection_cron_1.CollectionCron],
+        providers: [collection_cron_1.CollectionCron, financial_reports_cron_1.FinancialReportsCron, excel_service_1.ExcelService],
+        exports: [collection_cron_1.CollectionCron, financial_reports_cron_1.FinancialReportsCron],
     })
 ], CollectionCronModule);
 //# sourceMappingURL=collection-cron.module.js.map

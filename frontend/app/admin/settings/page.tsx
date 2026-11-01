@@ -26,6 +26,7 @@ export default function AdminSettingsPage() {
     const [termsEs, setTermsEs] = useState<string>('');
     const [termsEn, setTermsEn] = useState<string>('');
     const [termsTab, setTermsTab] = useState<'es' | 'en'>('es');
+    const [accountingEmails, setAccountingEmails] = useState<string>('accounting@jhoanes.com');
 
     useEffect(() => {
         const saved = localStorage.getItem('admin_notification_settings');
@@ -59,6 +60,12 @@ export default function AdminSettingsPage() {
                 if (res && res.value) setTermsEn(res.value);
             })
             .catch(() => {});
+
+        api.get('/configs/accounting_report_emails')
+            .then((res: any) => {
+                if (res && res.value) setAccountingEmails(res.value);
+            })
+            .catch(() => {});
     }, []);
 
     // Keep selectedDefault in sync if defaultLocale changes externally
@@ -83,6 +90,7 @@ export default function AdminSettingsPage() {
             await api.patch('/configs/cutoff_hour', { value: String(cutoffHour) });
             if (termsEs) await api.patch('/configs/terms_and_conditions_es', { value: termsEs });
             if (termsEn) await api.patch('/configs/terms_and_conditions_en', { value: termsEn });
+            if (accountingEmails) await api.patch('/configs/accounting_report_emails', { value: accountingEmails });
 
             await new Promise(r => setTimeout(r, 600));
             showToast(t.adminSettings.savedOk);
@@ -279,6 +287,36 @@ export default function AdminSettingsPage() {
                                     />
                                 </div>
                             )}
+                        </div>
+                    </section>
+
+                    {/* ── Accounting Reports Section ──────────────────────── */}
+                    <section className="bg-white rounded-[2.5rem] border border-border shadow-sm overflow-hidden">
+                        <div className="p-8 border-b border-border bg-slate-50/50 flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center">
+                                <FileText size={24} />
+                            </div>
+                            <div>
+                                <h2 className="font-black text-slate-800 text-xl leading-none mb-1">Informes Contables Automáticos</h2>
+                                <p className="text-sm text-muted-foreground">Destinatarios para el envío diario consolidado en Excel (23:59 NYS)</p>
+                            </div>
+                        </div>
+
+                        <div className="p-10 space-y-4">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                Correos Electrónicos Destino (separados por coma si son múltiples)
+                            </label>
+                            <input
+                                type="text"
+                                data-testid="input-accounting-emails"
+                                value={accountingEmails}
+                                onChange={e => setAccountingEmails(e.target.value)}
+                                placeholder="accounting@jhoanes.com, cfo@jhoanes.com"
+                                className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-6 py-4 text-sm font-mono text-slate-800 outline-none focus:border-emerald-600 focus:bg-white transition-all"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Cada noche a las 23:59 (hora de Nueva York), el sistema genera y despacha automáticamente el consolidado financiero de ventas, comisiones de pasarela (Stripe/ACH) y notas de crédito a estas direcciones.
+                            </p>
                         </div>
                     </section>
 

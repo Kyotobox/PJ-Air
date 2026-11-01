@@ -205,6 +205,19 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                 <td>TOTAL FACTURADO:</td>
                 <td style="color: #b45309;">$${grandTotal.toFixed(2)}</td>
             </tr>
+            ${Number(order.refunded_amount || 0) > 0 ? `
+            <tr style="color: #dc2626; font-size: 11px;">
+                <td>
+                    <b>Nota de Crédito (${order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}):</b><br/>
+                    <small style="color: #991b1b; font-size: 9px;">${order.refund_reason || 'Ajuste contable / Reembolso comercial'}</small>
+                </td>
+                <td style="font-weight: bold; color: #dc2626;">-$${Number(order.refunded_amount).toFixed(2)}</td>
+            </tr>
+            <tr class="total-row" style="border-top: 1px dashed #cbd5e1; background: #fafafa;">
+                <td>SALDO NETO EXIGIBLE:</td>
+                <td style="color: #0f172a;">$${Math.max(0, grandTotal - Number(order.refunded_amount || 0)).toFixed(2)}</td>
+            </tr>
+            ` : ''}
         </table>
     </div>
 
@@ -489,16 +502,26 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                     )}
 
                                     {order.payment_status === 'partially_refunded' && (
-                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold shadow-sm">
-                                            <span className="text-sm">↩️</span>
-                                            <span>{locale === 'en' ? `Partially Refunded ($${Number(order.refunded_amount || 0).toFixed(2)})` : `Reembolso Parcial ($${Number(order.refunded_amount || 0).toFixed(2)} devuelto)`}</span>
+                                        <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold shadow-sm">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">↩️</span>
+                                                <span>{locale === 'en' ? `Partially Refunded ($${Number(order.refunded_amount || 0).toFixed(2)})` : `Reembolso Parcial ($${Number(order.refunded_amount || 0).toFixed(2)} devuelto)`}</span>
+                                            </div>
+                                            <div className="text-[11px] font-mono text-orange-900 bg-orange-100/70 px-2 py-0.5 rounded-md inline-block w-fit">
+                                                Nota de Crédito: {order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}
+                                            </div>
                                         </div>
                                     )}
 
                                     {order.payment_status === 'refunded' && (
-                                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold shadow-sm">
-                                            <span className="text-sm">↩️</span>
-                                            <span>{locale === 'en' ? 'Fully Refunded' : 'Reembolsado Totalmente'}</span>
+                                        <div className="flex flex-col gap-1 p-3.5 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold shadow-sm">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">↩️</span>
+                                                <span>{locale === 'en' ? 'Fully Refunded' : 'Reembolsado Totalmente'}</span>
+                                            </div>
+                                            <div className="text-[11px] font-mono text-rose-900 bg-rose-100/70 px-2 py-0.5 rounded-md inline-block w-fit">
+                                                Nota de Crédito: {order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}
+                                            </div>
                                         </div>
                                     )}
 

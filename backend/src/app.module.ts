@@ -102,6 +102,9 @@ export class AppModule implements OnModuleInit {
       if (!orderColNames.includes('refund_reason')) {
         await qr.query(`ALTER TABLE orders ADD COLUMN refund_reason VARCHAR;`);
       }
+      if (!orderColNames.includes('credit_note_number')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN credit_note_number VARCHAR(50);`);
+      }
       if (!orderColNames.includes('payment_due_date')) {
         await qr.query(`ALTER TABLE orders ADD COLUMN payment_due_date VARCHAR;`);
       }

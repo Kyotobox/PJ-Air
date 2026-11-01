@@ -648,6 +648,114 @@ let MailService = MailService_1 = class MailService {
             return false;
         }
     }
+    async sendZelleRejectionAlert(order, customerEmail, reason) {
+        try {
+            if (!customerEmail || !order) {
+                this.logger.warn('sendZelleRejectionAlert invoked without customerEmail or order');
+                return false;
+            }
+            if (!this.transporter) {
+                this.logger.warn('SMTP transporter is not initialized');
+                return false;
+            }
+            const orderIdShort = (order.id || '').toString().slice(0, 8);
+            const totalFormatted = (Number(order.total) || 0).toFixed(2);
+            const siteUrl = config_1.SITE_URL || 'https://jhoanes.com';
+            const retryUrl = `${siteUrl}/checkout`;
+            const html = `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #fee2e2; border-radius: 12px; background: #ffffff;">
+          <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #ef4444; padding-bottom: 16px;">
+            <h1 style="color: #b91c1c; font-size: 22px; margin: 0;">Aviso de Validación Zelle — Panadería Jhoanes</h1>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Comprobante no conciliado para el Pedido #${orderIdShort}</p>
+          </div>
+
+          <p style="font-size: 14px; color: #334155;">Estimado cliente,</p>
+          <p style="font-size: 14px; color: #334155; line-height: 1.6;">
+            Le informamos que la transferencia Zelle reportada para su pedido <strong>#${orderIdShort}</strong> por un total de <strong>$${totalFormatted}</strong> no pudo ser verificada satisfactoriamente en nuestras cuentas bancarias.
+          </p>
+
+          <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px; border-radius: 6px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 13px; font-weight: bold; color: #991b1b;">Motivo del Rechazo:</p>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #b91c1c;">${reason || 'Comprobante ilegible o referencia bancaria no coincide con los fondos recibidos.'}</p>
+          </div>
+
+          <p style="font-size: 14px; color: #334155; line-height: 1.6;">
+            Su pedido ha sido pausado preventivamente. Para reactivarlo, por favor ingrese nuevamente al portal para reintentar el pago con otra referencia Zelle o con tarjeta de crédito/débito:
+          </p>
+
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${retryUrl}" style="background: #dc2626; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Reintentar Pago / Actualizar Comprobante</a>
+          </div>
+
+          <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; text-align: center;">
+            Panadería Jhoanes Wholesale — Departamento de Tesorería y Conciliación
+          </p>
+        </div>
+      `;
+            await this.transporter.sendMail({
+                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                to: customerEmail,
+                subject: `⚠️ Pago Zelle No Conciliado — Orden #${orderIdShort} — Panadería Jhoanes`,
+                html,
+            });
+            this.logger.log(`Zelle rejection alert sent successfully to ${customerEmail} for order #${orderIdShort}`);
+            return true;
+        }
+        catch (err) {
+            this.logger.error(`Error sending Zelle rejection alert: ${err.message}`);
+            return false;
+        }
+    }
+    async sendFinancialReport(recipientEmails, reportDate, excelBuffer) {
+        try {
+            if (!recipientEmails || recipientEmails.length === 0) {
+                this.logger.warn('sendFinancialReport invoked without recipientEmails');
+                return false;
+            }
+            const validEmails = recipientEmails.map(e => e.trim()).filter(Boolean);
+            if (validEmails.length === 0)
+                return false;
+            if (!this.transporter) {
+                this.logger.warn('SMTP transporter is not initialized');
+                return false;
+            }
+            const filename = `REPORTE_FINANCIERO_${reportDate}.xlsx`;
+            const html = `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+          <div style="border-bottom: 2px solid #059669; padding-bottom: 16px; margin-bottom: 20px;">
+            <h2 style="color: #065f46; margin: 0; font-size: 20px;">Reporte Financiero Diario Consolidado</h2>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Corte de Operaciones al ${reportDate} (America/New_York)</p>
+          </div>
+          <p style="font-size: 14px; color: #334155; line-height: 1.6;">
+            Adjunto encontrará el informe financiero consolidado en formato Excel con el desglose multicanal de ventas (Stripe, Zelle, Cheques y Líneas de Crédito B2B) y conciliación fiscal de la jornada.
+          </p>
+          <div style="background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 12px; color: #64748b; margin: 20px 0;">
+            <p style="margin: 0;"><strong>Archivo Adjunto:</strong> ${filename}</p>
+            <p style="margin: 4px 0 0 0;">Generado automáticamente por el motor de conciliación de Panadería Jhoanes Wholesale.</p>
+          </div>
+        </div>
+      `;
+            await this.transporter.sendMail({
+                from: config_1.SMTP_USER ? `"Panadería Jhoanes Contabilidad" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes Contabilidad" <accounting@jhoanes.com>',
+                to: validEmails.join(', '),
+                subject: `📊 Reporte Financiero Diario — Jhoanes Wholesale — ${reportDate}`,
+                html,
+                attachments: [
+                    {
+                        filename,
+                        content: excelBuffer,
+                        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    },
+                ],
+            });
+            this.logger.log(`Financial report sent to ${validEmails.join(', ')} for date ${reportDate}`);
+            return true;
+        }
+        catch (err) {
+            this.logger.error(`Error sending financial report: ${err.message}`);
+            return false;
+        }
+    }
 };
 exports.MailService = MailService;
 exports.MailService = MailService = MailService_1 = __decorate([
