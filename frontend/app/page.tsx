@@ -12,7 +12,8 @@ import {
     ShoppingCart, Check, Plus, Minus, Info,
     ChevronLeft, ChevronRight,
     LogIn, UserPlus, Lock, User as UserIcon, Loader2, Eye, EyeOff, X,
-    Clock, Truck, Calendar, Store, Moon, ShieldCheck, CheckCircle2, Award, Building2
+    Clock, Truck, Calendar, Store, Moon, ShieldCheck, CheckCircle2, Award, Building2,
+    Package, FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { API_URL } from '@/lib/config';
@@ -486,24 +487,28 @@ export default function Home() {
 
     const defaultSlides = useMemo(() => [
         {
-            id: 'croissants',
-            badgeEn: 'Wholesale Bestseller',
-            badgeEs: 'Bestseller Mayorista',
-            tagEn: 'Artisanal French Viennoiserie',
-            tagEs: 'Bollería Francesa Artesanal',
-            titleEn: '100% European Butter Artisanal Croissants',
-            titleEs: 'Croissants Artesanales 100% Mantequilla Europea',
-            descEn: 'Traditional 72-layer European butter lamination baked fresh every night. Elevate your cafe display with authentic flaky golden texture and irresistible morning aroma.',
-            descEs: 'Laminado tradicional con 72 capas de masa madre y mantequilla europea. Horneados durante la madrugada para que despierten con aroma y frescura inigualable en tu vitrina.',
-            image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=1200',
+            id: 'mockup-table',
+            badgeEn: 'JHOANES WHOLESALE',
+            badgeEs: 'JHOANES MAYORISTA',
+            tagEn: 'ARTISANAL PASTRIES FOR YOUR BUSINESS',
+            tagEs: 'PASTELERÍA ARTESANAL PARA TU NEGOCIO',
+            titleEn: 'Premium European Pastries for Wholesale',
+            titleEs: 'Pastelería Europea Premium para Mayoristas',
+            descEn: 'Authentic, artisanal croissants and pastries, crafted with European butter and exceptional quality for cafés, restaurants, and distributors.',
+            descEs: 'Auténticos croissants y pasteles artesanales elaborados con mantequilla europea y calidad excepcional para cafeterías, restaurantes y distribuidores.',
+            image: '/images/banners/seasonal/seasonal_hero_flatlay_table.jpg',
             statsEn: 'Over 8,000 croissants delivered weekly to NYC top cafes',
             statsEs: 'Más de 8,000 croissants despachados semanalmente en NYC',
-            linkUrl: '#catalogo',
-            buttonTextEn: 'Browse Catalog',
-            buttonTextEs: 'Ver Productos',
+            linkUrl: '/auth/register',
+            buttonTextEn: 'BECOME A WHOLESALE PARTNER',
+            buttonTextEs: 'HAZTE CLIENTE MAYORISTA',
+            secondaryLinkUrl: '#catalogo',
+            secondaryButtonTextEn: 'BROWSE CATALOG',
+            secondaryButtonTextEs: 'VER CATÁLOGO',
+            hasText: true,
         },
         {
-            id: 'pastries',
+            id: 'pastries-assorted',
             badgeEn: 'High Margin & Table-Ready',
             badgeEs: 'Alta Rentabilidad y Presentación',
             tagEn: 'Gourmet Pastry & Desserts',
@@ -512,32 +517,19 @@ export default function Home() {
             titleEs: 'Postres Selectos y Tartas Individuales',
             descEn: 'Ready-to-serve individual portions crafted by master pastry chefs. Guaranteed commercial margins for high-end restaurants, boutique hotels, and specialty coffee shops.',
             descEs: 'Porciones individuales y postres premium listos para servicio en mesa. Eleva el ticket promedio de tu negocio con margen mayorista garantizado y sin mermas.',
-            image: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?q=80&w=1200',
+            image: '/images/banners/seasonal/seasonal_hero_pastries_assorted.jpg',
             statsEn: '30+ gourmet dessert references ready for daily order',
             statsEs: 'Más de 30 referencias gourmet listas para despacho diario',
             linkUrl: '#catalogo',
             buttonTextEn: 'Browse Catalog',
             buttonTextEs: 'Ver Productos',
+            secondaryLinkUrl: '',
+            secondaryButtonTextEn: '',
+            secondaryButtonTextEs: '',
+            hasText: true,
         },
         {
-            id: 'seasonal',
-            badgeEn: 'Bi-Monthly Innovation',
-            badgeEs: 'Innovación Bimensual',
-            tagEn: 'Seasonal Collections & Rustic Sourdough',
-            tagEs: 'Colecciones de Temporada y Panes Rústicos',
-            titleEn: 'Seasonal Specials, Fruit Brioches & Country Loaves',
-            titleEs: 'Especiales de Temporada y Panes de Masa Madre',
-            descEn: 'Delight returning patrons with rotational seasonal specials: fruit-glazed brioches, holiday viennoiserie, and 36-hour slow-fermented crusty rustic boules.',
-            descEs: 'Novedades bimensuales que fidelizan a tus comensales: brioches rellenos de frutas, bollería navideña y hogazas rústicas de 36 horas de fermentación.',
-            image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1200',
-            statsEn: 'Exclusive seasonal catalogue updated 6 times per year',
-            statsEs: 'Catálogo exclusivo de temporada renovado 6 veces al año',
-            linkUrl: '#catalogo',
-            buttonTextEn: 'Browse Catalog',
-            buttonTextEs: 'Ver Productos',
-        },
-        {
-            id: 'fleet',
+            id: 'catering-spread',
             badgeEn: 'Early 4:00 AM - 1:00 PM Delivery',
             badgeEs: 'Despacho 4:00 AM - 1:00 PM',
             tagEn: 'NYC Direct Fleet Distribution',
@@ -546,37 +538,76 @@ export default function Home() {
             titleEs: 'Camioneta de Distribución Directa en Madrugada',
             descEn: 'Dedicated temperature-controlled vans departing from our Astoria bakery. Silent entry with access codes/keys so your fresh order is inside before opening.',
             descEs: 'Flota refrigerada propia saliendo desde Astoria, Queens. Acceso silencioso con código o llave y depósito en tus neveras antes de que subas la santamaría.',
-            image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1200',
+            image: '/images/banners/seasonal/seasonal_hero_catering_spread.jpg',
             statsEn: 'Covering Manhattan, Queens, Brooklyn & Bronx daily',
             statsEs: 'Rutas activas en Manhattan, Queens, Brooklyn y Bronx',
+            linkUrl: '/auth/register',
+            buttonTextEn: 'Sign Up Wholesale',
+            buttonTextEs: 'Registro Mayorista',
+            secondaryLinkUrl: '#catalogo',
+            secondaryButtonTextEn: 'Browse Catalog',
+            secondaryButtonTextEs: 'Ver Productos',
+            hasText: true,
+        },
+        {
+            id: 'croissants-golden',
+            badgeEn: 'Wholesale Bestseller',
+            badgeEs: 'Bestseller Mayorista',
+            tagEn: 'Artisanal French Viennoiserie',
+            tagEs: 'Bollería Francesa Artesanal',
+            titleEn: '100% European Butter Artisanal Croissants',
+            titleEs: 'Croissants Artesanales 100% Mantequilla Europea',
+            descEn: 'Traditional 72-layer European butter lamination baked fresh every night. Elevate your cafe display with authentic flaky golden texture and irresistible morning aroma.',
+            descEs: 'Laminado tradicional con 72 capas de masa madre y mantequilla europea. Horneados durante la madrugada para que despierten con aroma y frescura inigualable en tu vitrina.',
+            image: '/images/banners/seasonal/seasonal_croissants_butter_golden.jpg',
+            statsEn: 'Over 8,000 croissants delivered weekly to NYC top cafes',
+            statsEs: 'Más de 8,000 croissants despachados semanalmente en NYC',
             linkUrl: '#catalogo',
             buttonTextEn: 'Browse Catalog',
             buttonTextEs: 'Ver Productos',
+            secondaryLinkUrl: '',
+            secondaryButtonTextEn: '',
+            secondaryButtonTextEs: '',
+            hasText: true,
         },
     ], []);
 
     const heroSlides = useMemo(() => {
         if (dbBanners.length > 0) {
             return dbBanners.map(b => {
-                const img = b.image_url?.startsWith('http') || b.image_url?.startsWith('blob:')
-                    ? b.image_url
-                    : `${API_URL}${b.image_url}`;
+                let img = b.image_url;
+                if (img) {
+                    if (!img.startsWith('http') && !img.startsWith('blob:') && !img.startsWith('/images/')) {
+                        img = `${API_URL}${img}`;
+                    }
+                } else {
+                    img = '/images/banners/seasonal/seasonal_hero_flatlay_table.jpg';
+                }
+
+                const hasTitle = Boolean((b.title && b.title !== 'Banner' && b.title.trim()) || b.title_en?.trim());
+                const hasDesc = Boolean((b.subtitle && b.subtitle.trim()) || b.subtitle_en?.trim());
+                const hasText = hasTitle || hasDesc;
+
                 return {
                     id: `db-banner-${b.id}`,
-                    badgeEn: b.badge_en || b.badge || 'Seasonal Special',
-                    badgeEs: b.badge || b.badge_en || 'Especial de Temporada',
-                    tagEn: b.tag_en || b.tag || 'Jhoanes Bakery Wholesale',
-                    tagEs: b.tag || b.tag_en || 'Jhoanes Bakery Mayorista',
-                    titleEn: b.title_en || b.title,
-                    titleEs: b.title || b.title_en,
-                    descEn: b.subtitle_en || b.subtitle || 'Fresh artisanal bakery & viennoiserie delivered daily across NYC.',
-                    descEs: b.subtitle || b.subtitle_en || 'Bollería y pastelería artesanal horneada cada madrugada para tu vitrina.',
+                    badgeEn: b.badge_en || b.badge || '',
+                    badgeEs: b.badge || b.badge_en || '',
+                    tagEn: b.tag_en || b.tag || '',
+                    tagEs: b.tag || b.tag_en || '',
+                    titleEn: b.title_en || (b.title !== 'Banner' ? b.title : ''),
+                    titleEs: b.title !== 'Banner' ? b.title : (b.title_en || ''),
+                    descEn: b.subtitle_en || b.subtitle || '',
+                    descEs: b.subtitle || b.subtitle_en || '',
                     image: img,
-                    statsEn: 'Order fresh wholesale daily before 12:00 PM cutoff',
+                    statsEn: 'NYC Direct Wholesale Fleet — Delivery 4:00 AM - 1:00 PM',
                     statsEs: 'Despachos diarios en NYC — Realiza tu pedido antes de las 12 PM',
-                    linkUrl: b.link_url || '#catalogo',
-                    buttonTextEn: b.button_text_en || 'Browse Catalog',
-                    buttonTextEs: b.button_text || 'Ver Productos',
+                    linkUrl: b.link_url || '',
+                    buttonTextEn: b.button_text_en || b.button_text || '',
+                    buttonTextEs: b.button_text || b.button_text_en || '',
+                    secondaryLinkUrl: b.secondary_link_url || '',
+                    secondaryButtonTextEn: b.secondary_button_text_en || b.secondary_button_text || '',
+                    secondaryButtonTextEs: b.secondary_button_text || b.secondary_button_text_en || '',
+                    hasText,
                 };
             });
         }
@@ -779,75 +810,108 @@ export default function Home() {
                                 >
                                     {/* Background Image with Gradient Overlay */}
                                     <div 
-                                        className="absolute inset-0 bg-cover bg-center scale-105 transition-transform duration-[8000ms] ease-out"
+                                        className="absolute inset-0 bg-cover bg-right sm:bg-center scale-105 transition-transform duration-[8000ms] ease-out"
                                         style={{ 
                                             backgroundImage: `url(${slide.image})`,
                                             transform: isActive ? 'scale(1.05)' : 'scale(1.0)'
                                         }}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/30" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                                    {slide.hasText ? (
+                                        <>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/85 to-transparent" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                                        </>
+                                    ) : (
+                                        <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+                                    )}
 
-                                    {/* Content inside slide */}
-                                    <div className="relative z-20 max-w-2xl px-8 sm:px-14 py-12 flex flex-col justify-center">
-                                        {/* Institutional Header tag */}
-                                        <div className="flex flex-wrap items-center gap-2 mb-4">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-amber-300 text-[10px] font-black uppercase tracking-widest border border-white/10">
-                                                <Sparkles size={11} />
-                                                {locale === 'en' ? slide.tagEn : slide.tagEs}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/80 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-wider shadow-sm">
-                                                {locale === 'en' ? slide.badgeEn : slide.badgeEs}
-                                            </span>
+                                    {/* Content inside slide — only rendered if slide has text/content */}
+                                    {slide.hasText && (
+                                        <div className="relative z-20 max-w-2xl px-8 sm:px-14 py-12 flex flex-col justify-center">
+                                            {/* Institutional Header tag */}
+                                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                                                {(slide.badgeEn || slide.badgeEs) && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-amber-300 text-[11px] font-black uppercase tracking-wider border border-amber-400/50 shadow-sm">
+                                                        <Package size={12} className="text-amber-400" />
+                                                        {locale === 'en' ? slide.badgeEn : slide.badgeEs}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Institutional Tagline */}
+                                            {(slide.tagEn || slide.tagEs) && (
+                                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-white/70 mb-2">
+                                                    {locale === 'en' ? slide.tagEn : slide.tagEs}
+                                                </p>
+                                            )}
+
+                                            {/* Main Slide Title */}
+                                            <h1 className="text-3xl sm:text-5xl font-black font-sans text-white tracking-tight mb-4 leading-[1.12]">
+                                                {locale === 'en' ? slide.titleEn : slide.titleEs}
+                                            </h1>
+
+                                            {/* Description */}
+                                            {(slide.descEn || slide.descEs) && (
+                                                <p className="text-sm sm:text-base text-white/80 font-normal leading-relaxed mb-6 max-w-xl">
+                                                    {locale === 'en' ? slide.descEn : slide.descEs}
+                                                </p>
+                                            )}
+
+                                            {/* Action buttons (Modular 0, 1 or 2 buttons) */}
+                                            <div className="flex flex-wrap items-center gap-3 mb-6">
+                                                {/* Primary Button (Amber/Gold pill) */}
+                                                {(slide.buttonTextEn || slide.buttonTextEs) && (
+                                                    <a 
+                                                        href={slide.linkUrl || '#catalogo'} 
+                                                        className="px-6 py-3.5 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black uppercase tracking-wider shadow-xl transition-all flex items-center gap-2 group/btn"
+                                                    >
+                                                        <Package size={14} className="shrink-0" />
+                                                        <span>{locale === 'en' ? (slide.buttonTextEn || 'Browse Catalog') : (slide.buttonTextEs || 'Ver Productos')}</span>
+                                                        <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                                                    </a>
+                                                )}
+
+                                                {/* Secondary Button (Outline glass pill) */}
+                                                {(slide.secondaryButtonTextEn || slide.secondaryButtonTextEs) && (
+                                                    <a 
+                                                        href={slide.secondaryLinkUrl || '#catalogo'} 
+                                                        className="px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2"
+                                                    >
+                                                        <FileText size={14} className="shrink-0" />
+                                                        <span>{locale === 'en' ? slide.secondaryButtonTextEn : slide.secondaryButtonTextEs}</span>
+                                                    </a>
+                                                )}
+
+                                                {/* Quick Schedule Modal Button if secondary is not present */}
+                                                {(!slide.secondaryButtonTextEn && !slide.secondaryButtonTextEs) && (
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setShowScheduleModal(true)}
+                                                        className="px-5 py-3.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
+                                                    >
+                                                        <Clock size={13} />
+                                                        <span>{locale === 'en' ? 'Baking Schedule' : 'Horarios'}</span>
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Trust markers / micro-features at bottom of slide */}
+                                            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4 border-t border-white/15 text-xs text-white/80 font-medium">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Sparkles size={14} className="text-amber-400" />
+                                                    <span>{locale === 'en' ? 'Artisanal Quality' : 'Calidad Artesanal'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <ShieldCheck size={14} className="text-amber-400" />
+                                                    <span>{locale === 'en' ? 'Reliable Supply' : 'Suministro Confiable'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Truck size={14} className="text-amber-400" />
+                                                    <span>{locale === 'en' ? 'Daily / Weekly Delivery' : 'Despacho Diario / Semanal'}</span>
+                                                </div>
+                                            </div>
                                         </div>
-
-                                        {/* Institutional Title */}
-                                        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/60 mb-2">
-                                            Jhoanes Bakery Wholesale — Fresh Daily B2B Distribution
-                                        </p>
-
-                                        {/* Main Slide Title */}
-                                        <h1 className="text-3xl sm:text-5xl font-black font-serif text-white tracking-tight mb-4 leading-[1.15]">
-                                            {locale === 'en' ? slide.titleEn : slide.titleEs}
-                                        </h1>
-
-                                        {/* Description */}
-                                        <p className="text-sm sm:text-base text-white/80 font-medium leading-relaxed mb-6 max-w-xl">
-                                            {locale === 'en' ? slide.descEn : slide.descEs}
-                                        </p>
-
-                                        {/* Stats badge */}
-                                        <div className="inline-flex items-center gap-2 mb-8 text-xs font-bold text-amber-200/90 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 w-fit">
-                                            <Award size={14} className="text-amber-400 shrink-0" />
-                                            <span>{locale === 'en' ? slide.statsEn : slide.statsEs}</span>
-                                        </div>
-
-                                        {/* Action buttons */}
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <a 
-                                                href={slide.linkUrl || '#catalogo'} 
-                                                className="px-7 py-3.5 rounded-full bg-primary text-white text-xs font-black uppercase tracking-widest shadow-xl hover:bg-white hover:text-foreground transition-all flex items-center gap-2 group/btn"
-                                            >
-                                                <span>{locale === 'en' ? (slide.buttonTextEn || 'Browse Catalog') : (slide.buttonTextEs || 'Ver Productos')}</span>
-                                                <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
-                                            </a>
-                                            <button 
-                                                type="button"
-                                                onClick={() => setShowScheduleModal(true)}
-                                                className="px-6 py-3.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all flex items-center gap-2"
-                                            >
-                                                <Clock size={14} />
-                                                <span>{locale === 'en' ? 'Baking Schedule' : 'Horarios de Horneado'}</span>
-                                            </button>
-                                            <Link 
-                                                href="/auth/register"
-                                                className="px-6 py-3.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-widest hover:bg-amber-400 hover:text-black transition-all flex items-center gap-2"
-                                            >
-                                                <UserPlus size={14} />
-                                                <span>{locale === 'en' ? 'Sign Up Wholesale' : 'Registro Mayorista'}</span>
-                                            </Link>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             );
                         })}

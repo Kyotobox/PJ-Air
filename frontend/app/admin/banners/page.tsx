@@ -25,10 +25,23 @@ export interface BannerItem {
     link_url?: string;
     button_text?: string;
     button_text_en?: string;
+    secondary_button_text?: string;
+    secondary_button_text_en?: string;
+    secondary_link_url?: string;
     display_order: number;
     is_active: boolean;
     created_at?: string;
     updated_at?: string;
+}
+
+export interface GalleryItem {
+    id: string;
+    name: string;
+    filename: string;
+    url: string;
+    fallback_url: string;
+    orientation: 'landscape' | 'portrait' | 'square';
+    category: string;
 }
 
 export default function AdminBannersPage() {
@@ -48,6 +61,24 @@ export default function AdminBannersPage() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [togglingId, setTogglingId] = useState<number | null>(null);
 
+    // Gallery state
+    const [gallery, setGallery] = useState<GalleryItem[]>([]);
+    const [isLoadingGallery, setIsLoadingGallery] = useState(false);
+    const [mediaTab, setMediaTab] = useState<'gallery' | 'upload'>('gallery');
+
+    // Predefined destinations
+    const DESTINATIONS = [
+        { label: isEn ? '— Select predefined destination —' : '— Seleccionar destino predefinido —', value: '' },
+        { label: isEn ? 'Full Product Catalog (#catalogo)' : 'Catálogo Completo (#catalogo)', value: '#catalogo' },
+        { label: isEn ? 'Category: Croissants & Viennoiserie' : 'Categoría: Croissants & Bollería', value: '#catalogo?category=croissants' },
+        { label: isEn ? 'Category: Gourmet Pastry & Desserts' : 'Categoría: Pastelería & Postres', value: '#catalogo?category=pastries' },
+        { label: isEn ? 'Category: Artisan Sourdough Bread' : 'Categoría: Panes de Masa Madre', value: '#catalogo?category=breads' },
+        { label: isEn ? 'Wholesale Partner Registration (/auth/register)' : 'Registro Mayorista B2B (/auth/register)', value: '/auth/register' },
+        { label: isEn ? 'Baking & Delivery Schedule (Modal)' : 'Horarios de Horneado & Rutas (Modal)', value: 'modal:schedule' },
+        { label: isEn ? 'Credit Portal / Profile (/profile)' : 'Portal de Crédito / Mi Perfil (/profile)', value: '/profile' },
+        { label: isEn ? 'Direct Wholesale WhatsApp' : 'WhatsApp Comercial Directo', value: 'https://wa.me/19173995805' },
+    ];
+
     // Form state
     const [formData, setFormData] = useState({
         title: '',
@@ -62,6 +93,9 @@ export default function AdminBannersPage() {
         link_url: '#catalogo',
         button_text: 'Ver Productos',
         button_text_en: 'Browse Catalog',
+        secondary_button_text: '',
+        secondary_button_text_en: '',
+        secondary_link_url: '',
         display_order: 0,
         is_active: true,
     });
@@ -80,8 +114,38 @@ export default function AdminBannersPage() {
         }
     };
 
+    const fetchGallery = async () => {
+        setIsLoadingGallery(true);
+        try {
+            const data = await api.get('/banners/gallery') as GalleryItem[];
+            if (Array.isArray(data) && data.length > 0) {
+                setGallery(data);
+            } else {
+                setGallery(getStaticGalleryFallback());
+            }
+        } catch {
+            setGallery(getStaticGalleryFallback());
+        } finally {
+            setIsLoadingGallery(false);
+        }
+    };
+
+    const getStaticGalleryFallback = (): GalleryItem[] => [
+        { id: 'seasonal_hero_flatlay_table', name: 'Mesa Completa de Bollería & Postres (Mockup Oficial)', filename: 'seasonal_hero_flatlay_table.jpg', url: '/uploads/banners/seasonal/seasonal_hero_flatlay_table.jpg', fallback_url: '/images/banners/seasonal/seasonal_hero_flatlay_table.jpg', orientation: 'landscape', category: 'hero' },
+        { id: 'seasonal_hero_pastries_assorted', name: 'Selección de Tartas Finas y Postres', filename: 'seasonal_hero_pastries_assorted.jpg', url: '/uploads/banners/seasonal/seasonal_hero_pastries_assorted.jpg', fallback_url: '/images/banners/seasonal/seasonal_hero_pastries_assorted.jpg', orientation: 'landscape', category: 'hero' },
+        { id: 'seasonal_hero_catering_spread', name: 'Banquete de Despacho Mayorista', filename: 'seasonal_hero_catering_spread.jpg', url: '/uploads/banners/seasonal/seasonal_hero_catering_spread.jpg', fallback_url: '/images/banners/seasonal/seasonal_hero_catering_spread.jpg', orientation: 'landscape', category: 'hero' },
+        { id: 'seasonal_croissants_butter_golden', name: 'Croissants de Mantequilla Dorada', filename: 'seasonal_croissants_butter_golden.jpg', url: '/uploads/banners/seasonal/seasonal_croissants_butter_golden.jpg', fallback_url: '/images/banners/seasonal/seasonal_croissants_butter_golden.jpg', orientation: 'square', category: 'viennoiserie' },
+        { id: 'seasonal_danish_berries_cream', name: 'Hojaldre Danés de Frutos del Bosque', filename: 'seasonal_danish_berries_cream.jpg', url: '/uploads/banners/seasonal/seasonal_danish_berries_cream.jpg', fallback_url: '/images/banners/seasonal/seasonal_danish_berries_cream.jpg', orientation: 'square', category: 'pastry' },
+        { id: 'seasonal_brioche_fruit_tart', name: 'Brioche de Frutas & Tartaleta Especial', filename: 'seasonal_brioche_fruit_tart.jpg', url: '/uploads/banners/seasonal/seasonal_brioche_fruit_tart.jpg', fallback_url: '/images/banners/seasonal/seasonal_brioche_fruit_tart.jpg', orientation: 'square', category: 'pastry' },
+        { id: 'seasonal_pastry_showcase_01', name: 'Vitrina de Pastelería 01 (Móvil)', filename: 'seasonal_pastry_showcase_01.jpg', url: '/uploads/banners/seasonal/seasonal_pastry_showcase_01.jpg', fallback_url: '/images/banners/seasonal/seasonal_pastry_showcase_01.jpg', orientation: 'portrait', category: 'showcase' },
+        { id: 'seasonal_pastry_showcase_02', name: 'Vitrina de Pastelería 02 (Móvil)', filename: 'seasonal_pastry_showcase_02.jpg', url: '/uploads/banners/seasonal/seasonal_pastry_showcase_02.jpg', fallback_url: '/images/banners/seasonal/seasonal_pastry_showcase_02.jpg', orientation: 'portrait', category: 'showcase' },
+        { id: 'seasonal_pastry_showcase_03', name: 'Vitrina de Pastelería 03 (Móvil)', filename: 'seasonal_pastry_showcase_03.jpg', url: '/uploads/banners/seasonal/seasonal_pastry_showcase_03.jpg', fallback_url: '/images/banners/seasonal/seasonal_pastry_showcase_03.jpg', orientation: 'portrait', category: 'showcase' },
+        { id: 'seasonal_artisan_loaf_rustic', name: 'Pan Rústico de Masa Madre', filename: 'seasonal_artisan_loaf_rustic.jpg', url: '/uploads/banners/seasonal/seasonal_artisan_loaf_rustic.jpg', fallback_url: '/images/banners/seasonal/seasonal_artisan_loaf_rustic.jpg', orientation: 'portrait', category: 'bread' },
+    ];
+
     useEffect(() => {
         fetchBanners();
+        fetchGallery();
     }, []);
 
     const openCreateModal = () => {
@@ -95,13 +159,17 @@ export default function AdminBannersPage() {
             badge_en: '',
             tag: '',
             tag_en: '',
-            image_url: '',
+            image_url: gallery[0]?.url || '',
             link_url: '#catalogo',
             button_text: 'Ver Productos',
             button_text_en: 'Browse Catalog',
+            secondary_button_text: '',
+            secondary_button_text_en: '',
+            secondary_link_url: '',
             display_order: banners.length,
             is_active: true,
         });
+        setMediaTab('gallery');
         setIsModalOpen(true);
     };
 
@@ -118,11 +186,15 @@ export default function AdminBannersPage() {
             tag_en: banner.tag_en || '',
             image_url: banner.image_url || '',
             link_url: banner.link_url || '#catalogo',
-            button_text: banner.button_text || 'Ver Productos',
-            button_text_en: banner.button_text_en || 'Browse Catalog',
+            button_text: banner.button_text || '',
+            button_text_en: banner.button_text_en || '',
+            secondary_button_text: banner.secondary_button_text || '',
+            secondary_button_text_en: banner.secondary_button_text_en || '',
+            secondary_link_url: banner.secondary_link_url || '',
             display_order: banner.display_order ?? 0,
             is_active: banner.is_active ?? true,
         });
+        setMediaTab(banner.image_url?.includes('/seasonal/') ? 'gallery' : 'upload');
         setIsModalOpen(true);
     };
 
@@ -148,24 +220,25 @@ export default function AdminBannersPage() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.title.trim()) {
-            setError(isEn ? 'Title is required' : 'El título es obligatorio');
-            return;
-        }
         if (!formData.image_url.trim()) {
-            setError(isEn ? 'Image is required' : 'La imagen o URL es obligatoria');
+            setError(isEn ? 'Image or seasonal gallery selection is required' : 'La imagen o selección de galería es obligatoria');
             return;
         }
 
         setIsSaving(true);
         setError('');
         try {
+            const payload = {
+                ...formData,
+                title: formData.title.trim() || 'Banner',
+            };
+
             if (editingBanner) {
-                const updated = await api.patch(`/banners/${editingBanner.id}`, formData) as BannerItem;
+                const updated = await api.patch(`/banners/${editingBanner.id}`, payload) as BannerItem;
                 setBanners(prev => prev.map(b => b.id === updated.id ? updated : b));
                 setSuccessMessage(isEn ? 'Banner updated successfully' : 'Banner actualizado con éxito');
             } else {
-                const created = await api.post('/banners', formData) as BannerItem;
+                const created = await api.post('/banners', payload) as BannerItem;
                 setBanners(prev => [...prev, created].sort((a, b) => a.display_order - b.display_order));
                 setSuccessMessage(isEn ? 'Banner created successfully' : 'Banner creado con éxito');
             }
@@ -209,7 +282,7 @@ export default function AdminBannersPage() {
 
     const getImageSrc = (url: string) => {
         if (!url) return '';
-        if (url.startsWith('http') || url.startsWith('blob:')) return url;
+        if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('/images/')) return url;
         return `${API_URL}${url}`;
     };
 
@@ -464,70 +537,157 @@ export default function AdminBannersPage() {
 
                             {/* Modal Form */}
                             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-4">
-                                {/* Image upload / URL */}
-                                <div>
-                                    <label className="block text-xs font-bold text-foreground mb-1.5 uppercase tracking-wider">
-                                        {isEn ? 'Banner Image (Upload or URL) *' : 'Imagen del Banner (Subir o URL) *'}
-                                    </label>
+                                {/* Media Selector: Galería de Temporada vs Subida */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+                                            {isEn ? 'Banner Image *' : 'Imagen del Banner *'}
+                                        </label>
+                                        <div className="inline-flex rounded-xl p-1 bg-muted/60 border border-border text-xs font-semibold">
+                                            <button
+                                                type="button"
+                                                onClick={() => setMediaTab('gallery')}
+                                                className={`px-3 py-1 rounded-lg transition-all ${
+                                                    mediaTab === 'gallery'
+                                                        ? 'bg-card text-foreground shadow-sm font-bold'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                            >
+                                                {isEn ? 'Seasonal Gallery' : 'Galería de Temporada'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setMediaTab('upload')}
+                                                className={`px-3 py-1 rounded-lg transition-all ${
+                                                    mediaTab === 'upload'
+                                                        ? 'bg-card text-foreground shadow-sm font-bold'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                            >
+                                                {isEn ? 'Upload / Custom URL' : 'Subida / URL Externa'}
+                                            </button>
+                                        </div>
+                                    </div>
 
                                     {/* Preview container */}
                                     {formData.image_url && (
-                                        <div className="mb-3 relative h-40 w-full rounded-2xl overflow-hidden bg-slate-900 border border-border">
+                                        <div className="relative h-44 w-full rounded-2xl overflow-hidden bg-slate-900 border border-amber-400/30 shadow-md">
                                             <img
                                                 src={getImageSrc(formData.image_url)}
                                                 alt="Preview"
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-cover object-right sm:object-center"
                                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                             />
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
-                                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 text-white hover:bg-black"
-                                            >
-                                                <X size={14} />
-                                            </button>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
+                                            <div className="absolute top-2 left-3 right-3 flex items-center justify-between text-white text-[11px] font-bold">
+                                                <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20">
+                                                    {formData.image_url.includes('/seasonal/') ? (isEn ? 'Seasonal Image' : 'Foto de Temporada') : 'Custom Image'}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                                                    className="p-1 rounded-lg bg-black/70 text-white hover:bg-red-500 transition-colors pointer-events-auto"
+                                                    title={isEn ? 'Remove image' : 'Quitar imagen'}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
 
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            required
-                                            value={formData.image_url}
-                                            onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                                            placeholder="/uploads/banners/... or https://..."
-                                            className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
-                                        />
-                                        <label className="px-4 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 transition-colors border border-border">
-                                            {uploadingImage ? (
-                                                <Loader2 size={14} className="animate-spin" />
-                                            ) : (
-                                                <Upload size={14} />
-                                            )}
-                                            <span>{isEn ? 'Upload' : 'Subir'}</span>
+                                    {/* Tab 1: Galería de Temporada */}
+                                    {mediaTab === 'gallery' ? (
+                                        <div className="p-3 bg-muted/30 rounded-2xl border border-border">
+                                            <p className="text-[11px] text-muted-foreground mb-3 font-medium">
+                                                {isEn
+                                                    ? 'Click on any seasonal photo to apply it to the hero banner:'
+                                                    : 'Haz clic en cualquier foto de temporada del cliente para seleccionarla:'}
+                                            </p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                                                {gallery.map(item => {
+                                                    const isSelected = formData.image_url === item.url || formData.image_url === item.fallback_url;
+                                                    return (
+                                                        <button
+                                                            key={item.id}
+                                                            type="button"
+                                                            onClick={() => setFormData(prev => ({ ...prev, image_url: item.url }))}
+                                                            className={`relative rounded-xl overflow-hidden border text-left transition-all group ${
+                                                                isSelected
+                                                                    ? 'ring-2 ring-amber-400 border-amber-400 shadow-md scale-[1.02]'
+                                                                    : 'border-border/70 hover:border-amber-400/50 hover:scale-[1.01]'
+                                                            }`}
+                                                        >
+                                                            <div className="h-20 w-full bg-slate-900 overflow-hidden relative">
+                                                                <img
+                                                                    src={getImageSrc(item.url)}
+                                                                    alt={item.name}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                                    onError={(e) => {
+                                                                        const img = e.target as HTMLImageElement;
+                                                                        if (item.fallback_url && img.src !== item.fallback_url) {
+                                                                            img.src = item.fallback_url;
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                {isSelected && (
+                                                                    <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-md">
+                                                                        <Check size={12} strokeWidth={3} />
+                                                                    </div>
+                                                                )}
+                                                                <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-black/70 text-white backdrop-blur-sm">
+                                                                    {item.orientation === 'landscape' ? '3:2' : item.orientation === 'square' ? '1:1' : '9:16'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-1.5 bg-card">
+                                                                <p className="text-[10px] font-bold text-foreground line-clamp-1 leading-tight">
+                                                                    {item.name}
+                                                                </p>
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* Tab 2: Upload local / External URL */
+                                        <div className="flex gap-2">
                                             <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleFileUpload}
-                                                className="hidden"
-                                                disabled={uploadingImage}
+                                                type="text"
+                                                value={formData.image_url}
+                                                onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                                                placeholder="/uploads/banners/... or https://..."
+                                                className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                             />
-                                        </label>
-                                    </div>
+                                            <label className="px-4 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 transition-colors border border-border">
+                                                {uploadingImage ? (
+                                                    <Loader2 size={14} className="animate-spin" />
+                                                ) : (
+                                                    <Upload size={14} />
+                                                )}
+                                                <span>{isEn ? 'Upload' : 'Subir'}</span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileUpload}
+                                                    className="hidden"
+                                                    disabled={uploadingImage}
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Titles (ES & EN) */}
+                                {/* Titles (ES & EN) — Opcional para Banner Puro */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Main Title (ES) *' : 'Título Principal (ES) *'}
+                                            {isEn ? 'Main Title (ES) — Optional for photo-only' : 'Título Principal (ES) — Opcional para solo foto'}
                                         </label>
                                         <input
                                             type="text"
-                                            required
                                             value={formData.title}
                                             onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                            placeholder="ej. Especial de Navidad"
+                                            placeholder="ej. Especial de Temporada (deja vacío para banner limpio)"
                                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                         />
                                     </div>
@@ -539,7 +699,7 @@ export default function AdminBannersPage() {
                                             type="text"
                                             value={formData.title_en}
                                             onChange={e => setFormData(prev => ({ ...prev, title_en: e.target.value }))}
-                                            placeholder="e.g. Christmas Special"
+                                            placeholder="e.g. Seasonal Pastries Special"
                                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                         />
                                     </div>
@@ -549,25 +709,25 @@ export default function AdminBannersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Occasion Badge (ES)' : 'Badge de Ocasión (ES)'}
+                                            {isEn ? 'Badge Pill (ES)' : 'Badge Superior Píldora (ES)'}
                                         </label>
                                         <input
                                             type="text"
                                             value={formData.badge}
                                             onChange={e => setFormData(prev => ({ ...prev, badge: e.target.value }))}
-                                            placeholder="ej. Temporada, Bestseller"
+                                            placeholder="ej. JHOANES MAYORISTA"
                                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Occasion Badge (EN)' : 'Badge de Ocasión (EN)'}
+                                            {isEn ? 'Badge Pill (EN)' : 'Badge Superior Píldora (EN)'}
                                         </label>
                                         <input
                                             type="text"
                                             value={formData.badge_en}
                                             onChange={e => setFormData(prev => ({ ...prev, badge_en: e.target.value }))}
-                                            placeholder="e.g. Seasonal, Bestseller"
+                                            placeholder="e.g. JHOANES WHOLESALE"
                                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                         />
                                     </div>
@@ -576,25 +736,25 @@ export default function AdminBannersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Subheading / Tagline (ES)' : 'Cintillo / Tagline (ES)'}
+                                            {isEn ? 'Tagline / Subheading (ES)' : 'Cintillo / Tagline (ES)'}
                                         </label>
                                         <input
                                             type="text"
                                             value={formData.tag}
                                             onChange={e => setFormData(prev => ({ ...prev, tag: e.target.value }))}
-                                            placeholder="ej. Bollería Francesa Artesanal"
+                                            placeholder="ej. PASTELERÍA ARTESANAL PARA TU NEGOCIO"
                                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Subheading / Tagline (EN)' : 'Cintillo / Tagline (EN)'}
+                                            {isEn ? 'Tagline / Subheading (EN)' : 'Cintillo / Tagline (EN)'}
                                         </label>
                                         <input
                                             type="text"
                                             value={formData.tag_en}
                                             onChange={e => setFormData(prev => ({ ...prev, tag_en: e.target.value }))}
-                                            placeholder="e.g. Artisanal French Pastry"
+                                            placeholder="e.g. ARTISANAL PASTRIES FOR YOUR BUSINESS"
                                             className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                         />
                                     </div>
@@ -628,42 +788,130 @@ export default function AdminBannersPage() {
                                     </div>
                                 </div>
 
-                                {/* Link & Button Text */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {/* ── BOTÓN PRIMARIO (DORADO / AMBAR) ── */}
+                                <div className="p-4 bg-muted/20 rounded-2xl border border-border space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-black uppercase tracking-wider text-amber-500">
+                                            {isEn ? 'Primary Button (Gold Pill) — Optional' : 'Botón Primario (Píldora Dorada) — Opcional'}
+                                        </span>
+                                        <span className="text-[11px] text-muted-foreground">
+                                            {isEn ? 'Leave empty to hide' : 'Dejar vacío para ocultar'}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-muted-foreground mb-1">
+                                                {isEn ? 'Predefined Destination' : 'Destino Rápido'}
+                                            </label>
+                                            <select
+                                                value={formData.link_url}
+                                                onChange={e => setFormData(prev => ({ ...prev, link_url: e.target.value }))}
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-card text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            >
+                                                {DESTINATIONS.map(d => (
+                                                    <option key={d.value} value={d.value}>{d.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-muted-foreground mb-1">
+                                                {isEn ? 'Button Label (ES)' : 'Texto del Botón (ES)'}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.button_text}
+                                                onChange={e => setFormData(prev => ({ ...prev, button_text: e.target.value }))}
+                                                placeholder="ej. Hazte Cliente Mayorista"
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-muted-foreground mb-1">
+                                                {isEn ? 'Button Label (EN)' : 'Texto del Botón (EN)'}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.button_text_en}
+                                                onChange={e => setFormData(prev => ({ ...prev, button_text_en: e.target.value }))}
+                                                placeholder="e.g. Become a Wholesale Partner"
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            />
+                                        </div>
+                                    </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Target Link URL' : 'Enlace de Destino (URL)'}
+                                        <label className="block text-[10px] font-medium text-muted-foreground mb-1">
+                                            {isEn ? 'Or Custom Link / URL' : 'O enlace / URL personalizada'}
                                         </label>
                                         <input
                                             type="text"
                                             value={formData.link_url}
                                             onChange={e => setFormData(prev => ({ ...prev, link_url: e.target.value }))}
-                                            placeholder="#catalogo or /catalog/category/panes"
-                                            className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            placeholder="#catalogo or /auth/register or https://..."
+                                            className="w-full px-3 py-1.5 rounded-lg border border-border bg-muted/20 text-xs font-mono outline-none"
                                         />
                                     </div>
+                                </div>
+
+                                {/* ── BOTÓN SECUNDARIO (OUTLINE TRANSLÚCIDO) ── */}
+                                <div className="p-4 bg-muted/20 rounded-2xl border border-border space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                            {isEn ? 'Secondary Button (Outline Pill) — Optional' : 'Botón Secundario (Píldora Outline) — Opcional'}
+                                        </span>
+                                        <span className="text-[11px] text-muted-foreground">
+                                            {isEn ? 'Leave empty to hide' : 'Dejar vacío para ocultar'}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-muted-foreground mb-1">
+                                                {isEn ? 'Predefined Destination' : 'Destino Rápido'}
+                                            </label>
+                                            <select
+                                                value={formData.secondary_link_url}
+                                                onChange={e => setFormData(prev => ({ ...prev, secondary_link_url: e.target.value }))}
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-card text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            >
+                                                {DESTINATIONS.map(d => (
+                                                    <option key={d.value} value={d.value}>{d.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-muted-foreground mb-1">
+                                                {isEn ? 'Button Label (ES)' : 'Texto del Botón (ES)'}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.secondary_button_text}
+                                                onChange={e => setFormData(prev => ({ ...prev, secondary_button_text: e.target.value }))}
+                                                placeholder="ej. Ver Catálogo"
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-muted-foreground mb-1">
+                                                {isEn ? 'Button Label (EN)' : 'Texto del Botón (EN)'}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.secondary_button_text_en}
+                                                onChange={e => setFormData(prev => ({ ...prev, secondary_button_text_en: e.target.value }))}
+                                                placeholder="e.g. Browse Catalog"
+                                                className="w-full px-3 py-2 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            />
+                                        </div>
+                                    </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Button Text (ES)' : 'Texto de Botón (ES)'}
+                                        <label className="block text-[10px] font-medium text-muted-foreground mb-1">
+                                            {isEn ? 'Or Custom Link / URL' : 'O enlace / URL personalizada'}
                                         </label>
                                         <input
                                             type="text"
-                                            value={formData.button_text}
-                                            onChange={e => setFormData(prev => ({ ...prev, button_text: e.target.value }))}
-                                            placeholder="Ver Productos"
-                                            className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-foreground mb-1.5">
-                                            {isEn ? 'Button Text (EN)' : 'Texto de Botón (EN)'}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.button_text_en}
-                                            onChange={e => setFormData(prev => ({ ...prev, button_text_en: e.target.value }))}
-                                            placeholder="Browse Catalog"
-                                            className="w-full px-4 py-2.5 rounded-xl border border-border bg-muted/40 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                                            value={formData.secondary_link_url}
+                                            onChange={e => setFormData(prev => ({ ...prev, secondary_link_url: e.target.value }))}
+                                            placeholder="#catalogo or /catalog/category/postres"
+                                            className="w-full px-3 py-1.5 rounded-lg border border-border bg-muted/20 text-xs font-mono outline-none"
                                         />
                                     </div>
                                 </div>
