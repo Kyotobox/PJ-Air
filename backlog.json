@@ -7,51 +7,6 @@
   "current_task": "TASK-55-05",
   "sprints": [
     {
-      "id": "S51",
-      "name": "Sprint 51: Logística Nocturna con Fotos de Acceso y Landing B2B Mayorista",
-      "status": "COMPLETED",
-      "start_date": "2026-11-05",
-      "goal": "Instrucciones de acceso para entregas en la madrugada con fotos y rediseño comercial de Home B2B con CTA prominente.",
-      "tasks": [
-        {
-          "id": "TASK-51-01",
-          "label": "DOMAIN/EARLY-MORNING-ACCESS-SCHEMA",
-          "desc": "Columnas en Address para instrucciones de acceso en madrugada (códigos, llaves, neveras).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-51-02",
-          "label": "UI/DELIVERY-PHOTOS-UPLOAD",
-          "desc": "Subida de fotos de fachada, puerta de acceso y neveras en direcciones.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-51-03",
-          "label": "UI/HOME-B2B-HERO-CAROUSEL",
-          "desc": "Banner/carrusel publicitario B2B en Home (croissants, postres, temporadas, camioneta).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-51-04",
-          "label": "UI/SCHEDULE-ORDERS-MODAL",
-          "desc": "Modal informativo del horario y cronograma de horneado y pedidos.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-51-05",
-          "label": "UI/SIGNUP-B2B-PROMINENT-CTA",
-          "desc": "Botón/Cintillo destacado de registro mayorista (Regístrate ahora / Crece con nosotros).",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-51-06",
-          "label": "TEST/S51-LOGISTICS-AND-LANDING-SUITE",
-          "desc": "Tests unitarios y build clean de frontend y backend.",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
       "id": "S52",
       "name": "Sprint 52: Gestor Dinámico de Banners B2B para Temporadas y Ocasiones",
       "status": "COMPLETED",
@@ -175,7 +130,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 44,
+  "archived_sprints_count": 45,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S55",
