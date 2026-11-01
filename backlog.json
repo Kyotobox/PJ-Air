@@ -3,116 +3,64 @@
   "version": "4.0.0",
   "kernel_version": "4.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S56",
+  "current_sprint": "S58",
   "current_task": "TASK-56-07",
   "sprints": [
     {
-      "id": "S53",
-      "name": "Sprint 53: Armonizaci\u00f3n de Plantilla de Dise\u00f1o Gourmet en Portal de Pedidos y Cabecera B2B",
+      "id": "S56",
+      "title": "Auditoría Multicanal de Pagos, Conciliación Contable y Evidencia Visual",
       "status": "COMPLETED",
-      "start_date": "2026-10-31",
-      "goal": "Armonizar la cabecera de la p\u00e1gina de \u00f3rdenes con la plantilla de dise\u00f1o de Jhoanes (Opci\u00f3n A), restaurando el t\u00edtulo institucional, badges din\u00e1micos B2B y contenedor glass/jhoanes-card. Incorporar historial completo de \u00f3rdenes y bloque gerencial 360\u00b0 en el expediente del cliente en /admin/clients.",
       "tasks": [
         {
-          "id": "TASK-53-01",
-          "label": "UI/ORDERS-HEADER-DESIGN-ALIGNMENT",
-          "desc": "Refactorizaci\u00f3n de la cabecera en frontend/app/orders/page.tsx con plantilla de dise\u00f1o institucional, badge condicional B2B y contenedor cohesionado.",
+          "id": "TASK-56-01",
+          "title": "Auditoría técnica y seguridad de pasarelas y canales",
           "status": "DONE"
         },
         {
-          "id": "TASK-53-02",
-          "label": "TEST/S53-UI-VERIFICATION",
-          "desc": "Validaci\u00f3n de compilaci\u00f3n y suite de pruebas de frontend y backend.",
+          "id": "TASK-56-02",
+          "title": "Runner Playwright automatizado en vivo y evidencia visual",
           "status": "DONE"
         },
         {
-          "id": "TASK-53-03",
-          "label": "UI/ADMIN-CLIENT-ORDER-HISTORY",
-          "desc": "Secci\u00f3n de Historial Completo de Pedidos en la ficha de cliente en /admin/clients con desglose de \u00edtems, estados y acceso directo a /admin/orders/[id].",
+          "id": "TASK-56-03",
+          "title": "Compilación y sello del Informe Forense de Pagos",
           "status": "DONE"
         },
         {
-          "id": "TASK-53-04",
-          "label": "UI/ADMIN-CLIENT-EXECUTIVE-SUMMARY-CARD",
-          "desc": "Bloque gerencial 360\u00b0 en la cabecera del expediente de cliente en /admin/clients con LTV, sem\u00e1foro de puntualidad de pagos, saldo de cr\u00e9dito, productos favoritos y alertas de servicio.",
+          "id": "TASK-56-04",
+          "title": "Certificación final y build clean",
           "status": "DONE"
         }
       ]
     },
     {
-      "id": "S54",
-      "name": "Sprint 54: Validaci\u00f3n de Direcciones en Origen, Geocodificaci\u00f3n Resiliente con Cach\u00e9 y Despacho Inteligente con Street View",
+      "id": "S57",
+      "title": "Automatización de Reportes Contables, Notificación Zelle y Folio de Notas de Crédito",
       "status": "COMPLETED",
-      "start_date": "2026-10-31",
-      "goal": "Blindar el ciclo de entrega desde el origen: validaci\u00f3n y normalizaci\u00f3n f\u00edsica de direcciones en el registro (checkout/perfil/admin), geocodificaci\u00f3n backend resiliente con cach\u00e9 SQLite en MileageFreightService para c\u00e1lculo exacto de millaje y flete desde Astoria, y visualizaci\u00f3n operativa de Street View y ficha de despacho para chofer y administraci\u00f3n.",
       "tasks": [
         {
-          "id": "TASK-54-01",
-          "label": "CORE/ADDRESS-VALIDATION-INGESTION",
-          "desc": "Servicio backend de validaci\u00f3n y normalizaci\u00f3n de direcciones en tiempo de ingesti\u00f3n (POST /addresses, /profile/addresses/new, /checkout) con validaci\u00f3n de c\u00f3digo postal, componentes estructurados y rechazo de direcciones ambiguas o inexistentes.",
+          "id": "TASK-57-01",
+          "title": "Configuración de correos contables en admin/settings",
           "status": "DONE"
         },
         {
-          "id": "TASK-54-02",
-          "label": "DOMAIN/GEOCODING-CACHE-MILEAGE",
-          "desc": "Geocodificaci\u00f3n backend resiliente con cach\u00e9 local SQLite en MileageFreightService y fallback de coordenadas para c\u00e1lculo de millaje desde el obrador de Astoria (3304 Broadway, Astoria, NY 11106).",
+          "id": "TASK-57-02",
+          "title": "Cron de despacho diario y semanal de Excel de órdenes",
           "status": "DONE"
         },
         {
-          "id": "TASK-54-03",
-          "label": "UI/DELIVERY-STREETVIEW-FACADE",
-          "desc": "Componente de visualizaci\u00f3n de fachada a nivel de calle (Street View Static API con lazy-load) y mini-mapa est\u00e1tico en la Gu\u00eda de Entrega nocturna del Chofer (frontend/app/delivery/page.tsx).",
+          "id": "TASK-57-03",
+          "title": "Flujo de rechazo Zelle con notificación al cliente",
           "status": "DONE"
         },
         {
-          "id": "TASK-54-04",
-          "label": "UI/ADMIN-ORDER-DISPATCH-SHEET",
-          "desc": "Cuadrante de Despacho y Log\u00edstica en el Expediente de la Orden (frontend/app/admin/orders/[id]/page.tsx) con trazabilidad de millaje Astoria, visualizaci\u00f3n de ruta y conciliaci\u00f3n del flete cobrado vs matriz oficial.",
+          "id": "TASK-57-04",
+          "title": "Generador de notas de crédito con folio fiscal legal",
           "status": "DONE"
         },
         {
-          "id": "TASK-54-05",
-          "label": "TEST/S54-LOGISTICS-E2E-SUITE",
-          "desc": "Suite exhaustiva de pruebas unitarias y de integraci\u00f3n (Happy path y Sad paths: direcci\u00f3n inv\u00e1lida, timeout de red, cuota de API excedida y c\u00e1lculo de flete > 250 millas).",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S55",
-      "name": "Sprint 55: Armon\u00eda Zen y Operatividad Real Dropzone B2B",
-      "status": "COMPLETED",
-      "start_date": "2026-10-31",
-      "goal": "Implementar los 16 requerimientos operativos del cliente en Dropzone: Zelle oficial, regla de exclusi\u00f3n de martes, comprobante obligatorio, restricci\u00f3n ACH a VIP, supresi\u00f3n de precios en hoja de horneado, correcci\u00f3n del flujo de estado recibido, estabilizaci\u00f3n de reportes y simplificaci\u00f3n visual bajo est\u00e9tica Zen (Kanso, Ma, Shibui, Danshari, Seijaku, Wabi-Sabi).",
-      "tasks": [
-        {
-          "id": "TASK-55-01",
-          "label": "DOMAIN/CHECKOUT-OPERATIONAL-TRUTH",
-          "desc": "Actualizaci\u00f3n oficial de Zelle (Chefjhoanes@gmail.com / Jhoanes Bakery & Coffee), subida obligatoria de comprobante, exclusi\u00f3n de martes en calendario y restricci\u00f3n ACH a VIP en frontend/app/checkout/page.tsx.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-55-02",
-          "label": "UI/ZEN-VISUAL-HYGIENE-HOME-ORDERS",
-          "desc": "Ocultar banner de registro para usuarios autenticados, ajustar horarios a 4:00 AM - 1:00 PM con scroll-lock en modal y condicionar tarjeta de Salud Financiera a cr\u00e9dito activo en orders y home.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-55-03",
-          "label": "CORE/ORDERS-STATUS-TRANSITION-FIX",
-          "desc": "Normalizaci\u00f3n de transiciones de estado en backend/src/orders/orders.service.ts ('Pedido Enviado' a 'Pedido Recibido') y confirmaci\u00f3n reactiva en frontend/app/orders/page.tsx.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-55-04",
-          "label": "ADMIN/PRODUCTION-PRINT-AND-REPORTS-STABILIZATION",
-          "desc": "Hoja de Producci\u00f3n para cocina sin precios ni fletes en /admin/orders y estabilizaci\u00f3n de generaci\u00f3n de reportes con Bearer token y alineaci\u00f3n de fechas en /admin/reports.",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-55-05",
-          "label": "TEST/S55-E2E-CERTIFICATION-SUITE",
-          "desc": "Suite de pruebas automatizadas happy y sad path para corte sin martes, validaci\u00f3n Zelle, transiciones de orden y compilaci\u00f3n limpia.",
+          "id": "TASK-57-05",
+          "title": "Certificación integral de S57 y verificación DDL",
           "status": "DONE"
         }
       ]
@@ -123,59 +71,91 @@
       "dag_id": "SPRINT-S58-RECONCILED",
       "status": "COMPLETED",
       "reconciled_at": "2026-11-01T20:34:21.596388+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
-      "tasks": []
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
+      "tasks": [
+        {
+          "id": "TASK-58-01",
+          "title": "Ingesta, compresión y normalización de las 10 fotos de temporada del cliente",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-02",
+          "title": "Soporte para segundo botón opcional en la entidad Banner y endpoint GET /banners/gallery",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-03",
+          "title": "Selector interactivo de Galería de Temporada (Media Picker) en /admin/banners",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-04",
+          "title": "Renderizado modular en tienda principal (app/page.tsx) con fade lateral CSS y 2 botones",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-05",
+          "title": "Precarga y muestra de 4 banners activos y 6 en reserva con fotos exclusivas del ZIP",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-06",
+          "title": "Certificación integral de pruebas unitarias backend y builds sin errores",
+          "status": "DONE"
+        }
+      ],
+      "title": "Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1"
     }
   ],
-  "archived_sprints_count": 46,
+  "archived_sprints_count": 49,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S56",
-    "name": "Sprint 56: Auditor\u00eda Multicanal de Pagos, Conciliaci\u00f3n Contable y Automatizaci\u00f3n de Reportes",
+    "name": "Sprint 56: Auditoría Multicanal de Pagos, Conciliación Contable y Automatización de Reportes",
     "status": "COMPLETED",
     "start_date": "2026-11-01",
-    "goal": "Auditar integralmente los canales de pago (Stripe, Zelle, Cheques, Cr\u00e9dito B2B y Notas de Cr\u00e9dito) con suite Playwright en vivo e informe forense, e implementar las 3 brechas operativas: notificaci\u00f3n de rechazo Zelle, formalizaci\u00f3n correlativa de Notas de Cr\u00e9dito y Cron de despacho autom\u00e1tico de reportes contables en Excel.",
+    "goal": "Auditar integralmente los canales de pago (Stripe, Zelle, Cheques, Crédito B2B y Notas de Crédito) con suite Playwright en vivo e informe forense, e implementar las 3 brechas operativas: notificación de rechazo Zelle, formalización correlativa de Notas de Crédito y Cron de despacho automático de reportes contables en Excel.",
     "tasks": [
       {
         "id": "TASK-56-01",
         "label": "AUDIT/MULTICHANNEL-PAYMENTS-CORE",
-        "desc": "Auditor\u00eda est\u00e1tica y de seguridad de los 4 canales de pago (Stripe, Zelle, Cheques, Cr\u00e9dito B2B) y Notas de Cr\u00e9dito, verificando secrets, comisiones (3.5%, 0.8%, exenciones) y suite unitaria.",
+        "desc": "Auditoría estática y de seguridad de los 4 canales de pago (Stripe, Zelle, Cheques, Crédito B2B) y Notas de Crédito, verificando secrets, comisiones (3.5%, 0.8%, exenciones) y suite unitaria.",
         "status": "DONE"
       },
       {
         "id": "TASK-56-02",
         "label": "UI/PLAYWRIGHT-LIVE-EVIDENCE-GALLERY",
-        "desc": "Runner Playwright automatizado en vivo en https://testing.jhoanes.com capturando la galer\u00eda oficial de 9 pantallas (Checkout, Stripe, 3DS, Fondos, Visor Zelle, Cheques, Factura y Reportes).",
+        "desc": "Runner Playwright automatizado en vivo en https://testing.jhoanes.com capturando la galería oficial de 9 pantallas (Checkout, Stripe, 3DS, Fondos, Visor Zelle, Cheques, Factura y Reportes).",
         "status": "DONE"
       },
       {
         "id": "TASK-56-03",
         "label": "DOC/EXECUTIVE-AUDIT-REPORT",
-        "desc": "Compilaci\u00f3n y sello del Informe Forense de Auditor\u00eda Multicanal con evidencias visuales, an\u00e1lisis de flujo de caja y diagn\u00f3stico contable.",
+        "desc": "Compilación y sello del Informe Forense de Auditoría Multicanal con evidencias visuales, análisis de flujo de caja y diagnóstico contable.",
         "status": "DONE"
       },
       {
         "id": "TASK-56-04",
         "label": "CORE/ZELLE-REJECTION-NOTIFICATION",
-        "desc": "Implementaci\u00f3n en orders.service.ts y mail.service.ts del email autom\u00e1tico al cliente ante rechazo de Zelle con motivo y bot\u00f3n de reintento.",
+        "desc": "Implementación en orders.service.ts y mail.service.ts del email automático al cliente ante rechazo de Zelle con motivo y botón de reintento.",
         "status": "DONE"
       },
       {
         "id": "TASK-56-05",
         "label": "DOMAIN/CREDIT-NOTE-FORMALIZATION",
-        "desc": "Folio correlativo formal para Notas de Cr\u00e9dito (NC-YYYY-XXXX), persistencia y renderizado en la Factura Comercial imprimible.",
+        "desc": "Folio correlativo formal para Notas de Crédito (NC-YYYY-XXXX), persistencia y renderizado en la Factura Comercial imprimible.",
         "status": "DONE"
       },
       {
         "id": "TASK-56-06",
         "label": "CRON/AUTOMATIC-FINANCIAL-REPORT-DISPATCH",
-        "desc": "Cron desatendido FinancialReportsCron para consolidaci\u00f3n diaria de ventas multicanal en Excel y env\u00edo autom\u00e1tico por correo a accounting@jhoanes.com.",
+        "desc": "Cron desatendido FinancialReportsCron para consolidación diaria de ventas multicanal en Excel y envío automático por correo a accounting@jhoanes.com.",
         "status": "DONE"
       },
       {
         "id": "TASK-56-07",
         "label": "TEST/S56-E2E-CERTIFICATION-SUITE",
-        "desc": "Suite de pruebas automatizadas happy & sad path para rechazo Zelle, folio de nota de cr\u00e9dito, cron de reportes y validaci\u00f3n de build clean.",
+        "desc": "Suite de pruebas automatizadas happy & sad path para rechazo Zelle, folio de nota de crédito, cron de reportes y validación de build clean.",
         "status": "DONE"
       }
     ]
