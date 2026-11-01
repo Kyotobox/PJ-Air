@@ -107,55 +107,49 @@
       "title": "Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1"
     }
   ],
-  "archived_sprints_count": 49,
+  "archived_sprints_count": 50,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S56",
-    "name": "Sprint 56: Auditoría Multicanal de Pagos, Conciliación Contable y Automatización de Reportes",
+    "id": "S58",
+    "name": "Sprint 58: Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1",
     "status": "COMPLETED",
     "start_date": "2026-11-01",
-    "goal": "Auditar integralmente los canales de pago (Stripe, Zelle, Cheques, Crédito B2B y Notas de Crédito) con suite Playwright en vivo e informe forense, e implementar las 3 brechas operativas: notificación de rechazo Zelle, formalización correlativa de Notas de Crédito y Cron de despacho automático de reportes contables en Excel.",
+    "goal": "Gestor de Banners Hero con galería de medios reutilizables para imágenes de temporada del cliente, renderizado condicional modular (0, 1 o 2 botones, o solo foto limpia con fade lateral CSS), selector interactivo en /admin/banners y estética 1:1.",
     "tasks": [
       {
-        "id": "TASK-56-01",
-        "label": "AUDIT/MULTICHANNEL-PAYMENTS-CORE",
-        "desc": "Auditoría estática y de seguridad de los 4 canales de pago (Stripe, Zelle, Cheques, Crédito B2B) y Notas de Crédito, verificando secrets, comisiones (3.5%, 0.8%, exenciones) y suite unitaria.",
+        "id": "TASK-58-01",
+        "label": "MEDIA/SEASONAL-ASSETS-PIPELINE",
+        "desc": "Ingesta, compresión y normalización de las 10 fotos de temporada del cliente.",
         "status": "DONE"
       },
       {
-        "id": "TASK-56-02",
-        "label": "UI/PLAYWRIGHT-LIVE-EVIDENCE-GALLERY",
-        "desc": "Runner Playwright automatizado en vivo en https://testing.jhoanes.com capturando la galería oficial de 9 pantallas (Checkout, Stripe, 3DS, Fondos, Visor Zelle, Cheques, Factura y Reportes).",
+        "id": "TASK-58-02",
+        "label": "CORE/GALLERY-API-AND-SCHEMA",
+        "desc": "Soporte para segundo botón opcional en la entidad Banner y endpoint GET /banners/gallery.",
         "status": "DONE"
       },
       {
-        "id": "TASK-56-03",
-        "label": "DOC/EXECUTIVE-AUDIT-REPORT",
-        "desc": "Compilación y sello del Informe Forense de Auditoría Multicanal con evidencias visuales, análisis de flujo de caja y diagnóstico contable.",
+        "id": "TASK-58-03",
+        "label": "UI/ADMIN-MEDIA-PICKER-AND-DESTINATIONS",
+        "desc": "Selector interactivo de Galería de Temporada (Media Picker) en /admin/banners con menú de destinos.",
         "status": "DONE"
       },
       {
-        "id": "TASK-56-04",
-        "label": "CORE/ZELLE-REJECTION-NOTIFICATION",
-        "desc": "Implementación en orders.service.ts y mail.service.ts del email automático al cliente ante rechazo de Zelle con motivo y botón de reintento.",
+        "id": "TASK-58-04",
+        "label": "UI/STOREFRONT-HERO-MODULAR-FADE",
+        "desc": "Renderizado modular en tienda principal (app/page.tsx) con fade lateral CSS y 2 botones.",
         "status": "DONE"
       },
       {
-        "id": "TASK-56-05",
-        "label": "DOMAIN/CREDIT-NOTE-FORMALIZATION",
-        "desc": "Folio correlativo formal para Notas de Crédito (NC-YYYY-XXXX), persistencia y renderizado en la Factura Comercial imprimible.",
+        "id": "TASK-58-05",
+        "label": "SEED/PRELOADED-SEASONAL-BANNERS",
+        "desc": "Precarga y muestra de 4 banners activos y 6 en reserva con fotos exclusivas del ZIP.",
         "status": "DONE"
       },
       {
-        "id": "TASK-56-06",
-        "label": "CRON/AUTOMATIC-FINANCIAL-REPORT-DISPATCH",
-        "desc": "Cron desatendido FinancialReportsCron para consolidación diaria de ventas multicanal en Excel y envío automático por correo a accounting@jhoanes.com.",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-56-07",
-        "label": "TEST/S56-E2E-CERTIFICATION-SUITE",
-        "desc": "Suite de pruebas automatizadas happy & sad path para rechazo Zelle, folio de nota de crédito, cron de reportes y validación de build clean.",
+        "id": "TASK-58-06",
+        "label": "TEST/INTEGRATION-BUILD-CERTIFICATION",
+        "desc": "Certificación integral de pruebas unitarias backend y builds sin errores.",
         "status": "DONE"
       }
     ]
