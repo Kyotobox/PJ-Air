@@ -1,0 +1,150 @@
+/**
+ * CONEXT Fleet Design System — Shibui Tokens Standard (渋い)
+ * 
+ * Filosofía estética Shibui: Belleza sobria, sutil, discreta y no intrusiva.
+ * Erradicación absoluta de gradientes cyber neón, glow reflectivo y sobrecargas visuales.
+ * Soporte canónico para Paleta Dual: Sumi (Tinta carbón / Oscuro) y Washi (Papel artesanal / Claro).
+ * Escala de Espacio Ma (間) y bordes netos de 1px.
+ * Presupuesto Visual de Miller (≤ 7 elementos visuales principales por cuadrante).
+ * Pure CSS Tokens Specification — SSSoT (§39, §40).
+ */
+
+:root,
+[data-theme="sumi"] {
+  /* ==========================================================================
+     PALETA SUMI (墨) — Tinta Carbón / Modo Oscuro Calm
+     ========================================================================== */
+  --shibui-bg: #0d1117;
+  --shibui-surface: #161b22;
+  --shibui-surface-subtle: #21262d;
+  --shibui-surface-hover: #292e36;
+  
+  --shibui-border: #30363d;
+  --shibui-border-subtle: #21262d;
+  --shibui-border-active: #8b949e;
+
+  --shibui-text-primary: #f0f6fc;
+  --shibui-text-secondary: #8b949e;
+  --shibui-text-tertiary: #6e7681;
+  --shibui-text-inverse: #0d1117;
+
+  /* Acentos Semánticos Sobrios (Desaturados, no fluorescentes) */
+  --shibui-accent-blue: #58a6ff;
+  --shibui-accent-green: #3fb950;
+  --shibui-accent-amber: #d29922;
+  --shibui-accent-red: #f85149;
+  --shibui-accent-purple: #bc8cff;
+
+  /* Estados de Alerta y Badge (Fondo atenuado con borde neto) */
+  --shibui-badge-info-bg: rgba(56, 139, 253, 0.12);
+  --shibui-badge-info-border: #388bfd;
+  --shibui-badge-info-text: #58a6ff;
+
+  --shibui-badge-success-bg: rgba(46, 160, 67, 0.12);
+  --shibui-badge-success-border: #2ea043;
+  --shibui-badge-success-text: #3fb950;
+
+  --shibui-badge-warning-bg: rgba(187, 128, 9, 0.12);
+  --shibui-badge-warning-border: #bb8009;
+  --shibui-badge-warning-text: #d29922;
+
+  --shibui-badge-danger-bg: rgba(248, 81, 73, 0.12);
+  --shibui-badge-danger-border: #f85149;
+  --shibui-badge-danger-text: #f85149;
+
+  /* Elevaciones y Sombras (Contacto mínimo, sin resplandores) */
+  --shibui-shadow-none: none;
+  --shibui-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shibui-shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="washi"] {
+  /* ==========================================================================
+     PALETA WASHI (和紙) — Papel Artesanal / Modo Claro Calm
+     ========================================================================== */
+  --shibui-bg: #f6f8fa;
+  --shibui-surface: #ffffff;
+  --shibui-surface-subtle: #eaeef2;
+  --shibui-surface-hover: #e1e4e8;
+
+  --shibui-border: #d0d7de;
+  --shibui-border-subtle: #e1e4e8;
+  --shibui-border-active: #57606a;
+
+  --shibui-text-primary: #1f2328;
+  --shibui-text-secondary: #656d76;
+  --shibui-text-tertiary: #8c959f;
+  --shibui-text-inverse: #ffffff;
+
+  /* Acentos Semánticos Sobrios sobre Papel */
+  --shibui-accent-blue: #0969da;
+  --shibui-accent-green: #1a7f37;
+  --shibui-accent-amber: #9a6700;
+  --shibui-accent-red: #cf222e;
+  --shibui-accent-purple: #8250df;
+
+  /* Estados de Alerta y Badge */
+  --shibui-badge-info-bg: rgba(9, 105, 218, 0.08);
+  --shibui-badge-info-border: #0969da;
+  --shibui-badge-info-text: #0969da;
+
+  --shibui-badge-success-bg: rgba(26, 127, 55, 0.08);
+  --shibui-badge-success-border: #1a7f37;
+  --shibui-badge-success-text: #1a7f37;
+
+  --shibui-badge-warning-bg: rgba(154, 103, 0, 0.08);
+  --shibui-badge-warning-border: #9a6700;
+  --shibui-badge-warning-text: #7d5400;
+
+  --shibui-badge-danger-bg: rgba(207, 34, 46, 0.08);
+  --shibui-badge-danger-border: #cf222e;
+  --shibui-badge-danger-text: #cf222e;
+
+  /* Elevaciones */
+  --shibui-shadow-none: none;
+  --shibui-shadow-sm: 0 1px 2px 0 rgba(27, 31, 36, 0.06);
+  --shibui-shadow-md: 0 3px 6px 0 rgba(27, 31, 36, 0.1);
+}
+
+:root {
+  /* ==========================================================================
+     ESPACIO MA (間) — Proporciones Negativas Intencionales
+     ========================================================================== */
+  --ma-1: 4px;
+  --ma-2: 8px;
+  --ma-3: 12px;
+  --ma-4: 16px;
+  --ma-5: 24px;
+  --ma-6: 32px;
+  --ma-8: 48px;
+
+  /* ==========================================================================
+     GEOMETRÍA Y BORDES NETOS (1px)
+     ========================================================================== */
+  --border-width-net: 1px;
+  --radius-shibui-none: 0px;
+  --radius-shibui-sm: 3px;
+  --radius-shibui-md: 6px;
+
+  /* ==========================================================================
+     TIPOGRAFÍA SOBRIA
+     ========================================================================== */
+  --font-shibui-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-shibui-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+
+  /* ==========================================================================
+     TRANSICIONES SOBRIAS Y CALM
+     ========================================================================== */
+  --shibui-transition-fast: all 120ms ease-out;
+  --shibui-transition-base: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
