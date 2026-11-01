@@ -41,8 +41,22 @@ export class BannersController {
         orientation: 'landscape' | 'portrait' | 'square';
         category: string;
     }[]> {
-        const seasonalDir = overridePath || resolve(process.cwd(), UPLOAD_PATH, 'banners', 'seasonal');
-        if (!fs.existsSync(seasonalDir)) {
+        let seasonalDir: string | undefined;
+        if (overridePath) {
+            seasonalDir = fs.existsSync(overridePath) ? overridePath : undefined;
+        } else {
+            const candidatePaths = [
+                resolve(process.cwd(), UPLOAD_PATH, 'banners', 'seasonal'),
+                resolve(process.cwd(), 'uploads', 'banners', 'seasonal'),
+                resolve(__dirname, '..', '..', 'uploads', 'banners', 'seasonal'),
+                resolve(__dirname, '..', '..', '..', 'uploads', 'banners', 'seasonal'),
+                '/var/www/pj-air-testing/backend/uploads/banners/seasonal',
+                '/var/www/pj-air/backend/uploads/banners/seasonal',
+            ];
+            seasonalDir = candidatePaths.find(p => fs.existsSync(p));
+        }
+
+        if (!seasonalDir) {
             return [];
         }
 
