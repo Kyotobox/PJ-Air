@@ -17,15 +17,19 @@ Jhoanes Wholesale opera bajo una política de transparencia comercial conforme a
 
 | Medio de Pago | ¿Cómo Paga el Cliente? | Costo / Comisión | Tiempo de Confirmación | ¿Qué Requiere de Administración? |
 | :--- | :--- | :--- | :--- | :--- |
-| **Tarjeta de Crédito / Débito** | En línea al confirmar el pedido (Visa, Mastercard, Amex). | **3.5%** sobre el valor de los productos. | **Inmediato**: El cobro se procesa en segundos. | Ninguna acción manual. La orden pasa automáticamente a producción. |
-| **Transferencia ACH (Bancaria Directa)** | En línea vinculando su cuenta corriente comercial (exclusivo VIP/Autorizados). | **0.8%** (con **tope máximo de $5.00** por orden). | **3 a 5 días hábiles** para la liquidación efectiva en cuenta. | Verificación en extracto bancario en caso de devoluciones por cuenta sin fondos. |
-| **Transferencia Zelle B2B** | Desde su banca móvil a `Chefjhoanes@gmail.com`. | **$0.00 (0% - Exento)**. | **Manual**: Sujeto a cotejo bancario del equipo de tesorería. | **Obligatorio**: Revisar el comprobante y aprobar o rechazar la orden en el panel. |
-| **Cheque Comercial** | Cheque físico entregado al chofer en ruta o en el mostrador. | **$0.00 (0% - Exento)**. | **+3 días hábiles** tras ser depositado en el banco. | Registrar número de cheque, depositar en banco y marcar fecha en el sistema. |
-| **Línea de Crédito Comercial B2B** | Compra con cargo a su cupo aprobado, pagadero a 7 días. | **$0.00 (0% - Exento)**. | **Inmediato**: Siempre que no exceda su límite de crédito disponible. | Cobranza semanal o quincenal según acuerdo comercial. |
+| **Tarjeta de Crédito / Débito** | En línea al confirmar el pedido (Visa, Mastercard, Amex). Canal público. | **3.5%** sobre el valor de los productos. | **Inmediato**: El cobro se procesa en segundos. | Ninguna acción manual. La orden pasa automáticamente a producción. |
+| **Transferencia ACH (Bancaria Directa)** | En línea vinculando su cuenta corriente comercial (restringido a VIP / Autorizados). | **0.8%** (con **tope máximo de $5.00** por orden). | **3 a 5 días hábiles** para la liquidación efectiva en cuenta. | Verificación en extracto bancario en caso de devoluciones por cuenta sin fondos. |
+| **Transferencia Zelle B2B** | Desde su banca móvil a `Chefjhoanes@gmail.com`. Canal público con comprobante. | **$0.00 (0% - Exento)**. | **Manual**: Sujeto a cotejo bancario del equipo de tesorería. | **Obligatorio**: Revisar el comprobante y aprobar o rechazar la orden en el panel. |
+| **Cheque Comercial** *(Privado / Restringido)* | **NO es público en checkout**. Entrega física en ruta o tienda solo por clientes pre-autorizados. | **$0.00 (0% - Exento)**. | **+3 días hábiles** tras ser depositado en el banco. | **Gestión Interna**: Asignación manual del cheque a la orden, depósito y seguimiento a 3 días. |
+| **Línea de Crédito Comercial B2B** | Compra con cargo a su cupo aprobado, pagadero a 7 días. Restringido a cuentas aprobadas. | **$0.00 (0% - Exento)**. | **Inmediato**: Siempre que no exceda su límite de crédito disponible. | Cobranza semanal o quincenal según acuerdo comercial. |
 | **Notas de Crédito / Saldos a Favor** | Aplicadas por devoluciones, ajustes de inventario o modificaciones de orden. | **$0.00 (Deducción 1 a 1)**. | **Inmediato**: Resta directamente el saldo deudor de la factura. | Emisión de la nota desde el detalle de la orden con motivo formal. |
 
+> [!IMPORTANT]
+> **RESTRICCIÓN CORPORATIVA: EL PAGO POR CHEQUE NO ES PÚBLICO**  
+> El pago mediante cheques comerciales está estrictamente restringido y **NO aparece como opción en el checkout público de la tienda web**. Constituye un acuerdo corporativo privado reservado exclusivamente para clientes mayoristas calificados y autorizados por la administración. Los pedidos de estos clientes se liquidan internamente cuando entregan el documento físico al chofer o en el mostrador.
+
 ### Pantalla 1: Selector de Métodos de Pago en el Checkout
-El cliente mayorista visualiza con absoluta transparencia las opciones habilitadas para su cuenta y las comisiones correspondientes:
+El cliente mayorista estándar visualiza en el checkout únicamente los canales de pago directos y autorizados para su cuenta (Stripe, Zelle y Línea de Crédito si aplica), manteniendo los cheques fuera del autoservicio público:
 
 ![Selector de Métodos en Checkout](../../ui_screenshots/audit_multichannel_01_checkout_methods.png)
 
@@ -77,19 +81,28 @@ La orden entra en el panel como *"Pendiente de Verificación Zelle"*. La adminis
 
 ---
 
-## 5. CONCILIACIÓN DE CHEQUES COMERCIALES
+## 5. CONCILIACIÓN DE CHEQUES COMERCIALES (CANAL PRIVADO B2B AUTORIZADO)
 
-Para los clientes mayoristas autorizados a pagar con cheque físico en ruta o entrega en mostrador, el panel de administración centraliza la cartera de cheques en tres pestañas:
+> [!CAUTION]
+> **POLÍTICA DE RIESGO: NO DISPONIBLE EN AUTOSERVICIO PÚBLICO**  
+> El pago con cheque físico **NO es un método de pago público ni seleccionable en la tienda online**. Para proteger el flujo de caja de la panadería contra fraudes o falta de fondos de cuentas desconocidas, esta modalidad es un privilegio comercial que requiere aprobación expresa de la Gerencia en la ficha del cliente mayorista.
 
-### Pantalla 6: Bandejas de Conciliación de Cheques
+### A. Protocolo de Autorización y Recepción
+1. **Calificación Previa**: La gerencia habilita a clientes corporativos recurrentes con historial crediticio intachable.
+2. **Recepción Física**: El cliente autorizado entrega el cheque físico al chofer de despacho en su ruta matutina o en la recepción de la panadería, indicando el número de factura/pedido correspondiente.
+3. **Registro Interno en Tesorería**: El equipo administrativo registra el documento en el sistema ingresando el **Número de Cheque**, **Banco Emisor**, **Monto Exacto** y **Fecha de Recepción**.
+
+### Pantalla 6: Bandejas de Conciliación de Cheques en `/admin/orders`
+El panel de administración permite supervisar el ciclo de vida del cheque a través de tres bandejas operativas:
+
 ![Conciliación de Cheques](../../ui_screenshots/audit_multichannel_06_admin_check_reconciliation.png)
 
-### Ciclo Operativo del Cheque:
-1. **Por Depositar (En Cartera)**: Cheques físicos recibidos de los repartidores que aún no se han llevado al banco.
-2. **Depositados**: Una vez depositados en la sucursal, se marcan como *"Depositados"*. Durante los **3 días hábiles bancarios** posteriores permanecen en tránsito hasta su compensación definitiva.
-3. **Rebotados / Consecuencias**: Si el banco devuelve el cheque por falta de fondos:
-   - Se marca como *"Rebotado"*.
-   - El sistema anula el pago, reactiva la deuda de la orden y bloquea temporalmente al cliente para que no pueda volver a pagar con cheque hasta que liquide su saldo con tesorería.
+### B. Ciclo de Vida y Reglas de Compensación
+1. **Por Depositar (En Cartera)**: Cheques físicos en poder de tesorería que aún no han sido ingresados a la cuenta bancaria de la empresa.
+2. **Depositados**: Una vez depositados en ventanilla o cajero empresarial, se marcan como *"Depositados"*. A partir de ese momento, el sistema activa una cuenta regresiva de **3 días hábiles bancarios** (*Clearance Deadline*), tiempo estándar en el que el banco liquida los fondos.
+3. **Rebotados / Consecuencias Inmediatas**: Si el banco emisor rechaza el cheque por fondos insuficientes o cuenta cerrada:
+   - Tesorería lo marca como *"Rebotado"* en el panel.
+   - **Consecuencia Automática**: El sistema anula el pago registrado, restaura la deuda de la orden y **bloquea inmediatamente la cuenta del cliente**, revocándole el privilegio de pagar con cheque y suspendiendo cualquier línea de crédito activa hasta que salde la deuda con fondos certificados.
 
 ---
 
