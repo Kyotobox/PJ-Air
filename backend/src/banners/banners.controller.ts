@@ -31,6 +31,97 @@ export class BannersController {
         return this.bannersService.findPublic();
     }
 
+    @Get('gallery')
+    async getGallery(overridePath?: string): Promise<{
+        id: string;
+        name: string;
+        filename: string;
+        url: string;
+        fallback_url: string;
+        orientation: 'landscape' | 'portrait' | 'square';
+        category: string;
+    }[]> {
+        const seasonalDir = overridePath || resolve(process.cwd(), UPLOAD_PATH, 'banners', 'seasonal');
+        if (!fs.existsSync(seasonalDir)) {
+            return [];
+        }
+
+        const friendlyNames: Record<string, { name: string; orientation: 'landscape' | 'portrait' | 'square'; category: string }> = {
+            'seasonal_hero_flatlay_table.jpg': {
+                name: 'Mesa Completa de Bollería & Postres (Mockup Oficial)',
+                orientation: 'landscape',
+                category: 'hero'
+            },
+            'seasonal_hero_pastries_assorted.jpg': {
+                name: 'Selección de Tartas Finas y Postres',
+                orientation: 'landscape',
+                category: 'hero'
+            },
+            'seasonal_hero_catering_spread.jpg': {
+                name: 'Banquete de Despacho Mayorista',
+                orientation: 'landscape',
+                category: 'hero'
+            },
+            'seasonal_croissants_butter_golden.jpg': {
+                name: 'Croissants de Mantequilla Dorada',
+                orientation: 'square',
+                category: 'viennoiserie'
+            },
+            'seasonal_danish_berries_cream.jpg': {
+                name: 'Hojaldre Danés de Frutos del Bosque',
+                orientation: 'square',
+                category: 'pastry'
+            },
+            'seasonal_brioche_fruit_tart.jpg': {
+                name: 'Brioche de Frutas & Tartaleta Especial',
+                orientation: 'square',
+                category: 'pastry'
+            },
+            'seasonal_pastry_showcase_01.jpg': {
+                name: 'Vitrina de Pastelería 01 (Móvil)',
+                orientation: 'portrait',
+                category: 'showcase'
+            },
+            'seasonal_pastry_showcase_02.jpg': {
+                name: 'Vitrina de Pastelería 02 (Móvil)',
+                orientation: 'portrait',
+                category: 'showcase'
+            },
+            'seasonal_pastry_showcase_03.jpg': {
+                name: 'Vitrina de Pastelería 03 (Móvil)',
+                orientation: 'portrait',
+                category: 'showcase'
+            },
+            'seasonal_artisan_loaf_rustic.jpg': {
+                name: 'Pan Rústico de Masa Madre',
+                orientation: 'portrait',
+                category: 'bread'
+            }
+        };
+
+        const files = fs.readdirSync(seasonalDir);
+        const validExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+
+        return files
+            .filter(file => validExtensions.includes(extname(file).toLowerCase()))
+            .map(file => {
+                const meta = friendlyNames[file] || {
+                    name: file.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+                    orientation: 'landscape' as const,
+                    category: 'seasonal'
+                };
+                return {
+                    id: file.replace(/\.[^/.]+$/, ''),
+                    name: meta.name,
+                    filename: file,
+                    url: `/uploads/banners/seasonal/${file}`,
+                    fallback_url: `/images/banners/seasonal/${file}`,
+                    orientation: meta.orientation,
+                    category: meta.category
+                };
+            });
+    }
+
     @Get()
     @UseGuards(AuthGuard, RolesGuard)
     @Roles('admin')

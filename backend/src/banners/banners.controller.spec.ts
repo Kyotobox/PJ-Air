@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
+import * as fs from 'fs';
 import { BannersController } from './banners.controller';
 import { BannersService } from './banners.service';
 import { Banner } from './banner.entity';
@@ -113,6 +114,26 @@ describe('BannersController', () => {
             await expect(controller.uploadBannerImage(undefined as any)).rejects.toThrow(
                 BadRequestException,
             );
+        });
+    });
+
+    describe('getGallery', () => {
+        it('should return gallery items from seasonal banners directory (happy path)', async () => {
+            const items = await controller.getGallery();
+            expect(Array.isArray(items)).toBe(true);
+            if (items.length > 0) {
+                expect(items[0]).toHaveProperty('id');
+                expect(items[0]).toHaveProperty('name');
+                expect(items[0]).toHaveProperty('url');
+                expect(items[0]).toHaveProperty('fallback_url');
+                expect(items[0]).toHaveProperty('orientation');
+                expect(items[0]).toHaveProperty('category');
+            }
+        });
+
+        it('should handle non-existent directory safely (sad path)', async () => {
+            const items = await controller.getGallery('/non/existent/path/999');
+            expect(items).toEqual([]);
         });
     });
 });

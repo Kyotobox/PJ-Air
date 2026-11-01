@@ -47,6 +47,15 @@ export class Banner {
     @Column({ nullable: true, default: 'Browse Catalog' })
     button_text_en?: string;
 
+    @Column({ nullable: true })
+    secondary_button_text?: string;
+
+    @Column({ nullable: true })
+    secondary_button_text_en?: string;
+
+    @Column({ nullable: true })
+    secondary_link_url?: string;
+
     @Column({ type: 'integer', default: 0 })
     display_order: number;
 
