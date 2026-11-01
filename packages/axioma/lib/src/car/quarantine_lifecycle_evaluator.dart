@@ -89,7 +89,7 @@ class RuleQuarantineRecord {
     );
   }
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'rule_id': ruleId,
     'status': status.name.toUpperCase(),
     'severity': severity.name.toUpperCase(),
@@ -113,7 +113,7 @@ class LifecycleEvaluationResult {
     required this.reason,
   });
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'record': updatedRecord.toJson(),
     'decision': decision.name,
     'reason': reason,
@@ -143,7 +143,7 @@ class QuarantineLifecycleEvaluator {
 
     // 1. Falsos positivos fatales -> Revocación inmediata (vetoed)
     if (record.falsePositivesCount >= fatalFalsePositiveThreshold) {
-      final RuleQuarantineRecord updated = record.copyWith(
+      final updated = record.copyWith(
         status: CarPromotionStatus.vetoed,
         severity: CarRuleSeverity.warn,
         lastEvaluatedAt: now,
@@ -158,7 +158,7 @@ class QuarantineLifecycleEvaluator {
 
     // 2. Falsos positivos menores -> Retener en cuarentena y extender observación
     if (record.falsePositivesCount > maxAllowedFalsePositives) {
-      final RuleQuarantineRecord updated = record.copyWith(
+      final updated = record.copyWith(
         status: CarPromotionStatus.observation,
         severity: CarRuleSeverity.warn,
         lastEvaluatedAt: now,
@@ -174,7 +174,7 @@ class QuarantineLifecycleEvaluator {
     // 3. Sprints suficientes sin falsos positivos -> Promoción a regla activa (ERROR)
     if (record.sprintsInQuarantine >= minSprintsForPromotion &&
         record.falsePositivesCount == 0) {
-      final RuleQuarantineRecord updated = record.copyWith(
+      final updated = record.copyWith(
         status: CarPromotionStatus.promoted,
         severity: CarRuleSeverity.error,
         lastEvaluatedAt: now,
@@ -188,7 +188,7 @@ class QuarantineLifecycleEvaluator {
     }
 
     // 4. Periodo de observación nominal en curso
-    final RuleQuarantineRecord updated = record.copyWith(
+    final updated = record.copyWith(
       status: CarPromotionStatus.observation,
       severity: CarRuleSeverity.warn,
       lastEvaluatedAt: now,

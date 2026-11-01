@@ -18,6 +18,8 @@ fi
 # 2. Auditoría de ADN y Arquitectura (§4, §39, §43)
 if [ -x "./bin/logix" ]; then
   ./bin/logix audit --no-ui
+elif [ -x "/usr/local/bin/logix" ]; then
+  /usr/local/bin/logix audit --no-ui
 elif [ -x "/home/opc/.local/bin/logix" ]; then
   /home/opc/.local/bin/logix audit --no-ui
 elif [ -f "./bin/logix.exe" ]; then

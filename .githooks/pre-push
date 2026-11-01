@@ -15,6 +15,8 @@ fi
 
 if [ -x "./bin/logix" ]; then
   ./bin/logix check
+elif [ -x "/usr/local/bin/logix" ]; then
+  /usr/local/bin/logix check
 elif [ -x "/home/opc/.local/bin/logix" ]; then
   /home/opc/.local/bin/logix check
 fi

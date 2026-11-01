@@ -56,7 +56,7 @@ class AstCandidateSample {
     }
   }
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'snippet': snippet,
     'node_type': nodeType,
     'recurrence_count': recurrenceCount,
@@ -82,7 +82,7 @@ class VarianceEvaluationResult {
     required this.rationale,
   });
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'classification': classification.name,
     'special_cause_score': specialCauseScore,
     'common_cause_score': commonCauseScore,
@@ -161,7 +161,7 @@ class AstVarianceStabilizer {
     }
 
     // D. Gravedad del Tipo de Nodo
-    const Set<String> criticalNodes = <String>{
+    const Set<String> criticalNodes = {
       'CatchClause',
       'AsExpression',
       'PostfixExpression',
@@ -219,8 +219,8 @@ class AstVarianceStabilizer {
   List<AstCandidateSample> filterSpecialCauses(
     List<AstCandidateSample> candidates,
   ) {
-    return candidates.where((AstCandidateSample sample) {
-      final VarianceEvaluationResult res = evaluate(sample);
+    return candidates.where((sample) {
+      final res = evaluate(sample);
       return res.isApprovedForSynthesis;
     }).toList();
   }

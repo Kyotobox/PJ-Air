@@ -114,11 +114,9 @@ class ClaudeKeyPool implements KeyPool {
   String? get lastDowngradeReason => _lastDowngradeReason;
 
   /// Claves registradas (inmutables)
-  @override
   List<String> get keys => List<String>.unmodifiable(_keys);
 
   /// Cooldowns activos
-  @override
   Map<String, DateTime> get cooldowns =>
       Map<String, DateTime>.unmodifiable(_cooldowns);
 
@@ -142,7 +140,6 @@ class ClaudeKeyPool implements KeyPool {
   String acquireNextKey({DateTime? now}) => _acquireNextKey(now: now);
 
   /// Retorna si una clave está disponible para despacho
-  @override
   bool isKeyAvailable(String key, {DateTime? now}) {
     if (!_keys.contains(key)) return false;
     final DateTime current = now ?? DateTime.now();
@@ -246,7 +243,6 @@ class ClaudeKeyPool implements KeyPool {
   }
 
   /// Marca una clave como agotada por cuota diaria
-  @override
   void markQuotaExhausted(
     String key, {
     Duration duration = const Duration(hours: 24),
@@ -257,7 +253,6 @@ class ClaudeKeyPool implements KeyPool {
   }
 
   /// Marca una clave con rate-limit temporal (HTTP 429)
-  @override
   void markRateLimited(String key, {double cooldownSec = 60.0, DateTime? now}) {
     final DateTime current = now ?? DateTime.now();
     final int millis = (cooldownSec * 1000).round();
@@ -265,13 +260,11 @@ class ClaudeKeyPool implements KeyPool {
   }
 
   /// Limpia el cooldown de una clave
-  @override
   void resetCooldown(String key) {
     _cooldowns.remove(key);
   }
 
   /// Limpia todos los cooldowns registrados
-  @override
   void clearAllCooldowns() {
     _cooldowns.clear();
   }

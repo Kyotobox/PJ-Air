@@ -22,7 +22,7 @@ void main() {
       test(
         'Happy Path: Inicializa schema, registra control y lo consulta activamente',
         () {
-          final GovernanceControl control = const GovernanceControl(
+          final GovernanceControl control = GovernanceControl(
             controlId: 'CORE-01',
             node: 'conext_core',
             binaryCheck: '.git/hooks/pre-push',
@@ -43,7 +43,7 @@ void main() {
       );
 
       test('Happy Path: Actualiza control existente manteniendo unicidad', () {
-        final GovernanceControl initial = const GovernanceControl(
+        final GovernanceControl initial = GovernanceControl(
           controlId: 'AUTOMA-01',
           node: 'automa',
           binaryCheck: 'db/migrations/003.sql',
@@ -51,7 +51,7 @@ void main() {
         );
         manager.registerControl(initial);
 
-        final GovernanceControl updated = const GovernanceControl(
+        final GovernanceControl updated = GovernanceControl(
           controlId: 'AUTOMA-01',
           node: 'automa',
           binaryCheck: 'db/migrations/003_add_sla.sql',
@@ -71,7 +71,7 @@ void main() {
       });
 
       test('Sad Path: Lanza ArgumentError si controlId está vacío (§6)', () {
-        final GovernanceControl invalid = const GovernanceControl(
+        final GovernanceControl invalid = GovernanceControl(
           controlId: '   ',
           node: 'Smart',
           binaryCheck: 'check.sh',
@@ -85,7 +85,7 @@ void main() {
       });
 
       test('Sad Path: Lanza ArgumentError si binaryCheck está vacío (§6)', () {
-        final GovernanceControl invalid = const GovernanceControl(
+        final GovernanceControl invalid = GovernanceControl(
           controlId: 'SMART-01',
           node: 'Smart',
           binaryCheck: '',

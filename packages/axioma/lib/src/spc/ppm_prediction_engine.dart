@@ -54,7 +54,7 @@ class ExecutionTelemetryRecord {
     this.testPassRatio = 1.0,
   });
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'sprint_id': sprintId,
     'task_id': taskId,
     'files_changed': filesChanged,
@@ -117,7 +117,7 @@ class ConfidenceInterval {
     this.confidenceLevel = 0.95,
   });
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'lower_bound': lowerBound,
     'upper_bound': upperBound,
     'confidence_level': confidenceLevel,
@@ -147,7 +147,7 @@ class PpmPredictionResult {
   bool exceedsRiskThreshold([double threshold = 0.35]) =>
       failureProbability >= threshold;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
+  Map<String, dynamic> toJson() => {
     'failure_probability': failureProbability,
     'expected_duration_seconds': expectedDurationSeconds,
     'expected_token_consumption': expectedTokenConsumption,
@@ -163,13 +163,13 @@ class PpmPredictionResult {
 /// antes de su ejecución o despacho a runners.
 class PpmPredictionEngine {
   double _baseFailureProb = 0.05;
-  final double _fileRiskSlope = 0.045;
-  final double _tokenRiskSlope = 0.000015;
-  final double _defectMultiplier = 0.03;
+  double _fileRiskSlope = 0.045;
+  double _tokenRiskSlope = 0.000015;
+  double _defectMultiplier = 0.03;
 
   double _baseDurationSec = 12.0;
-  final double _fileDurationSlope = 7.5;
-  final double _tokenDurationSlope = 0.0012;
+  double _fileDurationSlope = 7.5;
+  double _tokenDurationSlope = 0.0012;
 
   double _durationVariance = 16.0;
   bool _isCalibrated = false;
@@ -185,13 +185,11 @@ class PpmPredictionEngine {
     }
 
     final double meanDuration =
-        observations
-            .map((ExecutionTelemetryRecord e) => e.durationSeconds)
-            .reduce((double a, double b) => a + b) /
+        observations.map((e) => e.durationSeconds).reduce((a, b) => a + b) /
         observations.length;
 
     double varianceDuration = 0.0;
-    for (final ExecutionTelemetryRecord obs in observations) {
+    for (final obs in observations) {
       varianceDuration += math.pow(obs.durationSeconds - meanDuration, 2);
     }
     varianceDuration /= (observations.length - 1);
@@ -202,9 +200,7 @@ class PpmPredictionEngine {
       );
     }
 
-    final int failCount = observations
-        .where((ExecutionTelemetryRecord e) => e.failed)
-        .length;
+    final int failCount = observations.where((e) => e.failed).length;
     _baseFailureProb = math.max(0.01, failCount / observations.length);
     _baseDurationSec = math.max(5.0, meanDuration * 0.4);
     _durationVariance = varianceDuration;

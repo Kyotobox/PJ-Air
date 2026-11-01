@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:axioma/src/analysis/product_leak_linter.dart';
+import '../lib/src/analysis/product_leak_linter.dart';
 
 void main(List<String> args) async {
   final bool enforce = args.contains('--enforce');

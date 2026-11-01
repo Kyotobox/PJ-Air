@@ -101,3 +101,28 @@ export 'src/neural/repomap_generator.dart';
 
 // Static Analysis & Product Leak Prevention (§1, §2, §39, §47)
 export 'src/analysis/product_leak_linter.dart';
+
+// Transversal Connectors & Official Rate Services (§39, §45, §47)
+export 'src/services/bcv_rate_service.dart';
+
+// Fleet Council & Cognitive Cascade Services (§39, §45, §47, TASK-N30-03)
+export 'src/services/fleet_council_client.dart';
+
+// Geo Domain Axioms (Sprint N32 - Pure Dart)
+export 'src/geo/geo_point.dart';
+export 'src/geo/bounding_box.dart';
+export 'src/geo/haversine_calculator.dart';
+export 'src/geo/address_normalizer.dart';
+export 'src/geo/google_maps_url_builder.dart';
+
+// Messaging Domain Axioms & Channels (Sprint N32 - Pure Dart)
+export 'src/messaging/whatsapp_models.dart';
+export 'src/messaging/phone_sanitizer.dart';
+export 'src/messaging/telegram_models.dart';
+export 'src/messaging/discord_models.dart';
+
+// Webhook Security & HMAC Verification (Sprint N32 - Pure Dart)
+export 'src/crypto/webhook_hmac_verifier.dart';
+
+// Multi-OS Parity & Platform Guard (Sprint G1 - Pure Dart, Art. Multi-OS)
+export 'src/platform_guard.dart';
