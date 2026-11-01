@@ -55,6 +55,9 @@ export class BannersService {
             link_url: data.link_url?.trim() || '#catalogo',
             button_text: data.button_text?.trim() || 'Ver Productos',
             button_text_en: data.button_text_en?.trim() || 'Browse Catalog',
+            secondary_button_text: data.secondary_button_text?.trim(),
+            secondary_button_text_en: data.secondary_button_text_en?.trim(),
+            secondary_link_url: data.secondary_link_url?.trim(),
             display_order: data.display_order !== undefined ? Number(data.display_order) : 0,
             is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
         });
@@ -87,6 +90,9 @@ export class BannersService {
         if (data.link_url !== undefined) banner.link_url = data.link_url?.trim();
         if (data.button_text !== undefined) banner.button_text = data.button_text?.trim();
         if (data.button_text_en !== undefined) banner.button_text_en = data.button_text_en?.trim();
+        if (data.secondary_button_text !== undefined) banner.secondary_button_text = data.secondary_button_text?.trim();
+        if (data.secondary_button_text_en !== undefined) banner.secondary_button_text_en = data.secondary_button_text_en?.trim();
+        if (data.secondary_link_url !== undefined) banner.secondary_link_url = data.secondary_link_url?.trim();
         if (data.display_order !== undefined) banner.display_order = Number(data.display_order);
         if (data.is_active !== undefined) banner.is_active = Boolean(data.is_active);
 

@@ -95,6 +95,22 @@ describe('BannersService', () => {
             expect(result.is_active).toBe(true);
             expect(result.display_order).toBe(0);
         });
+
+        it('should successfully persist secondary button fields if provided', async () => {
+            const result = await service.create({
+                title: 'Banner con 2 botones',
+                image_url: '/uploads/banners/seasonal/sample.jpg',
+                button_text: 'Botón 1',
+                link_url: '/dest1',
+                secondary_button_text: 'Botón 2',
+                secondary_button_text_en: 'Button 2',
+                secondary_link_url: '/dest2',
+            });
+
+            expect(result.secondary_button_text).toBe('Botón 2');
+            expect(result.secondary_button_text_en).toBe('Button 2');
+            expect(result.secondary_link_url).toBe('/dest2');
+        });
     });
 
     describe('create - Sad Path (§6)', () => {
@@ -192,6 +208,19 @@ describe('BannersService', () => {
             expect(updated.title).toBe('Croissants Horneados de Mantequilla');
             expect(updated.is_active).toBe(false);
             expect(updated.display_order).toBe(5);
+            expect(bannerRepo.save).toHaveBeenCalled();
+        });
+
+        it('should update secondary button fields', async () => {
+            const updated = await service.update(1, {
+                secondary_button_text: 'Nuevo Botón Secundario',
+                secondary_button_text_en: 'New Secondary Button',
+                secondary_link_url: '#nuevo-link',
+            });
+
+            expect(updated.secondary_button_text).toBe('Nuevo Botón Secundario');
+            expect(updated.secondary_button_text_en).toBe('New Secondary Button');
+            expect(updated.secondary_link_url).toBe('#nuevo-link');
             expect(bannerRepo.save).toHaveBeenCalled();
         });
 
