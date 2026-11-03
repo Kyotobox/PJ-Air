@@ -362,5 +362,26 @@
     "exile_name": "1793301165817_database.sqlite",
     "hash": "3F5E3C6EC969CF657B3F9C74F9A07C7AEEE9D5AA1A2967C9B4C934DF33B8EF8A",
     "original_path": "/home/opc/code/pj-air/database.sqlite"
+  },
+  {
+    "timestamp": "2026-11-03T17:06:32.579823+00:00",
+    "original_name": "ticket_TCK-PJ-AIR-S59-1793725589029",
+    "exile_name": "broker_approved_1793725592579_TCK-PJ-AIR-S59-1793725589029.json",
+    "verdict": "APPROVED",
+    "reason": "Ticket canónico validado y autorizado formalmente."
+  },
+  {
+    "timestamp": "2026-11-03T17:06:36.770245+00:00",
+    "original_name": "ticket_TCK-PJ-AIR-S60A-1793725589029",
+    "exile_name": "broker_approved_1793725596770_TCK-PJ-AIR-S60A-1793725589029.json",
+    "verdict": "APPROVED",
+    "reason": "Ticket canónico validado y autorizado formalmente."
+  },
+  {
+    "timestamp": "2026-11-03T17:06:41.077366+00:00",
+    "original_name": "ticket_TCK-PJ-AIR-S60B-1793725589029",
+    "exile_name": "broker_approved_1793725601077_TCK-PJ-AIR-S60B-1793725589029.json",
+    "verdict": "APPROVED",
+    "reason": "Ticket canónico validado y autorizado formalmente."
   }
 ]

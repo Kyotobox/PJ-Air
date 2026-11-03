@@ -157,15 +157,6 @@
           "status": "TODO"
         }
       ]
-    },
-    {
-      "id": "S55",
-      "name": "Sprint S55: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S55-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-03T17:04:11.066026+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
-      "tasks": []
     }
   ],
   "archived_sprints_count": 50,
