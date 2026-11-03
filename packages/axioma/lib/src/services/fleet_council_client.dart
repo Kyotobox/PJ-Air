@@ -138,7 +138,7 @@ class FleetCouncilClient {
     Uri? endpoint,
     String? authToken,
     String? hmacSecret,
-    this.timeout = const Duration(seconds: 60),
+    this.timeout = const Duration(seconds: 300),
     HttpClient? httpClient,
   }) : endpoint =
            endpoint ??

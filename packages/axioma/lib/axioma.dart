@@ -126,3 +126,20 @@ export 'src/crypto/webhook_hmac_verifier.dart';
 
 // Multi-OS Parity & Platform Guard (Sprint G1 - Pure Dart, Art. Multi-OS)
 export 'src/platform_guard.dart';
+
+// Governance & Anti-Rebound Lifecycle Gate (§4, §6, §39, §50)
+export 'src/governance/sprint_sequence_validator.dart';
+export 'src/governance/takeover_rebound_gate.dart';
+export 'src/governance/upstream_pointer.dart';
+export 'src/governance/bunker_skill_filter.dart';
+export 'src/governance/atomic_task_bifurcator.dart';
+export 'src/governance/governance_reconciler.dart';
+
+// Incremental Render & Content-Addressable Storage (CAS) Contracts (Sprint N54, §39)
+export 'src/render/incremental_render_spec.dart';
+export 'src/render/cas_storage_engine.dart';
+export 'src/render/fast_splice_engine.dart';
+export 'src/render/incremental_render_canary.dart';
+
+// Adaptive User Signal & CAR Linter Synthesis (Sprint N54, §39, §46)
+export 'src/car/user_signal_car_connector.dart';
