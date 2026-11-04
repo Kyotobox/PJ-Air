@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
+import { StripeService } from './stripe.service';
 import { CheckPaymentsController } from './check-payments.controller';
 import { CheckPaymentsService } from './check-payments.service';
 import { FeeCalculatorService } from './fee-calculator.service';
@@ -22,7 +23,7 @@ import { CreditModule } from '../credit/credit.module';
     CreditModule,
   ],
   controllers: [PaymentsController, CheckPaymentsController],
-  providers: [PaymentsService, CheckPaymentsService, FeeCalculatorService],
-  exports: [PaymentsService, CheckPaymentsService, FeeCalculatorService],
+  providers: [PaymentsService, StripeService, CheckPaymentsService, FeeCalculatorService],
+  exports: [PaymentsService, StripeService, CheckPaymentsService, FeeCalculatorService],
 })
 export class PaymentsModule {}

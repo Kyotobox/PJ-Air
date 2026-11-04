@@ -99,6 +99,21 @@ let AuthService = class AuthService {
             tax_id: cleanTaxId,
             st120_status: initialSt120Status,
             tax_exempt: false,
+            ...(body.legal_business_name ? { legal_business_name: body.legal_business_name } : {}),
+            ...(body.dba ? { dba: body.dba } : {}),
+            ...(body.ein ? { ein: body.ein } : {}),
+            ...(body.business_address ? { business_address: body.business_address } : {}),
+            ...(body.signer_name ? { signer_name: body.signer_name } : {}),
+            ...(body.signer_title ? { signer_title: body.signer_title } : {}),
+            ...(body.signer_phone ? { signer_phone: body.signer_phone } : {}),
+            ...(body.signer_email ? { signer_email: body.signer_email } : {}),
+            ...(body.terms_version ? { terms_version: body.terms_version } : {}),
+            ...(body.accepted_at ? { accepted_at: new Date(body.accepted_at) } : (body.signature_text ? { accepted_at: new Date() } : {})),
+            ...(body.ip_address ? { ip_address: body.ip_address } : {}),
+            ...(body.signature_text ? { signature_text: body.signature_text } : {}),
+            ...(body.card_last4 ? { card_last4: body.card_last4 } : {}),
+            ...(body.stripe_payment_method_id ? { stripe_payment_method_id: body.stripe_payment_method_id } : {}),
+            ...(body.check_enabled !== undefined ? { check_enabled: Boolean(body.check_enabled) } : {}),
         });
         const user = Array.isArray(userResult) ? userResult[0] : userResult;
         await this.usersService.createProfile({

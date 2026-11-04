@@ -146,4 +146,48 @@ describe('UsersService', () => {
       expect(result.avatar_url).toBe('/images/avatars/test.png');
     });
   });
+
+  describe('updateB2BTerms', () => {
+    it('should successfully persist B2B terms acceptance and legal signature fields', async () => {
+      const existingUser: any = { id: 'u-1', email: 'b2b@company.com' };
+      mockUserRepository.findOne.mockResolvedValue(existingUser);
+      mockUserRepository.save.mockImplementation(async (u) => u);
+
+      const acceptanceDate = new Date('2026-11-04T00:00:00Z');
+      const result = await service.updateB2BTerms('u-1', {
+        legal_business_name: 'Acme Wholesale LLC',
+        dba: 'Acme Foods',
+        ein: '12-3456789',
+        business_address: '123 Market St, Brooklyn NY',
+        signer_name: 'John Doe',
+        signer_title: 'Managing Director',
+        signer_phone: '7185550199',
+        signer_email: 'john@acme.com',
+        terms_version: 'v2026.10.29',
+        accepted_at: acceptanceDate,
+        ip_address: '192.168.1.100',
+        signature_text: 'John Doe',
+        card_last4: '4242',
+        stripe_payment_method_id: 'pm_123456789',
+        check_enabled: true,
+      });
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result.legal_business_name).toBe('Acme Wholesale LLC');
+      expect(result.ein).toBe('12-3456789');
+      expect(result.signature_text).toBe('John Doe');
+      expect(result.check_enabled).toBe(true);
+      expect(result.terms_version).toBe('v2026.10.29');
+    });
+
+    it('should throw NotFoundException if user does not exist (sad path)', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateB2BTerms('non-existent-user', {
+          legal_business_name: 'Ghost Corp',
+        }),
+      ).rejects.toThrow();
+    });
+  });
 });

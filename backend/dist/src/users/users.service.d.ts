@@ -42,4 +42,5 @@ export declare class UsersService {
     }): Promise<ProductDiscount>;
     deleteProductDiscount(discountId: string): Promise<void>;
     getProductDiscounts(userId: string): Promise<ProductDiscount[]>;
+    updateB2BTerms(userId: string, data: Partial<User>): Promise<User>;
 }

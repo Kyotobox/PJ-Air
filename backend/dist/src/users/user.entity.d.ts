@@ -21,5 +21,20 @@ export declare class User {
     st120_status: string;
     st120_document_url?: string | null;
     tax_exempt: boolean;
+    legal_business_name?: string | null;
+    dba?: string | null;
+    ein?: string | null;
+    business_address?: string | null;
+    signer_name?: string | null;
+    signer_title?: string | null;
+    signer_phone?: string | null;
+    signer_email?: string | null;
+    terms_version?: string | null;
+    accepted_at?: Date | null;
+    ip_address?: string | null;
+    signature_text?: string | null;
+    card_last4?: string | null;
+    stripe_payment_method_id?: string | null;
+    check_enabled: boolean;
     productDiscounts: ProductDiscount[];
 }

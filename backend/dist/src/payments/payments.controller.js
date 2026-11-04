@@ -15,13 +15,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentsController = void 0;
 const common_1 = require("@nestjs/common");
 const payments_service_1 = require("./payments.service");
+const stripe_service_1 = require("./stripe.service");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 let PaymentsController = class PaymentsController {
     paymentsService;
-    constructor(paymentsService) {
+    stripeService;
+    constructor(paymentsService, stripeService) {
         this.paymentsService = paymentsService;
+        this.stripeService = stripeService;
+    }
+    async createSetupIntentWholesale(body, req) {
+        let customerId = body?.customerId;
+        const userId = body?.userId || req.user?.id;
+        if (!customerId && userId) {
+            const customer = await this.paymentsService.getOrCreateCustomer(userId);
+            customerId = customer.id;
+        }
+        return this.stripeService.createSetupIntent({
+            customerId,
+            userId,
+            ein: body?.ein,
+            terms_version: body?.terms_version,
+            metadata: body?.metadata,
+        });
     }
     async createIntent(body, req) {
         let customerId = body.customerId;
@@ -62,6 +80,14 @@ let PaymentsController = class PaymentsController {
     }
 };
 exports.PaymentsController = PaymentsController;
+__decorate([
+    (0, common_1.Post)('create-setup-intent'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "createSetupIntentWholesale", null);
 __decorate([
     (0, common_1.Post)('create-intent'),
     __param(0, (0, common_1.Body)()),
@@ -133,6 +159,7 @@ __decorate([
 ], PaymentsController.prototype, "handleWebhook", null);
 exports.PaymentsController = PaymentsController = __decorate([
     (0, common_1.Controller)('payments'),
-    __metadata("design:paramtypes", [payments_service_1.PaymentsService])
+    __metadata("design:paramtypes", [payments_service_1.PaymentsService,
+        stripe_service_1.StripeService])
 ], PaymentsController);
 //# sourceMappingURL=payments.controller.js.map

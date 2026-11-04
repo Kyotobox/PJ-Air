@@ -3,8 +3,8 @@
   "version": "4.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S59",
-  "current_task": "TASK-59-01",
+  "current_sprint": "S60",
+  "current_task": "TASK-60-02",
   "sprints": [
     {
       "id": "S57",
@@ -118,18 +118,18 @@
     },
     {
       "id": "S60",
-      "title": "Onboarding Mayorista B2B, T\u00e9rminos Legales, Firma Electr\u00f3nica, Stripe Setup y Pagos con Cheque",
-      "status": "PLANNED",
+      "title": "Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
+      "status": "IN_PROGRESS",
       "tasks": [
         {
           "id": "TASK-60-01",
-          "title": "Modelo y persistencia legal de aceptaci\u00f3n de T\u00e9rminos y Firma bajo NY ESRA / E-SIGN Act",
-          "status": "TODO"
+          "title": "Modelo y persistencia legal de aceptación de Términos y Firma bajo NY ESRA / E-SIGN Act",
+          "status": "DONE"
         },
         {
           "id": "TASK-60-02",
-          "title": "Servicio Stripe SetupIntent para tokenizaci\u00f3n de tarjeta en archivo sin cobro inmediato (bash.00)",
-          "status": "TODO"
+          "title": "Servicio Stripe SetupIntent para tokenización de tarjeta en archivo sin cobro inmediato ($0.00)",
+          "status": "DONE"
         },
         {
           "id": "TASK-60-03",
@@ -143,7 +143,7 @@
         },
         {
           "id": "TASK-60-05",
-          "title": "M\u00e9todo de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificaci\u00f3n humana",
+          "title": "Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana",
           "status": "TODO"
         },
         {
@@ -153,7 +153,7 @@
         },
         {
           "id": "TASK-60-07",
-          "title": "Suite e2e de certificaci\u00f3n para SetupIntent, consentimiento legal y flujos de pago",
+          "title": "Suite e2e de certificación para SetupIntent, consentimiento legal y flujos de pago",
           "status": "TODO"
         }
       ]
@@ -162,47 +162,29 @@
   "archived_sprints_count": 50,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S59",
-    "name": "Sprint 59: Hoja de Cocina/Despacho 1:1 con Excel, Asignaci\u00f3n Operativa y Limpieza de Banners CTA",
+    "id": "S60",
+    "name": "Sprint 60: Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
     "status": "IN_PROGRESS",
-    "start_date": "2026-11-03",
-    "goal": "Implementar la Hoja de Empaque y Producci\u00f3n para cocina con modal interactivo de asignaci\u00f3n de chofer y empaque, vista HTML Print CSS 1:1 id\u00e9ntica a EJEMPLO_1.xlsx con paginaci\u00f3n inteligente, descargador directo de archivo .xlsx, ordenamiento alfab\u00e9tico estricto de categor\u00edas y productos, y eliminaci\u00f3n del segundo banner gigante en la tienda principal.",
+    "start_date": "2026-11-04",
+    "goal": "Persistencia Legal de Términos B2B bajo NY ESRA / E-SIGN Act y Servicio Stripe SetupIntent para tarjeta en archivo.",
     "tasks": [
       {
-        "id": "TASK-59-01",
-        "label": "UI/ADMIN-KITCHEN-ASSIGN-MODAL",
-        "desc": "Modal interactivo en /admin/orders al hacer clic en \"Hoja Cocina\" para asignar Chofer (William Medina, etc.) y Estilo de Empaque (Cart\u00f3n / Pl\u00e1stico) con selecci\u00f3n de imprimir o descargar Excel.",
-        "status": "TODO"
+        "id": "TASK-60-01",
+        "label": "DOMAIN/B2B-TERMS-AND-SIGNATURE-SCHEMA",
+        "desc": "Modelo y persistencia legal de aceptación de Términos y Firma bajo NY ESRA / E-SIGN Act",
+        "status": "DONE"
       },
       {
-        "id": "TASK-59-02",
-        "label": "CORE/KITCHEN-ALPHABETICAL-SORT-AND-CATEGORIES",
-        "desc": "L\u00f3gica de ordenamiento alfab\u00e9tico estricto de Categor\u00edas y Productos con cantidades, notas operativas (CP) y subtotales por categor\u00eda.",
-        "status": "TODO"
+        "id": "TASK-60-02",
+        "label": "PAYMENTS/STRIPE-SETUP-INTENT-VAULT",
+        "desc": "Servicio Stripe SetupIntent para tokenización de tarjeta en archivo sin cobro inmediato ($0.00)",
+        "status": "DONE"
       },
       {
-        "id": "TASK-59-03",
-        "label": "UI/KITCHEN-PRINT-CSS-1TO1-PAGINATION",
-        "desc": "Plantilla Print CSS 1:1 con EJEMPLO_1.xlsx: encabezado operativo sin tel\u00e9fonos ni precios, badge RETIRO LOCAL para pickup, y paginaci\u00f3n con \"MORE INFORMATION ON THE NEXT PAGE \u2192\".",
-        "status": "TODO"
-      },
-      {
-        "id": "TASK-59-04",
-        "label": "CORE/KITCHEN-EXCEL-EXPORT-GENERATOR",
-        "desc": "Generador din\u00e1mico y descargador de archivo .xlsx id\u00e9ntico a la plantilla f\u00edsica de empaque.",
-        "status": "TODO"
-      },
-      {
-        "id": "TASK-59-05",
-        "label": "UI/STOREFRONT-HERO-CLEANUP-COMPACT-CTA",
-        "desc": "Supresi\u00f3n del segundo banner masivo en Home y adopci\u00f3n de botones Call-to-Action compactos.",
-        "status": "TODO"
-      },
-      {
-        "id": "TASK-59-06",
-        "label": "TEST/S59-INTEGRATION-CERTIFICATION",
-        "desc": "Certificaci\u00f3n integral de pruebas unitarias, exports y builds limpios de frontend y backend.",
-        "status": "TODO"
+        "id": "TASK-60-07A",
+        "label": "TEST/S60A-CERTIFICATION",
+        "desc": "Suite de tests unitarios backend para SetupIntent y persistencia legal",
+        "status": "DONE"
       }
     ]
   }

@@ -1,7 +1,16 @@
 import { PaymentsService } from './payments.service';
+import { StripeService } from './stripe.service';
 export declare class PaymentsController {
     private readonly paymentsService;
-    constructor(paymentsService: PaymentsService);
+    private readonly stripeService;
+    constructor(paymentsService: PaymentsService, stripeService: StripeService);
+    createSetupIntentWholesale(body: {
+        customerId?: string;
+        userId?: string;
+        ein?: string;
+        terms_version?: string;
+        metadata?: Record<string, any>;
+    }, req: any): Promise<import("./stripe.service").SetupIntentResult>;
     createIntent(body: {
         amount: number;
         currency?: string;
