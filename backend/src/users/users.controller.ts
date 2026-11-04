@@ -28,6 +28,11 @@ export class UsersController {
     return this.usersService.updateProfile(id, profileData);
   }
 
+  @Patch(':id/b2b-terms')
+  async updateB2BTerms(@Param('id') id: string, @Body() data: any) {
+    return this.usersService.updateB2BTerms(id, data);
+  }
+
   @Patch(':id/role')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')

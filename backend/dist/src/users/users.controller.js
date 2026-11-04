@@ -70,6 +70,9 @@ let UsersController = class UsersController {
     async updateProfile(id, profileData) {
         return this.usersService.updateProfile(id, profileData);
     }
+    async updateB2BTerms(id, data) {
+        return this.usersService.updateB2BTerms(id, data);
+    }
     async updateRole(id, body) {
         return this.usersService.updateRole(id, body.role);
     }
@@ -147,6 +150,14 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Patch)(':id/b2b-terms'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateB2BTerms", null);
 __decorate([
     (0, common_1.Patch)(':id/role'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),

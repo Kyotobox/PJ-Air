@@ -34,6 +34,21 @@ let User = class User {
     st120_status;
     st120_document_url;
     tax_exempt;
+    legal_business_name;
+    dba;
+    ein;
+    business_address;
+    signer_name;
+    signer_title;
+    signer_phone;
+    signer_email;
+    terms_version;
+    accepted_at;
+    ip_address;
+    signature_text;
+    card_last4;
+    stripe_payment_method_id;
+    check_enabled;
     productDiscounts;
 };
 exports.User = User;
@@ -109,6 +124,66 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "tax_exempt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "legal_business_name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "dba", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "ein", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "business_address", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "signer_name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "signer_title", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "signer_phone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "signer_email", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', default: 'v2026.10.29', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "terms_version", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "accepted_at", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "ip_address", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "signature_text", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "card_last4", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "stripe_payment_method_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "check_enabled", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

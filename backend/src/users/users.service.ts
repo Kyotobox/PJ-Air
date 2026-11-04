@@ -211,4 +211,32 @@ export class UsersService {
       relations: ['product']
     });
   }
+
+  async updateB2BTerms(userId: string, data: Partial<User>): Promise<User> {
+    const user = await this.findOne(userId);
+    const allowedFields: (keyof User)[] = [
+      'legal_business_name',
+      'dba',
+      'ein',
+      'business_address',
+      'signer_name',
+      'signer_title',
+      'signer_phone',
+      'signer_email',
+      'terms_version',
+      'accepted_at',
+      'ip_address',
+      'signature_text',
+      'card_last4',
+      'stripe_payment_method_id',
+      'check_enabled',
+    ];
+    for (const field of allowedFields) {
+      if ((data as any)[field] !== undefined) {
+        (user as any)[field] = (data as any)[field];
+      }
+    }
+    const result = await this.userRepository.save(user);
+    return Array.isArray(result) ? result[0] : result;
+  }
 }

@@ -60,6 +60,51 @@ export class User {
   @Column({ type: 'boolean', default: false })
   tax_exempt: boolean;
 
+  @Column({ type: 'varchar', nullable: true })
+  legal_business_name?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  dba?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  ein?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  business_address?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  signer_name?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  signer_title?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  signer_phone?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  signer_email?: string | null;
+
+  @Column({ type: 'varchar', default: 'v2026.10.29', nullable: true })
+  terms_version?: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  accepted_at?: Date | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  ip_address?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  signature_text?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  card_last4?: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  stripe_payment_method_id?: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  check_enabled: boolean;
+
   @OneToMany(() => ProductDiscount, (pd) => pd.user)
   productDiscounts: ProductDiscount[];
 }

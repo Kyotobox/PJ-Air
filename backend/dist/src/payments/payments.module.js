@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const payments_controller_1 = require("./payments.controller");
 const payments_service_1 = require("./payments.service");
+const stripe_service_1 = require("./stripe.service");
 const check_payments_controller_1 = require("./check-payments.controller");
 const check_payments_service_1 = require("./check-payments.service");
 const fee_calculator_service_1 = require("./fee-calculator.service");
@@ -34,8 +35,8 @@ exports.PaymentsModule = PaymentsModule = __decorate([
             credit_module_1.CreditModule,
         ],
         controllers: [payments_controller_1.PaymentsController, check_payments_controller_1.CheckPaymentsController],
-        providers: [payments_service_1.PaymentsService, check_payments_service_1.CheckPaymentsService, fee_calculator_service_1.FeeCalculatorService],
-        exports: [payments_service_1.PaymentsService, check_payments_service_1.CheckPaymentsService, fee_calculator_service_1.FeeCalculatorService],
+        providers: [payments_service_1.PaymentsService, stripe_service_1.StripeService, check_payments_service_1.CheckPaymentsService, fee_calculator_service_1.FeeCalculatorService],
+        exports: [payments_service_1.PaymentsService, stripe_service_1.StripeService, check_payments_service_1.CheckPaymentsService, fee_calculator_service_1.FeeCalculatorService],
     })
 ], PaymentsModule);
 //# sourceMappingURL=payments.module.js.map

@@ -114,6 +114,51 @@ let AppModule = AppModule_1 = class AppModule {
             if (!userColNames.includes('tax_exempt')) {
                 await qr.query(`ALTER TABLE users ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
             }
+            if (!userColNames.includes('legal_business_name')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN legal_business_name VARCHAR;`);
+            }
+            if (!userColNames.includes('dba')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN dba VARCHAR;`);
+            }
+            if (!userColNames.includes('ein')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN ein VARCHAR;`);
+            }
+            if (!userColNames.includes('business_address')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN business_address TEXT;`);
+            }
+            if (!userColNames.includes('signer_name')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN signer_name VARCHAR;`);
+            }
+            if (!userColNames.includes('signer_title')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN signer_title VARCHAR;`);
+            }
+            if (!userColNames.includes('signer_phone')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN signer_phone VARCHAR;`);
+            }
+            if (!userColNames.includes('signer_email')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN signer_email VARCHAR;`);
+            }
+            if (!userColNames.includes('terms_version')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN terms_version VARCHAR DEFAULT 'v2026.10.29';`);
+            }
+            if (!userColNames.includes('accepted_at')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN accepted_at DATETIME;`);
+            }
+            if (!userColNames.includes('ip_address')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN ip_address VARCHAR;`);
+            }
+            if (!userColNames.includes('signature_text')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN signature_text VARCHAR;`);
+            }
+            if (!userColNames.includes('card_last4')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN card_last4 VARCHAR;`);
+            }
+            if (!userColNames.includes('stripe_payment_method_id')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN stripe_payment_method_id VARCHAR;`);
+            }
+            if (!userColNames.includes('check_enabled')) {
+                await qr.query(`ALTER TABLE users ADD COLUMN check_enabled BOOLEAN DEFAULT 0;`);
+            }
             await qr.query(`
         CREATE TABLE IF NOT EXISTS check_payments (
           id VARCHAR PRIMARY KEY NOT NULL,

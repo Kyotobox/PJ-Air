@@ -2,13 +2,37 @@ import {
   Controller, Post, Get, Delete, Body, Param, Headers, Req, HttpCode, HttpStatus, UseGuards
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
+import { StripeService } from './stripe.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(
+    private readonly paymentsService: PaymentsService,
+    private readonly stripeService: StripeService,
+  ) {}
+
+  @Post('create-setup-intent')
+  async createSetupIntentWholesale(
+    @Body() body: { customerId?: string; userId?: string; ein?: string; terms_version?: string; metadata?: Record<string, any> },
+    @Req() req: any,
+  ) {
+    let customerId = body?.customerId;
+    const userId = body?.userId || req.user?.id;
+    if (!customerId && userId) {
+      const customer = await this.paymentsService.getOrCreateCustomer(userId);
+      customerId = customer.id;
+    }
+    return this.stripeService.createSetupIntent({
+      customerId,
+      userId,
+      ein: body?.ein,
+      terms_version: body?.terms_version,
+      metadata: body?.metadata,
+    });
+  }
 
   @Post('create-intent')
   async createIntent(

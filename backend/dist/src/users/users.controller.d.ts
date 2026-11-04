@@ -5,6 +5,7 @@ export declare class UsersController {
     findAll(): Promise<import("./user.entity").User[]>;
     findOne(id: string): Promise<import("./user.entity").User>;
     updateProfile(id: string, profileData: any): Promise<import("./profile.entity").Profile>;
+    updateB2BTerms(id: string, data: any): Promise<import("./user.entity").User>;
     updateRole(id: string, body: {
         role: string;
     }): Promise<import("./user.entity").User>;
