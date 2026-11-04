@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
+import PrintKitchenModal from '@/components/modals/PrintKitchenModal';
 
 interface OrderItem {
     id: string;
@@ -96,6 +97,10 @@ export default function AdminOrdersPage() {
         bounced: any[];
     }>({ inHand: [], deposited: [], bounced: [] });
     const [loadingChecks, setLoadingChecks] = useState(false);
+
+    // Print Kitchen Modal State (TASK-59-01)
+    const [printKitchenModalOpen, setPrintKitchenModalOpen] = useState(false);
+    const [orderToPrintKitchen, setOrderToPrintKitchen] = useState<Order | null>(null);
 
     // Refund Modal State
     const [refundModalOpen, setRefundModalOpen] = useState(false);
@@ -969,7 +974,10 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     <ExternalLink size={14} /> Detalle
                                 </Link>
                                 <button 
-                                    onClick={() => handlePrintOrder(selectedOrder, 'production')} 
+                                    onClick={() => {
+                                        setOrderToPrintKitchen(selectedOrder);
+                                        setPrintKitchenModalOpen(true);
+                                    }} 
                                     className="px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center gap-2"
                                     title="Imprimir Hoja de Producción (Cocina)"
                                 >
@@ -1402,6 +1410,13 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     </div>
                 </div>
             )}
+
+            {/* Print Kitchen & Production Modal (TASK-59-01) */}
+            <PrintKitchenModal
+                isOpen={printKitchenModalOpen}
+                onClose={() => setPrintKitchenModalOpen(false)}
+                order={orderToPrintKitchen}
+            />
 
             {/* Notification Toast */}
             {toast && (

@@ -4,61 +4,29 @@
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S59",
-  "current_task": "TASK-59-01",
+  "current_task": "TASK-59-06",
   "sprints": [
-    {
-      "id": "S57",
-      "title": "Automatizaci\u00f3n de Reportes Contables, Notificaci\u00f3n Zelle y Folio de Notas de Cr\u00e9dito",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-57-01",
-          "title": "Configuraci\u00f3n de correos contables en admin/settings",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-02",
-          "title": "Cron de despacho diario y semanal de Excel de \u00f3rdenes",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-03",
-          "title": "Flujo de rechazo Zelle con notificaci\u00f3n al cliente",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-04",
-          "title": "Generador de notas de cr\u00e9dito con folio fiscal legal",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-05",
-          "title": "Certificaci\u00f3n integral de S57 y verificaci\u00f3n DDL",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S58",
       "name": "Sprint S58: [RECONCILED] Auto-reconciled from git history",
       "dag_id": "SPRINT-S58-RECONCILED",
       "status": "COMPLETED",
       "reconciled_at": "2026-11-01T20:34:21.596388+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
       "tasks": [
         {
           "id": "TASK-58-01",
-          "title": "Ingesta, compresi\u00f3n y normalizaci\u00f3n de las 10 fotos de temporada del cliente",
+          "title": "Ingesta, compresión y normalización de las 10 fotos de temporada del cliente",
           "status": "DONE"
         },
         {
           "id": "TASK-58-02",
-          "title": "Soporte para segundo bot\u00f3n opcional en la entidad Banner y endpoint GET /banners/gallery",
+          "title": "Soporte para segundo botón opcional en la entidad Banner y endpoint GET /banners/gallery",
           "status": "DONE"
         },
         {
           "id": "TASK-58-03",
-          "title": "Selector interactivo de Galer\u00eda de Temporada (Media Picker) en /admin/banners",
+          "title": "Selector interactivo de Galería de Temporada (Media Picker) en /admin/banners",
           "status": "DONE"
         },
         {
@@ -73,62 +41,62 @@
         },
         {
           "id": "TASK-58-06",
-          "title": "Certificaci\u00f3n integral de pruebas unitarias backend y builds sin errores",
+          "title": "Certificación integral de pruebas unitarias backend y builds sin errores",
           "status": "DONE"
         }
       ],
-      "title": "Gestor de Banners Hero de Temporada, Galer\u00eda de Medios Reutilizables y Renderizado Modular 1:1"
+      "title": "Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1"
     },
     {
       "id": "S59",
-      "title": "Hoja de Cocina/Despacho 1:1 con Excel, Asignaci\u00f3n Operativa y Limpieza de Banners CTA",
-      "status": "IN_PROGRESS",
+      "title": "Hoja de Cocina/Despacho 1:1 con Excel, Asignación Operativa y Limpieza de Banners CTA",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-59-01",
-          "title": "Modal interactivo de asignaci\u00f3n de Chofer y Empaque en admin/orders",
-          "status": "TODO"
+          "title": "Modal interactivo de asignación de Chofer y Empaque en admin/orders",
+          "status": "DONE"
         },
         {
           "id": "TASK-59-02",
-          "title": "L\u00f3gica de ordenamiento alfab\u00e9tico estricto de Categor\u00edas y Productos con subtotales",
-          "status": "TODO"
+          "title": "Lógica de ordenamiento alfabético estricto de Categorías y Productos con subtotales",
+          "status": "DONE"
         },
         {
           "id": "TASK-59-03",
-          "title": "Plantilla Print CSS 1:1 con EJEMPLO_1.xlsx y paginaci\u00f3n inteligente multi-p\u00e1gina",
-          "status": "TODO"
+          "title": "Plantilla Print CSS 1:1 con EJEMPLO_1.xlsx y paginación inteligente multi-página",
+          "status": "DONE"
         },
         {
           "id": "TASK-59-04",
-          "title": "Generador din\u00e1mico y descargador de archivo .xlsx id\u00e9ntico a la plantilla f\u00edsica",
-          "status": "TODO"
+          "title": "Generador dinámico y descargador de archivo .xlsx idéntico a la plantilla física",
+          "status": "DONE"
         },
         {
           "id": "TASK-59-05",
-          "title": "Supresi\u00f3n del segundo banner masivo en Home y adopci\u00f3n de CTAs compactos",
-          "status": "TODO"
+          "title": "Supresión del segundo banner masivo en Home y adopción de CTAs compactos",
+          "status": "DONE"
         },
         {
           "id": "TASK-59-06",
-          "title": "Certificaci\u00f3n integral de pruebas unitarias, exports y builds limpios",
-          "status": "TODO"
+          "title": "Certificación integral de pruebas unitarias, exports y builds limpios",
+          "status": "DONE"
         }
       ]
     },
     {
       "id": "S60",
-      "title": "Onboarding Mayorista B2B, T\u00e9rminos Legales, Firma Electr\u00f3nica, Stripe Setup y Pagos con Cheque",
+      "title": "Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
       "status": "PLANNED",
       "tasks": [
         {
           "id": "TASK-60-01",
-          "title": "Modelo y persistencia legal de aceptaci\u00f3n de T\u00e9rminos y Firma bajo NY ESRA / E-SIGN Act",
+          "title": "Modelo y persistencia legal de aceptación de Términos y Firma bajo NY ESRA / E-SIGN Act",
           "status": "TODO"
         },
         {
           "id": "TASK-60-02",
-          "title": "Servicio Stripe SetupIntent para tokenizaci\u00f3n de tarjeta en archivo sin cobro inmediato (bash.00)",
+          "title": "Servicio Stripe SetupIntent para tokenización de tarjeta en archivo sin cobro inmediato (bash.00)",
           "status": "TODO"
         },
         {
@@ -143,7 +111,7 @@
         },
         {
           "id": "TASK-60-05",
-          "title": "M\u00e9todo de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificaci\u00f3n humana",
+          "title": "Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana",
           "status": "TODO"
         },
         {
@@ -153,56 +121,56 @@
         },
         {
           "id": "TASK-60-07",
-          "title": "Suite e2e de certificaci\u00f3n para SetupIntent, consentimiento legal y flujos de pago",
+          "title": "Suite e2e de certificación para SetupIntent, consentimiento legal y flujos de pago",
           "status": "TODO"
         }
       ]
     }
   ],
-  "archived_sprints_count": 50,
+  "archived_sprints_count": 1,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S59",
-    "name": "Sprint 59: Hoja de Cocina/Despacho 1:1 con Excel, Asignaci\u00f3n Operativa y Limpieza de Banners CTA",
-    "status": "IN_PROGRESS",
+    "name": "Sprint 59: Hoja de Cocina/Despacho 1:1 con Excel, Asignación Operativa y Limpieza de Banners CTA",
+    "status": "COMPLETED",
     "start_date": "2026-11-03",
-    "goal": "Implementar la Hoja de Empaque y Producci\u00f3n para cocina con modal interactivo de asignaci\u00f3n de chofer y empaque, vista HTML Print CSS 1:1 id\u00e9ntica a EJEMPLO_1.xlsx con paginaci\u00f3n inteligente, descargador directo de archivo .xlsx, ordenamiento alfab\u00e9tico estricto de categor\u00edas y productos, y eliminaci\u00f3n del segundo banner gigante en la tienda principal.",
+    "goal": "Implementar la Hoja de Empaque y Producción para cocina con modal interactivo de asignación de chofer y empaque, vista HTML Print CSS 1:1 idéntica a EJEMPLO_1.xlsx con paginación inteligente, descargador directo de archivo .xlsx, ordenamiento alfabético estricto de categorías y productos, y eliminación del segundo banner gigante en la tienda principal.",
     "tasks": [
       {
         "id": "TASK-59-01",
         "label": "UI/ADMIN-KITCHEN-ASSIGN-MODAL",
-        "desc": "Modal interactivo en /admin/orders al hacer clic en \"Hoja Cocina\" para asignar Chofer (William Medina, etc.) y Estilo de Empaque (Cart\u00f3n / Pl\u00e1stico) con selecci\u00f3n de imprimir o descargar Excel.",
-        "status": "TODO"
+        "desc": "Modal interactivo en /admin/orders al hacer clic en \"Hoja Cocina\" para asignar Chofer (William Medina, etc.) y Estilo de Empaque (Cartón / Plástico) con selección de imprimir o descargar Excel.",
+        "status": "DONE"
       },
       {
         "id": "TASK-59-02",
         "label": "CORE/KITCHEN-ALPHABETICAL-SORT-AND-CATEGORIES",
-        "desc": "L\u00f3gica de ordenamiento alfab\u00e9tico estricto de Categor\u00edas y Productos con cantidades, notas operativas (CP) y subtotales por categor\u00eda.",
-        "status": "TODO"
+        "desc": "Lógica de ordenamiento alfabético estricto de Categorías y Productos con cantidades, notas operativas (CP) y subtotales por categoría.",
+        "status": "DONE"
       },
       {
         "id": "TASK-59-03",
         "label": "UI/KITCHEN-PRINT-CSS-1TO1-PAGINATION",
-        "desc": "Plantilla Print CSS 1:1 con EJEMPLO_1.xlsx: encabezado operativo sin tel\u00e9fonos ni precios, badge RETIRO LOCAL para pickup, y paginaci\u00f3n con \"MORE INFORMATION ON THE NEXT PAGE \u2192\".",
-        "status": "TODO"
+        "desc": "Plantilla Print CSS 1:1 con EJEMPLO_1.xlsx: encabezado operativo sin teléfonos ni precios, badge RETIRO LOCAL para pickup, y paginación con \"MORE INFORMATION ON THE NEXT PAGE →\".",
+        "status": "DONE"
       },
       {
         "id": "TASK-59-04",
         "label": "CORE/KITCHEN-EXCEL-EXPORT-GENERATOR",
-        "desc": "Generador din\u00e1mico y descargador de archivo .xlsx id\u00e9ntico a la plantilla f\u00edsica de empaque.",
-        "status": "TODO"
+        "desc": "Generador dinámico y descargador de archivo .xlsx idéntico a la plantilla física de empaque.",
+        "status": "DONE"
       },
       {
         "id": "TASK-59-05",
         "label": "UI/STOREFRONT-HERO-CLEANUP-COMPACT-CTA",
-        "desc": "Supresi\u00f3n del segundo banner masivo en Home y adopci\u00f3n de botones Call-to-Action compactos.",
-        "status": "TODO"
+        "desc": "Supresión del segundo banner masivo en Home y adopción de botones Call-to-Action compactos.",
+        "status": "DONE"
       },
       {
         "id": "TASK-59-06",
         "label": "TEST/S59-INTEGRATION-CERTIFICATION",
-        "desc": "Certificaci\u00f3n integral de pruebas unitarias, exports y builds limpios de frontend y backend.",
-        "status": "TODO"
+        "desc": "Certificación integral de pruebas unitarias, exports y builds limpios de frontend y backend.",
+        "status": "DONE"
       }
     ]
   }
