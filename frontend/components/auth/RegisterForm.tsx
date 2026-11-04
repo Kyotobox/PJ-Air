@@ -1,7 +1,11 @@
 'use client';
 
-import React from 'react';
-import { Mail, Lock, User, Phone, Building2, Loader2, ArrowRight, CheckCircle2, Smartphone, FileText, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+    Mail, Lock, User, Phone, Building2, Loader2, ArrowRight, 
+    CheckCircle2, Smartphone, FileText, ChevronDown, ChevronUp, 
+    Scale, AlertTriangle, ShieldCheck, Clock, CalendarX, PhoneCall 
+} from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatPhoneNumber } from '@/lib/firebase';
 
@@ -29,6 +33,7 @@ export const RegisterForm = ({
     onPhoneChange,
 }: RegisterFormProps) => {
     const { t, locale } = useLanguage();
+    const [isTermsAccordionOpen, setIsTermsAccordionOpen] = useState(false);
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formatted = formatPhoneNumber(e.target.value);
@@ -41,6 +46,19 @@ export const RegisterForm = ({
         }
     };
 
+    const isAllConsentChecked = Boolean(
+        formData.terms_consent_1 && 
+        formData.terms_consent_2 && 
+        formData.terms_consent_3
+    );
+
+    const hasSignature = Boolean(
+        formData.signature_text && 
+        formData.signature_text.trim().length >= 3
+    );
+
+    const isSubmitDisabled = isLoading || !isPhoneVerified || !isAllConsentChecked || !hasSignature;
+
     return (
         <form onSubmit={onSubmit} className="space-y-8">
             {error && (
@@ -49,233 +67,493 @@ export const RegisterForm = ({
                 </div>
             )}
 
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{t.register.fullName}</label>
-                    <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
-                        <input
-                            required
-                            type="text"
-                            placeholder={locale === 'en' ? 'e.g. John Doe' : 'Ej: Juan Pérez'}
-                            className="premium-input pl-12"
-                            value={formData.full_name}
-                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                        />
-                    </div>
+            {/* SECCIÓN 1: Credenciales y Usuario */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+                    <User size={16} className="text-primary" />
+                    <h2 className="text-xs font-black uppercase tracking-widest text-foreground">
+                        {locale === 'en' ? '1. Account & Login' : '1. Cuenta y Acceso'}
+                    </h2>
                 </div>
 
-                <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{t.register.username}</label>
-                    <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-[10px] font-bold">@</div>
-                        <input
-                            required
-                            type="text"
-                            placeholder={locale === 'en' ? 'user123' : 'usuario123'}
-                            className="premium-input pl-12"
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        />
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {t.register.fullName} *
+                        </label>
+                        <div className="relative">
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={16} />
+                            <input
+                                required
+                                type="text"
+                                placeholder={locale === 'en' ? 'John Doe' : 'Juan Pérez'}
+                                className="premium-input pl-11 text-xs"
+                                value={formData.full_name}
+                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                            />
+                        </div>
                     </div>
-                </div>
 
-                <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{t.register.email}</label>
-                    <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
-                        <input
-                            required
-                            type="email"
-                            placeholder={locale === 'en' ? 'john@example.com' : 'juan@ejemplo.com'}
-                            className="premium-input pl-12"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {t.register.username} *
+                        </label>
+                        <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-[11px] font-bold">@</div>
+                            <input
+                                required
+                                type="text"
+                                placeholder="johndoe_b2b"
+                                className="premium-input pl-11 text-xs"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            />
+                        </div>
                     </div>
-                </div>
 
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between ml-1">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t.register.phone}</label>
-                        {isPhoneVerified ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                                <CheckCircle2 size={12} />
-                                <span>{locale === 'en' ? 'Phone Verified ✓' : 'Teléfono Verificado ✓'}</span>
-                            </span>
-                        ) : (
-                            formData.phone && formData.phone.replace(/\D/g, '').length >= 10 && onVerifyPhoneClick && (
-                                <button
-                                    type="button"
-                                    onClick={onVerifyPhoneClick}
-                                    className="text-[10px] font-black text-primary hover:underline uppercase tracking-wider flex items-center gap-1 cursor-pointer"
-                                >
-                                    <Smartphone size={12} />
-                                    <span>{locale === 'en' ? 'Verify via SMS' : 'Verificar vía SMS'}</span>
-                                </button>
-                            )
-                        )}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {t.register.email} *
+                        </label>
+                        <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={16} />
+                            <input
+                                required
+                                type="email"
+                                placeholder="orders@mybusiness.com"
+                                className="premium-input pl-11 text-xs"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            />
+                        </div>
                     </div>
-                    <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
-                        <input
-                            required
-                            type="tel"
-                            placeholder="+1 (305) 555-0100"
-                            className={`premium-input pl-12 ${isPhoneVerified ? 'border-emerald-500 bg-emerald-50/20' : ''}`}
-                            value={formData.phone}
-                            onChange={handlePhoneChange}
-                        />
-                        {isPhoneVerified && (
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600">
-                                <CheckCircle2 size={18} />
-                            </div>
-                        )}
-                    </div>
-                    {formData.phone && !isPhoneVerified && (
-                        <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex items-center justify-between gap-2 animate-fade-in shadow-xs">
-                            <div className="flex items-center gap-2">
-                                <Smartphone size={16} className="text-amber-600 shrink-0" />
-                                <span className="font-semibold text-[11px] leading-tight">
-                                    {locale === 'en'
-                                        ? 'Phone verification required for wholesale accounts'
-                                        : 'Verificación de teléfono requerida para cuentas mayoristas'}
+
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between ml-1">
+                            <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+                                {t.register.phone} (SMS) *
+                            </label>
+                            {isPhoneVerified ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                    <CheckCircle2 size={10} />
+                                    <span>{locale === 'en' ? 'Verified ✓' : 'Verificado ✓'}</span>
                                 </span>
-                            </div>
-                            {onVerifyPhoneClick && (
-                                <button
-                                    type="button"
-                                    onClick={onVerifyPhoneClick}
-                                    className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors shrink-0 cursor-pointer"
-                                >
-                                    {locale === 'en' ? 'Verify via SMS' : 'Verificar vía SMS'}
-                                </button>
+                            ) : (
+                                formData.phone && formData.phone.replace(/\D/g, '').length >= 10 && onVerifyPhoneClick && (
+                                    <button
+                                        type="button"
+                                        onClick={onVerifyPhoneClick}
+                                        className="text-[10px] font-black text-primary hover:underline uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <Smartphone size={11} />
+                                        <span>{locale === 'en' ? 'Verify SMS' : 'Verificar SMS'}</span>
+                                    </button>
+                                )
                             )}
                         </div>
-                    )}
+                        <div className="relative">
+                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={16} />
+                            <input
+                                required
+                                type="tel"
+                                placeholder="+1 (305) 555-0100"
+                                className={`premium-input pl-11 text-xs ${isPhoneVerified ? 'border-emerald-500 bg-emerald-50/20' : ''}`}
+                                value={formData.phone}
+                                onChange={handlePhoneChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {t.register.password} *
+                        </label>
+                        <div className="relative">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={16} />
+                            <input
+                                required
+                                type="password"
+                                placeholder="••••••••"
+                                className="premium-input pl-11 text-xs"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {t.register.confirmPassword} *
+                        </label>
+                        <div className="relative">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={16} />
+                            <input
+                                required
+                                type="password"
+                                placeholder="••••••••"
+                                className="premium-input pl-11 text-xs"
+                                value={formData.confirm_password}
+                                onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* SECCIÓN 2: Datos de Empresa (Wholesale) */}
+            <div className="space-y-4 pt-4 border-t border-border/60">
+                <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+                    <Building2 size={16} className="text-primary" />
+                    <h2 className="text-xs font-black uppercase tracking-widest text-foreground">
+                        {locale === 'en' ? '2. Business Information' : '2. Datos de Empresa'}
+                    </h2>
                 </div>
 
-                {/* Company name — full width, mandatory */}
-                <div className="space-y-3 md:col-span-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
-                        {t.register.companyName}
-                    </label>
-                    <div className="relative">
-                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'Legal Business Name *' : 'Razón Social (Legal Name) *'}
+                        </label>
                         <input
                             required
                             type="text"
-                            placeholder={locale === 'en' ? 'e.g. My Bakery Shop' : 'Ej: Panadería El Sol'}
-                            className="premium-input pl-12"
+                            placeholder={locale === 'en' ? 'e.g. Acme Hospitality LLC' : 'Ej: Acme Hospitality LLC'}
+                            className="premium-input text-xs"
+                            value={formData.legal_business_name || ''}
+                            onChange={(e) => setFormData({ ...formData, legal_business_name: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'DBA (Doing Business As)' : 'Nombre Comercial / DBA'}
+                        </label>
+                        <input
+                            type="text"
+                            placeholder={locale === 'en' ? 'e.g. Sunny Cafe & Bakery' : 'Ej: Sunny Cafe & Bakery'}
+                            className="premium-input text-xs"
+                            value={formData.dba || ''}
+                            onChange={(e) => setFormData({ ...formData, dba: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'EIN / Federal Tax ID *' : 'EIN / Tax ID Federal *'}
+                        </label>
+                        <input
+                            required
+                            type="text"
+                            placeholder="XX-XXXXXXX"
+                            className="premium-input text-xs font-mono"
+                            value={formData.ein || ''}
+                            onChange={(e) => setFormData({ ...formData, ein: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'Store / Company Display Name *' : 'Nombre de Tienda / Establecimiento *'}
+                        </label>
+                        <input
+                            required
+                            type="text"
+                            placeholder={locale === 'en' ? 'e.g. Downtown Bakery' : 'Ej: Panadería Centro'}
+                            className="premium-input text-xs"
                             value={formData.company_name}
                             onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                         />
                     </div>
-                </div>
 
-                {/* Tax ID / NY Resale Certificate # — full width, mandatory */}
-                <div className="space-y-3 md:col-span-2 p-4 bg-muted/20 border border-border/80 rounded-2xl">
-                    <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                            <FileText size={14} className="text-primary" />
-                            <span>TAX ID / NY RESALE CERTIFICATE # *</span>
+                    <div className="space-y-2 md:col-span-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'Commercial Address (Billing & Delivery) *' : 'Dirección Comercial (Facturación y Entrega) *'}
                         </label>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                            {locale === 'en' ? '0% Sales Tax ST-120' : '0% Impuestos ST-120'}
-                        </span>
+                        <input
+                            required
+                            type="text"
+                            placeholder={locale === 'en' ? '123 Main St, Suite 400, Brooklyn, NY 11201' : '123 Main St, Suite 400, Brooklyn, NY 11201'}
+                            className="premium-input text-xs"
+                            value={formData.business_address || ''}
+                            onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
+                        />
                     </div>
-                    <div className="relative">
-                        <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
+
+                    {/* Tax ID & ST-120 Resale Certificate */}
+                    <div className="space-y-3 md:col-span-2 p-4 bg-muted/20 border border-border/80 rounded-2xl">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
+                                <FileText size={14} className="text-primary" />
+                                <span>TAX ID / NY RESALE CERTIFICATE # *</span>
+                            </label>
+                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                {locale === 'en' ? '0% Sales Tax ST-120' : '0% Impuestos ST-120'}
+                            </span>
+                        </div>
                         <input
                             required
                             type="text"
                             placeholder={locale === 'en' ? 'e.g. 12-3456789 or NY Certificate #' : 'Ej: 12-3456789 o Certificado NY'}
-                            className="premium-input pl-12"
+                            className="premium-input text-xs"
                             value={formData.tax_id || ''}
                             onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
                         />
+                        <div className="flex items-start gap-2.5 pt-1">
+                            <input
+                                id="st120_declared"
+                                type="checkbox"
+                                className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
+                                checked={Boolean(formData.st120_declared)}
+                                onChange={(e) => setFormData({ ...formData, st120_declared: e.target.checked })}
+                            />
+                            <label htmlFor="st120_declared" className="text-[11px] text-foreground/80 leading-snug cursor-pointer">
+                                {locale === 'en' ? (
+                                    <>Certify under penalty of perjury that all purchases are for resale under a valid NY Form ST-120 certificate.</>
+                                ) : (
+                                    <>Certifico bajo pena de perjurio que todas las compras son para reventa amparadas en certificado ST-120 de NY vigente.</>
+                                )}
+                            </label>
+                        </div>
                     </div>
-                    <div className="flex items-start gap-2.5 pt-2">
-                        <input
-                            id="st120_declared"
-                            type="checkbox"
-                            className="mt-0.5 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
-                            checked={Boolean(formData.st120_declared)}
-                            onChange={(e) => setFormData({ ...formData, st120_declared: e.target.checked })}
-                        />
-                        <label htmlFor="st120_declared" className="text-[11px] text-foreground/80 leading-snug cursor-pointer">
-                            {locale === 'en' ? (
-                                <>Certify under penalty of perjury that all purchases are for resale under a valid NY Form ST-120 certificate. (Document can be uploaded in your profile).</>
-                            ) : (
-                                <>Certifico bajo pena de perjurio que todas las compras son para reventa amparadas en certificado ST-120 de NY vigente. (El archivo puede subirse en tu perfil).</>
-                            )}
+                </div>
+            </div>
+
+            {/* SECCIÓN 3: Firmante Autorizado */}
+            <div className="space-y-4 pt-4 border-t border-border/60">
+                <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+                    <ShieldCheck size={16} className="text-primary" />
+                    <h2 className="text-xs font-black uppercase tracking-widest text-foreground">
+                        {locale === 'en' ? '3. Authorized Signer' : '3. Firmante Autorizado'}
+                    </h2>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'Signer Full Name *' : 'Nombre Completo del Firmante *'}
                         </label>
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{t.register.password}</label>
-                    <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
                         <input
                             required
-                            type="password"
-                            placeholder="••••••••"
-                            className="premium-input pl-12"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            type="text"
+                            placeholder={locale === 'en' ? 'e.g. Jane Doe' : 'Ej: Jane Doe'}
+                            className="premium-input text-xs"
+                            value={formData.signer_name || ''}
+                            onChange={(e) => setFormData({ ...formData, signer_name: e.target.value })}
                         />
                     </div>
-                </div>
 
-                <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{t.register.confirmPassword}</label>
-                    <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'Title / Position *' : 'Cargo / Puesto *'}
+                        </label>
                         <input
                             required
-                            type="password"
-                            placeholder="••••••••"
-                            className="premium-input pl-12"
-                            value={formData.confirm_password}
-                            onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
+                            type="text"
+                            placeholder={locale === 'en' ? 'e.g. Managing Director / Owner' : 'Ej: Propietario / Gerente General'}
+                            className="premium-input text-xs"
+                            value={formData.signer_title || ''}
+                            onChange={(e) => setFormData({ ...formData, signer_title: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'Signer Direct Phone *' : 'Teléfono Directo del Firmante *'}
+                        </label>
+                        <input
+                            required
+                            type="tel"
+                            placeholder="+1 (347) 555-0199"
+                            className="premium-input text-xs"
+                            value={formData.signer_phone || ''}
+                            onChange={(e) => setFormData({ ...formData, signer_phone: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                            {locale === 'en' ? 'Signer Official Email *' : 'Email Oficial del Firmante *'}
+                        </label>
+                        <input
+                            required
+                            type="email"
+                            placeholder="legal@mybusiness.com"
+                            className="premium-input text-xs"
+                            value={formData.signer_email || ''}
+                            onChange={(e) => setFormData({ ...formData, signer_email: e.target.value })}
                         />
                     </div>
                 </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 bg-muted/40 rounded-2xl border border-border/60">
-                <input
-                    required
-                    id="terms_agree"
-                    type="checkbox"
-                    className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer"
-                />
-                <label htmlFor="terms_agree" className="text-xs text-foreground/80 font-medium leading-relaxed cursor-pointer">
-                    {locale === 'en' ? (
-                        <>I have read and agree to the <a href="/terms" target="_blank" className="text-primary font-bold underline hover:text-black">Commercial Terms and Conditions</a> of Jhoanes Wholesale.</>
-                    ) : (
-                        <>He leído y acepto los <a href="/terms" target="_blank" className="text-primary font-bold underline hover:text-black">Términos y Condiciones Comerciales</a> de Jhoanes Wholesale.</>
-                    )}
+            {/* SECCIÓN 4: Acordeón de Términos y Condiciones Oficiales */}
+            <div className="space-y-4 pt-4 border-t border-border/60">
+                <div 
+                    onClick={() => setIsTermsAccordionOpen(!isTermsAccordionOpen)}
+                    className="p-4 bg-muted/40 hover:bg-muted/60 border border-border/80 rounded-2xl cursor-pointer transition-all flex items-center justify-between"
+                >
+                    <div className="flex items-center gap-3">
+                        <Scale size={18} className="text-primary" />
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-wider text-foreground">
+                                {locale === 'en' ? 'Official Terms & Commercial Conditions (Jhoanes Bakery)' : 'Términos y Condiciones Comerciales Oficiales (Jhoanes Bakery)'}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                                {locale === 'en' ? 'Click to expand terms, delivery schedules, and credit agreement' : 'Haz clic para desplegar cláusulas, horarios de corte y acuerdo comercial'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="text-muted-foreground">
+                        {isTermsAccordionOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </div>
+                </div>
+
+                {isTermsAccordionOpen && (
+                    <div className="p-5 bg-background border border-border/80 rounded-2xl text-[11px] text-muted-foreground space-y-3 leading-relaxed max-h-64 overflow-y-auto animate-fade-in shadow-inner">
+                        <h4 className="font-bold text-foreground uppercase tracking-wider text-xs">
+                            Jhoanes Bakery & Coffee Wholesale Agreement (v2026.10.29)
+                        </h4>
+                        <p>
+                            <b>1. Política de Corte de Producción (36h):</b> Todo pedido mayorista debe confirmarse con un mínimo de 36 horas de antelación al día de despacho. Las cancelaciones posteriores al corte incurren en el 100% del costo de horneado.
+                        </p>
+                        <p>
+                            <b>2. Calendario Operativo de Entregas:</b> Los despachos se ejecutan de miércoles a lunes. <u>No se realizan entregas los martes</u> bajo ninguna circunstancia debido a mantenimiento mayor y sanitización de plantas.
+                        </p>
+                        <p>
+                            <b>3. Condiciones de Crédito y Cobro:</b> Las cuentas comerciales bajo modalidad de crédito gozan de un plazo de 7 días naturales. Los saldos vencidos no liquidados generan un interés moratorio del 1.5% mensual (18% anual) o el máximo legal permitido por el Estado de New York.
+                        </p>
+                        <p>
+                            <b>4. Autorización de Tarjeta en Archivo (Stripe Card-on-File):</b> El cliente autoriza a Jhoanes Bakery a tokenizar de forma segura una tarjeta de crédito o débito mediante Stripe sin cobro inicial ($0.00 SetupIntent), y autoriza su débito automático para cubrir cualquier balance vencido o interés por mora no cubierto oportunamente.
+                        </p>
+                        <p>
+                            <b>5. Firma Electrónica Vinculante (NY ESRA / E-SIGN Act):</b> Ambas partes acuerdan que la adopción del nombre escrito y la marcación de casillas electrónicas constituye una firma digital vinculante con plena validez legal y admisibilidad probatoria de conformidad con la New York Electronic Signatures and Records Act (State Technology Law §§ 301-309) y el Federal E-SIGN Act (15 U.S.C. § 7001).
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* SECCIÓN 5: Las 3 Casillas de Consentimiento Obligatorias */}
+            <div className="space-y-3 pt-4 border-t border-border/60">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                    {locale === 'en' ? 'Mandatory Consent & Legal Acknowledgement' : 'Consentimiento Legal Mandatorio'}
+                </p>
+
+                {/* Casilla 1 */}
+                <div className={`flex items-start gap-3 p-4 rounded-2xl border transition-all ${
+                    formData.terms_consent_1 ? 'bg-primary/5 border-primary/40' : 'bg-muted/30 border-border/70'
+                }`}>
+                    <input
+                        id="terms_consent_1"
+                        type="checkbox"
+                        checked={Boolean(formData.terms_consent_1)}
+                        onChange={(e) => setFormData({ ...formData, terms_consent_1: e.target.checked })}
+                        className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer shrink-0"
+                    />
+                    <label htmlFor="terms_consent_1" className="text-xs text-foreground/90 font-medium leading-relaxed cursor-pointer select-none">
+                        {locale === 'en' ? (
+                            <><b>1.</b> I have read and agree to the <b>Official Commercial Terms and Conditions</b> on behalf of the company.</>
+                        ) : (
+                            <><b>1.</b> He leído y acepto los <b>Términos Comerciales Oficiales</b> en nombre y representación de la empresa.</>
+                        )}
+                    </label>
+                </div>
+
+                {/* Casilla 2 */}
+                <div className={`flex items-start gap-3 p-4 rounded-2xl border transition-all ${
+                    formData.terms_consent_2 ? 'bg-primary/5 border-primary/40' : 'bg-muted/30 border-border/70'
+                }`}>
+                    <input
+                        id="terms_consent_2"
+                        type="checkbox"
+                        checked={Boolean(formData.terms_consent_2)}
+                        onChange={(e) => setFormData({ ...formData, terms_consent_2: e.target.checked })}
+                        className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer shrink-0"
+                    />
+                    <label htmlFor="terms_consent_2" className="text-xs text-foreground/90 font-medium leading-relaxed cursor-pointer select-none">
+                        {locale === 'en' ? (
+                            <><b>2.</b> I authorize Jhoanes Bakery to charge the card on file via Stripe for any outstanding balances, overdue invoices, or late fees (<b>1.5% monthly</b>).</>
+                        ) : (
+                            <><b>2.</b> Autorizo a Jhoanes a cobrar la tarjeta en archivo por Stripe por montos adeudados, facturas vencidas o moras (<b>1.5% mensual</b>).</>
+                        )}
+                    </label>
+                </div>
+
+                {/* Casilla 3 */}
+                <div className={`flex items-start gap-3 p-4 rounded-2xl border transition-all ${
+                    formData.terms_consent_3 ? 'bg-primary/5 border-primary/40' : 'bg-muted/30 border-border/70'
+                }`}>
+                    <input
+                        id="terms_consent_3"
+                        type="checkbox"
+                        checked={Boolean(formData.terms_consent_3)}
+                        onChange={(e) => setFormData({ ...formData, terms_consent_3: e.target.checked })}
+                        className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer shrink-0"
+                    />
+                    <label htmlFor="terms_consent_3" className="text-xs text-foreground/90 font-medium leading-relaxed cursor-pointer select-none">
+                        {locale === 'en' ? (
+                            <><b>3.</b> I accept electronic notifications and adopt my typed name below as my binding electronic signature under the <b>NY ESRA / Federal E-SIGN Act</b>.</>
+                        ) : (
+                            <><b>3.</b> Acepto notificaciones electrónicas y adopto mi nombre escrito como firma electrónica vinculante bajo la <b>NY ESRA / E-SIGN Act</b>.</>
+                        )}
+                    </label>
+                </div>
+            </div>
+
+            {/* SECCIÓN 6: Campo de Firma Electrónica */}
+            <div className="space-y-3 pt-4 border-t border-border/60">
+                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-2">
+                    <Scale size={14} className="text-primary" />
+                    <span>{locale === 'en' ? 'Typed full name (electronic signature) *' : 'Nombre completo escrito (Firma electrónica vinculante) *'}</span>
                 </label>
+                <div className="relative">
+                    <input
+                        required
+                        type="text"
+                        placeholder={locale === 'en' ? 'Type your full legal name here' : 'Escribe tu nombre legal completo aquí'}
+                        className="premium-input text-sm font-serif italic pl-4"
+                        value={formData.signature_text || ''}
+                        onChange={(e) => setFormData({ ...formData, signature_text: e.target.value })}
+                    />
+                    {hasSignature && (
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600 flex items-center gap-1 text-[10px] font-bold">
+                            <CheckCircle2 size={16} />
+                            <span>{locale === 'en' ? 'Signed' : 'Firmado'}</span>
+                        </div>
+                    )}
+                </div>
+                <p className="text-[10px] text-muted-foreground italic ml-1">
+                    {locale === 'en'
+                        ? 'By typing your name, you certify with legal force that you are authorized to bind this entity.'
+                        : 'Al escribir tu nombre, certificas con validez legal que tienes facultades suficientes para obligar a la entidad.'}
+                </p>
             </div>
 
+            {/* Botón de Envío */}
             <div className="pt-4">
                 <button
-                    disabled={isLoading || !isPhoneVerified}
+                    disabled={isSubmitDisabled}
                     className={`w-full premium-button jhoanes-gradient text-white text-sm uppercase tracking-widest py-4 flex items-center justify-center gap-3 transition-all ${
-                        (!isPhoneVerified || isLoading) ? 'opacity-50 cursor-not-allowed shadow-none' : ''
+                        isSubmitDisabled ? 'opacity-50 cursor-not-allowed shadow-none' : ''
                     }`}
                 >
                     {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
                         <>{t.register.submit} <ArrowRight size={20} /></>
                     )}
                 </button>
+
+                {/* Validaciones pendientes indicativas */}
                 {!isPhoneVerified && (
                     <p className="text-[11px] text-center text-amber-700/80 font-bold mt-2.5 animate-fade-in">
                         {locale === 'en'
                             ? '⚠ SMS phone verification is required to enable wholesale account registration'
                             : '⚠ Se requiere verificación de teléfono vía SMS para habilitar el registro mayorista'}
+                    </p>
+                )}
+                {isPhoneVerified && (!isAllConsentChecked || !hasSignature) && (
+                    <p className="text-[11px] text-center text-slate-500 font-bold mt-2.5 animate-fade-in">
+                        {locale === 'en'
+                            ? '⚠ Please mark all 3 consent checkboxes and enter your electronic signature to proceed'
+                            : '⚠ Por favor marca las 3 casillas de consentimiento y escribe tu firma electrónica para continuar'}
                     </p>
                 )}
             </div>

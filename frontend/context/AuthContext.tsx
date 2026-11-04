@@ -83,6 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 general_discount: data?.general_discount || 0,
                 delivery_fee: data?.delivery_fee || 0,
                 productDiscounts: data?.productDiscounts || [],
+                check_enabled: Boolean(data?.check_enabled),
             });
             setSessionCookies(undefined, liveRole);
         } catch {

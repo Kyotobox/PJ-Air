@@ -160,7 +160,7 @@ export class UsersController {
   @Roles('admin')
   async updateCredit(
     @Param('id') id: string,
-    @Body() body: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean },
+    @Body() body: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean; check_enabled?: boolean },
   ) {
     return this.usersService.updateCreditSettings(id, body);
   }

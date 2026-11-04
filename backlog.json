@@ -2,9 +2,9 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "5.0.0",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETED",
   "current_sprint": "S60",
-  "current_task": "TASK-60-03",
+  "current_task": "TASK-60-07",
   "sprints": [
     {
       "id": "S57",
@@ -119,7 +119,7 @@
     {
       "id": "S60",
       "title": "Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-60-01",
@@ -134,27 +134,27 @@
         {
           "id": "TASK-60-03",
           "title": "Flujo de Registro Mayorista con 3 casillas de consentimiento, firma escrita y panel informativo",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-60-04",
           "title": "Switch administrativo para habilitar selectivamente pago por Cheque en admin/clients",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-60-05",
           "title": "Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-60-06",
           "title": "Portal de Cliente: Consulta y descarga de Estado de Cuenta B2B consolidado en PDF y Excel",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-60-07",
           "title": "Suite e2e de certificación para SetupIntent, consentimiento legal y flujos de pago",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     }
@@ -164,9 +164,9 @@
   "active_sprint": {
     "id": "S60",
     "name": "Sprint 60: Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "start_date": "2026-11-04",
-    "goal": "Persistencia Legal de Términos B2B bajo NY ESRA / E-SIGN Act y Servicio Stripe SetupIntent para tarjeta en archivo.",
+    "goal": "Persistencia Legal de Términos B2B bajo NY ESRA / E-SIGN Act y Servicio Stripe SetupIntent para tarjeta en archivo, registro con 3 casillas, pagos con cheque y estado de cuenta.",
     "tasks": [
       {
         "id": "TASK-60-01",
@@ -181,9 +181,33 @@
         "status": "DONE"
       },
       {
-        "id": "TASK-60-07A",
-        "label": "TEST/S60A-CERTIFICATION",
-        "desc": "Suite de tests unitarios backend para SetupIntent y persistencia legal",
+        "id": "TASK-60-03",
+        "label": "UI/WHOLESALE-SIGNUP-TERMS-STEPPER",
+        "desc": "Flujo de Registro Mayorista con 3 casillas de consentimiento, firma escrita y panel informativo",
+        "status": "DONE"
+      },
+      {
+        "id": "TASK-60-04",
+        "label": "ADMIN/CHECK-PAYMENT-ENABLEMENT-TOGGLE",
+        "desc": "Switch administrativo para habilitar selectivamente pago por Cheque en admin/clients",
+        "status": "DONE"
+      },
+      {
+        "id": "TASK-60-05",
+        "label": "UI/CHECKOUT-CHECK-PAYMENT-PHOTO-OCR-VERIFY",
+        "desc": "Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana",
+        "status": "DONE"
+      },
+      {
+        "id": "TASK-60-06",
+        "label": "PORTAL/CLIENT-ACCOUNT-STATEMENT-REPORT",
+        "desc": "Portal de Cliente: Consulta y descarga de Estado de Cuenta B2B consolidado en PDF y Excel",
+        "status": "DONE"
+      },
+      {
+        "id": "TASK-60-07",
+        "label": "TEST/S60B-CERTIFICATION",
+        "desc": "Suite de certificación integral para S60 (happy y sad path, next build limpio)",
         "status": "DONE"
       }
     ]
