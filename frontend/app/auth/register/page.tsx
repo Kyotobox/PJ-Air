@@ -300,7 +300,7 @@ export default function RegisterPage() {
                     }
                     onVerified={async (data) => {
                         setIsPhoneVerified(true);
-                        setPhoneIdToken(data?.idToken || 'mock-valid-firebase-token');
+                        setPhoneIdToken(data?.idToken || '');
                     }}
                 />
 
