@@ -20,6 +20,11 @@ export declare class Order {
     refunded_amount: number;
     refund_reason: string;
     credit_note_number: string;
+    check_number: string;
+    check_bank: string;
+    check_amount: number;
+    check_image_url: string;
+    check_verified: boolean;
     tax_amount: number;
     tax_rate: number;
     tax_exempt: boolean;

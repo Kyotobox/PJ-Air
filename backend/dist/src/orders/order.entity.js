@@ -33,6 +33,11 @@ let Order = class Order {
     refunded_amount;
     refund_reason;
     credit_note_number;
+    check_number;
+    check_bank;
+    check_amount;
+    check_image_url;
+    check_verified;
     tax_amount;
     tax_rate;
     tax_exempt;
@@ -123,6 +128,26 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Order.prototype, "credit_note_number", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Order.prototype, "check_number", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Order.prototype, "check_bank", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, nullable: true }),
+    __metadata("design:type", Number)
+], Order.prototype, "check_amount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'text' }),
+    __metadata("design:type", String)
+], Order.prototype, "check_image_url", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], Order.prototype, "check_verified", void 0);
 __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)

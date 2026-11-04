@@ -256,8 +256,14 @@ let OrdersService = class OrdersService {
             .leftJoinAndSelect('order.delivery_user', 'delivery_user')
             .leftJoinAndSelect('delivery_user.profile', 'delivery_profile')
             .leftJoinAndSelect('order.address', 'address')
-            .where('order.created_at >= :start', { start: queryStart })
-            .andWhere('order.created_at <= :end', { end: queryEnd })
+            .where('((order.delivery_date >= :rawStart AND (order.delivery_date <= :rawEnd OR order.delivery_date <= :rawEndMax)) OR ((order.delivery_date IS NULL OR order.delivery_date = :emptyStr) AND order.created_at >= :start AND order.created_at <= :end))', {
+            rawStart,
+            rawEnd,
+            rawEndMax: rawEnd + 'T23:59:59.999Z',
+            emptyStr: '',
+            start: queryStart,
+            end: queryEnd,
+        })
             .andWhere('order.payment_status != :pzStatus', { pzStatus: 'pending_zelle_verification' })
             .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] });
         if (userId) {
@@ -281,8 +287,16 @@ let OrdersService = class OrdersService {
             return `${yr}-${mo}-${da}`;
         };
         const filtered = allMatching.filter(order => {
-            const prodDate = getProductionDate(order.created_at || order.delivery_date || '');
-            return prodDate >= rawStart && prodDate <= rawEnd;
+            let effectiveDate = '';
+            if (order.delivery_date) {
+                effectiveDate = order.delivery_date.includes('T')
+                    ? order.delivery_date.split('T')[0]
+                    : order.delivery_date.split(' ')[0];
+            }
+            else {
+                effectiveDate = getProductionDate(order.created_at);
+            }
+            return effectiveDate >= rawStart && effectiveDate <= rawEnd;
         });
         console.log(`findInRange: wider query found ${allMatching.length}, filtered down to ${filtered.length} for ${rawStart} to ${rawEnd}`);
         return filtered;

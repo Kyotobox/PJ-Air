@@ -103,7 +103,8 @@ let ExcelService = class ExcelService {
                 row.getCell(2).alignment = { horizontal: 'left' };
             };
             addHeaderRow('CLIENTE:', clientName.toUpperCase());
-            addHeaderRow('FECHA DE ENTREGA:', String(deliveryDate).toUpperCase());
+            addHeaderRow('FECHA DE DESPACHO / ENTREGA:', String(deliveryDate).toUpperCase());
+            addHeaderRow('FECHA DE REGISTRO / PEDIDO:', order?.created_at ? new Date(order.created_at).toLocaleDateString('es-CO') : 'N/A');
             addHeaderRow('CHOFER ASIGNADO:', chofer.toUpperCase());
             addHeaderRow('DIRECCIÓN DE ENTREGA:', addressStr);
             worksheet.addRow([]);
@@ -258,6 +259,11 @@ let ExcelService = class ExcelService {
                 fgColor: { argb: 'FF5C3D2E' }
             };
             titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+            const noticeRow = worksheet.addRow(['* Cantidades correspondientes a los despachos del rango seleccionado']);
+            worksheet.mergeCells(noticeRow.number, 1, noticeRow.number, clientNames.length + 2);
+            noticeRow.height = 18;
+            noticeRow.getCell(1).font = { name: fontName, italic: true, size: 9, color: { argb: 'FF5C3D2E' } };
+            noticeRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
             worksheet.addRow([]);
             const headers = ['PRODUCTO', ...clientNames.map(c => c.toUpperCase()), 'TOTAL'];
             const headerRow = worksheet.addRow(headers);

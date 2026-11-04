@@ -3,82 +3,9 @@
   "version": "4.0.0",
   "kernel_version": "5.0.0",
   "status": "COMPLETED",
-  "current_sprint": "S60",
-  "current_task": "TASK-60-07",
+  "current_sprint": "S61",
+  "current_task": "TASK-61-04",
   "sprints": [
-    {
-      "id": "S57",
-      "title": "Automatización de Reportes Contables, Notificación Zelle y Folio de Notas de Crédito",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-57-01",
-          "title": "Configuración de correos contables en admin/settings",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-02",
-          "title": "Cron de despacho diario y semanal de Excel de órdenes",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-03",
-          "title": "Flujo de rechazo Zelle con notificación al cliente",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-04",
-          "title": "Generador de notas de crédito con folio fiscal legal",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-05",
-          "title": "Certificación integral de S57 y verificación DDL",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S58",
-      "name": "Sprint S58: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S58-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-01T20:34:21.596388+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
-      "tasks": [
-        {
-          "id": "TASK-58-01",
-          "title": "Ingesta, compresión y normalización de las 10 fotos de temporada del cliente",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-02",
-          "title": "Soporte para segundo botón opcional en la entidad Banner y endpoint GET /banners/gallery",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-03",
-          "title": "Selector interactivo de Galería de Temporada (Media Picker) en /admin/banners",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-04",
-          "title": "Renderizado modular en tienda principal (app/page.tsx) con fade lateral CSS y 2 botones",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-05",
-          "title": "Precarga y muestra de 4 banners activos y 6 en reserva con fotos exclusivas del ZIP",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-06",
-          "title": "Certificación integral de pruebas unitarias backend y builds sin errores",
-          "status": "DONE"
-        }
-      ],
-      "title": "Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1"
-    },
     {
       "id": "S59",
       "title": "Hoja de Cocina/Despacho 1:1 con Excel, Asignación Operativa y Limpieza de Banners CTA",
@@ -157,57 +84,66 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S61",
+      "title": "Reportes Basados en Fechas de Despacho/Entrega",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-61-01",
+          "title": "Refactorizar findInRange en orders.service.ts para filtrar primariamente por delivery_date",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-61-02",
+          "title": "Actualizar excel.service.ts con fechas de despacho y notas de rango en reportes individuales y consolidados",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-61-03",
+          "title": "Ajustar admin/reports y produccion/reports con filtros y visualización de despacho",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-61-04",
+          "title": "Suite de certificación integral para S61A (unit tests findInRange, excel headers y builds limpios)",
+          "status": "DONE"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 50,
+  "archived_sprints_count": 2,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S60",
-    "name": "Sprint 60: Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
-    "status": "COMPLETED",
+    "id": "S61",
+    "name": "Sprint 61: Reportes Basados en Fechas de Despacho/Entrega",
+    "status": "IN_PROGRESS",
     "start_date": "2026-11-04",
-    "goal": "Persistencia Legal de Términos B2B bajo NY ESRA / E-SIGN Act y Servicio Stripe SetupIntent para tarjeta en archivo, registro con 3 casillas, pagos con cheque y estado de cuenta.",
+    "goal": "Reportes de órdenes y producción basados primariamente en fechas de despacho/entrega con fallback a creación, exportación Excel detallada e interfaz administrativa sincronizada.",
     "tasks": [
       {
-        "id": "TASK-60-01",
-        "label": "DOMAIN/B2B-TERMS-AND-SIGNATURE-SCHEMA",
-        "desc": "Modelo y persistencia legal de aceptación de Términos y Firma bajo NY ESRA / E-SIGN Act",
+        "id": "TASK-61-01",
+        "label": "BACKEND/REPORTING-DISPATCH-RANGE",
+        "desc": "Refactorizar findInRange en orders.service.ts para filtrar primariamente por delivery_date",
         "status": "DONE"
       },
       {
-        "id": "TASK-60-02",
-        "label": "PAYMENTS/STRIPE-SETUP-INTENT-VAULT",
-        "desc": "Servicio Stripe SetupIntent para tokenización de tarjeta en archivo sin cobro inmediato ($0.00)",
+        "id": "TASK-61-02",
+        "label": "BACKEND/EXCEL-EXPORT-DISPATCH-COLUMNS",
+        "desc": "Actualizar excel.service.ts con fechas de despacho y notas de rango en reportes individuales y consolidados",
         "status": "DONE"
       },
       {
-        "id": "TASK-60-03",
-        "label": "UI/WHOLESALE-SIGNUP-TERMS-STEPPER",
-        "desc": "Flujo de Registro Mayorista con 3 casillas de consentimiento, firma escrita y panel informativo",
+        "id": "TASK-61-03",
+        "label": "UI/ADMIN-REPORTS-DELIVERY-FILTERS",
+        "desc": "Ajustar admin/reports y produccion/reports con filtros y visualización de despacho",
         "status": "DONE"
       },
       {
-        "id": "TASK-60-04",
-        "label": "ADMIN/CHECK-PAYMENT-ENABLEMENT-TOGGLE",
-        "desc": "Switch administrativo para habilitar selectivamente pago por Cheque en admin/clients",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-60-05",
-        "label": "UI/CHECKOUT-CHECK-PAYMENT-PHOTO-OCR-VERIFY",
-        "desc": "Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-60-06",
-        "label": "PORTAL/CLIENT-ACCOUNT-STATEMENT-REPORT",
-        "desc": "Portal de Cliente: Consulta y descarga de Estado de Cuenta B2B consolidado en PDF y Excel",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-60-07",
-        "label": "TEST/S60B-CERTIFICATION",
-        "desc": "Suite de certificación integral para S60 (happy y sad path, next build limpio)",
+        "id": "TASK-61-04",
+        "label": "TEST/S61A-CERTIFICATION",
+        "desc": "Suite de certificación integral para S61A (unit tests findInRange, excel headers y builds limpios)",
         "status": "DONE"
       }
     ]

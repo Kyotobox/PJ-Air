@@ -77,7 +77,8 @@ export class ExcelService {
       };
 
       addHeaderRow('CLIENTE:', clientName.toUpperCase());
-      addHeaderRow('FECHA DE ENTREGA:', String(deliveryDate).toUpperCase());
+      addHeaderRow('FECHA DE DESPACHO / ENTREGA:', String(deliveryDate).toUpperCase());
+      addHeaderRow('FECHA DE REGISTRO / PEDIDO:', order?.created_at ? new Date(order.created_at).toLocaleDateString('es-CO') : 'N/A');
       addHeaderRow('CHOFER ASIGNADO:', chofer.toUpperCase());
       addHeaderRow('DIRECCIÓN DE ENTREGA:', addressStr);
       worksheet.addRow([]); // Empty spacer row
@@ -266,6 +267,13 @@ export class ExcelService {
         fgColor: { argb: 'FF5C3D2E' } // Dark brown primary theme
       };
       titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+
+      // Subtitle notice: Cantidades correspondientes a los despachos del rango seleccionado
+      const noticeRow = worksheet.addRow(['* Cantidades correspondientes a los despachos del rango seleccionado']);
+      worksheet.mergeCells(noticeRow.number, 1, noticeRow.number, clientNames.length + 2);
+      noticeRow.height = 18;
+      noticeRow.getCell(1).font = { name: fontName, italic: true, size: 9, color: { argb: 'FF5C3D2E' } };
+      noticeRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
 
       worksheet.addRow([]); // Spacer
 

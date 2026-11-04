@@ -1303,5 +1303,58 @@ describe('OrdersService', () => {
       });
     });
   });
+
+  describe('findInRange', () => {
+    it('should filter orders primarily by delivery_date within range', async () => {
+      const mockOrders = [
+        {
+          id: 'ord-1',
+          delivery_date: '2026-11-04',
+          created_at: new Date('2026-10-30T10:00:00Z'),
+        },
+        {
+          id: 'ord-2',
+          delivery_date: '2026-11-10', // out of range
+          created_at: new Date('2026-11-04T10:00:00Z'),
+        },
+      ];
+
+      const qb = orderRepository.createQueryBuilder();
+      qb.getMany.mockResolvedValue(mockOrders);
+
+      const res = await service.findInRange('2026-11-03', '2026-11-05');
+      expect(res).toHaveLength(1);
+      expect(res[0].id).toBe('ord-1');
+      expect(qb.where).toHaveBeenCalledWith(
+        expect.stringContaining('order.delivery_date >= :rawStart'),
+        expect.objectContaining({ rawStart: '2026-11-03', rawEnd: '2026-11-05' }),
+      );
+    });
+
+    it('should fallback to order.created_at production date when delivery_date is missing', async () => {
+      const mockOrders = [
+        {
+          id: 'ord-legacy',
+          delivery_date: null,
+          created_at: new Date('2026-11-04T14:00:00Z'), // ~10 AM NY -> prodDate 2026-11-04
+        },
+      ];
+
+      const qb = orderRepository.createQueryBuilder();
+      qb.getMany.mockResolvedValue(mockOrders);
+
+      const res = await service.findInRange('2026-11-04', '2026-11-04');
+      expect(res).toHaveLength(1);
+      expect(res[0].id).toBe('ord-legacy');
+    });
+
+    it('Sad path: returns empty array when no orders match range or query builder returns empty', async () => {
+      const qb = orderRepository.createQueryBuilder();
+      qb.getMany.mockResolvedValue([]);
+
+      const res = await service.findInRange('2026-11-01', '2026-11-02');
+      expect(res).toEqual([]);
+    });
+  });
 });
 

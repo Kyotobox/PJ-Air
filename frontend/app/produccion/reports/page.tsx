@@ -165,8 +165,10 @@ function ReportsPageContent() {
             const rawData = await res.json();
             
             const validOrders = (Array.isArray(rawData) ? rawData : []).filter(order => {
-                const prodDate = getProductionDate(order.delivery_date || order.created_at || '');
-                return prodDate >= s && prodDate <= e;
+                const effectiveDate = order.delivery_date
+                    ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                    : getProductionDate(order.created_at || '');
+                return effectiveDate >= s && effectiveDate <= e;
             });
             
             setOrders(validOrders);
@@ -232,10 +234,13 @@ function ReportsPageContent() {
             let label = '';
             let subLabel = '';
             let typeLabel = '';
+            const effectiveDate = order.delivery_date
+                ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                : getProductionDate(order.created_at || '');
 
             if (isSpecific) {
                 // For specific client, columns are dates or periods
-                const datePart = getProductionDate(order.delivery_date || order.created_at || '');
+                const datePart = effectiveDate;
                 if (reportType === 'monthly') {
                     key = 'period_monthly';
                     label = t.adminSettings.spanish; // Placeholder or month name? User said "indicando el mes"
@@ -260,21 +265,29 @@ function ReportsPageContent() {
             }
 
             if (!columnMap[key]) {
-                columnMap[key] = { id: key, name: label, addressAlias: subLabel, deliveryType: typeLabel };
+                columnMap[key] = { id: key, name: label, addressAlias: subLabel, deliveryType: typeLabel, dispatchDates: new Set<string>() };
                 columnOrder.push(key);
+            }
+            if (effectiveDate) {
+                columnMap[key].dispatchDates.add(effectiveDate);
             }
         });
 
-        const columns = columnOrder.map(k => columnMap[k]);
+        const columns = columnOrder.map(k => ({
+            ...columnMap[k],
+            dispatchDate: Array.from(columnMap[k].dispatchDates as Set<string>).sort().join(', ')
+        }));
         const catMap: Record<string, CategoryBlock> = {};
 
         activeOrders.forEach(order => {
-            const datePart = getProductionDate(order.delivery_date || order.created_at || '');
+            const effectiveDate = order.delivery_date
+                ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                : getProductionDate(order.created_at || '');
             let colKey = '';
             if (isSpecific) {
                 if (reportType === 'monthly') colKey = 'period_monthly';
                 else if (reportType === 'weekly') colKey = 'period_weekly';
-                else colKey = datePart;
+                else colKey = effectiveDate;
             } else {
                 const cid = order.user_id;
                 const dType = order.delivery_type || 'pickup';
@@ -307,7 +320,9 @@ function ReportsPageContent() {
     const historyTable = useMemo(() => {
         const days: Record<string, Record<string, number>> = {};
         historyOrders.forEach(order => {
-            const dateKey = getProductionDate(order.created_at || order.delivery_date || '');
+            const dateKey = order.delivery_date
+                ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                : getProductionDate(order.created_at || '');
             if (!dateKey) return;
             if (!days[dateKey]) days[dateKey] = { total: 0 };
             (order.items || []).forEach((item: any) => {
@@ -332,7 +347,9 @@ function ReportsPageContent() {
     const weeklyHistory = useMemo(() => {
         const weeks: Record<string, { start: string; end: string; data: Record<string, number> }> = {};
         historyOrders.forEach(order => {
-            const dateKey = getProductionDate(order.created_at || order.delivery_date || '');
+            const dateKey = order.delivery_date
+                ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                : getProductionDate(order.created_at || '');
             if (!dateKey) return;
             const dateObj = new Date(dateKey + 'T12:00:00');
             if (isNaN(dateObj.getTime())) return;
@@ -362,7 +379,9 @@ function ReportsPageContent() {
     const monthlyHistory = useMemo(() => {
         const months: Record<string, { start: string; end: string; label: string; data: Record<string, number> }> = {};
         historyOrders.forEach(order => {
-            const dateKey = getProductionDate(order.created_at || order.delivery_date || '');
+            const dateKey = order.delivery_date
+                ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                : getProductionDate(order.created_at || '');
             if (!dateKey) return;
             const dateObj = new Date(dateKey + 'T12:00:00');
             if (isNaN(dateObj.getTime())) return;
@@ -464,7 +483,7 @@ function ReportsPageContent() {
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 print:hidden">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-black text-foreground tracking-tight">Reportes de Producción</h1>
-                    <p className="text-muted-foreground text-sm">Consolidado operativo de productos y pedidos</p>
+                    <p className="text-muted-foreground text-sm font-bold">Filtro por Fecha de Despacho / Entrega</p>
                 </div>
                 {orders.length > 0 && (
                     <button
@@ -543,7 +562,7 @@ function ReportsPageContent() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Período</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Período (Filtro por Fecha de Despacho / Entrega)</label>
                             <div className="flex items-center gap-2 bg-muted/30 border border-border rounded-2xl px-3 py-2">
                                 <CalendarIcon className="text-muted-foreground shrink-0" size={15} />
                                 <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); setReportType('custom'); }}
@@ -584,7 +603,7 @@ function ReportsPageContent() {
                     <div className="print:hidden bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-foreground/5 mb-8">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Reporte Generado</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Reporte de Producción (Fecha de Despacho / Entrega)</p>
                                 <h2 className="text-2xl font-black tracking-tight">
                                     {reportMeta.start === reportMeta.end ? formatDate(reportMeta.start) : `${reportMeta.start} — ${reportMeta.end}`}
                                 </h2>
@@ -633,6 +652,7 @@ function ReportsPageContent() {
                                                             <button className="font-black text-[10px] uppercase leading-tight hover:text-primary transition-colors relative group">
                                                                 {column.name}
                                                                 {column.addressAlias && <span className="block text-[8px] text-muted-foreground font-bold normal-case">{column.addressAlias}</span>}
+                                                                {column.dispatchDate && <span className="block text-[8px] text-amber-700 font-bold normal-case">Despacho: {column.dispatchDate}</span>}
                                                             </button>
                                                             {column.deliveryType && <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase leading-none ${deliveryColor(column.deliveryType)}`}>{deliveryLabel(column.deliveryType)}</span>}
                                                         </div>
@@ -675,7 +695,10 @@ function ReportsPageContent() {
                                                             return (
                                                                 <th key={ci} className={`${isPeriod ? 'period-header-th' : 'vertical-header-th'} border-b border-r border-black text-center ${isPeriod ? 'w-[50px] min-w-[50px] max-w-[50px]' : 'w-[9px] min-w-[9px] max-w-[9px]'}`}>
                                                                     <div className={isPeriod ? 'period-header-content' : 'vertical-header-content'}>
-                                                                        <div className={isPeriod ? 'period-name' : 'vertical-client-name'}>{col.name}</div>
+                                                                        <div className={isPeriod ? 'period-name' : 'vertical-client-name'}>
+                                                                            {col.name}
+                                                                            {col.dispatchDate && <span className="block text-[3.5pt] font-semibold text-gray-700">[{col.dispatchDate}]</span>}
+                                                                        </div>
                                                                     </div>
                                                                 </th>
                                                             );
@@ -755,8 +778,8 @@ function ReportsPageContent() {
                         <FileText className="text-muted-foreground" size={22} />
                     </div>
                     <div>
-                        <h2 className="text-lg font-black uppercase tracking-tight">Historial Diario</h2>
-                        <p className="text-xs text-muted-foreground italic">Unidades totales por categoría · Haz click en "Ver Detalle" para generar el reporte</p>
+                        <h2 className="text-lg font-black uppercase tracking-tight">Historial Diario (Despacho / Entrega)</h2>
+                        <p className="text-xs text-muted-foreground italic">Unidades totales por categoría según fecha de despacho · Haz click en "Ver Detalle" para generar el reporte</p>
                     </div>
                 </div>
 

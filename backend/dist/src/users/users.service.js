@@ -146,6 +146,8 @@ let UsersService = class UsersService {
             user.credit_limit = Number(data.credit_limit) || 0;
         if (data.credit_override !== undefined)
             user.credit_override = Boolean(data.credit_override);
+        if (data.check_enabled !== undefined)
+            user.check_enabled = Boolean(data.check_enabled);
         await this.userRepository.save(user);
         return this.findOne(userId);
     }
@@ -164,6 +166,7 @@ let UsersService = class UsersService {
             account_type: user.account_type || 'cash',
             credit_limit,
             credit_override: Boolean(user.credit_override),
+            check_enabled: Boolean(user.check_enabled),
             used_credit: Math.round(used_credit * 100) / 100,
             available_credit: Math.round(available_credit * 100) / 100,
             is_overdraft,
