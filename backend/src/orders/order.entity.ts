@@ -59,6 +59,21 @@ export class Order {
   @Column({ nullable: true })
   credit_note_number: string;
 
+  @Column({ nullable: true })
+  check_number: string;
+
+  @Column({ nullable: true })
+  check_bank: string;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  check_amount: number;
+
+  @Column({ nullable: true, type: 'text' })
+  check_image_url: string;
+
+  @Column({ type: 'boolean', default: false })
+  check_verified: boolean;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   tax_amount: number;
 

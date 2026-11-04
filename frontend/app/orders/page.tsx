@@ -8,8 +8,9 @@ import {
     ShoppingBag, ChevronDown, CreditCard, Wallet, TrendingUp, Calendar,
     CheckSquare, Square, ShoppingCart, MessageSquare, ArrowRight,
     RefreshCw, X, ShieldAlert, Sparkles, Check, ChevronLeft, ChevronRight,
-    Building2
+    Building2, FileText, Download, Printer
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { api } from '@/lib/api';
@@ -69,6 +70,10 @@ export default function ClientOrdersPage() {
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+    // Account Statement State (TASK-60-06)
+    const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
+    const [statementRange, setStatementRange] = useState<'current_month' | 'last_30_days' | 'all'>('current_month');
 
     // Order Status Feedback State (TASK-55-03)
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -359,6 +364,208 @@ export default function ClientOrdersPage() {
         );
     }, [displayCredit, profile]);
 
+    // TASK-60-06: Consolidated statement calculations
+    const filteredStatementOrders = useMemo(() => {
+        if (!orders || orders.length === 0) return [];
+        const now = new Date();
+        return orders.filter(order => {
+            if (!order.created_at) return false;
+            const orderDate = new Date(order.created_at);
+            if (statementRange === 'current_month') {
+                return (
+                    orderDate.getFullYear() === now.getFullYear() &&
+                    orderDate.getMonth() === now.getMonth()
+                );
+            }
+            if (statementRange === 'last_30_days') {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(now.getDate() - 30);
+                return orderDate >= thirtyDaysAgo;
+            }
+            return true;
+        });
+    }, [orders, statementRange]);
+
+    const statementSummary = useMemo(() => {
+        let totalInvoiced = 0;
+        let totalPaid = 0;
+        let totalPending = 0;
+
+        filteredStatementOrders.forEach(o => {
+            const tot = Number(o.total) || 0;
+            const ref = Number(o.refunded_amount) || 0;
+            const net = Math.max(0, tot - ref);
+            totalInvoiced += net;
+
+            const isPaid = (o.payment_status || '').toLowerCase() === 'paid';
+            if (isPaid) {
+                totalPaid += net;
+            } else {
+                totalPending += net;
+            }
+        });
+
+        return {
+            totalInvoiced: Math.round(totalInvoiced * 100) / 100,
+            totalPaid: Math.round(totalPaid * 100) / 100,
+            totalPending: Math.round(totalPending * 100) / 100,
+            ordersCount: filteredStatementOrders.length,
+        };
+    }, [filteredStatementOrders]);
+
+    const exportStatementToExcel = () => {
+        const clientName = profile?.company_name || user?.user_metadata?.full_name || user?.email || 'Cliente';
+        const periodLabel = statementRange === 'current_month' 
+            ? 'Mes Actual' 
+            : statementRange === 'last_30_days' 
+                ? 'Últimos 30 Días' 
+                : 'Histórico Completo';
+
+        const rows: any[] = [
+            ['JHOANES BAKERY & COFFEE - ESTADO DE CUENTA B2B'],
+            ['Cliente / Razón Social:', clientName],
+            ['Email:', user?.email || ''],
+            ['Periodo:', periodLabel],
+            ['Fecha de Generación:', new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()],
+            [''],
+            ['RESUMEN FINANCIERO CONSOLIDADO'],
+            ['Total Facturado ($):', statementSummary.totalInvoiced.toFixed(2)],
+            ['Total Pagado ($):', statementSummary.totalPaid.toFixed(2)],
+            ['Saldo Pendiente ($):', statementSummary.totalPending.toFixed(2)],
+            ['Total de Órdenes:', statementSummary.ordersCount],
+            [''],
+            [
+                'Folio / ID',
+                'Fecha de Creación',
+                'Fecha de Entrega',
+                'Método de Pago',
+                'Estado de Pago',
+                'Total Facturado ($)',
+                'Pagos Aplicados ($)',
+                'Saldo Pendiente ($)'
+            ]
+        ];
+
+        filteredStatementOrders.forEach(o => {
+            const tot = Number(o.total) || 0;
+            const ref = Number(o.refunded_amount) || 0;
+            const net = Math.max(0, tot - ref);
+            const isPaid = (o.payment_status || '').toLowerCase() === 'paid';
+            const paid = isPaid ? net : 0;
+            const pending = isPaid ? 0 : net;
+
+            rows.push([
+                `#${o.id.slice(0, 8).toUpperCase()}`,
+                o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A',
+                o.delivery_date ? new Date(o.delivery_date).toLocaleDateString() : 'N/A',
+                (o.payment_method || 'stripe').toUpperCase(),
+                (o.payment_status || 'pending').toUpperCase(),
+                net.toFixed(2),
+                paid.toFixed(2),
+                pending.toFixed(2),
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Estado de Cuenta');
+        const filename = `Estado_Cuenta_${statementRange}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(wb, filename);
+    };
+
+    const exportStatementToPdf = () => {
+        const clientName = profile?.company_name || user?.user_metadata?.full_name || user?.email || 'Cliente';
+        const periodLabel = statementRange === 'current_month' 
+            ? 'Mes Actual' 
+            : statementRange === 'last_30_days' 
+                ? 'Últimos 30 Días' 
+                : 'Histórico Completo';
+
+        const rowsHtml = filteredStatementOrders.map(o => {
+            const tot = Number(o.total) || 0;
+            const ref = Number(o.refunded_amount) || 0;
+            const net = Math.max(0, tot - ref);
+            const isPaid = (o.payment_status || '').toLowerCase() === 'paid';
+            const paid = isPaid ? net : 0;
+            const pending = isPaid ? 0 : net;
+
+            return `<tr>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; font-family:monospace; font-weight:bold;">#${o.id.slice(0, 8).toUpperCase()}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A'}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${o.delivery_date ? new Date(o.delivery_date).toLocaleDateString() : 'N/A'}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; text-transform:uppercase;">${o.payment_method || 'stripe'}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; font-weight:bold; color:${isPaid ? '#15803d' : '#b45309'}; text-transform:uppercase;">${o.payment_status || 'pending'}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:bold;">$${net.toFixed(2)}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:right; color:#15803d;">$${paid.toFixed(2)}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:right; color:#b91c1c; font-weight:bold;">$${pending.toFixed(2)}</td>
+            </tr>`;
+        }).join('');
+
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Estado de Cuenta - Jhoanes Bakery</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; color: #1e293b; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 24px; }
+            .title { font-size: 24px; font-weight: 900; margin: 0; color: #0f172a; }
+            .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+            .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+            .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px; }
+            .card-label { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; }
+            .card-val { font-size: 20px; font-weight: 900; margin-top: 4px; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th { background: #f1f5f9; padding: 10px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
+            .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center; }
+            @media print { body { margin: 15mm; } }
+        </style>
+        </head><body>
+            <div class="header">
+                <div>
+                    <h1 class="title">JHOANES BAKERY & COFFEE</h1>
+                    <div class="subtitle">ESTADO DE CUENTA B2B MAYORISTA • ${periodLabel}</div>
+                </div>
+                <div style="text-align: right; font-size: 12px;">
+                    <div><b>Cliente:</b> ${clientName}</div>
+                    <div><b>Email:</b> ${user?.email || ''}</div>
+                    <div><b>Fecha de Emisión:</b> ${new Date().toLocaleDateString()}</div>
+                </div>
+            </div>
+
+            <div class="cards">
+                <div class="card">
+                    <div class="card-label">Total Facturado</div>
+                    <div class="card-val" style="color: #0f172a;">$${statementSummary.totalInvoiced.toFixed(2)}</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Pagos Aplicados</div>
+                    <div class="card-val" style="color: #15803d;">$${statementSummary.totalPaid.toFixed(2)}</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Saldo Pendiente</div>
+                    <div class="card-val" style="color: #b91c1c;">$${statementSummary.totalPending.toFixed(2)}</div>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Folio</th><th>Fecha</th><th>Entrega</th><th>Método</th><th>Estado</th>
+                        <th style="text-align:right;">Facturación</th>
+                        <th style="text-align:right;">Pagado</th>
+                        <th style="text-align:right;">Pendiente</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+
+            <div class="footer">
+                Jhoanes Bakery & Coffee LLC • (347) 761-2687 • Chefjhoanes@gmail.com • Brooklyn, NY
+            </div>
+            <script>window.onload=function(){window.print();};<\/script>
+        </body></html>`;
+
+        const w = window.open('', '_blank', 'width=900,height=700');
+        if (w) { w.document.write(html); w.document.close(); }
+    };
+
     return (
         <div className="min-h-screen bg-[#f8f9fa]">
             <Navbar />
@@ -387,7 +594,16 @@ export default function ClientOrdersPage() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                        <button
+                            data-testid="open-account-statement-modal-btn"
+                            onClick={() => setIsStatementModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-primary/20 cursor-pointer"
+                        >
+                            <FileText size={16} />
+                            <span>{locale === 'en' ? 'Account Statement' : 'Descargar Estado de Cuenta'}</span>
+                        </button>
+
                         <button
                             onClick={() => setIsFeedbackOpen(true)}
                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-primary/5 border border-primary/20 text-primary rounded-2xl text-xs font-bold transition-all shadow-sm hover:shadow cursor-pointer"
@@ -1079,6 +1295,198 @@ export default function ClientOrdersPage() {
                                 </div>
                             </form>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* ======================================================== */}
+            {/* TASK-60-06: MODAL DESCARGAR ESTADO DE CUENTA B2B        */}
+            {/* ======================================================== */}
+            {isStatementModalOpen && (
+                <div 
+                    data-testid="account-statement-modal"
+                    className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+                >
+                    <div className="bg-card w-full max-w-2xl rounded-3xl border border-border p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between pb-4 border-b border-border/80">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                                    <FileText size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold font-serif text-foreground">
+                                        {locale === 'en' ? 'Consolidated B2B Statement' : 'Estado de Cuenta B2B Consolidado'}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                        {profile?.company_name || user?.user_metadata?.full_name || user?.email}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsStatementModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Date Range Selection Tabs */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest block">
+                                {locale === 'en' ? 'Select Date Range' : 'Seleccionar Periodo de Facturación'}
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setStatementRange('current_month')}
+                                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                                        statementRange === 'current_month'
+                                            ? 'bg-primary text-white border-primary shadow-sm'
+                                            : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+                                    }`}
+                                >
+                                    {locale === 'en' ? 'Current Month' : 'Mes Actual'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatementRange('last_30_days')}
+                                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                                        statementRange === 'last_30_days'
+                                            ? 'bg-primary text-white border-primary shadow-sm'
+                                            : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+                                    }`}
+                                >
+                                    {locale === 'en' ? 'Last 30 Days' : 'Últimos 30 Días'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatementRange('all')}
+                                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                                        statementRange === 'all'
+                                            ? 'bg-primary text-white border-primary shadow-sm'
+                                            : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+                                    }`}
+                                >
+                                    {locale === 'en' ? 'All History' : 'Histórico Completo'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Summary Metrics Cards */}
+                        <div className="grid grid-cols-3 gap-3 p-4 bg-muted/40 rounded-2xl border border-border/60 text-center">
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground mb-0.5">
+                                    {locale === 'en' ? 'Invoiced' : 'Facturado'}
+                                </p>
+                                <p className="text-base font-black text-foreground">
+                                    ${statementSummary.totalInvoiced.toFixed(2)}
+                                </p>
+                                <p className="text-[9px] text-muted-foreground">
+                                    {statementSummary.ordersCount} {locale === 'en' ? 'order(s)' : 'pedido(s)'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600 mb-0.5">
+                                    {locale === 'en' ? 'Paid' : 'Pagado'}
+                                </p>
+                                <p className="text-base font-black text-emerald-600">
+                                    ${statementSummary.totalPaid.toFixed(2)}
+                                </p>
+                                <p className="text-[9px] text-emerald-700/80">
+                                    {locale === 'en' ? 'Applied payments' : 'Pagos aplicados'}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-wider text-amber-600 mb-0.5">
+                                    {locale === 'en' ? 'Pending' : 'Saldo Pendiente'}
+                                </p>
+                                <p className="text-base font-black text-amber-600">
+                                    ${statementSummary.totalPending.toFixed(2)}
+                                </p>
+                                <p className="text-[9px] text-amber-700/80">
+                                    {locale === 'en' ? 'Balance due' : 'Por liquidar'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Preview List of Orders */}
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+                                {locale === 'en' ? 'Period Transactions Preview' : 'Movimientos del Periodo'} ({filteredStatementOrders.length})
+                            </p>
+                            <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                                {filteredStatementOrders.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground text-center py-6 italic">
+                                        {locale === 'en' ? 'No orders recorded in this date range.' : 'No hay pedidos registrados en este rango de fechas.'}
+                                    </p>
+                                ) : (
+                                    filteredStatementOrders.map(o => {
+                                        const net = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
+                                        const isPaid = (o.payment_status || '').toLowerCase() === 'paid';
+                                        return (
+                                            <div key={o.id} className="p-3 bg-white rounded-xl border border-border/80 flex items-center justify-between text-xs">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono font-bold text-foreground">
+                                                            #{o.id.slice(0, 8).toUpperCase()}
+                                                        </span>
+                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                                            isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                                        }`}>
+                                                            {isPaid ? (locale === 'en' ? 'Paid' : 'Pagado') : (locale === 'en' ? 'Pending' : 'Pendiente')}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                                        {o.created_at ? new Date(o.created_at).toLocaleDateString() : ''} • {o.payment_method?.toUpperCase()}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold text-foreground">${net.toFixed(2)}</p>
+                                                    {!isPaid && (
+                                                        <p className="text-[9px] font-bold text-amber-600">
+                                                            {locale === 'en' ? 'Due' : 'Saldo'}: ${net.toFixed(2)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Export Buttons */}
+                        <div className="pt-4 border-t border-border/80 flex flex-col sm:flex-row items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setIsStatementModalOpen(false)}
+                                className="w-full sm:w-auto px-5 py-2.5 bg-muted hover:bg-border text-foreground rounded-xl text-xs font-bold transition-all cursor-pointer"
+                            >
+                                {locale === 'en' ? 'Cancel' : 'Cerrar'}
+                            </button>
+
+                            <button
+                                type="button"
+                                data-testid="download-statement-pdf-btn"
+                                onClick={exportStatementToPdf}
+                                disabled={filteredStatementOrders.length === 0}
+                                className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                                <Printer size={15} />
+                                <span>{locale === 'en' ? 'Print / PDF Report' : 'Descargar / Imprimir PDF'}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                data-testid="download-statement-excel-btn"
+                                onClick={exportStatementToExcel}
+                                disabled={filteredStatementOrders.length === 0}
+                                className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                                <Download size={15} />
+                                <span>{locale === 'en' ? 'Export Excel (.xlsx)' : 'Exportar Excel (.xlsx)'}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -50,6 +50,7 @@ interface UserRecord {
     account_type?: 'cash' | 'credit';
     credit_limit?: number;
     credit_override?: boolean;
+    check_enabled?: boolean;
     tax_id?: string;
     st120_status?: string;
     st120_document_url?: string;
@@ -109,6 +110,7 @@ export default function AdminClientsPage() {
     const [accountType, setAccountType] = useState<'cash' | 'credit'>('cash');
     const [creditLimit, setCreditLimit] = useState<number>(0);
     const [creditOverride, setCreditOverride] = useState<boolean>(false);
+    const [checkEnabled, setCheckEnabled] = useState<boolean>(false);
     const [isSavingCredit, setIsSavingCredit] = useState(false);
     const [creditSummary, setCreditSummary] = useState<any>(null);
 
@@ -178,6 +180,7 @@ export default function AdminClientsPage() {
         setAccountType(user.account_type || 'cash');
         setCreditLimit(Number(user.credit_limit) || 0);
         setCreditOverride(Boolean(user.credit_override));
+        setCheckEnabled(Boolean(user.check_enabled));
         
         try {
             setLoadingDetail(true);
@@ -189,6 +192,7 @@ export default function AdminClientsPage() {
             setAccountType(detail.account_type || 'cash');
             setCreditLimit(Number(detail.credit_limit) || 0);
             setCreditOverride(Boolean(detail.credit_override));
+            setCheckEnabled(Boolean(detail.check_enabled));
             
             // Get product discounts
             const discounts = await api.get(`/users/${detail.id}/product-discounts`) as any[];
@@ -216,19 +220,22 @@ export default function AdminClientsPage() {
                 account_type: accountType,
                 credit_limit: creditLimit,
                 credit_override: creditOverride,
+                check_enabled: checkEnabled,
             });
-            showToast('✅ Configuración de crédito actualizada');
+            showToast('✅ Configuración comercial y de cheques actualizada');
             setUsers(prev => prev.map(u => u.id === selectedUser.id ? {
                 ...u,
                 account_type: accountType,
                 credit_limit: creditLimit,
                 credit_override: creditOverride,
+                check_enabled: checkEnabled,
             } : u));
             setSelectedUser(prev => prev ? {
                 ...prev,
                 account_type: accountType,
                 credit_limit: creditLimit,
                 credit_override: creditOverride,
+                check_enabled: checkEnabled,
             } : null);
 
             // Refresh credit summary
@@ -674,6 +681,11 @@ export default function AdminClientsPage() {
                                             ) : (
                                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">
                                                     Contado
+                                                </span>
+                                            )}
+                                            {u.check_enabled && (
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200" title="Pago con cheque habilitado">
+                                                    Cheque ON
                                                 </span>
                                             )}
                                         </div>
@@ -1178,6 +1190,49 @@ export default function AdminClientsPage() {
                                             )}
                                         </div>
                                     )}
+
+                                    {/* Check Payment Enablement Switch (TASK-60-04) */}
+                                    <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-black text-xs shrink-0">
+                                                    CHK
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-800 uppercase">Habilitar Pago con Cheque</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">
+                                                        Coexistencia con crédito a 7 días y compensación bancaria de 3 días hábiles
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                data-testid="toggle-check-enabled"
+                                                onClick={() => setCheckEnabled(!checkEnabled)}
+                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    checkEnabled ? 'bg-purple-600' : 'bg-slate-300'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                                        checkEnabled ? 'translate-x-5' : 'translate-x-0'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                checkEnabled ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                                {checkEnabled ? 'Cheques Habilitados [ON]' : 'Cheques Deshabilitados [OFF]'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {checkEnabled
+                                                    ? 'Permite al cliente pagar con foto de cheque y OCR en el checkout.'
+                                                    : 'El cliente no verá la opción de cheque en el checkout.'}
+                                            </span>
+                                        </div>
+                                    </div>
 
                                     <div className="flex justify-end pt-2">
                                         <button

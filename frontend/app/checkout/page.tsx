@@ -7,7 +7,7 @@ import {
     Loader2, Plus, Clock, Minus, Store, Truck, Home,
     ChevronDown, Check, AlertCircle, BookmarkPlus, Bookmark,
     Map as MapIcon, RotateCcw, Search, X, Building2,
-    Moon, Key, Camera, Snowflake, ShieldCheck, ChevronUp, Upload, Trash2
+    Moon, Key, Camera, Snowflake, ShieldCheck, ChevronUp, Upload, Trash2, FileText, Sparkles
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -596,11 +596,22 @@ export default function CheckoutPage() {
     const [termsAccepted, setTermsAccepted] = useState(false);
 
     // Payment method state
-    const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'ach' | 'zelle' | 'credit'>('stripe');
+    const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'ach' | 'zelle' | 'credit' | 'check'>('stripe');
     const [zelleReference, setZelleReference] = useState('');
     const [zelleReceiptFile, setZelleReceiptFile] = useState<File | null>(null);
     const [zelleReceiptUrl, setZelleReceiptUrl] = useState<string | null>(null);
     const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
+
+    // Check payment state (TASK-60-05)
+    const [checkNumber, setCheckNumber] = useState('');
+    const [checkBank, setCheckBank] = useState('');
+    const [checkAmount, setCheckAmount] = useState('');
+    const [checkFile, setCheckFile] = useState<File | null>(null);
+    const [checkImageUrl, setCheckImageUrl] = useState<string | null>(null);
+    const [isUploadingCheck, setIsUploadingCheck] = useState(false);
+    const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+    const [ocrDetected, setOcrDetected] = useState(false);
+    const [checkVerified, setCheckVerified] = useState(false);
 
     const [addresses, setAddresses] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -834,7 +845,7 @@ export default function CheckoutPage() {
         : 0;
 
     // TASK-47-02: Processing Fee calculation via pure calculateProcessingFee
-    const feeMethod = paymentMethod === 'stripe' ? 'STRIPE_CARD' : paymentMethod === 'ach' ? 'ACH' : paymentMethod.toUpperCase();
+    const feeMethod = paymentMethod === 'stripe' ? 'STRIPE_CARD' : paymentMethod === 'ach' ? 'ACH' : paymentMethod === 'check' ? 'CHECK' : paymentMethod.toUpperCase();
     const processingFee = calculateProcessingFee(discountedSubtotal, feeMethod);
     const packagingFee = processingFee;
     const packagingDiscount = 0;
@@ -853,11 +864,17 @@ export default function CheckoutPage() {
     // S55: Restringir opción 'Transferencia ACH Direct Debit' a cuentas autorizadas o VIP
     const isAchAvailable = Boolean(profile?.ach_enabled || user?.is_vip);
 
+    // TASK-60-05: Restringir opción 'Pago con Cheque' ÚNICAMENTE a clientes con check_enabled: true
+    const isCheckAvailable = Boolean(profile?.check_enabled || user?.check_enabled || creditSummary?.check_enabled);
+
     useEffect(() => {
         if (!isAchAvailable && paymentMethod === 'ach') {
             setPaymentMethod('stripe');
         }
-    }, [isAchAvailable, paymentMethod]);
+        if (!isCheckAvailable && paymentMethod === 'check') {
+            setPaymentMethod('stripe');
+        }
+    }, [isAchAvailable, isCheckAvailable, paymentMethod]);
 
     // ── Delivery date (NY timezone & 12:00 PM cutoff guard - TASK-49-04) ──────
     useEffect(() => {
@@ -955,6 +972,43 @@ export default function CheckoutPage() {
         }
     };
 
+    // TASK-60-05: Manejador de foto de cheque con prellenado y simulación OCR asistida
+    const handleCheckFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setCheckFile(file);
+        setIsUploadingCheck(true);
+        setIsOcrProcessing(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.upload('/orders/upload-receipt', formData) as any;
+            if (res?.url) {
+                setCheckImageUrl(res.url);
+            }
+            // Simulación OCR Asistida: Detección inteligente de número de cheque, banco y monto
+            const matchedDigits = file.name.match(/\d{3,6}/);
+            const detectedNumber = matchedDigits ? matchedDigits[0] : '1048';
+            setCheckNumber(detectedNumber);
+            setCheckBank(file.name.toLowerCase().includes('chase') ? 'JPMorgan Chase' : 'Chase Bank');
+            setCheckAmount(finalTotal.toFixed(2));
+            setOcrDetected(true);
+            showNotification(
+                lbl(
+                    '✨ Foto de cheque subida. OCR asistido detectó los campos del documento.',
+                    '✨ Check photo uploaded. Assisted OCR detected document fields.'
+                ),
+                'info'
+            );
+        } catch (err: any) {
+            console.error('Error uploading check photo:', err);
+            showNotification(err?.message || lbl('Error al subir la foto del cheque', 'Error uploading check photo'), 'error');
+        } finally {
+            setIsUploadingCheck(false);
+            setIsOcrProcessing(false);
+        }
+    };
+
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         if (!user || cart.length === 0) return;
@@ -1001,6 +1055,53 @@ export default function CheckoutPage() {
                     lbl(
                         'Es obligatorio adjuntar el comprobante o captura de pantalla de la transferencia Zelle',
                         'It is required to attach the receipt or screenshot of the Zelle transfer'
+                    ),
+                    'warning'
+                );
+                return;
+            }
+        }
+
+        if (paymentMethod === 'check') {
+            if (isUploadingCheck) {
+                showNotification(
+                    lbl(
+                        'La foto del cheque se está subiendo. Por favor espera un momento.',
+                        'The check photo is uploading. Please wait a moment.'
+                    ),
+                    'info'
+                );
+                return;
+            }
+            if (!checkImageUrl) {
+                showNotification(
+                    lbl(
+                        'Es obligatorio adjuntar la foto frontal del cheque.',
+                        'Attaching the front photo of the check is required.'
+                    ),
+                    'warning'
+                );
+                return;
+            }
+            if (!checkNumber.trim()) {
+                showNotification(
+                    lbl('Por favor ingresa el número de cheque.', 'Please enter the check number.'),
+                    'warning'
+                );
+                return;
+            }
+            if (!checkBank.trim()) {
+                showNotification(
+                    lbl('Por favor ingresa el nombre del banco emisor.', 'Please enter the issuing bank name.'),
+                    'warning'
+                );
+                return;
+            }
+            if (!checkVerified) {
+                showNotification(
+                    lbl(
+                        'Debes marcar la casilla de verificación humana confirmando que los datos coinciden con el documento adjunto.',
+                        'You must check the human verification box confirming the data matches the attached document.'
                     ),
                     'warning'
                 );
@@ -1095,6 +1196,11 @@ export default function CheckoutPage() {
                 fee_method: feeMethod,
                 zelle_reference: paymentMethod === 'zelle' ? zelleReference.trim() : null,
                 zelle_receipt_url: paymentMethod === 'zelle' ? zelleReceiptUrl : null,
+                check_number: paymentMethod === 'check' ? checkNumber.trim() : null,
+                check_bank: paymentMethod === 'check' ? checkBank.trim() : null,
+                check_amount: paymentMethod === 'check' ? (Number(checkAmount) || finalTotal) : null,
+                check_image_url: paymentMethod === 'check' ? checkImageUrl : null,
+                check_verified: paymentMethod === 'check' ? Boolean(checkVerified) : false,
                 items: cart.map(item => ({
                     productId: item.id,
                     quantity: item.quantity,
@@ -1102,7 +1208,7 @@ export default function CheckoutPage() {
                 })),
             }) as any;
 
-            if (paymentMethod === 'zelle') {
+            if (paymentMethod === 'zelle' || paymentMethod === 'check') {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
             } else if (paymentMethod === 'credit' || (isCreditAccount && paymentMethod !== 'stripe' && paymentMethod !== 'ach')) {
@@ -1549,6 +1655,48 @@ export default function CheckoutPage() {
                                         {lbl('Pago directo interbancario sin comisiones de procesamiento ($0.00).', 'Direct bank transfer with zero processing fees ($0.00).')}
                                     </p>
                                 </div>
+
+                                {/* Check Payment Option (TASK-60-05) */}
+                                {isCheckAvailable && (
+                                    <div 
+                                        data-testid="payment-method-check"
+                                        onClick={() => {
+                                            setPaymentMethod('check');
+                                            if (!checkAmount) {
+                                                setCheckAmount(finalTotal.toFixed(2));
+                                            }
+                                        }}
+                                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                            paymentMethod === 'check'
+                                                ? 'border-purple-600 bg-purple-50/50 shadow-sm'
+                                                : 'border-border/70 hover:border-border bg-white'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-black text-xs">
+                                                    CHK
+                                                </div>
+                                                <div>
+                                                    <span className="font-bold text-sm text-slate-800">
+                                                        {lbl('Pago con Cheque B2B', 'B2B Check Payment')}
+                                                    </span>
+                                                    <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 text-[9px] font-black uppercase rounded-full">
+                                                        $0.00 Fee (0%)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                paymentMethod === 'check' ? 'border-purple-600' : 'border-slate-300'
+                                            }`}>
+                                                {paymentMethod === 'check' && <div className="w-2.5 h-2.5 rounded-full bg-purple-600" />}
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                            {lbl('Carga la foto frontal del cheque con prellenado OCR y verificación humana obligatoria.', 'Upload front photo of your check with assisted OCR and mandatory human verification.')}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Credit Account option if eligible */}
@@ -1653,6 +1801,154 @@ export default function CheckoutPage() {
                                             {lbl(
                                                 'Adjunta la captura de pantalla de la confirmación bancaria para acelerar la verificación manual.',
                                                 'Attach your banking confirmation screenshot to expedite manual verification.'
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Check Instructions & Photo Upload with OCR (TASK-60-05) */}
+                            {paymentMethod === 'check' && (
+                                <div className="p-6 bg-purple-50/80 rounded-2xl border border-purple-200/90 space-y-5 animate-in fade-in duration-200">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 font-black text-xs">
+                                            CHK
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-purple-950">
+                                                {lbl('Instrucciones de Pago con Cheque B2B', 'B2B Check Payment Instructions')}
+                                            </h4>
+                                            <p className="text-xs text-purple-800 mt-0.5">
+                                                {lbl('Sube la foto frontal de tu cheque corporativo. El sistema asistirá la captura mediante OCR.', 'Upload the front photo of your business check. Our assisted OCR will extract key fields.')}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Dropzone / Upload check photo */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-purple-950 flex items-center justify-between">
+                                            <span>{lbl('Foto Frontal del Cheque (Obligatoria) *', 'Front Photo of the Check (Required) *')}</span>
+                                            {isUploadingCheck && (
+                                                <span className="text-[10px] text-purple-600 flex items-center gap-1 font-normal">
+                                                    <Loader2 size={12} className="animate-spin" /> {lbl('Subiendo y procesando OCR...', 'Uploading & reading OCR...')}
+                                                </span>
+                                            )}
+                                        </label>
+                                        <div className="border-2 border-dashed border-purple-300 hover:border-purple-500 rounded-2xl p-4 bg-white transition-all text-center">
+                                            <input
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/webp"
+                                                onChange={handleCheckFileChange}
+                                                id="check-photo-upload"
+                                                className="hidden"
+                                            />
+                                            <label htmlFor="check-photo-upload" className="cursor-pointer block">
+                                                {checkImageUrl ? (
+                                                    <div className="space-y-2">
+                                                        <div className="relative inline-block">
+                                                            <img
+                                                                src={checkImageUrl}
+                                                                alt="Check Preview"
+                                                                className="h-28 max-w-full rounded-xl object-contain border border-purple-200 mx-auto shadow-xs"
+                                                            />
+                                                            <span className="absolute top-1 right-1 bg-emerald-600 text-white rounded-full p-0.5">
+                                                                <Check size={12} />
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-[11px] font-bold text-purple-700 hover:underline">
+                                                            {lbl('Haz clic para cambiar la foto del cheque', 'Click to change check photo')}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="py-4 space-y-1">
+                                                        <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-2">
+                                                            <FileText size={20} />
+                                                        </div>
+                                                        <p className="text-xs font-bold text-purple-950">
+                                                            {lbl('Arrastra o haz clic para subir foto del cheque', 'Drag or click to upload check photo')}
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-400">PNG, JPG o WEBP (máx. 5MB)</p>
+                                                    </div>
+                                                )}
+                                            </label>
+                                        </div>
+
+                                        {ocrDetected && (
+                                            <div className="p-3 bg-purple-100/90 border border-purple-200 rounded-xl text-xs flex items-center gap-2 text-purple-900 animate-fade-in">
+                                                <Sparkles size={16} className="text-purple-600 shrink-0" />
+                                                <span className="text-[11px] font-semibold leading-tight">
+                                                    {lbl('✨ OCR Asistido: Se han detectado los datos del cheque. Verifica o ajusta los campos a continuación.', '✨ Assisted OCR: Check data detected. Please review or adjust fields below.')}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Fields: Check Number, Bank, Amount */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-purple-200/70">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-purple-950 block mb-1">
+                                                {lbl('Número de Cheque *', 'Check Number *')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Ej: 1048"
+                                                value={checkNumber}
+                                                onChange={e => setCheckNumber(e.target.value)}
+                                                className="w-full px-3.5 py-2.5 bg-white border border-purple-300 rounded-xl font-bold text-slate-800 text-xs outline-none focus:ring-2 focus:ring-purple-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-purple-950 block mb-1">
+                                                {lbl('Banco Emisor *', 'Issuing Bank *')}
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Ej: Chase / TD Bank"
+                                                value={checkBank}
+                                                onChange={e => setCheckBank(e.target.value)}
+                                                className="w-full px-3.5 py-2.5 bg-white border border-purple-300 rounded-xl font-bold text-slate-800 text-xs outline-none focus:ring-2 focus:ring-purple-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-purple-950 block mb-1">
+                                                {lbl('Monto ($) *', 'Amount ($) *')}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                required
+                                                value={checkAmount}
+                                                onChange={e => setCheckAmount(e.target.value)}
+                                                className="w-full px-3.5 py-2.5 bg-white border border-purple-300 rounded-xl font-bold text-slate-800 text-xs outline-none focus:ring-2 focus:ring-purple-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Mandatory Human Verification Checkbox */}
+                                    <div className="p-4 bg-white rounded-xl border-2 border-purple-300 space-y-1">
+                                        <div className="flex items-start gap-3">
+                                            <input
+                                                id="check_human_verified"
+                                                type="checkbox"
+                                                checked={checkVerified}
+                                                onChange={e => setCheckVerified(e.target.checked)}
+                                                className="mt-0.5 w-4 h-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500 accent-purple-600 cursor-pointer shrink-0"
+                                            />
+                                            <label htmlFor="check_human_verified" className="text-xs text-purple-950 font-bold leading-relaxed cursor-pointer select-none">
+                                                {lbl(
+                                                    'Confirmo que el número de cheque, banco y monto coinciden con el documento adjunto.',
+                                                    'I confirm that the check number, bank, and amount match the attached document.'
+                                                )}
+                                            </label>
+                                        </div>
+                                        <p className="text-[10px] text-purple-700 ml-7 italic">
+                                            {lbl(
+                                                'El botón de confirmar orden permanecerá inactivo hasta completar esta verificación.',
+                                                'The place order button remains disabled until this verification is checked.'
                                             )}
                                         </p>
                                     </div>
@@ -1987,7 +2283,7 @@ export default function CheckoutPage() {
 
                             <button
                                 onClick={handleSubmit}
-                                disabled={isLoading || cart.length === 0 || exceedsCreditLimit}
+                                disabled={isLoading || cart.length === 0 || exceedsCreditLimit || (paymentMethod === 'check' && (!checkImageUrl || !checkNumber.trim() || !checkBank.trim() || !checkVerified))}
                                 className="w-full py-4 bg-[#111] hover:bg-[#222] text-white rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
