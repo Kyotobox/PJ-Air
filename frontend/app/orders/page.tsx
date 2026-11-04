@@ -364,23 +364,48 @@ export default function ClientOrdersPage() {
         );
     }, [displayCredit, profile]);
 
-    // TASK-60-06: Consolidated statement calculations
+    // TASK-60-06 & TASK-61-05: Consolidated statement calculations based on delivery date
     const filteredStatementOrders = useMemo(() => {
         if (!orders || orders.length === 0) return [];
         const now = new Date();
         return orders.filter(order => {
-            if (!order.created_at) return false;
-            const orderDate = new Date(order.created_at);
+            if (!order) return false;
+
+            let effectiveDate: Date | null = null;
+            if (order.delivery_date && typeof order.delivery_date === 'string') {
+                let dStr = order.delivery_date.trim();
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
+                    dStr = `${dStr}T12:00:00`;
+                }
+                const d = new Date(dStr);
+                if (!isNaN(d.getTime())) {
+                    effectiveDate = d;
+                }
+            }
+
+            if (!effectiveDate && order.created_at && typeof order.created_at === 'string') {
+                let cStr = order.created_at.trim();
+                if (/^\d{4}-\d{2}-\d{2}$/.test(cStr)) {
+                    cStr = `${cStr}T12:00:00`;
+                }
+                const d = new Date(cStr);
+                if (!isNaN(d.getTime())) {
+                    effectiveDate = d;
+                }
+            }
+
+            if (!effectiveDate) return false;
+
             if (statementRange === 'current_month') {
                 return (
-                    orderDate.getFullYear() === now.getFullYear() &&
-                    orderDate.getMonth() === now.getMonth()
+                    effectiveDate.getFullYear() === now.getFullYear() &&
+                    effectiveDate.getMonth() === now.getMonth()
                 );
             }
             if (statementRange === 'last_30_days') {
-                const thirtyDaysAgo = new Date();
+                const thirtyDaysAgo = new Date(now);
                 thirtyDaysAgo.setDate(now.getDate() - 30);
-                return orderDate >= thirtyDaysAgo;
+                return effectiveDate >= thirtyDaysAgo && effectiveDate <= now;
             }
             return true;
         });
@@ -436,8 +461,8 @@ export default function ClientOrdersPage() {
             [''],
             [
                 'Folio / ID',
-                'Fecha de Creación',
-                'Fecha de Entrega',
+                'Fecha de Despacho / Entrega',
+                'Fecha de Pedido',
                 'Método de Pago',
                 'Estado de Pago',
                 'Total Facturado ($)',
@@ -454,10 +479,15 @@ export default function ClientOrdersPage() {
             const paid = isPaid ? net : 0;
             const pending = isPaid ? 0 : net;
 
+            const dispatchDateStr = o.delivery_date
+                ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0])
+                : (o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A');
+            const createdDateStr = o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A';
+
             rows.push([
                 `#${o.id.slice(0, 8).toUpperCase()}`,
-                o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A',
-                o.delivery_date ? new Date(o.delivery_date).toLocaleDateString() : 'N/A',
+                dispatchDateStr,
+                createdDateStr,
                 (o.payment_method || 'stripe').toUpperCase(),
                 (o.payment_status || 'pending').toUpperCase(),
                 net.toFixed(2),
@@ -489,10 +519,15 @@ export default function ClientOrdersPage() {
             const paid = isPaid ? net : 0;
             const pending = isPaid ? 0 : net;
 
+            const dispatchDateStr = o.delivery_date
+                ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0])
+                : (o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A');
+            const createdDateStr = o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A';
+
             return `<tr>
                 <td style="padding:8px; border-bottom:1px solid #e2e8f0; font-family:monospace; font-weight:bold;">#${o.id.slice(0, 8).toUpperCase()}</td>
-                <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A'}</td>
-                <td style="padding:8px; border-bottom:1px solid #e2e8f0;">${o.delivery_date ? new Date(o.delivery_date).toLocaleDateString() : 'N/A'}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; font-weight:bold;">${dispatchDateStr}</td>
+                <td style="padding:8px; border-bottom:1px solid #e2e8f0; color:#64748b;">${createdDateStr}</td>
                 <td style="padding:8px; border-bottom:1px solid #e2e8f0; text-transform:uppercase;">${o.payment_method || 'stripe'}</td>
                 <td style="padding:8px; border-bottom:1px solid #e2e8f0; font-weight:bold; color:${isPaid ? '#15803d' : '#b45309'}; text-transform:uppercase;">${o.payment_status || 'pending'}</td>
                 <td style="padding:8px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:bold;">$${net.toFixed(2)}</td>
@@ -547,7 +582,11 @@ export default function ClientOrdersPage() {
             <table>
                 <thead>
                     <tr>
-                        <th>Folio</th><th>Fecha</th><th>Entrega</th><th>Método</th><th>Estado</th>
+                        <th>Folio</th>
+                        <th>Fecha de Despacho / Entrega</th>
+                        <th>Fecha de Pedido</th>
+                        <th>Método</th>
+                        <th>Estado</th>
                         <th style="text-align:right;">Facturación</th>
                         <th style="text-align:right;">Pagado</th>
                         <th style="text-align:right;">Pendiente</th>
@@ -1437,7 +1476,11 @@ export default function ClientOrdersPage() {
                                                         </span>
                                                     </div>
                                                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                                                        {o.created_at ? new Date(o.created_at).toLocaleDateString() : ''} • {o.payment_method?.toUpperCase()}
+                                                        <span className="font-semibold text-slate-700">Entrega: {o.delivery_date ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0]) : (o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A')}</span>
+                                                        <span className="mx-1">•</span>
+                                                        <span>Pedido: {o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A'}</span>
+                                                        <span className="mx-1">•</span>
+                                                        <span>{o.payment_method?.toUpperCase()}</span>
                                                     </p>
                                                 </div>
                                                 <div className="text-right">

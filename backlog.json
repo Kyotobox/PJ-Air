@@ -2,9 +2,9 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "5.0.0",
-  "status": "COMPLETED",
-  "current_sprint": "S60",
-  "current_task": "TASK-60-07",
+  "status": "IN_PROGRESS",
+  "current_sprint": "S61",
+  "current_task": "TASK-61-01",
   "sprints": [
     {
       "id": "S57",
@@ -157,57 +157,96 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S61",
+      "title": "Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-04",
+      "goal": "Ajustar la arquitectura de consulta, agregación, exportación (Excel/PDF) y filtrado de reportes en backend y frontend para que operen con base en la Fecha de Despacho/Entrega (delivery_date) en lugar de la fecha de creación del pedido, agregando este dato explícitamente en reportes y tablas.",
+      "tasks": [
+        {
+          "id": "TASK-61-01",
+          "label": "BACKEND/REPORTING-DISPATCH-RANGE",
+          "desc": "Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-61-02",
+          "label": "BACKEND/EXCEL-EXPORT-DISPATCH-COLUMNS",
+          "desc": "Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-61-03",
+          "label": "UI/ADMIN-REPORTS-DELIVERY-FILTERS",
+          "desc": "Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualización de entrega en tablas y cards",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-61-04",
+          "label": "UI/ADMIN-ORDERS-DELIVERY-FILTER-AND-COLUMN",
+          "desc": "En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adición de columna/dato visible de Fecha de Entrega en tabla de pedidos",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-61-05",
+          "label": "DOMAIN/B2B-STATEMENT-DELIVERY-DATE-REPORTS",
+          "desc": "Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-61-06",
+          "label": "TEST/S61-DISPATCH-REPORTS-CERTIFICATION",
+          "desc": "Suite de pruebas de certificación unitaria y de integración para filtrado y reportes por fecha de despacho (happy y sad path)",
+          "status": "DONE"
+        }
+      ]
     }
   ],
   "archived_sprints_count": 50,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S60",
-    "name": "Sprint 60: Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
-    "status": "COMPLETED",
+    "id": "S61",
+    "title": "Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)",
+    "status": "IN_PROGRESS",
     "start_date": "2026-11-04",
-    "goal": "Persistencia Legal de Términos B2B bajo NY ESRA / E-SIGN Act y Servicio Stripe SetupIntent para tarjeta en archivo, registro con 3 casillas, pagos con cheque y estado de cuenta.",
+    "goal": "Ajustar la arquitectura de consulta, agregación, exportación (Excel/PDF) y filtrado de reportes en backend y frontend para que operen con base en la Fecha de Despacho/Entrega (delivery_date) en lugar de la fecha de creación del pedido, agregando este dato explícitamente en reportes y tablas.",
     "tasks": [
       {
-        "id": "TASK-60-01",
-        "label": "DOMAIN/B2B-TERMS-AND-SIGNATURE-SCHEMA",
-        "desc": "Modelo y persistencia legal de aceptación de Términos y Firma bajo NY ESRA / E-SIGN Act",
+        "id": "TASK-61-01",
+        "label": "BACKEND/REPORTING-DISPATCH-RANGE",
+        "desc": "Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-61-02",
+        "label": "BACKEND/EXCEL-EXPORT-DISPATCH-COLUMNS",
+        "desc": "Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-61-03",
+        "label": "UI/ADMIN-REPORTS-DELIVERY-FILTERS",
+        "desc": "Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualización de entrega en tablas y cards",
+        "status": "TODO"
+      },
+      {
+        "id": "TASK-61-04",
+        "label": "UI/ADMIN-ORDERS-DELIVERY-FILTER-AND-COLUMN",
+        "desc": "En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adición de columna/dato visible de Fecha de Entrega en tabla de pedidos",
         "status": "DONE"
       },
       {
-        "id": "TASK-60-02",
-        "label": "PAYMENTS/STRIPE-SETUP-INTENT-VAULT",
-        "desc": "Servicio Stripe SetupIntent para tokenización de tarjeta en archivo sin cobro inmediato ($0.00)",
+        "id": "TASK-61-05",
+        "label": "DOMAIN/B2B-STATEMENT-DELIVERY-DATE-REPORTS",
+        "desc": "Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho",
         "status": "DONE"
       },
       {
-        "id": "TASK-60-03",
-        "label": "UI/WHOLESALE-SIGNUP-TERMS-STEPPER",
-        "desc": "Flujo de Registro Mayorista con 3 casillas de consentimiento, firma escrita y panel informativo",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-60-04",
-        "label": "ADMIN/CHECK-PAYMENT-ENABLEMENT-TOGGLE",
-        "desc": "Switch administrativo para habilitar selectivamente pago por Cheque en admin/clients",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-60-05",
-        "label": "UI/CHECKOUT-CHECK-PAYMENT-PHOTO-OCR-VERIFY",
-        "desc": "Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-60-06",
-        "label": "PORTAL/CLIENT-ACCOUNT-STATEMENT-REPORT",
-        "desc": "Portal de Cliente: Consulta y descarga de Estado de Cuenta B2B consolidado en PDF y Excel",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-60-07",
-        "label": "TEST/S60B-CERTIFICATION",
-        "desc": "Suite de certificación integral para S60 (happy y sad path, next build limpio)",
+        "id": "TASK-61-06",
+        "label": "TEST/S61-DISPATCH-REPORTS-CERTIFICATION",
+        "desc": "Suite de pruebas de certificación unitaria y de integración para filtrado y reportes por fecha de despacho (happy y sad path)",
         "status": "DONE"
       }
     ]

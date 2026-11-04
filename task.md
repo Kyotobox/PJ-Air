@@ -1,11 +1,10 @@
-# SPRINT S60 - Sprint Activo
-**Objetivo**: Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque
+# SPRINT S61 - Sprint Activo
+**Objetivo**: Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)
 **Fecha**: 2026-11-04
 
-- [x] **TASK-60-01** [TASK] Modelo y persistencia legal de aceptación de Términos y Firma bajo NY ESRA / E-SIGN Act
-- [x] **TASK-60-02** [TASK] Servicio Stripe SetupIntent para tokenización de tarjeta en archivo sin cobro inmediato ($0.00)
-- [x] **TASK-60-03** [TASK] Flujo de Registro Mayorista con 3 casillas de consentimiento, firma escrita y panel informativo
-- [x] **TASK-60-04** [TASK] Switch administrativo para habilitar selectivamente pago por Cheque en admin/clients
-- [x] **TASK-60-05** [TASK] Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana
-- [x] **TASK-60-06** [TASK] Portal de Cliente: Consulta y descarga de Estado de Cuenta B2B consolidado en PDF y Excel
-- [x] **TASK-60-07** [TASK] Suite e2e de certificación para SetupIntent, consentimiento legal y flujos de pago
+- [ ] **TASK-61-01** [TASK] Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)
+- [ ] **TASK-61-02** [TASK] Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega
+- [ ] **TASK-61-03** [TASK] Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualización de entrega en tablas y cards
+- [x] **TASK-61-04** [TASK] En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adición de columna/dato visible de Fecha de Entrega en tabla de pedidos
+- [x] **TASK-61-05** [TASK] Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho
+- [x] **TASK-61-06** [TASK] Suite de pruebas de certificación unitaria y de integración para filtrado y reportes por fecha de despacho (happy y sad path)

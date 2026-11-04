@@ -410,9 +410,9 @@ export default function AdminOrdersPage() {
                 return catName.toLowerCase().includes(q);
             });
         const matchesStatus = statusFilter === 'Todos' || o.status === statusFilter;
-        const orderDate = new Date(o.created_at).toISOString().split('T')[0];
-        const matchesStart = !startDate || orderDate >= startDate;
-        const matchesEnd = !endDate || orderDate <= endDate;
+        const orderDispatchDate = o.delivery_date ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0]) : new Date(o.created_at).toISOString().split('T')[0];
+        const matchesStart = !startDate || orderDispatchDate >= startDate;
+        const matchesEnd = !endDate || orderDispatchDate <= endDate;
         return matchesSearch && matchesStatus && matchesStart && matchesEnd;
     });
 
@@ -779,12 +779,12 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     <div className="flex flex-wrap items-center gap-3">
                         <CalendarDays size={18} className="text-muted-foreground" />
                         <div className="flex items-center gap-2 bg-muted/30 border border-border rounded-xl px-3 py-1.5">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">Desde</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Entrega Desde</span>
                             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent outline-none text-xs font-bold text-slate-700 py-1" />
                         </div>
                         <span className="text-slate-300 font-bold">→</span>
                         <div className="flex items-center gap-2 bg-muted/30 border border-border rounded-xl px-3 py-1.5">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">Hasta</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase">Entrega Hasta</span>
                             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent outline-none text-xs font-bold text-slate-700 py-1" />
                         </div>
                         {(startDate || endDate) && (
@@ -823,7 +823,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-mono text-xs font-bold text-slate-400">#{order.id.slice(0, 8)}</span>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
                                                         <Clock size={10} /> {new Date(order.created_at).toLocaleDateString()}
                                                     </span>
@@ -832,6 +832,16 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                             <Edit size={8} /> Modificado
                                                         </span>
                                                     )}
+                                                </div>
+                                                <div className="mt-1">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wide border shadow-xs ${
+                                                        order.delivery_date
+                                                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80 font-bold'
+                                                            : 'bg-slate-100 text-slate-500 border-slate-200 italic'
+                                                    }`}>
+                                                        <Truck size={12} className={order.delivery_date ? 'text-indigo-600' : 'text-slate-400'} />
+                                                        <span>Entrega: {order.delivery_date ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0]) : 'Sin programar'}</span>
+                                                    </span>
                                                 </div>
                                             </div>
                                         </td>
