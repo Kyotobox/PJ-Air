@@ -2,9 +2,9 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "5.0.0",
-  "status": "COMPLETED",
-  "current_sprint": "S61",
-  "current_task": "TASK-61-06",
+  "status": "IN_PROGRESS",
+  "current_sprint": "S62",
+  "current_task": "TASK-62-01",
   "sprints": [
     {
       "id": "S57",
@@ -202,52 +202,97 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S62",
+      "title": "Refinamiento UX/UI: Facturas en Inglés, Tax ID Único, Login Limpio y Ajustes de Hoja de Cocina",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-06",
+      "goal": "Implementar los ajustes directos solicitados por la operación: unificar campo Tax ID en registro mayorista, login exclusivo por email/clave, facturas de clientes estrictamente en inglés, corrección de textos i18n en checkout/Zelle y fix de paginación/dirección en hoja de cocina.",
+      "tasks": [
+        {
+          "id": "TASK-62-01",
+          "label": "UI/AUTH-SINGLE-TAX-ID",
+          "desc": "Eliminar el campo duplicado de Tax ID/EIN en el formulario de registro mayorista dejando una sola entrada unificada",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-62-02",
+          "label": "UI/AUTH-CLEAN-EMAIL-LOGIN",
+          "desc": "Simplificar el login para acceso exclusivo mediante Correo Electrónico y Contraseña sin username",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-62-03",
+          "label": "UI/INVOICE-PRINT-STRICT-ENGLISH",
+          "desc": "Actualizar la plantilla de impresión de factura/recibo del cliente para que esté estrictamente en idioma inglés",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-62-04",
+          "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
+          "desc": "Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-62-05",
+          "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
+          "desc": "Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible",
+          "status": "TODO"
+        },
+        {
+          "id": "TASK-62-06",
+          "label": "TEST/S62-CERTIFICATION",
+          "desc": "Suite de pruebas de certificación y verificación de build de producción Next.js limpio",
+          "status": "TODO"
+        }
+      ]
     }
   ],
   "archived_sprints_count": 50,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S61",
-    "title": "Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)",
-    "status": "COMPLETED",
-    "start_date": "2026-11-04",
-    "goal": "Ajustar la arquitectura de consulta, agregación, exportación (Excel/PDF) y filtrado de reportes en backend y frontend para que operen con base en la Fecha de Despacho/Entrega (delivery_date) en lugar de la fecha de creación del pedido, agregando este dato explícitamente en reportes y tablas.",
+    "id": "S62",
+    "title": "Refinamiento UX/UI: Facturas en Inglés, Tax ID Único, Login Limpio y Ajustes de Hoja de Cocina",
+    "status": "IN_PROGRESS",
+    "start_date": "2026-11-06",
+    "goal": "Implementar los ajustes directos solicitados por la operación: unificar campo Tax ID en registro mayorista, login exclusivo por email/clave, facturas de clientes estrictamente en inglés, corrección de textos i18n en checkout/Zelle y fix de paginación/dirección en hoja de cocina.",
     "tasks": [
       {
-        "id": "TASK-61-01",
-        "label": "BACKEND/REPORTING-DISPATCH-RANGE",
-        "desc": "Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)",
-        "status": "DONE"
+        "id": "TASK-62-01",
+        "label": "UI/AUTH-SINGLE-TAX-ID",
+        "desc": "Eliminar el campo duplicado de Tax ID/EIN en el formulario de registro mayorista dejando una sola entrada unificada",
+        "status": "TODO"
       },
       {
-        "id": "TASK-61-02",
-        "label": "BACKEND/EXCEL-EXPORT-DISPATCH-COLUMNS",
-        "desc": "Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega",
-        "status": "DONE"
+        "id": "TASK-62-02",
+        "label": "UI/AUTH-CLEAN-EMAIL-LOGIN",
+        "desc": "Simplificar el login para acceso exclusivo mediante Correo Electrónico y Contraseña sin username",
+        "status": "TODO"
       },
       {
-        "id": "TASK-61-03",
-        "label": "UI/ADMIN-REPORTS-DELIVERY-FILTERS",
-        "desc": "Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualización de entrega en tablas y cards",
-        "status": "DONE"
+        "id": "TASK-62-03",
+        "label": "UI/INVOICE-PRINT-STRICT-ENGLISH",
+        "desc": "Actualizar la plantilla de impresión de factura/recibo del cliente para que esté estrictamente en idioma inglés",
+        "status": "TODO"
       },
       {
-        "id": "TASK-61-04",
-        "label": "UI/ADMIN-ORDERS-DELIVERY-FILTER-AND-COLUMN",
-        "desc": "En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adición de columna/dato visible de Fecha de Entrega en tabla de pedidos",
-        "status": "DONE"
+        "id": "TASK-62-04",
+        "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
+        "desc": "Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)",
+        "status": "TODO"
       },
       {
-        "id": "TASK-61-05",
-        "label": "DOMAIN/B2B-STATEMENT-DELIVERY-DATE-REPORTS",
-        "desc": "Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho",
-        "status": "DONE"
+        "id": "TASK-62-05",
+        "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
+        "desc": "Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible",
+        "status": "TODO"
       },
       {
-        "id": "TASK-61-06",
-        "label": "TEST/S61-DISPATCH-REPORTS-CERTIFICATION",
-        "desc": "Suite de pruebas de certificación unitaria y de integración para filtrado y reportes por fecha de despacho (happy y sad path)",
-        "status": "DONE"
+        "id": "TASK-62-06",
+        "label": "TEST/S62-CERTIFICATION",
+        "desc": "Suite de pruebas de certificación y verificación de build de producción Next.js limpio",
+        "status": "TODO"
       }
     ]
   }

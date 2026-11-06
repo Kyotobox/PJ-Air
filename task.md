@@ -1,10 +1,10 @@
-# SPRINT S61 - Sprint Activo
-**Objetivo**: Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)
-**Fecha**: 2026-11-04
+# SPRINT S62 - Sprint Activo
+**Objetivo**: Refinamiento UX/UI: Facturas en Inglés, Tax ID Único, Login Limpio y Ajustes de Hoja de Cocina
+**Fecha**: 2026-11-06
 
-- [x] **TASK-61-01** [TASK] Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)
-- [x] **TASK-61-02** [TASK] Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega
-- [x] **TASK-61-03** [TASK] Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualización de entrega en tablas y cards
-- [x] **TASK-61-04** [TASK] En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adición de columna/dato visible de Fecha de Entrega en tabla de pedidos
-- [x] **TASK-61-05** [TASK] Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho
-- [x] **TASK-61-06** [TASK] Suite de pruebas de certificación unitaria y de integración para filtrado y reportes por fecha de despacho (happy y sad path)
+- [ ] **TASK-62-01** [TASK] Eliminar el campo duplicado de Tax ID/EIN en el formulario de registro mayorista dejando una sola entrada unificada
+- [ ] **TASK-62-02** [TASK] Simplificar el login para acceso exclusivo mediante Correo Electrónico y Contraseña sin username
+- [ ] **TASK-62-03** [TASK] Actualizar la plantilla de impresión de factura/recibo del cliente para que esté estrictamente en idioma inglés
+- [ ] **TASK-62-04** [TASK] Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)
+- [ ] **TASK-62-05** [TASK] Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible
+- [ ] **TASK-62-06** [TASK] Suite de pruebas de certificación y verificación de build de producción Next.js limpio
