@@ -7,116 +7,6 @@
   "current_task": "TASK-62-06",
   "sprints": [
     {
-      "id": "S57",
-      "title": "Automatización de Reportes Contables, Notificación Zelle y Folio de Notas de Crédito",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-57-01",
-          "title": "Configuración de correos contables en admin/settings",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-02",
-          "title": "Cron de despacho diario y semanal de Excel de órdenes",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-03",
-          "title": "Flujo de rechazo Zelle con notificación al cliente",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-04",
-          "title": "Generador de notas de crédito con folio fiscal legal",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-57-05",
-          "title": "Certificación integral de S57 y verificación DDL",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S58",
-      "name": "Sprint S58: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S58-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-01T20:34:21.596388+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
-      "tasks": [
-        {
-          "id": "TASK-58-01",
-          "title": "Ingesta, compresión y normalización de las 10 fotos de temporada del cliente",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-02",
-          "title": "Soporte para segundo botón opcional en la entidad Banner y endpoint GET /banners/gallery",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-03",
-          "title": "Selector interactivo de Galería de Temporada (Media Picker) en /admin/banners",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-04",
-          "title": "Renderizado modular en tienda principal (app/page.tsx) con fade lateral CSS y 2 botones",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-05",
-          "title": "Precarga y muestra de 4 banners activos y 6 en reserva con fotos exclusivas del ZIP",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-58-06",
-          "title": "Certificación integral de pruebas unitarias backend y builds sin errores",
-          "status": "DONE"
-        }
-      ],
-      "title": "Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1"
-    },
-    {
-      "id": "S59",
-      "title": "Hoja de Cocina/Despacho 1:1 con Excel, Asignación Operativa y Limpieza de Banners CTA",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-59-01",
-          "title": "Modal interactivo de asignación de Chofer y Empaque en admin/orders",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-59-02",
-          "title": "Lógica de ordenamiento alfabético estricto de Categorías y Productos con subtotales",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-59-03",
-          "title": "Plantilla Print CSS 1:1 con EJEMPLO_1.xlsx y paginación inteligente multi-página",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-59-04",
-          "title": "Generador dinámico y descargador de archivo .xlsx idéntico a la plantilla física",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-59-05",
-          "title": "Supresión del segundo banner masivo en Home y adopción de CTAs compactos",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-59-06",
-          "title": "Certificación integral de pruebas unitarias, exports y builds limpios",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
       "id": "S60",
       "title": "Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
       "status": "COMPLETED",
@@ -249,7 +139,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 50,
+  "archived_sprints_count": 53,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S62",
