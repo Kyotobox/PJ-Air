@@ -239,9 +239,9 @@ describe('Kitchen Dispatch Engine (TASK-59-02, TASK-59-03, TASK-59-04)', () => {
         });
 
         it('displays "MORE INFORMATION ON THE NEXT PAGE →" when items exceed threshold for multi-page', () => {
-            // Generate > 20 items to trigger multi-page
+            // Generate > 32 items to trigger multi-page (TASK-62-05 threshold)
             const manyItems = [];
-            for (let i = 1; i <= 25; i++) {
+            for (let i = 1; i <= 35; i++) {
                 manyItems.push({
                     product: { name: `Product ${i}`, category: `Category ${i % 5}` },
                     quantity: 2,

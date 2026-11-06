@@ -232,19 +232,19 @@
           "id": "TASK-62-04",
           "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
           "desc": "Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-62-05",
           "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
           "desc": "Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-62-06",
           "label": "TEST/S62-CERTIFICATION",
           "desc": "Suite de pruebas de certificación y verificación de build de producción Next.js limpio",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     }
@@ -280,19 +280,19 @@
         "id": "TASK-62-04",
         "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
         "desc": "Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-62-05",
         "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
         "desc": "Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-62-06",
         "label": "TEST/S62-CERTIFICATION",
         "desc": "Suite de pruebas de certificación y verificación de build de producción Next.js limpio",
-        "status": "TODO"
+        "status": "DONE"
       }
     ]
   }

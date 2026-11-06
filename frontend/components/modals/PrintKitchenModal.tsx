@@ -10,6 +10,7 @@ import {
     downloadKitchenExcel, 
     groupAndSortKitchenItems, 
     formatDeliveryDateUpper,
+    resolveKitchenDeliveryAddress,
     KitchenPrintOptions
 } from '@/lib/kitchen-dispatch';
 
@@ -64,12 +65,9 @@ export default function PrintKitchenModal({ isOpen, onClose, order }: PrintKitch
         : '';
     const formattedDate = formatDeliveryDateUpper(deliveryDateStr, 'es');
     
-    let deliveryAddress = order.address?.address || '';
-    if (order.delivery_type === 'pickup') {
-        deliveryAddress = 'PICK UP EN TIENDA (JHÓANES BAKERY)';
-    } else if (!deliveryAddress) {
-        deliveryAddress = 'DIRECCIÓN NO ESPECIFICADA';
-    }
+    const deliveryAddress = (order.delivery_type === 'pickup')
+        ? 'RETIRO EN LOCAL / STORE PICKUP'
+        : (order.delivery_address_text || order.address?.address || 'DIRECCIÓN NO ESPECIFICADA');
 
     const items = order.items || [];
     const { groups, totalUnits } = groupAndSortKitchenItems(items);

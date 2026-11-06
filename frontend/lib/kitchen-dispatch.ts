@@ -45,6 +45,34 @@ const ENGLISH_MONTHS = [
 ];
 
 /**
+ * Resuelve la dirección de entrega de una orden para la Hoja de Cocina (TASK-62-05).
+ * Evalúa tipo pickup, dirección temporal y dirección guardada.
+ */
+export function resolveKitchenDeliveryAddress(order: any): string {
+    if (!order) return 'DIRECCIÓN NO ESPECIFICADA';
+    if (order.delivery_type === 'pickup') {
+        return 'RETIRO EN LOCAL / STORE PICKUP';
+    }
+    return order.delivery_address_text || order.address?.address || 'DIRECCIÓN NO ESPECIFICADA';
+}
+
+/**
+ * Determina si la orden requiere paginación múltiple basado en el conteo de productos reales (> 32).
+ * TASK-62-05: Umbral aumentado de 18 a > 32 filas de productos reales.
+ */
+export function isKitchenMultiPage(itemsOrGroups: any[] | number): boolean {
+    if (typeof itemsOrGroups === 'number') {
+        return itemsOrGroups > 32;
+    }
+    if (!Array.isArray(itemsOrGroups) || itemsOrGroups.length === 0) return false;
+    if ('items' in itemsOrGroups[0]) {
+        const count = itemsOrGroups.reduce((acc, g: any) => acc + (Array.isArray(g.items) ? g.items.length : 0), 0);
+        return count > 32;
+    }
+    return itemsOrGroups.length > 32;
+}
+
+/**
  * Normaliza y extrae el nombre de la categoría de un ítem de forma determinista.
  */
 export function extractCategoryName(item: any): string {
@@ -255,13 +283,17 @@ export function generateKitchenPrintHtml(options: KitchenPrintOptions): string {
     const shortOrderId = orderId ? orderId.slice(0, 8).toUpperCase() : 'N/A';
     const { groups, totalUnits } = groupAndSortKitchenItems(items);
 
-    // Contar total de filas para determinar paginación inteligente
-    const totalItemRows = groups.reduce((acc, g) => acc + g.items.length + 3, 0);
-    const isMultiPage = totalItemRows > 18;
+    // Contar total de productos reales para determinar paginación inteligente (TASK-62-05: umbral > 32)
+    const isMultiPage = isKitchenMultiPage(groups);
 
     let tablesHtml = '';
+    let accumulatedItems = 0;
+    let pageBreakInserted = false;
+
     for (let gIdx = 0; gIdx < groups.length; gIdx++) {
         const group = groups[gIdx];
+        accumulatedItems += group.items.length;
+
         const rowsHtml = group.items.map(item => `
             <tr>
                 <td class="col-product">${escapeHtml(item.name)}</td>
@@ -291,6 +323,21 @@ export function generateKitchenPrintHtml(options: KitchenPrintOptions): string {
                     </tbody>
                 </table>
             </div>
+        `;
+
+        // Ubicar la alerta al final de la primera página cuando haya desborde real (> 32 items acumulados)
+        if (isMultiPage && !pageBreakInserted && accumulatedItems >= 28) {
+            tablesHtml += `
+                <div class="pagination-alert">MORE INFORMATION ON THE NEXT PAGE →</div>
+                <div class="page-break-indicator" style="page-break-after: always;"></div>
+            `;
+            pageBreakInserted = true;
+        }
+    }
+
+    if (isMultiPage && !pageBreakInserted) {
+        tablesHtml += `
+            <div class="pagination-alert">MORE INFORMATION ON THE NEXT PAGE →</div>
         `;
     }
 
@@ -505,11 +552,9 @@ export function generateKitchenPrintHtml(options: KitchenPrintOptions): string {
         <span class="header-line"><span class="header-label">PEDIDO:</span> ${escapeHtml(clientName.toUpperCase())}</span>
         <span class="header-line"><span class="header-label">FECHA ENTREGA:</span> ${escapeHtml(formattedDate)}</span>
         <span class="header-line"><span class="header-label">CHOFER ASIGNADO:</span> ${escapeHtml((driverName || 'WILLIAM MEDINA').toUpperCase())}</span>
-        <span class="header-line"><span class="header-label">DIRECCION:</span> ${escapeHtml((deliveryAddress || 'RECOGIDA EN TIENDA / NO ESPECIFICADA').toUpperCase())}</span>
+        <span class="header-line"><span class="header-label">DIRECCION:</span> ${escapeHtml((deliveryAddress || 'RETIRO EN LOCAL / STORE PICKUP').toUpperCase())}</span>
         <span class="header-line"><span class="header-label">ESTILO DE EMPAQUE:</span> ${escapeHtml((packingStyle || 'CAJAS DE CARTON').toUpperCase())}</span>
     </div>
-
-    ${isMultiPage ? '<div class="pagination-alert">MORE INFORMATION ON THE NEXT PAGE →</div>' : ''}
 
     <!-- Tablas por Categoría A-Z -->
     ${tablesHtml}

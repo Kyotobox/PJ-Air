@@ -1254,7 +1254,7 @@ export default function CheckoutPage() {
         {
             value: 'pickup',
             icon: <Store size={20} />,
-            label: lbl('Retiro en Tienda (Pick Up)', 'Store Pickup (Pick Up)'),
+            label: lbl('Retiro en Local (Pick Up)', 'Store Pickup (Pick Up)'),
             desc: lbl('Horario: 8:00 AM - 10:00 AM (Astoria NY)', 'Hours: 8:00 AM - 10:00 AM (Astoria NY)'),
         },
         {
@@ -1357,11 +1357,11 @@ export default function CheckoutPage() {
                                     <Store size={22} className="text-emerald-600 shrink-0 mt-0.5" />
                                     <div className="space-y-1.5">
                                         <p className="font-bold text-emerald-950 text-sm">
-                                            {lbl('Retiro en Tienda (Pick Up)', 'Store Pickup (Pick Up)')}
+                                            {lbl('Retiro en Local (Pick Up)', 'Store Pickup (Pick Up)')}
                                         </p>
                                         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-black tracking-wide shadow-xs">
                                             <Clock size={13} />
-                                            <span>Horario de retiro en tienda: 8:00 AM a 10:00 AM (Astoria NY)</span>
+                                            <span>{lbl('Horario de retiro en local: 8:00 AM a 10:00 AM (Astoria NY)', 'Store pickup hours: 8:00 AM to 10:00 AM (Astoria NY)')}</span>
                                         </div>
                                         <p className="text-xs text-emerald-800 leading-snug">
                                             {lbl(
@@ -1785,12 +1785,40 @@ export default function CheckoutPage() {
                                                 </span>
                                             )}
                                         </label>
-                                        <input
-                                            type="file"
-                                            accept="image/png,image/jpeg,image/webp,application/pdf"
-                                            onChange={handleReceiptFileChange}
-                                            className="w-full text-xs text-purple-900 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
-                                        />
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                            <input
+                                                id="zelle-receipt-upload"
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/webp,application/pdf"
+                                                onChange={handleReceiptFileChange}
+                                                className="hidden"
+                                            />
+                                            <label
+                                                htmlFor="zelle-receipt-upload"
+                                                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                                                    zelleReceiptUrl
+                                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs'
+                                                        : 'bg-purple-600 text-white hover:bg-purple-700 shadow-xs'
+                                                }`}
+                                            >
+                                                {zelleReceiptUrl ? (
+                                                    <>
+                                                        <Check size={16} />
+                                                        <span>{lbl('Comprobante adjuntado', 'Receipt attached')}</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Upload size={16} />
+                                                        <span>{lbl('Seleccionar archivo...', 'Choose receipt file...')}</span>
+                                                    </>
+                                                )}
+                                            </label>
+                                            {zelleReceiptFile && (
+                                                <span className="text-xs text-purple-900 font-medium truncate max-w-xs">
+                                                    {zelleReceiptFile.name}
+                                                </span>
+                                            )}
+                                        </div>
                                         {zelleReceiptUrl && (
                                             <div className="flex items-center gap-2 p-2 bg-purple-100/80 rounded-lg text-[11px] text-purple-900 font-medium">
                                                 <Check size={14} className="text-emerald-600" />
