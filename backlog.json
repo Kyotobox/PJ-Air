@@ -2,52 +2,10 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "5.0.0",
-  "status": "COMPLETED",
-  "current_sprint": "S62",
-  "current_task": "TASK-62-06",
+  "status": "IN_PROGRESS",
+  "current_sprint": "S63",
+  "current_task": "TASK-63-01",
   "sprints": [
-    {
-      "id": "S60",
-      "title": "Onboarding Mayorista B2B, Términos Legales, Firma Electrónica, Stripe Setup y Pagos con Cheque",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-60-01",
-          "title": "Modelo y persistencia legal de aceptación de Términos y Firma bajo NY ESRA / E-SIGN Act",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-60-02",
-          "title": "Servicio Stripe SetupIntent para tokenización de tarjeta en archivo sin cobro inmediato ($0.00)",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-60-03",
-          "title": "Flujo de Registro Mayorista con 3 casillas de consentimiento, firma escrita y panel informativo",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-60-04",
-          "title": "Switch administrativo para habilitar selectivamente pago por Cheque en admin/clients",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-60-05",
-          "title": "Método de Pago por Cheque en Checkout con subida de foto, OCR y checkbox de verificación humana",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-60-06",
-          "title": "Portal de Cliente: Consulta y descarga de Estado de Cuenta B2B consolidado en PDF y Excel",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-60-07",
-          "title": "Suite e2e de certificación para SetupIntent, consentimiento legal y flujos de pago",
-          "status": "DONE"
-        }
-      ]
-    },
     {
       "id": "S61",
       "title": "Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)",
@@ -137,52 +95,109 @@
           "status": "DONE"
         }
       ]
+    },
+    {
+      "id": "S63",
+      "title": "Inhabilitación de Clientes, Motor SMS OTP Backend, Saldo a Favor, Pedidos Complementarios y Facturas por Email",
+      "status": "IN_PROGRESS",
+      "start_date": "2026-11-06",
+      "goal": "Implementar inhabilitación de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detección de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarquía estricta de delivery fee.",
+      "tasks": [
+        {
+          "id": "TASK-63-01",
+          "label": "TECH/AUTH-USER-STATUS",
+          "desc": "Inhabilitación de clientes por administración en DB, login y panel /admin/clients",
+          "status": "IN_PROGRESS"
+        },
+        {
+          "id": "TASK-63-02",
+          "label": "TECH/AUTH-BACKEND-SMS-OTP",
+          "desc": "Endpoints y motor backend para SMS OTP determinista sin reCAPTCHA",
+          "status": "PENDING"
+        },
+        {
+          "id": "TASK-63-03",
+          "label": "DOMAIN/STORE-CREDIT-WALLET",
+          "desc": "Bolsa de saldo a favor (store_credit) con descuento automático en checkout y estado de cuenta",
+          "status": "PENDING"
+        },
+        {
+          "id": "TASK-63-04",
+          "label": "DOMAIN/COMPLEMENTARY-ORDERS",
+          "desc": "Regla de pedidos complementarios con tarifa de flete a $0.00",
+          "status": "PENDING"
+        },
+        {
+          "id": "TASK-63-05",
+          "label": "TECH/EMAIL-INVOICE-DISPATCH",
+          "desc": "Despacho de facturas oficiales en inglés por correo electrónico (PDF adjunto)",
+          "status": "PENDING"
+        },
+        {
+          "id": "TASK-63-06",
+          "label": "DOMAIN/DELIVERY-FEE-HIERARCHY",
+          "desc": "Precedencia de tarifa personalizada del cliente sobre matriz de millaje",
+          "status": "PENDING"
+        },
+        {
+          "id": "TASK-63-07",
+          "label": "TEST/S63-CERTIFICATION",
+          "desc": "Suite de certificación integral de Sprint S63 y verificación de build Next.js/NestJS",
+          "status": "PENDING"
+        }
+      ]
     }
   ],
   "archived_sprints_count": 53,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S62",
-    "title": "Refinamiento UX/UI: Facturas en Inglés, Tax ID Único, Login Limpio y Ajustes de Hoja de Cocina",
-    "status": "COMPLETED",
+    "id": "S63",
+    "title": "Inhabilitación de Clientes, Motor SMS OTP Backend, Saldo a Favor, Pedidos Complementarios y Facturas por Email",
+    "status": "IN_PROGRESS",
     "start_date": "2026-11-06",
-    "goal": "Implementar los ajustes directos solicitados por la operación: unificar campo Tax ID en registro mayorista, login exclusivo por email/clave, facturas de clientes estrictamente en inglés, corrección de textos i18n en checkout/Zelle y fix de paginación/dirección en hoja de cocina.",
+    "goal": "Implementar inhabilitación de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detección de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarquía estricta de delivery fee.",
     "tasks": [
       {
-        "id": "TASK-62-01",
-        "label": "UI/AUTH-SINGLE-TAX-ID",
-        "desc": "Eliminar el campo duplicado de Tax ID/EIN en el formulario de registro mayorista dejando una sola entrada unificada",
-        "status": "DONE"
+        "id": "TASK-63-01",
+        "label": "TECH/AUTH-USER-STATUS",
+        "desc": "Inhabilitación de clientes por administración en DB, login y panel /admin/clients",
+        "status": "IN_PROGRESS"
       },
       {
-        "id": "TASK-62-02",
-        "label": "UI/AUTH-CLEAN-EMAIL-LOGIN",
-        "desc": "Simplificar el login para acceso exclusivo mediante Correo Electrónico y Contraseña sin username",
-        "status": "DONE"
+        "id": "TASK-63-02",
+        "label": "TECH/AUTH-BACKEND-SMS-OTP",
+        "desc": "Endpoints y motor backend para SMS OTP determinista sin reCAPTCHA",
+        "status": "PENDING"
       },
       {
-        "id": "TASK-62-03",
-        "label": "UI/INVOICE-PRINT-STRICT-ENGLISH",
-        "desc": "Actualizar la plantilla de impresión de factura/recibo del cliente para que esté estrictamente en idioma inglés",
-        "status": "DONE"
+        "id": "TASK-63-03",
+        "label": "DOMAIN/STORE-CREDIT-WALLET",
+        "desc": "Bolsa de saldo a favor (store_credit) con descuento automático en checkout y estado de cuenta",
+        "status": "PENDING"
       },
       {
-        "id": "TASK-62-04",
-        "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
-        "desc": "Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)",
-        "status": "DONE"
+        "id": "TASK-63-04",
+        "label": "DOMAIN/COMPLEMENTARY-ORDERS",
+        "desc": "Regla de pedidos complementarios con tarifa de flete a $0.00",
+        "status": "PENDING"
       },
       {
-        "id": "TASK-62-05",
-        "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
-        "desc": "Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible",
-        "status": "DONE"
+        "id": "TASK-63-05",
+        "label": "TECH/EMAIL-INVOICE-DISPATCH",
+        "desc": "Despacho de facturas oficiales en inglés por correo electrónico (PDF adjunto)",
+        "status": "PENDING"
       },
       {
-        "id": "TASK-62-06",
-        "label": "TEST/S62-CERTIFICATION",
-        "desc": "Suite de pruebas de certificación y verificación de build de producción Next.js limpio",
-        "status": "DONE"
+        "id": "TASK-63-06",
+        "label": "DOMAIN/DELIVERY-FEE-HIERARCHY",
+        "desc": "Precedencia de tarifa personalizada del cliente sobre matriz de millaje",
+        "status": "PENDING"
+      },
+      {
+        "id": "TASK-63-07",
+        "label": "TEST/S63-CERTIFICATION",
+        "desc": "Suite de certificación integral de Sprint S63 y verificación de build Next.js/NestJS",
+        "status": "PENDING"
       }
     ]
   }
