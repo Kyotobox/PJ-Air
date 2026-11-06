@@ -2,9 +2,9 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "5.0.0",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETED",
   "current_sprint": "S62",
-  "current_task": "TASK-62-01",
+  "current_task": "TASK-62-06",
   "sprints": [
     {
       "id": "S57",
@@ -206,7 +206,7 @@
     {
       "id": "S62",
       "title": "Refinamiento UX/UI: Facturas en Inglés, Tax ID Único, Login Limpio y Ajustes de Hoja de Cocina",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-06",
       "goal": "Implementar los ajustes directos solicitados por la operación: unificar campo Tax ID en registro mayorista, login exclusivo por email/clave, facturas de clientes estrictamente en inglés, corrección de textos i18n en checkout/Zelle y fix de paginación/dirección en hoja de cocina.",
       "tasks": [
@@ -214,37 +214,37 @@
           "id": "TASK-62-01",
           "label": "UI/AUTH-SINGLE-TAX-ID",
           "desc": "Eliminar el campo duplicado de Tax ID/EIN en el formulario de registro mayorista dejando una sola entrada unificada",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-62-02",
           "label": "UI/AUTH-CLEAN-EMAIL-LOGIN",
           "desc": "Simplificar el login para acceso exclusivo mediante Correo Electrónico y Contraseña sin username",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-62-03",
           "label": "UI/INVOICE-PRINT-STRICT-ENGLISH",
           "desc": "Actualizar la plantilla de impresión de factura/recibo del cliente para que esté estrictamente en idioma inglés",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-62-04",
           "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
           "desc": "Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-62-05",
           "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
           "desc": "Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible",
-          "status": "TODO"
+          "status": "DONE"
         },
         {
           "id": "TASK-62-06",
           "label": "TEST/S62-CERTIFICATION",
           "desc": "Suite de pruebas de certificación y verificación de build de producción Next.js limpio",
-          "status": "TODO"
+          "status": "DONE"
         }
       ]
     }
@@ -254,7 +254,7 @@
   "active_sprint": {
     "id": "S62",
     "title": "Refinamiento UX/UI: Facturas en Inglés, Tax ID Único, Login Limpio y Ajustes de Hoja de Cocina",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "start_date": "2026-11-06",
     "goal": "Implementar los ajustes directos solicitados por la operación: unificar campo Tax ID en registro mayorista, login exclusivo por email/clave, facturas de clientes estrictamente en inglés, corrección de textos i18n en checkout/Zelle y fix de paginación/dirección en hoja de cocina.",
     "tasks": [
@@ -262,37 +262,37 @@
         "id": "TASK-62-01",
         "label": "UI/AUTH-SINGLE-TAX-ID",
         "desc": "Eliminar el campo duplicado de Tax ID/EIN en el formulario de registro mayorista dejando una sola entrada unificada",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-62-02",
         "label": "UI/AUTH-CLEAN-EMAIL-LOGIN",
         "desc": "Simplificar el login para acceso exclusivo mediante Correo Electrónico y Contraseña sin username",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-62-03",
         "label": "UI/INVOICE-PRINT-STRICT-ENGLISH",
         "desc": "Actualizar la plantilla de impresión de factura/recibo del cliente para que esté estrictamente en idioma inglés",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-62-04",
         "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
         "desc": "Corregir textos en español residuales en checkout cuando está en inglés (Pick up, botón de comprobante Zelle)",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-62-05",
         "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
         "desc": "Ajustar hoja de cocina: suprimir paginación fantasma MORE INFORMATION si no desborda y asegurar dirección visible",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-62-06",
         "label": "TEST/S62-CERTIFICATION",
         "desc": "Suite de pruebas de certificación y verificación de build de producción Next.js limpio",
-        "status": "TODO"
+        "status": "DONE"
       }
     ]
   }
