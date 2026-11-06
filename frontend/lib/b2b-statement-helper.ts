@@ -28,21 +28,45 @@ export function filterOrdersByDateRange(
   if (!Array.isArray(orders)) return [];
 
   return orders.filter((order) => {
-    if (!order?.created_at) return false;
-    const orderDate = new Date(order.created_at);
-    if (isNaN(orderDate.getTime())) return false;
+    if (!order) return false;
+
+    let effectiveDate: Date | null = null;
+
+    if (order.delivery_date && typeof order.delivery_date === 'string') {
+      let dStr = order.delivery_date.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
+        dStr = `${dStr}T12:00:00`;
+      }
+      const d = new Date(dStr);
+      if (!isNaN(d.getTime())) {
+        effectiveDate = d;
+      }
+    }
+
+    if (!effectiveDate && order.created_at && typeof order.created_at === 'string') {
+      let cStr = order.created_at.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cStr)) {
+        cStr = `${cStr}T12:00:00`;
+      }
+      const d = new Date(cStr);
+      if (!isNaN(d.getTime())) {
+        effectiveDate = d;
+      }
+    }
+
+    if (!effectiveDate) return false;
 
     if (range === 'current_month') {
       return (
-        orderDate.getFullYear() === referenceDate.getFullYear() &&
-        orderDate.getMonth() === referenceDate.getMonth()
+        effectiveDate.getFullYear() === referenceDate.getFullYear() &&
+        effectiveDate.getMonth() === referenceDate.getMonth()
       );
     }
 
     if (range === 'last_30_days') {
       const thirtyDaysAgo = new Date(referenceDate);
       thirtyDaysAgo.setDate(referenceDate.getDate() - 30);
-      return orderDate >= thirtyDaysAgo && orderDate <= referenceDate;
+      return effectiveDate >= thirtyDaysAgo && effectiveDate <= referenceDate;
     }
 
     return true;

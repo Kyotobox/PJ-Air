@@ -4,8 +4,81 @@
   "kernel_version": "5.0.0",
   "status": "COMPLETED",
   "current_sprint": "S61",
-  "current_task": "TASK-61-04",
+  "current_task": "TASK-61-06",
   "sprints": [
+    {
+      "id": "S57",
+      "title": "Automatización de Reportes Contables, Notificación Zelle y Folio de Notas de Crédito",
+      "status": "COMPLETED",
+      "tasks": [
+        {
+          "id": "TASK-57-01",
+          "title": "Configuración de correos contables en admin/settings",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-57-02",
+          "title": "Cron de despacho diario y semanal de Excel de órdenes",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-57-03",
+          "title": "Flujo de rechazo Zelle con notificación al cliente",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-57-04",
+          "title": "Generador de notas de crédito con folio fiscal legal",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-57-05",
+          "title": "Certificación integral de S57 y verificación DDL",
+          "status": "DONE"
+        }
+      ]
+    },
+    {
+      "id": "S58",
+      "name": "Sprint S58: [RECONCILED] Auto-reconciled from git history",
+      "dag_id": "SPRINT-S58-RECONCILED",
+      "status": "COMPLETED",
+      "reconciled_at": "2026-11-01T20:34:21.596388+00:00",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
+      "tasks": [
+        {
+          "id": "TASK-58-01",
+          "title": "Ingesta, compresión y normalización de las 10 fotos de temporada del cliente",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-02",
+          "title": "Soporte para segundo botón opcional en la entidad Banner y endpoint GET /banners/gallery",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-03",
+          "title": "Selector interactivo de Galería de Temporada (Media Picker) en /admin/banners",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-04",
+          "title": "Renderizado modular en tienda principal (app/page.tsx) con fade lateral CSS y 2 botones",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-05",
+          "title": "Precarga y muestra de 4 banners activos y 6 en reserva con fotos exclusivas del ZIP",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-58-06",
+          "title": "Certificación integral de pruebas unitarias backend y builds sin errores",
+          "status": "DONE"
+        }
+      ],
+      "title": "Gestor de Banners Hero de Temporada, Galería de Medios Reutilizables y Renderizado Modular 1:1"
+    },
     {
       "id": "S59",
       "title": "Hoja de Cocina/Despacho 1:1 con Excel, Asignación Operativa y Limpieza de Banners CTA",
@@ -87,63 +160,93 @@
     },
     {
       "id": "S61",
-      "title": "Reportes Basados en Fechas de Despacho/Entrega",
-      "status": "IN_PROGRESS",
+      "title": "Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)",
+      "status": "COMPLETED",
+      "start_date": "2026-11-04",
+      "goal": "Ajustar la arquitectura de consulta, agregación, exportación (Excel/PDF) y filtrado de reportes en backend y frontend para que operen con base en la Fecha de Despacho/Entrega (delivery_date) en lugar de la fecha de creación del pedido, agregando este dato explícitamente en reportes y tablas.",
       "tasks": [
         {
           "id": "TASK-61-01",
-          "title": "Refactorizar findInRange en orders.service.ts para filtrar primariamente por delivery_date",
+          "label": "BACKEND/REPORTING-DISPATCH-RANGE",
+          "desc": "Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)",
           "status": "DONE"
         },
         {
           "id": "TASK-61-02",
-          "title": "Actualizar excel.service.ts con fechas de despacho y notas de rango en reportes individuales y consolidados",
+          "label": "BACKEND/EXCEL-EXPORT-DISPATCH-COLUMNS",
+          "desc": "Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega",
           "status": "DONE"
         },
         {
           "id": "TASK-61-03",
-          "title": "Ajustar admin/reports y produccion/reports con filtros y visualización de despacho",
+          "label": "UI/ADMIN-REPORTS-DELIVERY-FILTERS",
+          "desc": "Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualización de entrega en tablas y cards",
           "status": "DONE"
         },
         {
           "id": "TASK-61-04",
-          "title": "Suite de certificación integral para S61A (unit tests findInRange, excel headers y builds limpios)",
+          "label": "UI/ADMIN-ORDERS-DELIVERY-FILTER-AND-COLUMN",
+          "desc": "En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adición de columna/dato visible de Fecha de Entrega en tabla de pedidos",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-61-05",
+          "label": "DOMAIN/B2B-STATEMENT-DELIVERY-DATE-REPORTS",
+          "desc": "Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho",
+          "status": "DONE"
+        },
+        {
+          "id": "TASK-61-06",
+          "label": "TEST/S61-DISPATCH-REPORTS-CERTIFICATION",
+          "desc": "Suite de pruebas de certificación unitaria y de integración para filtrado y reportes por fecha de despacho (happy y sad path)",
           "status": "DONE"
         }
       ]
     }
   ],
-  "archived_sprints_count": 2,
+  "archived_sprints_count": 50,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S61",
-    "name": "Sprint 61: Reportes Basados en Fechas de Despacho/Entrega",
-    "status": "IN_PROGRESS",
+    "title": "Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producción, Pedidos y Estado de Cuenta B2B)",
+    "status": "COMPLETED",
     "start_date": "2026-11-04",
-    "goal": "Reportes de órdenes y producción basados primariamente en fechas de despacho/entrega con fallback a creación, exportación Excel detallada e interfaz administrativa sincronizada.",
+    "goal": "Ajustar la arquitectura de consulta, agregación, exportación (Excel/PDF) y filtrado de reportes en backend y frontend para que operen con base en la Fecha de Despacho/Entrega (delivery_date) en lugar de la fecha de creación del pedido, agregando este dato explícitamente en reportes y tablas.",
     "tasks": [
       {
         "id": "TASK-61-01",
         "label": "BACKEND/REPORTING-DISPATCH-RANGE",
-        "desc": "Refactorizar findInRange en orders.service.ts para filtrar primariamente por delivery_date",
+        "desc": "Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)",
         "status": "DONE"
       },
       {
         "id": "TASK-61-02",
         "label": "BACKEND/EXCEL-EXPORT-DISPATCH-COLUMNS",
-        "desc": "Actualizar excel.service.ts con fechas de despacho y notas de rango en reportes individuales y consolidados",
+        "desc": "Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega",
         "status": "DONE"
       },
       {
         "id": "TASK-61-03",
         "label": "UI/ADMIN-REPORTS-DELIVERY-FILTERS",
-        "desc": "Ajustar admin/reports y produccion/reports con filtros y visualización de despacho",
+        "desc": "Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualización de entrega en tablas y cards",
         "status": "DONE"
       },
       {
         "id": "TASK-61-04",
-        "label": "TEST/S61A-CERTIFICATION",
-        "desc": "Suite de certificación integral para S61A (unit tests findInRange, excel headers y builds limpios)",
+        "label": "UI/ADMIN-ORDERS-DELIVERY-FILTER-AND-COLUMN",
+        "desc": "En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adición de columna/dato visible de Fecha de Entrega en tabla de pedidos",
+        "status": "DONE"
+      },
+      {
+        "id": "TASK-61-05",
+        "label": "DOMAIN/B2B-STATEMENT-DELIVERY-DATE-REPORTS",
+        "desc": "Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho",
+        "status": "DONE"
+      },
+      {
+        "id": "TASK-61-06",
+        "label": "TEST/S61-DISPATCH-REPORTS-CERTIFICATION",
+        "desc": "Suite de pruebas de certificación unitaria y de integración para filtrado y reportes por fecha de despacho (happy y sad path)",
         "status": "DONE"
       }
     ]
