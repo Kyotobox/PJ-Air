@@ -239,20 +239,6 @@ export const RegisterForm = ({
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
-                            {locale === 'en' ? 'EIN / Federal Tax ID *' : 'EIN / Tax ID Federal *'}
-                        </label>
-                        <input
-                            required
-                            type="text"
-                            placeholder="XX-XXXXXXX"
-                            className="premium-input text-xs font-mono"
-                            value={formData.ein || ''}
-                            onChange={(e) => setFormData({ ...formData, ein: e.target.value })}
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
                             {locale === 'en' ? 'Store / Company Display Name *' : 'Nombre de Tienda / Establecimiento *'}
                         </label>
                         <input
@@ -279,12 +265,12 @@ export const RegisterForm = ({
                         />
                     </div>
 
-                    {/* Tax ID & ST-120 Resale Certificate */}
+                    {/* Tax ID / EIN & ST-120 Resale Certificate */}
                     <div className="space-y-3 md:col-span-2 p-4 bg-muted/20 border border-border/80 rounded-2xl">
                         <div className="flex items-center justify-between">
                             <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
                                 <FileText size={14} className="text-primary" />
-                                <span>TAX ID / NY RESALE CERTIFICATE # *</span>
+                                <span>Tax ID / EIN (Federal Employer Identification Number or NY Resale Certificate #) *</span>
                             </label>
                             <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                                 {locale === 'en' ? '0% Sales Tax ST-120' : '0% Impuestos ST-120'}
@@ -293,10 +279,10 @@ export const RegisterForm = ({
                         <input
                             required
                             type="text"
-                            placeholder={locale === 'en' ? 'e.g. 12-3456789 or NY Certificate #' : 'Ej: 12-3456789 o Certificado NY'}
+                            placeholder="e.g. 12-3456789 or NY Certificate #"
                             className="premium-input text-xs"
                             value={formData.tax_id || ''}
-                            onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                            onChange={(e) => setFormData({ ...formData, tax_id: e.target.value, ein: e.target.value })}
                         />
                         <div className="flex items-start gap-2.5 pt-1">
                             <input

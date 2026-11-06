@@ -65,7 +65,7 @@ const en = {
   login: {
     title: 'Welcome Back',
     subtitle: 'Fresh delights are waiting for you',
-    emailOrUser: 'Email or Username',
+    emailOrUser: 'Email Address',
     password: 'Password',
     submit: 'Sign In',
     loading: 'Signing in...',

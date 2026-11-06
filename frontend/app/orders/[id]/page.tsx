@@ -80,29 +80,40 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
 
     const handlePrintInvoice = () => {
         if (!order) return;
-        const clientName = order.user?.profile?.full_name || order.user?.name || order.user?.email || 'Cliente Mayorista';
+        const clientName = order.user?.profile?.full_name || order.user?.name || order.user?.email || 'Valued Customer';
         const clientPhone = order.user?.profile?.phone || '';
-        const orderDate = new Date(order.created_at || Date.now()).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
+        const orderDate = new Date(order.created_at || Date.now()).toLocaleDateString('en-US', {
             year: 'numeric', month: 'long', day: 'numeric'
         });
+        const deliveryDateStr = order.delivery_date 
+            ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+            : (order.delivery_window || 'Standard Dispatch');
+        const deliveryAddress = order.delivery_type === 'pickup' 
+            ? 'Store Pick Up (3304 Broadway, Astoria, NY)' 
+            : (order.address ? `${order.address.address}${order.address.city ? `, ${order.address.city}` : ''}${order.address.state ? `, ${order.address.state}` : ''} ${order.address.zip_code || ''}`.trim() : (order.delivery_address_text || 'Direct Delivery'));
+        const paymentMethod = (order.payment_method || 'STRIPE').toUpperCase();
+        const paymentStatus = order.payment_status === 'paid' ? 'PAID' : (order.payment_status === 'refunded' ? 'REFUNDED' : 'PENDING');
+
         const itemsTotal = items.reduce((acc: number, item: any) => {
             const price = Number(item.price_at_time || item.product?.price || 0);
             return acc + (price * Number(item.quantity || 1));
         }, 0);
         const deliveryFee = Number(order.delivery_fee_charged || 0);
         const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? itemsTotal * 0.035 : 0));
-        const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXENTO');
+        const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXEMPT');
         const grandTotal = Number(order.total) || (itemsTotal + deliveryFee + feeAmount);
+        const amountPaid = order.payment_status === 'paid' ? grandTotal : Number(order.paid_amount || 0);
+        const balanceDue = Math.max(0, grandTotal - amountPaid - Number(order.refunded_amount || 0));
 
         const itemsRows = items.map((item: any) => {
             const price = Number(item.price_at_time || item.product?.price || 0);
             const qty = Number(item.quantity || 1);
             const lineTotal = price * qty;
             return `<tr>
-                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || 'Producto Artesanal'}</td>
-                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: center;">${qty}</td>
-                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${price.toFixed(2)}</td>
-                <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${lineTotal.toFixed(2)}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || 'Artisanal Bakery Item'}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${qty}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${price.toFixed(2)}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${lineTotal.toFixed(2)}</td>
             </tr>`;
         }).join('');
 
@@ -110,7 +121,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Factura Comercial #${order.id.slice(0, 8).toUpperCase()}</title>
+    <title>INVOICE / RECEIPT #${order.id.slice(0, 8).toUpperCase()}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
         body { padding: 40px; color: #1e293b; background: #fff; font-size: 12px; line-height: 1.5; }
@@ -122,61 +133,63 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
         .brand h1 { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; }
         .brand p { font-size: 11px; color: #64748b; margin-top: 2px; }
         .invoice-meta { text-align: right; }
-        .invoice-meta h2 { font-size: 16px; font-weight: 800; color: #d97706; text-transform: uppercase; }
+        .invoice-meta h2 { font-size: 18px; font-weight: 900; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px; }
         .invoice-meta p { font-size: 11px; color: #475569; }
         .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
         .party h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px; }
         .party p { font-size: 12px; font-weight: 600; color: #1e293b; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-        th { background: #0f172a; color: #fff; text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; padding: 8px; text-align: left; }
-        th:nth-child(2) { text-align: center; }
-        th:nth-child(3), th:nth-child(4) { text-align: right; }
+        table.items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        table.items-table th { background: #0f172a; color: #fff; text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; padding: 10px; text-align: left; }
+        table.items-table th:nth-child(2) { text-align: center; }
+        table.items-table th:nth-child(3), table.items-table th:nth-child(4) { text-align: right; }
         .summary-box { display: flex; justify-content: flex-end; margin-bottom: 24px; }
-        .summary-table { width: 320px; border-collapse: collapse; }
+        .summary-table { width: 340px; border-collapse: collapse; }
         .summary-table td { padding: 6px 8px; font-size: 12px; }
         .summary-table td:last-child { text-align: right; font-family: monospace; font-weight: 700; }
         .summary-table tr.total-row td { border-top: 2px solid #0f172a; font-size: 14px; font-weight: 900; color: #0f172a; padding-top: 10px; }
-        .legal-notice { border-top: 1px dashed #cbd5e1; padding-top: 16px; font-size: 10px; color: #64748b; text-align: center; line-height: 1.6; }
+        .footer { border-top: 1px dashed #cbd5e1; padding-top: 16px; font-size: 11px; color: #64748b; text-align: center; line-height: 1.6; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="brand">
-            <h1>JHOANES BAKERY & WHOLESALE</h1>
+            <h1>JHOANES BAKERY & COFFEE LLC</h1>
             <p>3304 Broadway, Astoria, NY 11106 • Tel: (718) 555-0199</p>
             <p>NYS Certificate of Authority • Wholesale Bakery Division</p>
         </div>
         <div class="invoice-meta">
-            <h2>FACTURA COMERCIAL</h2>
-            <p><b>No:</b> INV-${order.id.slice(0, 8).toUpperCase()}</p>
-            <p><b>Fecha:</b> ${orderDate}</p>
-            <p><b>Vencimiento:</b> ${order.payment_due_date || 'Inmediato'}</p>
-            <p><b>Estado:</b> <span style="text-transform: uppercase; font-weight: bold;">${order.payment_status === 'paid' ? 'PAGADO / PAID' : 'PENDIENTE / UNPAID'}</span></p>
+            <h2>INVOICE / RECEIPT</h2>
+            <p><b>Order #:</b> ${order.id.slice(0, 8).toUpperCase()}</p>
+            <p><b>Order Date:</b> ${orderDate}</p>
+            <p><b>Payment Status:</b> <span style="font-weight: bold; color: ${paymentStatus === 'PAID' ? '#15803d' : '#b91c1c'};">${paymentStatus}</span></p>
         </div>
     </div>
 
     <div class="parties">
         <div class="party">
-            <h3>Emisor (Proveedor):</h3>
-            <p>Jhoanes Bakery Wholesale LLC</p>
-            <p>Astoria, Queens, NY 11106</p>
+            <h3>Issuer / Provider:</h3>
+            <p>Jhoanes Bakery & Coffee LLC</p>
+            <p>3304 Broadway, Astoria, NY 11106</p>
             <p>accounting@jhoanes.com</p>
         </div>
         <div class="party">
-            <h3>Facturado a (Cliente B2B):</h3>
-            <p>${clientName}</p>
-            ${clientPhone ? `<p>Tel: ${clientPhone}</p>` : ''}
-            <p>${order.address ? `${order.address.address}, ${order.address.city || 'NY'}` : (order.delivery_address_text || 'Entrega en tienda (Pick Up)')}</p>
+            <h3>Bill To / Customer Details:</h3>
+            <p><b>Customer:</b> ${clientName}</p>
+            ${clientPhone ? `<p><b>Phone:</b> ${clientPhone}</p>` : ''}
+            <p><b>Delivery Address:</b> ${deliveryAddress}</p>
+            <p><b>Delivery Date:</b> ${deliveryDateStr}</p>
+            <p><b>Payment Method:</b> ${paymentMethod}</p>
+            <p><b>Payment Status:</b> ${paymentStatus}</p>
         </div>
     </div>
 
-    <table>
+    <table class="items-table">
         <thead>
             <tr>
-                <th>Descripción del Producto</th>
-                <th>Cant</th>
-                <th>Precio Unit</th>
-                <th>Importe</th>
+                <th>Item / Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Total</th>
             </tr>
         </thead>
         <tbody>
@@ -187,43 +200,54 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
     <div class="summary-box">
         <table class="summary-table">
             <tr>
-                <td>Subtotal Mercancía:</td>
+                <td>Subtotal:</td>
                 <td>$${itemsTotal.toFixed(2)}</td>
             </tr>
             <tr>
-                <td>Cargo por Flete / Delivery:</td>
+                <td>Delivery Fee:</td>
                 <td>+$${deliveryFee.toFixed(2)}</td>
             </tr>
+            <tr>
+                <td>NY Sales Tax:</td>
+                <td>$0.00</td>
+            </tr>
+            ${feeAmount > 0 ? `
             <tr style="background: #f1f5f9; border-radius: 6px;">
                 <td>
                     <b>Processing Fee:</b><br/>
-                    <small style="color: #64748b; font-size: 9px;">${feeMethod} (Comisión de pasarela no absorbida)</small>
+                    <small style="color: #64748b; font-size: 9px;">${feeMethod} Gateway Surcharge</small>
                 </td>
                 <td style="color: #0f172a;">+$${feeAmount.toFixed(2)}</td>
             </tr>
+            ` : ''}
             <tr class="total-row">
-                <td>TOTAL FACTURADO:</td>
+                <td>Total Amount:</td>
                 <td style="color: #b45309;">$${grandTotal.toFixed(2)}</td>
+            </tr>
+            <tr>
+                <td style="color: #15803d; font-weight: 700;">Amount Paid:</td>
+                <td style="color: #15803d; font-weight: 700;">$${amountPaid.toFixed(2)}</td>
+            </tr>
+            <tr class="total-row" style="border-top: 1px dashed #cbd5e1; background: #fafafa;">
+                <td>Balance Due:</td>
+                <td style="color: ${balanceDue > 0 ? '#b91c1c' : '#0f172a'};">$${balanceDue.toFixed(2)}</td>
             </tr>
             ${Number(order.refunded_amount || 0) > 0 ? `
             <tr style="color: #dc2626; font-size: 11px;">
                 <td>
-                    <b>Nota de Crédito (${order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}):</b><br/>
-                    <small style="color: #991b1b; font-size: 9px;">${order.refund_reason || 'Ajuste contable / Reembolso comercial'}</small>
+                    <b>Credit Note (${order.credit_note_number || `CN-2026-${order.id.slice(0, 4).toUpperCase()}`}):</b><br/>
+                    <small style="color: #991b1b; font-size: 9px;">${order.refund_reason || 'Commercial Refund'}</small>
                 </td>
                 <td style="font-weight: bold; color: #dc2626;">-$${Number(order.refunded_amount).toFixed(2)}</td>
-            </tr>
-            <tr class="total-row" style="border-top: 1px dashed #cbd5e1; background: #fafafa;">
-                <td>SALDO NETO EXIGIBLE:</td>
-                <td style="color: #0f172a;">$${Math.max(0, grandTotal - Number(order.refunded_amount || 0)).toFixed(2)}</td>
             </tr>
             ` : ''}
         </table>
     </div>
 
-    <div class="legal-notice">
-        <p><b>Desglose Legal y Contable:</b> De conformidad con la normativa de transparencia comercial del Estado de Nueva York, las comisiones de procesamiento de pagos (3.5% en tarjetas de crédito/débito o 0.8% con tope de $5.00 en transferencias ACH) se desglosan explícitamente y no son absorbidas en ventas comerciales al por mayor.</p>
-        <p>Gracias por su preferencia comercial • Jhoanes Bakery & Wholesale</p>
+    <div class="footer">
+        ${order.notes ? `<p style="margin-bottom: 8px;"><b>Notes:</b> ${order.notes.replace(/\n/g, ' | ')}</p>` : ''}
+        <p style="font-weight: 700; color: #0f172a;">Thank you for your business • Jhoanes Bakery & Coffee LLC</p>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 4px;">NYS Certificate of Authority • All sales subject to standard wholesale terms</p>
     </div>
 
     <script>

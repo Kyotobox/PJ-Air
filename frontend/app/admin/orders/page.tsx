@@ -438,9 +438,176 @@ export default function AdminOrdersPage() {
 
     const isModified = (order: Order) => order.notes && order.notes.includes('modificado');
 
+    const printInvoice = (order: Order) => {
+        handlePrintOrder(order, 'invoice');
+    };
+
     const handlePrintOrder = (order: Order, mode: 'production' | 'invoice' = 'production') => {
         const isKitchen = mode === 'production';
         const items = order.items || [];
+
+        if (!isKitchen) {
+            // Customer Invoice / Receipt in strict English
+            const clientName = order.user?.profile?.full_name || order.user?.email || 'Valued Customer';
+            const clientPhone = order.user?.profile?.phone || '';
+            const orderDate = new Date(order.created_at || Date.now()).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+            const deliveryDateStr = order.delivery_date 
+                ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                : 'Standard Dispatch';
+            const deliveryAddress = order.delivery_type === 'pickup' 
+                ? 'Store Pick Up (3304 Broadway, Astoria, NY)' 
+                : (order.address ? `${order.address.address}${order.address.city ? `, ${order.address.city}` : ''}`.trim() : 'Direct Delivery');
+            const paymentMethod = (order.payment_method || 'STRIPE').toUpperCase();
+            const paymentStatus = order.payment_status === 'paid' ? 'PAID' : (order.payment_status === 'refunded' ? 'REFUNDED' : 'PENDING');
+
+            const subtotal = items.reduce((acc, i: any) => acc + (Number(i.price_at_time || i.product?.price || 0) * Number(i.quantity || 1)), 0);
+            const deliveryFee = Number(order.delivery_fee_charged || 0);
+            const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? subtotal * 0.035 : 0));
+            const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXEMPT');
+            const grandTotal = Number(order.total) || (subtotal + deliveryFee + feeAmount);
+            const amountPaid = order.payment_status === 'paid' ? grandTotal : Math.max(0, grandTotal - (order.pending_balance ?? grandTotal));
+            const balanceDue = Math.max(0, grandTotal - amountPaid - Number(order.refunded_amount || 0));
+
+            const itemsRows = items.map((item: any) => {
+                const price = Number(item.price_at_time || item.product?.price || 0);
+                const qty = Number(item.quantity || 1);
+                const lineTotal = price * qty;
+                return `<tr>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || 'Artisanal Bakery Item'}</td>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: center;">${qty}</td>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${price.toFixed(2)}</td>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${lineTotal.toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+
+            const invoiceHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>INVOICE / RECEIPT #${order.id.slice(0, 8).toUpperCase()}</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+body { padding: 30px; color: #1e293b; background: #fff; font-size: 11px; line-height: 1.5; }
+@media print {
+    body { padding: 15px; }
+    @page { margin: 10mm; size: letter; }
+}
+.header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px; }
+.brand h1 { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a; }
+.brand p { font-size: 10px; color: #64748b; margin-top: 2px; }
+.invoice-meta { text-align: right; }
+.invoice-meta h2 { font-size: 16px; font-weight: 900; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px; }
+.invoice-meta p { font-size: 11px; color: #475569; }
+.parties { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; padding: 14px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
+.party h3 { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px; }
+.party p { font-size: 11px; font-weight: 600; color: #1e293b; }
+table.items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+table.items-table th { background: #0f172a; color: #fff; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 0.5px; padding: 8px; text-align: left; }
+table.items-table th:nth-child(2) { text-align: center; }
+table.items-table th:nth-child(3), table.items-table th:nth-child(4) { text-align: right; }
+.summary-box { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+.summary-table { width: 320px; border-collapse: collapse; }
+.summary-table td { padding: 5px 6px; font-size: 11px; }
+.summary-table td:last-child { text-align: right; font-family: monospace; font-weight: 700; }
+.summary-table tr.total-row td { border-top: 2px solid #0f172a; font-size: 13px; font-weight: 900; color: #0f172a; padding-top: 8px; }
+.footer { border-top: 1px dashed #cbd5e1; padding-top: 14px; font-size: 10px; color: #64748b; text-align: center; line-height: 1.6; }
+</style></head><body>
+<div class="header">
+    <div class="brand">
+        <h1>JHOANES BAKERY & COFFEE LLC</h1>
+        <p>3304 Broadway, Astoria, NY 11106 • Tel: (718) 555-0199</p>
+        <p>NYS Certificate of Authority • Wholesale Bakery Division</p>
+    </div>
+    <div class="invoice-meta">
+        <h2>INVOICE / RECEIPT</h2>
+        <p><b>Order #:</b> ${order.id.slice(0, 8).toUpperCase()}</p>
+        <p><b>Order Date:</b> ${orderDate}</p>
+        <p><b>Payment Status:</b> <span style="font-weight: bold; color: ${paymentStatus === 'PAID' ? '#15803d' : '#b91c1c'};">${paymentStatus}</span></p>
+    </div>
+</div>
+
+<div class="parties">
+    <div class="party">
+        <h3>Issuer / Provider:</h3>
+        <p>Jhoanes Bakery & Coffee LLC</p>
+        <p>3304 Broadway, Astoria, NY 11106</p>
+        <p>accounting@jhoanes.com</p>
+    </div>
+    <div class="party">
+        <h3>Bill To / Customer Details:</h3>
+        <p><b>Customer:</b> ${clientName}</p>
+        ${clientPhone ? `<p><b>Phone:</b> ${clientPhone}</p>` : ''}
+        <p><b>Delivery Address:</b> ${deliveryAddress}</p>
+        <p><b>Delivery Date:</b> ${deliveryDateStr}</p>
+        <p><b>Payment Method:</b> ${paymentMethod}</p>
+        <p><b>Payment Status:</b> ${paymentStatus}</p>
+    </div>
+</div>
+
+<table class="items-table">
+    <thead>
+        <tr>
+            <th>Item / Description</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        ${itemsRows}
+    </tbody>
+</table>
+
+<div class="summary-box">
+    <table class="summary-table">
+        <tr>
+            <td>Subtotal:</td>
+            <td>$${subtotal.toFixed(2)}</td>
+        </tr>
+        <tr>
+            <td>Delivery Fee:</td>
+            <td>+$${deliveryFee.toFixed(2)}</td>
+        </tr>
+        <tr>
+            <td>NY Sales Tax:</td>
+            <td>$0.00</td>
+        </tr>
+        ${feeAmount > 0 ? `
+        <tr style="background: #f1f5f9; border-radius: 6px;">
+            <td>
+                <b>Processing Fee:</b><br/>
+                <small style="color: #64748b; font-size: 9px;">${feeMethod} Gateway Surcharge</small>
+            </td>
+            <td style="color: #0f172a;">+$${feeAmount.toFixed(2)}</td>
+        </tr>
+        ` : ''}
+        <tr class="total-row">
+            <td>Total Amount:</td>
+            <td style="color: #b45309;">$${grandTotal.toFixed(2)}</td>
+        </tr>
+        <tr>
+            <td style="color: #15803d; font-weight: 700;">Amount Paid:</td>
+            <td style="color: #15803d; font-weight: 700;">$${amountPaid.toFixed(2)}</td>
+        </tr>
+        <tr class="total-row" style="border-top: 1px dashed #cbd5e1; background: #fafafa;">
+            <td>Balance Due:</td>
+            <td style="color: ${balanceDue > 0 ? '#b91c1c' : '#0f172a'};">$${balanceDue.toFixed(2)}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="footer">
+    ${order.notes ? `<p style="margin-bottom: 6px;"><b>Notes:</b> ${order.notes.replace(/\n/g, ' | ')}</p>` : ''}
+    <p style="font-weight: 700; color: #0f172a;">Thank you for your business • Jhoanes Bakery & Coffee LLC</p>
+    <p style="font-size: 9px; color: #94a3b8; margin-top: 2px;">NYS Certificate of Authority • All sales subject to standard wholesale terms</p>
+</div>
+
+<script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script>
+</body></html>`;
+            const w = window.open('', '_blank', 'width=900,height=700');
+            if (w) { w.document.write(invoiceHtml); w.document.close(); }
+            return;
+        }
+
         const grouped: Record<string, OrderItem[]> = {};
         items.forEach(item => {
             const catObj = item.product?.category;
@@ -501,7 +668,7 @@ export default function AdminOrdersPage() {
     </div>
 </div>`;
 
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${isKitchen ? 'Hoja de Producción' : 'Factura Contable'} #${order.id.slice(0,8)}</title>
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hoja de Producción #${order.id.slice(0,8)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',Arial,sans-serif;padding:20px;width:80%;margin:0 auto;font-size:10px}
@@ -994,11 +1161,11 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     <Printer size={14} /> Hoja Cocina
                                 </button>
                                 <button 
-                                    onClick={() => handlePrintOrder(selectedOrder, 'invoice')} 
-                                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
-                                    title="Imprimir Factura Contable"
+                                    onClick={() => printInvoice(selectedOrder)} 
+                                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
+                                    title="Print Official Invoice / Receipt"
                                 >
-                                    <Receipt size={14} /> Factura Contable
+                                    <Receipt size={14} /> Print Invoice
                                 </button>
                                 <button 
                                     onClick={() => setSelectedOrder(null)} 

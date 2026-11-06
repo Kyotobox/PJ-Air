@@ -66,18 +66,13 @@ export default function RegisterPage() {
             return;
         }
 
-        if (!formData.ein || !formData.ein.trim()) {
-            setError(locale === 'en' ? 'EIN / Federal Tax ID is required' : 'El EIN / Tax ID Federal es obligatorio');
-            return;
-        }
-
         if (!formData.business_address || !formData.business_address.trim()) {
             setError(locale === 'en' ? 'Commercial address is required' : 'La dirección comercial es obligatoria');
             return;
         }
 
         if (!formData.tax_id || !formData.tax_id.trim()) {
-            setError(locale === 'en' ? 'Tax ID / NY Resale Certificate # is required for wholesale accounts' : 'El Tax ID / NY Resale Certificate # es obligatorio para cuentas mayoristas');
+            setError(locale === 'en' ? 'Tax ID / EIN is required for wholesale accounts' : 'El Tax ID / EIN es obligatorio para cuentas mayoristas');
             return;
         }
 
@@ -113,6 +108,8 @@ export default function RegisterPage() {
         }
 
         try {
+            const normalizedTaxId = formData.tax_id ? formData.tax_id.trim() : '';
+
             // Sign up user via local API with wholesale terms and electronic signature
             const data = await api.post('/auth/signup', {
                 email: sanitizedEmail,
@@ -123,11 +120,11 @@ export default function RegisterPage() {
                 phone_verified: true,
                 idToken: phoneIdToken,
                 company_name: formData.company_name,
-                tax_id: formData.tax_id ? formData.tax_id.trim() : undefined,
+                tax_id: normalizedTaxId || undefined,
                 st120_declared: Boolean(formData.st120_declared),
                 legal_business_name: formData.legal_business_name.trim(),
                 dba: formData.dba ? formData.dba.trim() : undefined,
-                ein: formData.ein.trim(),
+                ein: normalizedTaxId,
                 business_address: formData.business_address.trim(),
                 signer_name: formData.signer_name.trim(),
                 signer_title: formData.signer_title.trim(),

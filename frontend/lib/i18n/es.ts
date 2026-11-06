@@ -67,7 +67,7 @@ const es: Translations = {
   login: {
     title: 'Bienvenido de nuevo',
     subtitle: 'Delicias frescas te están esperando',
-    emailOrUser: 'Email o Usuario',
+    emailOrUser: 'Correo Electrónico',
     password: 'Contraseña',
     submit: 'Iniciar Sesión',
     loading: 'Ingresando...',

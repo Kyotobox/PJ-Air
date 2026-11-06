@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { User, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -35,14 +35,14 @@ export const LoginForm = ({
             )}
             <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 text-foreground/70">
-                    {t.login.emailOrUser}
+                    {locale === 'en' ? 'Email Address' : 'Correo Electrónico'}
                 </label>
                 <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
                     <input
                         required
-                        type="text"
-                        placeholder={locale === 'en' ? 'your@email.com or username' : 'tu@correo.com o usuario'}
+                        type="email"
+                        placeholder={locale === 'en' ? 'your@email.com' : 'tu@correo.com'}
                         className="premium-input pl-12 h-14"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
