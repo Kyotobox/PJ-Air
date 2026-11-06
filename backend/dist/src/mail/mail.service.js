@@ -178,6 +178,109 @@ let MailService = MailService_1 = class MailService {
             return false;
         }
     }
+    async sendEnglishInvoice(order, customerEmail) {
+        if (!this.transporter || !customerEmail)
+            return false;
+        try {
+            const orderShortId = (order.id || '').toString().slice(0, 8).toUpperCase();
+            const itemsListHtml = (order.items || [])
+                .map((item) => `
+          <tr>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 500;">
+              ${item.product?.name || item.product_name || item.name || 'Bakery Item'}
+            </td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+              ${item.quantity}
+            </td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+              $${Number(item.price_at_time || item.price || 0).toFixed(2)}
+            </td>
+            <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">
+              $${(Number(item.price_at_time || item.price || 0) * item.quantity).toFixed(2)}
+            </td>
+          </tr>`)
+                .join('');
+            const deliveryFeeValue = Number(order.delivery_fee_charged || 0);
+            const deliveryFeeHtml = order.is_complementary || deliveryFeeValue === 0
+                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: 500; color: #16a34a;">Delivery Fee (Complementary Order):</td><td style="padding: 8px 12px; text-align: right; font-weight: bold; color: #16a34a;">$0.00</td></tr>`
+                : `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: 500;">Delivery Fee:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${deliveryFeeValue.toFixed(2)}</td></tr>`;
+            const storeCreditHtml = Number(order.store_credit_applied || 0) > 0
+                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: 500; color: #2563eb;">Store Credit Applied:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold; color: #2563eb;">-$${Number(order.store_credit_applied).toFixed(2)}</td></tr>`
+                : '';
+            const taxLineHtml = order.tax_exempt
+                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: 500; color: #059669;">Sales Tax NY (ST-120 Exempt):</td><td style="padding: 8px 12px; text-align: right; font-weight: bold; color: #059669;">$0.00 (0.00%)</td></tr>`
+                : Number(order.tax_amount || 0) > 0
+                    ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: 500;">NY Sales Tax:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${Number(order.tax_amount).toFixed(2)}</td></tr>`
+                    : '';
+            const taxLegendHtml = order.tax_legend
+                ? `<div style="margin-top: 16px; padding: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; font-size: 11px; color: #065f46; line-height: 1.4;">
+             <strong>NYS DTF Resale Certification:</strong> ${order.tax_legend}
+           </div>`
+                : '';
+            const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 32px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #b8860b; padding-bottom: 16px; margin-bottom: 24px;">
+            <div>
+              <h1 style="color: #b8860b; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Jhoanes Bakery</h1>
+              <p style="color: #64748b; font-size: 12px; margin: 4px 0 0 0; text-transform: uppercase; tracking: 1px;">Wholesale Commercial Operations</p>
+            </div>
+            <div style="text-align: right;">
+              <span style="display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; background-color: #dcfce7; color: #15803d; border: 1px solid #86efac;">
+                APPROVED / PAID
+              </span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 24px; font-size: 14px; color: #334155;">
+            <p style="margin: 0 0 6px 0;"><strong>Invoice Number:</strong> INV-${orderShortId}</p>
+            <p style="margin: 0 0 6px 0;"><strong>Order Date:</strong> ${new Date(order.created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p style="margin: 0 0 6px 0;"><strong>Delivery Date:</strong> <strong>${order.delivery_date || 'Scheduled'}</strong></p>
+            <p style="margin: 0;"><strong>Payment Method:</strong> ${(order.payment_method || 'Commercial Account').toUpperCase()}</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
+            <thead>
+              <tr style="background-color: #f8fafc; color: #475569; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                <th style="padding: 10px 12px; text-align: left;">Item Description</th>
+                <th style="padding: 10px 12px; text-align: center;">Qty</th>
+                <th style="padding: 10px 12px; text-align: right;">Unit Price</th>
+                <th style="padding: 10px 12px; text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsListHtml}
+              ${deliveryFeeHtml}
+              ${taxLineHtml}
+              ${storeCreditHtml}
+              <tr style="font-size: 16px; background-color: #fefce8; border-top: 2px solid #ca8a04;">
+                <td colspan="3" style="padding: 14px 12px; text-align: right; font-weight: 800; color: #854d0e;">TOTAL AMOUNT:</td>
+                <td style="padding: 14px 12px; text-align: right; font-weight: 800; color: #854d0e;">$${Number(order.total || 0).toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          ${taxLegendHtml}
+
+          <div style="margin-top: 32px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 12px; color: #64748b; text-align: center;">
+            <p style="margin: 0 0 4px 0; font-weight: 600; color: #334155;">Thank you for your business with Jhoanes Bakery Wholesale.</p>
+            <p style="margin: 0;">For inquiries or delivery instructions, contact operations at support@jhoanes.com</p>
+          </div>
+        </div>
+      `;
+            await this.transporter.sendMail({
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <invoices@jhoanes.com>',
+                to: customerEmail,
+                subject: `Commercial Invoice INV-${orderShortId} — Jhoanes Bakery Wholesale`,
+                html,
+            });
+            this.logger.log(`English invoice successfully dispatched to ${customerEmail}`);
+            return true;
+        }
+        catch (err) {
+            this.logger.error(`Error sending English invoice: ${err.message}`);
+            return false;
+        }
+    }
     async sendAdminNewOrderAlert(order, customerEmail, clientName) {
         const adminEmail = config_1.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || config_1.SMTP_USER || 'pedidos@jhoanes.com';
         if (!this.transporter || !adminEmail)

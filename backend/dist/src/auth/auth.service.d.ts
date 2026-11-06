@@ -1,10 +1,13 @@
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { SystemConfig } from '../system-configs/system-config.entity';
+import { SmsService } from '../sms/sms.service';
 export declare class AuthService {
     private usersService;
     private systemConfigRepository;
-    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>);
+    private smsService?;
+    private otpStore;
+    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>, smsService?: SmsService | undefined);
     signup(body: any): Promise<{
         message: string;
         user: {
@@ -67,6 +70,23 @@ export declare class AuthService {
     }): Promise<{
         success: boolean;
         phone_verified: boolean;
+        phone: string;
+    }>;
+    sendSmsOtp(input: string | {
+        phone: string;
+    }): Promise<{
+        success: boolean;
+        verificationId: string;
+        phone: string;
+        message: string;
+    }>;
+    verifySmsOtp(body: {
+        phone: string;
+        code: string;
+        verificationId?: string;
+    }): Promise<{
+        success: boolean;
+        idToken: string;
         phone: string;
     }>;
 }

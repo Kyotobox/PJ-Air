@@ -4,6 +4,7 @@ export declare class UsersController {
     constructor(usersService: UsersService);
     findAll(): Promise<import("./user.entity").User[]>;
     findOne(id: string): Promise<import("./user.entity").User>;
+    updateUser(id: string, data: any): Promise<import("./user.entity").User>;
     updateProfile(id: string, profileData: any): Promise<import("./profile.entity").Profile>;
     updateB2BTerms(id: string, data: any): Promise<import("./user.entity").User>;
     updateRole(id: string, body: {
@@ -32,6 +33,7 @@ export declare class UsersController {
         available_credit: number;
         is_overdraft: boolean;
         can_order: boolean;
+        credit_balance?: number;
     }>;
     getProductDiscounts(id: string): Promise<import("./product-discount.entity").ProductDiscount[]>;
     setProductDiscount(id: string, body: {

@@ -86,6 +86,12 @@ export class Order {
   @Column({ nullable: true, type: 'text' })
   tax_legend: string;
 
+  @Column({ type: 'boolean', default: false })
+  is_complementary: boolean;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  store_credit_applied: number;
+
   @Column({ nullable: true })
   address_id: string;
 

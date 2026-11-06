@@ -53,4 +53,21 @@ export declare class AuthController {
         phone_verified: boolean;
         phone: string;
     }>;
+    sendSmsOtp(body: {
+        phone: string;
+    }): Promise<{
+        success: boolean;
+        verificationId: string;
+        phone: string;
+        message: string;
+    }>;
+    verifySmsOtp(body: {
+        phone: string;
+        code: string;
+        verificationId?: string;
+    }): Promise<{
+        success: boolean;
+        idToken: string;
+        phone: string;
+    }>;
 }

@@ -168,6 +168,7 @@ export class UsersService {
     available_credit: number;
     is_overdraft: boolean;
     can_order: boolean;
+    credit_balance?: number;
   }> {
     const user = await this.findOne(userId);
     const unpaidOrders = (user.orders || []).filter(
@@ -191,7 +192,43 @@ export class UsersService {
       available_credit: Math.round(available_credit * 100) / 100,
       is_overdraft,
       can_order,
+      credit_balance: Number(user.credit_balance || 0),
     };
+  }
+
+  async updateUser(id: string, data: Partial<User>): Promise<User> {
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (data.is_active !== undefined) {
+      user.is_active = Boolean(data.is_active);
+    }
+    if (data.credit_balance !== undefined) {
+      user.credit_balance = Number(data.credit_balance);
+    }
+    if (data.role !== undefined) {
+      user.role = data.role;
+    }
+    if (data.account_type !== undefined) {
+      user.account_type = data.account_type;
+    }
+    if (data.credit_limit !== undefined) {
+      user.credit_limit = Number(data.credit_limit);
+    }
+    if (data.credit_override !== undefined) {
+      user.credit_override = Boolean(data.credit_override);
+    }
+    if (data.check_enabled !== undefined) {
+      user.check_enabled = Boolean(data.check_enabled);
+    }
+    if (data.general_discount !== undefined) {
+      user.general_discount = Number(data.general_discount);
+    }
+    if (data.delivery_fee !== undefined) {
+      user.delivery_fee = Number(data.delivery_fee);
+    }
+    return this.userRepository.save(user);
   }
 
   async setProductDiscount(userId: string, productId: number, data: { discount_percentage?: number; special_price?: number }): Promise<ProductDiscount> {

@@ -4,6 +4,7 @@ export declare class MailService {
     constructor();
     private initTransporter;
     sendOrderReceipt(order: any, customerEmail: string): Promise<boolean>;
+    sendEnglishInvoice(order: any, customerEmail: string): Promise<boolean>;
     sendAdminNewOrderAlert(order: any, customerEmail?: string, clientName?: string): Promise<boolean>;
     sendRefundReceipt(order: any, customerEmail: string, refundData: {
         refundedAmount: number;

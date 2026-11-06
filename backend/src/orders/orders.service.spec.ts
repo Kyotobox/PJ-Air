@@ -46,6 +46,7 @@ describe('OrdersService', () => {
 
     userRepository = {
       findOne: jest.fn(),
+      save: jest.fn().mockImplementation((u) => Promise.resolve(u)),
     };
 
     productRepository = {
@@ -67,6 +68,7 @@ describe('OrdersService', () => {
       sendOrderReceipt: jest.fn().mockResolvedValue(true),
       sendAdminNewOrderAlert: jest.fn().mockResolvedValue(true),
       sendZelleRejectionAlert: jest.fn().mockResolvedValue(true),
+      sendEnglishInvoice: jest.fn().mockResolvedValue(true),
     };
 
     const mockPaymentsService = {

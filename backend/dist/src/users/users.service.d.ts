@@ -37,7 +37,9 @@ export declare class UsersService {
         available_credit: number;
         is_overdraft: boolean;
         can_order: boolean;
+        credit_balance?: number;
     }>;
+    updateUser(id: string, data: Partial<User>): Promise<User>;
     setProductDiscount(userId: string, productId: number, data: {
         discount_percentage?: number;
         special_price?: number;

@@ -29,6 +29,8 @@ export declare class Order {
     tax_rate: number;
     tax_exempt: boolean;
     tax_legend: string;
+    is_complementary: boolean;
+    store_credit_applied: number;
     address_id: string;
     delivery_date: string;
     payment_due_date: string;

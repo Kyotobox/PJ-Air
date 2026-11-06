@@ -51,6 +51,8 @@ interface UserRecord {
     credit_limit?: number;
     credit_override?: boolean;
     check_enabled?: boolean;
+    is_active?: boolean;
+    credit_balance?: number;
     tax_id?: string;
     st120_status?: string;
     st120_document_url?: string;
@@ -125,6 +127,34 @@ export default function AdminClientsPage() {
 
     // ST-120 Tax Exemption Audit Modal state
     const [auditModalUser, setAuditModalUser] = useState<UserRecord | null>(null);
+
+    // TASK-63-01: Toggle Client Active/Inactive State
+    const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
+
+    const handleToggleActiveStatus = async (userRecord: UserRecord, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        const currentActive = userRecord.is_active !== false;
+        const nextActive = !currentActive;
+        const actionLabel = nextActive ? 'activar' : 'inhabilitar';
+        if (!confirm(`¿Estás seguro de que deseas ${actionLabel} la cuenta de ${userRecord.profile?.full_name || userRecord.email}?`)) {
+            return;
+        }
+
+        try {
+            setTogglingStatusId(userRecord.id);
+            await api.patch(`/users/${userRecord.id}`, { is_active: nextActive });
+            setUsers(prev => prev.map(u => u.id === userRecord.id ? { ...u, is_active: nextActive } : u));
+            if (selectedUser?.id === userRecord.id) {
+                setSelectedUser(prev => prev ? { ...prev, is_active: nextActive } : null);
+            }
+            showToast(`Cuenta ${nextActive ? 'activada' : 'inhabilitada'} exitosamente`);
+        } catch (err: any) {
+            console.error('Error updating user active status:', err);
+            showToast(`Error al cambiar estado: ${err.message || 'Error en servidor'}`);
+        } finally {
+            setTogglingStatusId(null);
+        }
+    };
 
     const handleResetPasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -632,15 +662,16 @@ export default function AdminClientsPage() {
                                 <th className="px-8 py-5">Contacto</th>
                                 <th className="px-6 py-5">Cuenta / Crédito</th>
                                 <th className="px-6 py-5">ST-120 Fiscal</th>
+                                <th className="px-6 py-5 text-center">Estado</th>
                                 <th className="px-8 py-5 text-center">Info</th>
                                 <th className="px-8 py-5 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan={6} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
+                                <tr><td colSpan={7} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
                             ) : paginatedUsers.length === 0 ? (
-                                <tr><td colSpan={6} className="py-20 text-center text-slate-500 font-medium italic">No se encontraron clientes</td></tr>
+                                <tr><td colSpan={7} className="py-20 text-center text-slate-500 font-medium italic">No se encontraron clientes</td></tr>
                             ) : paginatedUsers.map(u => (
                                 <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-8 py-6">
@@ -722,6 +753,40 @@ export default function AdminClientsPage() {
                                             )}
                                         </div>
                                     </td>
+                                    <td className="px-6 py-6 text-center">
+                                        <div className="flex flex-col items-center gap-1.5">
+                                            {u.is_active !== false ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    ACTIVO
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                    INHABILITADO
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleToggleActiveStatus(u, e)}
+                                                disabled={togglingStatusId === u.id}
+                                                className={`text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer ${
+                                                    u.is_active !== false
+                                                        ? 'text-rose-600 hover:bg-rose-50'
+                                                        : 'text-emerald-600 hover:bg-emerald-50'
+                                                }`}
+                                                title={u.is_active !== false ? 'Inhabilitar cuenta del cliente' : 'Activar cuenta del cliente'}
+                                            >
+                                                {togglingStatusId === u.id ? (
+                                                    <Loader2 size={12} className="animate-spin inline" />
+                                                ) : u.is_active !== false ? (
+                                                    'Inhabilitar'
+                                                ) : (
+                                                    'Activar'
+                                                )}
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td className="px-8 py-6 text-center">
                                         <div className="inline-flex gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
                                             <div className="flex items-center gap-1 text-[10px] font-black text-slate-400" title="Direcciones">
@@ -789,7 +854,20 @@ export default function AdminClientsPage() {
                                     {(selectedUser.profile?.full_name || selectedUser.email)?.[0]?.toUpperCase()}
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 leading-tight">{selectedUser.profile?.full_name || 'Sin Nombre'}</h2>
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-2xl font-black text-slate-900 leading-tight">{selectedUser.profile?.full_name || 'Sin Nombre'}</h2>
+                                        {selectedUser.is_active !== false ? (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                ACTIVO
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                INHABILITADO
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-slate-400 font-bold text-sm tracking-wide">{selectedUser.email}</p>
                                 </div>
                             </div>
@@ -973,13 +1051,44 @@ export default function AdminClientsPage() {
                                         <p className="font-bold text-slate-700">@{selectedUser.profile?.username || '—'}</p>
                                     </div>
                                 </div>
-                                <div className="mt-4 flex justify-end">
-                                    <button
-                                        onClick={() => setResetPasswordModal(selectedUser)}
-                                        className="px-4 py-2 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 transition-all cursor-pointer"
-                                    >
-                                        Restablecer Contraseña
-                                    </button>
+                                <div className="mt-4 flex flex-wrap justify-between items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Estado de Cuenta:</span>
+                                        {selectedUser.is_active !== false ? (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                ACTIVO
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                INHABILITADO
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleActiveStatus(selectedUser)}
+                                            disabled={togglingStatusId === selectedUser.id}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                                selectedUser.is_active !== false
+                                                    ? 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
+                                                    : 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+                                            }`}
+                                        >
+                                            {togglingStatusId === selectedUser.id ? (
+                                                <Loader2 size={12} className="animate-spin inline mr-1" />
+                                            ) : null}
+                                            {selectedUser.is_active !== false ? 'Inhabilitar Cuenta' : 'Activar Cuenta'}
+                                        </button>
+                                        <button
+                                            onClick={() => setResetPasswordModal(selectedUser)}
+                                            className="px-4 py-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 transition-all cursor-pointer"
+                                        >
+                                            Restablecer Contraseña
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 mt-4 flex items-end gap-4">
                                     <div className="flex-1">

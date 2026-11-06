@@ -183,6 +183,12 @@ export class AppModule implements OnModuleInit {
       if (!userColNames.includes('check_enabled')) {
         await qr.query(`ALTER TABLE users ADD COLUMN check_enabled BOOLEAN DEFAULT 0;`);
       }
+      if (!userColNames.includes('is_active')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1;`);
+      }
+      if (!userColNames.includes('credit_balance')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN credit_balance DECIMAL(10,2) DEFAULT 0;`);
+      }
 
       await qr.query(`
         CREATE TABLE IF NOT EXISTS check_payments (
@@ -240,6 +246,12 @@ export class AppModule implements OnModuleInit {
       }
       if (!orderColNames.includes('fee_method')) {
         await qr.query(`ALTER TABLE orders ADD COLUMN fee_method VARCHAR;`);
+      }
+      if (!orderColNames.includes('is_complementary')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN is_complementary BOOLEAN DEFAULT 0;`);
+      }
+      if (!orderColNames.includes('store_credit_applied')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN store_credit_applied DECIMAL(10,2) DEFAULT 0;`);
       }
 
       // TASK-43-03: Purgar tabla obsoleta scheduled_orders

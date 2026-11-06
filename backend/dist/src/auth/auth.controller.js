@@ -57,6 +57,18 @@ let AuthController = class AuthController {
         const userId = req.user?.id;
         return this.authService.verifyPhone(userId, body);
     }
+    async sendSmsOtp(body) {
+        if (!body || !body.phone) {
+            throw new common_1.BadRequestException('Phone is required');
+        }
+        return this.authService.sendSmsOtp(body.phone);
+    }
+    async verifySmsOtp(body) {
+        if (!body || !body.phone || !body.code) {
+            throw new common_1.BadRequestException('Phone and code are required');
+        }
+        return this.authService.verifySmsOtp(body);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -105,8 +117,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyPhoneToken", null);
+__decorate([
+    (0, common_1.Post)('send-sms-otp'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "sendSmsOtp", null);
+__decorate([
+    (0, common_1.Post)('verify-sms-otp'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifySmsOtp", null);
 exports.AuthController = AuthController = __decorate([
-    (0, common_1.Controller)('auth'),
+    (0, common_1.Controller)(['auth', 'api/auth']),
     __metadata("design:paramtypes", [auth_service_1.AuthService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

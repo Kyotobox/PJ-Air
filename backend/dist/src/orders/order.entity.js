@@ -42,6 +42,8 @@ let Order = class Order {
     tax_rate;
     tax_exempt;
     tax_legend;
+    is_complementary;
+    store_credit_applied;
     address_id;
     delivery_date;
     payment_due_date;
@@ -164,6 +166,14 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true, type: 'text' }),
     __metadata("design:type", String)
 ], Order.prototype, "tax_legend", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], Order.prototype, "is_complementary", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "store_credit_applied", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

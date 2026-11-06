@@ -36,5 +36,7 @@ export declare class User {
     card_last4?: string | null;
     stripe_payment_method_id?: string | null;
     check_enabled: boolean;
+    is_active: boolean;
+    credit_balance: number;
     productDiscounts: ProductDiscount[];
 }

@@ -49,6 +49,8 @@ let User = class User {
     card_last4;
     stripe_payment_method_id;
     check_enabled;
+    is_active;
+    credit_balance;
     productDiscounts;
 };
 exports.User = User;
@@ -184,6 +186,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "check_enabled", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: true }),
+    __metadata("design:type", Boolean)
+], User.prototype, "is_active", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
+    __metadata("design:type", Number)
+], User.prototype, "credit_balance", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import {
     Calendar, MapPin, CreditCard, ChevronRight, ShoppingBag,
@@ -640,6 +640,8 @@ export default function CheckoutPage() {
     // Discounts & Credit
     const [userDiscounts, setUserDiscounts] = useState<any>(null);
     const [creditSummary, setCreditSummary] = useState<any>(null);
+    const [userOrders, setUserOrders] = useState<any[]>([]);
+    const [applyStoreCredit, setApplyStoreCredit] = useState<boolean>(true);
     const [stripePaymentData, setStripePaymentData] = useState<{ clientSecret: string; amount: number; orderId: string } | null>(null);
     const [notification, setNotification] = useState<{
         message: string;
@@ -677,13 +679,15 @@ export default function CheckoutPage() {
         // Parallel fetch for speed
         Promise.all([
             api.get(`/addresses/user/${user.id}`) as Promise<any[]>,
-            api.get(`/users/${user.id}`).catch(() => null), // Includes general_discount and productDiscounts
-            api.get(`/users/${user.id}/credit-summary`).catch(() => null)
-        ]).then(([addrData, userData, creditData]) => {
+            api.get(`/users/${user.id}`).catch(() => null), // Includes general_discount and credit_balance
+            api.get(`/users/${user.id}/credit-summary`).catch(() => null),
+            api.get('/orders').catch(() => []) as Promise<any[]>
+        ]).then(([addrData, userData, creditData, ordersData]) => {
             setAddresses(Array.isArray(addrData) ? addrData : []);
             if (addrData?.length > 0) setSelectedAddressId(addrData[0].id);
             setUserDiscounts(userData);
             setCreditSummary(creditData);
+            setUserOrders(Array.isArray(ordersData) ? ordersData : []);
             if ((creditData as any)?.account_type === 'credit') {
                 setPaymentMethod('credit');
             }
@@ -814,7 +818,20 @@ export default function CheckoutPage() {
     const rawSubtotal = getRawSubtotal();
     const discountedSubtotal = getDiscountedSubtotal();
 
+    // TASK-63-04: Complementary Orders Rule ($0 fee if user already has an active order for same delivery date)
+    const isComplementaryOrder = useMemo(() => {
+        const targetDate = rawDeliveryDate || deliveryDate;
+        if (!targetDate || deliveryType === 'pickup') return false;
+        return (userOrders || []).some(o => {
+            if (o.status === 'cancelled' || o.status === 'Cancelado') return false;
+            if (o.delivery_date !== targetDate) return false;
+            if (selectedAddressId && o.address_id && o.address_id !== selectedAddressId) return false;
+            return true;
+        });
+    }, [userOrders, rawDeliveryDate, deliveryDate, deliveryType, selectedAddressId]);
+
     // Matriz de precedencia:
+    // 0. Pedido Complementario: siempre $0.00 (TASK-63-04)
     // 1. Pickup: siempre $0.00
     // 2. Tarifa Especial VIP pactada en perfil (user.delivery_fee > 0): prevalece sobre la zona
     // 3. Zona resuelta por ZIP (si subtotal >= min_free_delivery_amount -> $0.00, sino -> zone.base_fee)
@@ -822,7 +839,7 @@ export default function CheckoutPage() {
     // 5. Contingencia fallback ($15.00) si no hay coordenadas ni zona registrada
     const hasVipFee = Number(profile?.delivery_fee) > 0;
     let deliveryFee = 0;
-    if (deliveryType === 'pickup') {
+    if (deliveryType === 'pickup' || isComplementaryOrder) {
         deliveryFee = 0;
     } else if (hasVipFee) {
         deliveryFee = Number(profile?.delivery_fee);
@@ -839,8 +856,8 @@ export default function CheckoutPage() {
         deliveryFee = 15.00; // Contingency fallback
     }
 
-    const isFreeDeliveryEligible = !hasVipFee && resolvedZone && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal >= Number(resolvedZone.min_free_delivery_amount);
-    const freeDeliveryShortage = !hasVipFee && resolvedZone && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal < Number(resolvedZone.min_free_delivery_amount)
+    const isFreeDeliveryEligible = !hasVipFee && !isComplementaryOrder && resolvedZone && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal >= Number(resolvedZone.min_free_delivery_amount);
+    const freeDeliveryShortage = !hasVipFee && !isComplementaryOrder && resolvedZone && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal < Number(resolvedZone.min_free_delivery_amount)
         ? Math.round((Number(resolvedZone.min_free_delivery_amount) - discountedSubtotal + Number.EPSILON) * 100) / 100
         : 0;
 
@@ -850,7 +867,16 @@ export default function CheckoutPage() {
     const packagingFee = processingFee;
     const packagingDiscount = 0;
 
-    const finalTotal = Math.round((discountedSubtotal + processingFee + deliveryFee + Number.EPSILON) * 100) / 100;
+    const subtotalWithFees = Math.round((discountedSubtotal + processingFee + deliveryFee + Number.EPSILON) * 100) / 100;
+
+    // TASK-63-03: Saldo a Favor (Store Credit)
+    const storeCreditBalance = Math.max(0, Number(userDiscounts?.credit_balance ?? creditSummary?.credit_balance ?? 0));
+    const storeCreditApplied = (applyStoreCredit && storeCreditBalance > 0)
+        ? Math.min(storeCreditBalance, subtotalWithFees)
+        : 0;
+
+    const finalTotal = Math.max(0, Math.round((subtotalWithFees - storeCreditApplied + Number.EPSILON) * 100) / 100);
+    const isPaidWithStoreCredit = storeCreditApplied > 0 && finalTotal === 0;
     const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + Number.EPSILON) * 100) / 100;
     const subtotal = rawSubtotal;
 
@@ -1018,7 +1044,7 @@ export default function CheckoutPage() {
             return;
         }
 
-        if (paymentMethod === 'ach' && !isAchAvailable) {
+        if (!isPaidWithStoreCredit && paymentMethod === 'ach' && !isAchAvailable) {
             showNotification(
                 lbl(
                     'La opción de transferencia ACH está disponible únicamente para cuentas autorizadas o clientes VIP.',
@@ -1029,7 +1055,7 @@ export default function CheckoutPage() {
             return;
         }
 
-        if (paymentMethod === 'zelle') {
+        if (!isPaidWithStoreCredit && paymentMethod === 'zelle') {
             if (!zelleReference.trim()) {
                 showNotification(
                     lbl(
@@ -1062,7 +1088,7 @@ export default function CheckoutPage() {
             }
         }
 
-        if (paymentMethod === 'check') {
+        if (!isPaidWithStoreCredit && paymentMethod === 'check') {
             if (isUploadingCheck) {
                 showNotification(
                     lbl(
@@ -1124,7 +1150,7 @@ export default function CheckoutPage() {
             }
         }
 
-        if (exceedsCreditLimit) {
+        if (!isPaidWithStoreCredit && exceedsCreditLimit) {
             showNotification(lbl(
                 `Tu pedido excede tu línea de crédito disponible ($${availableCredit.toFixed(2)}). Comunícate con administración.`,
                 `Your order exceeds your available credit line ($${availableCredit.toFixed(2)}). Please contact administration.`
@@ -1132,8 +1158,8 @@ export default function CheckoutPage() {
             return;
         }
 
-        // Minimum order amount check
-        if (finalTotal < minOrderAmount) {
+        // Minimum order amount check (evaluated before store credit deduction)
+        if (subtotalWithFees < minOrderAmount) {
             setShowMinAmountModal(true);
             return;
         }
@@ -1191,9 +1217,13 @@ export default function CheckoutPage() {
                 status: 'Pedido Enviado',
                 deliveryDate: rawDeliveryDate || deliveryDate,
                 paymentDueDate: paymentDate,
-                payment_method: paymentMethod,
+                payment_method: isPaidWithStoreCredit ? 'store_credit' : paymentMethod,
+                payment_status: isPaidWithStoreCredit ? 'paid' : undefined,
                 fee_amount: processingFee,
                 fee_method: feeMethod,
+                store_credit_applied: storeCreditApplied,
+                is_complementary: isComplementaryOrder,
+                notes: isComplementaryOrder ? 'Complementario a orden existente' : undefined,
                 zelle_reference: paymentMethod === 'zelle' ? zelleReference.trim() : null,
                 zelle_receipt_url: paymentMethod === 'zelle' ? zelleReceiptUrl : null,
                 check_number: paymentMethod === 'check' ? checkNumber.trim() : null,
@@ -1208,7 +1238,7 @@ export default function CheckoutPage() {
                 })),
             }) as any;
 
-            if (paymentMethod === 'zelle' || paymentMethod === 'check') {
+            if (isPaidWithStoreCredit || paymentMethod === 'zelle' || paymentMethod === 'check') {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
             } else if (paymentMethod === 'credit' || (isCreditAccount && paymentMethod !== 'stripe' && paymentMethod !== 'ach')) {
@@ -2075,7 +2105,47 @@ export default function CheckoutPage() {
                                             ? lbl('🏪 Pick Up en tienda', '🏪 Store Pickup')
                                             : lbl('🚛 Delivery', '🚛 Delivery')}
                                     </span>
+                                    {isComplementaryOrder && (
+                                        <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                                            🎁 {lbl('Complementario ($0)', 'Complementary ($0)')}
+                                        </span>
+                                    )}
                                 </div>
+
+                                {/* TASK-63-03: Saldo a Favor Banner */}
+                                {storeCreditBalance > 0 && (
+                                    <div className="my-3 p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl shadow-sm">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                                    💰
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-blue-900">
+                                                        {lbl(
+                                                            `Tienes $${storeCreditBalance.toFixed(2)} de Saldo a Favor disponible`,
+                                                            `You have $${storeCreditBalance.toFixed(2)} Store Credit available`
+                                                        )}
+                                                    </p>
+                                                    <p className="text-[11px] text-blue-700 font-medium">
+                                                        {storeCreditApplied >= subtotalWithFees
+                                                            ? lbl('¡Cubre el 100% de tu orden! No requerirás pago adicional.', 'Covers 100% of your order! No additional payment required.')
+                                                            : lbl(`Se descontarán $${storeCreditApplied.toFixed(2)} del total a pagar.`, `$${storeCreditApplied.toFixed(2)} will be deducted from your total.`)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-blue-900 select-none">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={applyStoreCredit}
+                                                    onChange={(e) => setApplyStoreCredit(e.target.checked)}
+                                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                                                />
+                                                <span>{lbl('Aplicar', 'Apply')}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
 
                                  <div className="border-t border-border pt-4 flex flex-col gap-1">
                                     <div className="flex justify-between items-center text-xs mb-1">
@@ -2084,7 +2154,22 @@ export default function CheckoutPage() {
                                     </div>
 
                                     {/* Delivery fee breakdown according to precedence */}
-                                    {deliveryType === 'pickup' ? (
+                                    {isComplementaryOrder ? (
+                                        <div className="flex flex-col gap-1 mb-2 bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl">
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                                    🎁 {lbl('Pedido Complementario', 'Complementary Order')}
+                                                </span>
+                                                <span className="font-black text-emerald-700 dark:text-emerald-400 font-mono">$0.00</span>
+                                            </div>
+                                            <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                                                {lbl(
+                                                    'Ya tienes un pedido activo para esta fecha. ¡Flete gratis ($0.00)!',
+                                                    'You already have an active order for this date. Free delivery ($0.00)!'
+                                                )}
+                                            </span>
+                                        </div>
+                                    ) : deliveryType === 'pickup' ? (
                                         <div className="flex justify-between items-center text-xs mb-1">
                                             <span className="text-muted-foreground">{lbl('Entrega en Panadería', 'Bakery Pickup')}</span>
                                             <span className="font-bold text-emerald-600 font-mono">$0.00</span>
@@ -2180,6 +2265,19 @@ export default function CheckoutPage() {
                                         </span>
                                     </div>
 
+                                    {/* Store Credit Line (TASK-63-03) */}
+                                    {storeCreditApplied > 0 && (
+                                        <div className="flex justify-between items-center text-xs mb-1 bg-blue-50/70 p-2 rounded-xl border border-blue-100 text-blue-800">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold">{lbl('Saldo a Favor Aplicado', 'Store Credit Applied')}</span>
+                                                {isPaidWithStoreCredit && (
+                                                    <span className="text-[10px] text-blue-600 font-bold uppercase">{lbl('✅ Pagado con Saldo a Favor', '✅ Paid with Store Credit')}</span>
+                                                )}
+                                            </div>
+                                            <span className="font-black font-mono text-blue-700">-${storeCreditApplied.toFixed(2)}</span>
+                                        </div>
+                                    )}
+
                                     {/* Real-time Dynamic Fees Breakdown: Subtotal + Delivery Fee + Processing Fee ($X.XX) = Total (TASK-47-02, TASK-49-05) */}
                                     <div
                                         data-testid="checkout-fee-breakdown-formula"
@@ -2190,7 +2288,7 @@ export default function CheckoutPage() {
                                             <span className="text-[9px] text-primary lowercase font-mono">live</span>
                                         </div>
                                         <div className="text-[11px] font-mono font-bold text-slate-800 tracking-tight leading-relaxed">
-                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Delivery Fee (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)}) = Total (${finalTotal.toFixed(2)})</span>
+                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Delivery Fee (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)})${storeCreditApplied > 0 ? ` - Store Credit ($${storeCreditApplied.toFixed(2)})` : ''} = Total (${finalTotal.toFixed(2)})</span>
                                         </div>
                                     </div>
 
@@ -2208,7 +2306,7 @@ export default function CheckoutPage() {
                                         </div>
                                     )}
 
-                                    {finalTotal < minOrderAmount && (
+                                    {subtotalWithFees < minOrderAmount && (
                                         <div className="p-3 bg-red-50 rounded-xl border border-red-100 mb-2">
                                             <p className="text-[10px] text-red-600 font-black uppercase tracking-tight leading-tight">
                                                 {lbl(
@@ -2221,7 +2319,14 @@ export default function CheckoutPage() {
 
                                     <div className="flex justify-between items-center mt-2">
                                         <span className="font-bold text-lg">{lbl('Total a Pagar', 'Final Total')}</span>
-                                        <span className="text-3xl font-black text-primary">${finalTotal.toFixed(2)}</span>
+                                        <div className="text-right">
+                                            <span className="text-3xl font-black text-primary">${finalTotal.toFixed(2)}</span>
+                                            {isPaidWithStoreCredit && (
+                                                <span className="block text-[11px] font-bold text-emerald-600 uppercase tracking-tight">
+                                                    {lbl('100% Cubierto con Saldo a Favor', '100% Covered with Store Credit')}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {totalDiscount > 0 && (
@@ -2311,12 +2416,14 @@ export default function CheckoutPage() {
 
                             <button
                                 onClick={handleSubmit}
-                                disabled={isLoading || cart.length === 0 || exceedsCreditLimit || (paymentMethod === 'check' && (!checkImageUrl || !checkNumber.trim() || !checkBank.trim() || !checkVerified))}
+                                disabled={isLoading || cart.length === 0 || (!isPaidWithStoreCredit && exceedsCreditLimit) || (!isPaidWithStoreCredit && paymentMethod === 'check' && (!checkImageUrl || !checkNumber.trim() || !checkBank.trim() || !checkVerified))}
                                 className="w-full py-4 bg-[#111] hover:bg-[#222] text-white rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
                                     <>
-                                        {lbl('Confirmar Pedido', 'Place Order')}
+                                        {isPaidWithStoreCredit
+                                            ? lbl('Confirmar Pedido (Cubierto con Saldo a Favor)', 'Place Order (Covered by Store Credit)')
+                                            : lbl('Confirmar Pedido', 'Place Order')}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                     </>
                                 )}

@@ -2,7 +2,7 @@ import { Controller, Post, Body, UnauthorizedException, BadRequestException, Pat
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 
-@Controller('auth')
+@Controller(['auth', 'api/auth'])
 export class AuthController {
   constructor(private authService: AuthService) {}
 
@@ -53,5 +53,21 @@ export class AuthController {
   async verifyPhoneToken(@Request() req: any, @Body() body: { phone: string; verificationCode?: string; idToken?: string }) {
     const userId = req.user?.id;
     return this.authService.verifyPhone(userId, body);
+  }
+
+  @Post('send-sms-otp')
+  async sendSmsOtp(@Body() body: { phone: string }) {
+    if (!body || !body.phone) {
+      throw new BadRequestException('Phone is required');
+    }
+    return this.authService.sendSmsOtp(body.phone);
+  }
+
+  @Post('verify-sms-otp')
+  async verifySmsOtp(@Body() body: { phone: string; code: string; verificationId?: string }) {
+    if (!body || !body.phone || !body.code) {
+      throw new BadRequestException('Phone and code are required');
+    }
+    return this.authService.verifySmsOtp(body);
   }
 }

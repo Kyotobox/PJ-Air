@@ -367,7 +367,7 @@ let OrdersService = class OrdersService {
             catch (_) { }
         }
         let appliedPaymentStatus = paymentStatus || rest.payment_status || 'pending';
-        const appliedPaymentMethod = rest.payment_method || orderData.payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
+        let appliedPaymentMethod = rest.payment_method || orderData.payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
         const rawZelleRef = rest.zelle_reference || orderData.zelle_reference;
         const appliedZelleReference = rawZelleRef ? String(rawZelleRef).trim() : null;
         const rawZelleReceipt = rest.zelle_receipt_url || orderData.zelle_receipt_url;
@@ -484,7 +484,36 @@ let OrdersService = class OrdersService {
         else {
             deliveryFee = Number(user?.delivery_fee || 0);
         }
-        const finalTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
+        let isComplementary = false;
+        if (appliedDeliveryDate && appliedDeliveryType !== 'pickup') {
+            const activeSameDateOrders = await this.orderRepository.find({
+                where: {
+                    user_id: userId,
+                    delivery_date: appliedDeliveryDate,
+                },
+            });
+            const validExisting = activeSameDateOrders.filter(o => o.status !== 'cancelled' && o.status !== 'Cancelado' && (!appliedAddressId || !o.address_id || o.address_id === appliedAddressId));
+            if (validExisting.length > 0 || orderData.is_complementary === true) {
+                isComplementary = true;
+                deliveryFee = 0.00;
+            }
+        }
+        let appliedNotes = orderData.notes || '';
+        if (isComplementary && !appliedNotes.includes('Complementario a orden existente')) {
+            appliedNotes = appliedNotes ? `${appliedNotes}\n[Complementario a orden existente]` : '[Complementario a orden existente]';
+        }
+        let storeCreditApplied = 0;
+        const requestedStoreCredit = Number(orderData.store_credit_applied || 0);
+        const userCreditBalance = Number(user?.credit_balance || 0);
+        const grossTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
+        if (requestedStoreCredit > 0 && userCreditBalance > 0) {
+            storeCreditApplied = Math.min(requestedStoreCredit, userCreditBalance, grossTotal);
+        }
+        const finalTotal = Math.max(0, Math.round((grossTotal - storeCreditApplied + Number.EPSILON) * 100) / 100);
+        if (finalTotal === 0 && storeCreditApplied > 0) {
+            appliedPaymentMethod = 'store_credit';
+            appliedPaymentStatus = 'paid';
+        }
         let shouldSendCreditAlert = false;
         let isOverdraftAlert = false;
         let prospectiveCreditTotal = 0;
@@ -558,9 +587,16 @@ let OrdersService = class OrdersService {
                 tax_rate: appliedTaxRate,
                 tax_exempt: appliedTaxExempt,
                 tax_legend: appliedTaxLegend,
+                is_complementary: isComplementary,
+                store_credit_applied: storeCreditApplied,
+                notes: appliedNotes,
             });
             const savedResult = await manager.save(order_entity_1.Order, orderToCreate);
             const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
+            if (storeCreditApplied > 0 && user) {
+                user.credit_balance = Math.max(0, Math.round((userCreditBalance - storeCreditApplied) * 100) / 100);
+                await manager.save(user_entity_1.User, user);
+            }
             if (validatedItems.length > 0) {
                 const orderItems = validatedItems.map((item) => manager.create(order_item_entity_1.OrderItem, {
                     product_id: item.product_id,
@@ -576,6 +612,11 @@ let OrdersService = class OrdersService {
         if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function' && user?.email) {
             this.mailService.sendOrderReceipt(createdOrder, user.email).catch(err => {
                 console.error('[OrdersService] Error sending order receipt email:', err?.message || err);
+            });
+        }
+        if (appliedPaymentStatus === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function' && user?.email) {
+            this.mailService.sendEnglishInvoice(createdOrder, user.email).catch(err => {
+                console.error('[OrdersService] Error sending initial English invoice:', err?.message || err);
             });
         }
         if (this.mailService && typeof this.mailService.sendAdminNewOrderAlert === 'function') {
@@ -605,6 +646,9 @@ let OrdersService = class OrdersService {
     }
     async update(id, updateData, userRole) {
         const order = await this.findOne(id);
+        const oldTotal = Number(order.total) || 0;
+        const oldPaymentStatus = order.payment_status;
+        const oldStatus = order.status;
         const { status, total, delivery_date, address_id, motivo, items, payment_status, paymentStatus } = updateData;
         if (status) {
             const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
@@ -670,7 +714,25 @@ let OrdersService = class OrdersService {
         else if (total !== undefined) {
             order.total = total;
         }
-        await this.orderRepository.save(order);
+        if (oldPaymentStatus === 'paid' && Number(order.total) < oldTotal) {
+            const diff = Math.round((oldTotal - Number(order.total)) * 100) / 100;
+            const client = await this.userRepository.findOne({ where: { id: order.user_id } });
+            if (client) {
+                client.credit_balance = Math.round(((Number(client.credit_balance) || 0) + diff) * 100) / 100;
+                await this.userRepository.save(client);
+            }
+        }
+        const saved = await this.orderRepository.save(order);
+        const isNowPaidOrApproved = (saved.payment_status === 'paid' || saved.status === 'approved' || saved.status === 'aprobado');
+        const wasPaidOrApproved = (oldPaymentStatus === 'paid' || oldStatus === 'approved' || oldStatus === 'aprobado');
+        if (isNowPaidOrApproved && !wasPaidOrApproved && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
+            const client = await this.userRepository.findOne({ where: { id: saved.user_id } });
+            if (client?.email) {
+                this.mailService.sendEnglishInvoice(saved, client.email).catch(err => {
+                    console.error('[OrdersService] Error sending English invoice on order status update:', err?.message || err);
+                });
+            }
+        }
         return this.findOne(id);
     }
     async approveZellePayment(orderId) {
@@ -680,11 +742,16 @@ let OrdersService = class OrdersService {
         }
         order.payment_status = 'paid';
         const saved = await this.orderRepository.save(order);
-        if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function') {
-            const user = await this.userRepository.findOne({ where: { id: order.user_id } });
-            if (user?.email) {
+        const user = await this.userRepository.findOne({ where: { id: order.user_id } });
+        if (user?.email) {
+            if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function') {
                 this.mailService.sendOrderReceipt(saved, user.email).catch(err => {
                     console.error('[OrdersService] Error sending zelle approved receipt email:', err?.message || err);
+                });
+            }
+            if (this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
+                this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending English invoice on zelle approval:', err?.message || err);
                 });
             }
         }
@@ -998,6 +1065,13 @@ let OrdersService = class OrdersService {
                     order.refund_reason = creditNote;
                     order.refunded_amount = Math.round(((Number(order.refunded_amount) || 0) + refundAmount) * 100) / 100;
                 }
+                if (order.payment_status === 'paid' || order.payment_status === 'partially_paid') {
+                    const clientUser = await this.userRepository.findOne({ where: { id: order.user_id } });
+                    if (clientUser) {
+                        clientUser.credit_balance = Math.round(((Number(clientUser.credit_balance) || 0) + refundAmount) * 100) / 100;
+                        await this.userRepository.save(clientUser);
+                    }
+                }
                 order.pending_balance = 0;
             }
             else if (delta > 0) {
@@ -1012,7 +1086,15 @@ let OrdersService = class OrdersService {
                 }
             }
         }
-        await this.orderRepository.save(order);
+        const savedOrder = await this.orderRepository.save(order);
+        if ((savedOrder.payment_status === 'paid' || savedOrder.status === 'approved' || savedOrder.status === 'aprobado') && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
+            const clientUser = await this.userRepository.findOne({ where: { id: savedOrder.user_id } });
+            if (clientUser?.email) {
+                this.mailService.sendEnglishInvoice(savedOrder, clientUser.email).catch(err => {
+                    console.error('[OrdersService] Error sending English invoice after adminEdit:', err?.message || err);
+                });
+            }
+        }
         return this.findOne(order.id);
     }
 };

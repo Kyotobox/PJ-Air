@@ -167,7 +167,8 @@ export const toE164Phone = (phone: string): string => {
 
 /**
  * Sends an OTP SMS to the phone number.
- * Uses Firebase Phone Auth when configured, with a resilient simulation mode fallback.
+ * TASK-63-02: Calls backend /api/auth/send-sms-otp first without reCAPTCHA,
+ * with fallback to Firebase Phone Auth and simulation mode.
  */
 export const sendOtpSms = async (
   phoneNumber: string,
@@ -175,7 +176,58 @@ export const sendOtpSms = async (
 ): Promise<OtpConfirmation> => {
   const e164 = toE164Phone(phoneNumber);
 
-  // If Firebase is configured and not in test/simulation mode
+  // 1. First priority: Backend deterministic OTP endpoint without reCAPTCHA
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const endpoint = baseUrl ? `${baseUrl}/api/auth/send-sms-otp` : '/api/auth/send-sms-otp';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: e164 }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.success) {
+        return {
+          verificationId: data.verificationId || 'backend-otp-' + Date.now(),
+          confirm: async (verificationCode: string) => {
+            const verifyEndpoint = baseUrl ? `${baseUrl}/api/auth/verify-sms-otp` : '/api/auth/verify-sms-otp';
+            const verifyRes = await fetch(verifyEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                phone: e164,
+                code: verificationCode.trim(),
+                verificationId: data.verificationId,
+              }),
+            });
+
+            if (!verifyRes.ok) {
+              const errData = await verifyRes.json().catch(() => ({}));
+              const error = new Error(errData.message || 'Invalid or expired verification code');
+              (error as any).code = 'auth/invalid-verification-code';
+              throw error;
+            }
+
+            const verifyData = await verifyRes.json();
+            const idToken = verifyData.idToken || 'valid-test-token-otp';
+            return {
+              user: {
+                getIdToken: async () => idToken,
+                phoneNumber: e164,
+              },
+            };
+          },
+        };
+      }
+    }
+  } catch (backendErr: any) {
+    // If backend is unreachable or in offline unit test environment, fallback gracefully
+    console.warn('Backend OTP dispatch notice, evaluating fallback:', backendErr?.message || backendErr);
+  }
+
+  // 2. Fallback to Firebase Phone Auth when configured and in browser
   if (isFirebaseConfigured() && typeof window !== 'undefined') {
     try {
       const currentAuth = getFirebaseAuth();
@@ -188,11 +240,10 @@ export const sendOtpSms = async (
       }
     } catch (err: any) {
       console.warn('Firebase SMS dispatch error, falling back to local simulation:', err);
-      // If error is related to quota or domain, fallback to test mode for smooth UX
     }
   }
 
-  // Fallback Simulation Mode (Test Mode)
+  // 3. Fallback Simulation Mode (Test Mode)
   // Supports test numbers (+1 305 555 0100) or local development
   return {
     verificationId: 'simulated-verification-' + Date.now(),

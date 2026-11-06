@@ -6,11 +6,13 @@ import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { RolesGuard } from './roles.guard';
 import { UsersModule } from '../users/users.module';
+import { SmsModule } from '../sms/sms.module';
 import { SystemConfig } from '../system-configs/system-config.entity';
 
 @Module({
   imports: [
     UsersModule,
+    SmsModule,
     TypeOrmModule.forFeature([SystemConfig]),
   ],
   providers: [AuthService, AuthGuard, RolesGuard, Reflector],

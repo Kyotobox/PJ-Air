@@ -67,6 +67,9 @@ let UsersController = class UsersController {
     async findOne(id) {
         return this.usersService.findOne(id);
     }
+    async updateUser(id, data) {
+        return this.usersService.updateUser(id, data);
+    }
     async updateProfile(id, profileData) {
         return this.usersService.updateProfile(id, profileData);
     }
@@ -142,6 +145,16 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Patch)(':id/profile'),
     __param(0, (0, common_1.Param)('id')),
@@ -303,7 +316,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "deleteProductDiscount", null);
 exports.UsersController = UsersController = __decorate([
-    (0, common_1.Controller)('users'),
+    (0, common_1.Controller)(['users', 'api/users']),
     __metadata("design:paramtypes", [users_service_1.UsersService])
 ], UsersController);
 //# sourceMappingURL=users.controller.js.map

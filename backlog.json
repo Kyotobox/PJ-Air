@@ -2,9 +2,9 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "5.0.0",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETED",
   "current_sprint": "S63",
-  "current_task": "TASK-63-01",
+  "current_task": "TASK-63-07",
   "sprints": [
     {
       "id": "S61",
@@ -99,7 +99,7 @@
     {
       "id": "S63",
       "title": "Inhabilitación de Clientes, Motor SMS OTP Backend, Saldo a Favor, Pedidos Complementarios y Facturas por Email",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "start_date": "2026-11-06",
       "goal": "Implementar inhabilitación de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detección de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarquía estricta de delivery fee.",
       "tasks": [
@@ -107,43 +107,43 @@
           "id": "TASK-63-01",
           "label": "TECH/AUTH-USER-STATUS",
           "desc": "Inhabilitación de clientes por administración en DB, login y panel /admin/clients",
-          "status": "IN_PROGRESS"
+          "status": "DONE"
         },
         {
           "id": "TASK-63-02",
           "label": "TECH/AUTH-BACKEND-SMS-OTP",
           "desc": "Endpoints y motor backend para SMS OTP determinista sin reCAPTCHA",
-          "status": "PENDING"
+          "status": "DONE"
         },
         {
           "id": "TASK-63-03",
           "label": "DOMAIN/STORE-CREDIT-WALLET",
           "desc": "Bolsa de saldo a favor (store_credit) con descuento automático en checkout y estado de cuenta",
-          "status": "PENDING"
+          "status": "DONE"
         },
         {
           "id": "TASK-63-04",
           "label": "DOMAIN/COMPLEMENTARY-ORDERS",
           "desc": "Regla de pedidos complementarios con tarifa de flete a $0.00",
-          "status": "PENDING"
+          "status": "DONE"
         },
         {
           "id": "TASK-63-05",
           "label": "TECH/EMAIL-INVOICE-DISPATCH",
           "desc": "Despacho de facturas oficiales en inglés por correo electrónico (PDF adjunto)",
-          "status": "PENDING"
+          "status": "DONE"
         },
         {
           "id": "TASK-63-06",
           "label": "DOMAIN/DELIVERY-FEE-HIERARCHY",
           "desc": "Precedencia de tarifa personalizada del cliente sobre matriz de millaje",
-          "status": "PENDING"
+          "status": "DONE"
         },
         {
           "id": "TASK-63-07",
           "label": "TEST/S63-CERTIFICATION",
           "desc": "Suite de certificación integral de Sprint S63 y verificación de build Next.js/NestJS",
-          "status": "PENDING"
+          "status": "DONE"
         }
       ]
     }
@@ -153,7 +153,7 @@
   "active_sprint": {
     "id": "S63",
     "title": "Inhabilitación de Clientes, Motor SMS OTP Backend, Saldo a Favor, Pedidos Complementarios y Facturas por Email",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "start_date": "2026-11-06",
     "goal": "Implementar inhabilitación de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detección de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarquía estricta de delivery fee.",
     "tasks": [
@@ -161,43 +161,43 @@
         "id": "TASK-63-01",
         "label": "TECH/AUTH-USER-STATUS",
         "desc": "Inhabilitación de clientes por administración en DB, login y panel /admin/clients",
-        "status": "IN_PROGRESS"
+        "status": "DONE"
       },
       {
         "id": "TASK-63-02",
         "label": "TECH/AUTH-BACKEND-SMS-OTP",
         "desc": "Endpoints y motor backend para SMS OTP determinista sin reCAPTCHA",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-63-03",
         "label": "DOMAIN/STORE-CREDIT-WALLET",
         "desc": "Bolsa de saldo a favor (store_credit) con descuento automático en checkout y estado de cuenta",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-63-04",
         "label": "DOMAIN/COMPLEMENTARY-ORDERS",
         "desc": "Regla de pedidos complementarios con tarifa de flete a $0.00",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-63-05",
         "label": "TECH/EMAIL-INVOICE-DISPATCH",
         "desc": "Despacho de facturas oficiales en inglés por correo electrónico (PDF adjunto)",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-63-06",
         "label": "DOMAIN/DELIVERY-FEE-HIERARCHY",
         "desc": "Precedencia de tarifa personalizada del cliente sobre matriz de millaje",
-        "status": "PENDING"
+        "status": "DONE"
       },
       {
         "id": "TASK-63-07",
         "label": "TEST/S63-CERTIFICATION",
         "desc": "Suite de certificación integral de Sprint S63 y verificación de build Next.js/NestJS",
-        "status": "PENDING"
+        "status": "DONE"
       }
     ]
   }

@@ -105,6 +105,12 @@ export class User {
   @Column({ type: 'boolean', default: false })
   check_enabled: boolean;
 
+  @Column({ type: 'boolean', default: true })
+  is_active: boolean;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  credit_balance: number;
+
   @OneToMany(() => ProductDiscount, (pd) => pd.user)
   productDiscounts: ProductDiscount[];
 }

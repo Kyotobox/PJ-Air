@@ -9,7 +9,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
-@Controller('users')
+@Controller(['users', 'api/users'])
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -21,6 +21,13 @@ export class UsersController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async updateUser(@Param('id') id: string, @Body() data: any) {
+    return this.usersService.updateUser(id, data);
   }
 
   @Patch(':id/profile')
