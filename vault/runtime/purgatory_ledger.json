@@ -383,5 +383,19 @@
     "exile_name": "broker_approved_1793725601077_TCK-PJ-AIR-S60B-1793725589029.json",
     "verdict": "APPROVED",
     "reason": "Ticket canónico validado y autorizado formalmente."
+  },
+  {
+    "timestamp": "2026-11-06T15:42:31.849078+00:00",
+    "original_name": "ticket_TCK-PJ-AIR-S63A-1793979632783",
+    "exile_name": "broker_rejected_1793979751849_TCK-PJ-AIR-S63A-1793979632783.json",
+    "verdict": "REJECTED",
+    "reason": "Violación de directiva §12.b: El lote excede el límite estricto de 5 archivos (6 detectados)."
+  },
+  {
+    "timestamp": "2026-11-06T15:43:15.232815+00:00",
+    "original_name": "ticket_TCK-PJ-AIR-S63A-1793979787895",
+    "exile_name": "broker_approved_1793979795232_TCK-PJ-AIR-S63A-1793979787895.json",
+    "verdict": "APPROVED",
+    "reason": "Ticket canónico validado y autorizado formalmente."
   }
 ]

@@ -1242,7 +1242,9 @@ class IncrementalRenderCanaryCertifier {
           );
         } on FastSpliceMissingArtifactException {
           threwMissing = true;
-        } catch (_) {}
+        } catch (_) {
+          // INTENTIONAL: Sonda canario captura cualquier otra excepción no esperada
+        }
         if (threwMissing) sadPathsPassed++;
 
         // 3. Validación de especificación con duración negativa
@@ -1271,7 +1273,9 @@ class IncrementalRenderCanaryCertifier {
           badSpec.validate();
         } on IncrementalRenderSpecValidationException {
           threwInvalidSpec = true;
-        } catch (_) {}
+        } catch (_) {
+          // INTENTIONAL: Sonda canario captura cualquier otra excepción no esperada
+        }
         if (threwInvalidSpec) sadPathsPassed++;
 
         s6Watch.stop();

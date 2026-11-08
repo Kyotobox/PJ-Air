@@ -20,10 +20,22 @@ elif [ -x "/usr/local/bin/logix" ]; then
 elif [ -x "/home/opc/.local/bin/logix" ]; then
   /home/opc/.local/bin/logix check
 fi
+CHECK_STATUS=$?
 
-if [ $? -ne 0 ]; then
-  echo "❌ [PUSH-FAIL] Odómetro o gobernanza en zona no permitida."
+if [ $CHECK_STATUS -eq 2 ]; then
+  echo "❌ [PUSH-FAIL] Odómetro en Zona Roja. Handover obligatorio requerido antes de push."
   exit 1
+elif [ $CHECK_STATUS -eq 1 ]; then
+  LAST_MSG=$(git log -1 --pretty=%B)
+  case "$LAST_MSG" in
+    *"[GOV] Session Handover"*|*"handover"*|*"Handover"*|*"reconciliar cierre"*)
+      echo "⚠️ [PRE-PUSH] Zona Ámbar detectada pero el commit es de Handover / Cierre. Push autorizado (§45, §50)."
+      ;;
+    *)
+      echo "❌ [PUSH-FAIL] Odómetro en Zona Ámbar. Ejecute handover antes de continuar."
+      exit 1
+      ;;
+  esac
 fi
 
 echo "✅ [PRE-PUSH] Suite física íntegra. Push autorizado."

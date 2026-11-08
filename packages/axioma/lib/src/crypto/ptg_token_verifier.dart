@@ -102,7 +102,9 @@ class PtgTokenVerifier {
     if (pemContent != null && pemContent.trim().isNotEmpty) {
       try {
         return parsePublicKeyPem(pemContent);
-      } catch (_) {}
+      } catch (_) {
+        // INTENTIONAL: Fallback a resolución por ruta si el parseo de PEM crudo falla
+      }
     }
 
     // 2. Ruta explícita en variable de entorno

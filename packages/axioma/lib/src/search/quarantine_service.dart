@@ -88,6 +88,8 @@ class QuarantineService {
       if (file.existsSync()) {
         file.deleteSync();
       }
-    } catch (_) {}
+    } catch (_) {
+      // INTENTIONAL: Best-effort delete; ignorar fallo de eliminación si el archivo está bloqueado
+    }
   }
 }

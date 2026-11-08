@@ -143,3 +143,15 @@ export 'src/render/incremental_render_canary.dart';
 
 // Adaptive User Signal & CAR Linter Synthesis (Sprint N54, §39, §46)
 export 'src/car/user_signal_car_connector.dart';
+
+// Canonical Tactical Directives (Sprint N89 - Pure Dart, TASK-N89-01, §4, §6, §39)
+export 'src/contracts/tactical_directive.dart';
+export 'src/contracts/directive_acknowledgement.dart';
+
+// UI Contracts, Defensive State Machine & Semantic Tokens (Sprint N91 / N94, §8, §39, TASK-N94-01)
+export 'src/ui/action_lock.dart';
+export 'src/ui/contrast_calculator.dart';
+export 'src/ui/semantic_tokens.dart';
+export 'src/ui/ui_exceptions.dart';
+export 'src/ui/ui_state_machine.dart';
+export 'src/ui/viewport_test_runner.dart';

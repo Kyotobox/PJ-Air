@@ -23,7 +23,9 @@ class TestDatabaseFactory {
         } catch (_) {
           try {
             DynamicLibrary.open('libsqlite3.so');
-          } catch (_) {}
+          } catch (_) {
+            // INTENTIONAL: Fallback encadenado para resolución nativa de libsqlite3 en Linux
+          }
         }
       }
     }
