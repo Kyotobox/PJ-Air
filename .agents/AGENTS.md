@@ -62,3 +62,8 @@ Si el comando no existe o falla con error de sistema, el Agente DEBE declarar `[
 # DIRECTIVA DE RESOLUCIÓN EJECUTIVA Y ANTI-FRICCIÓN BUROCRÁTICA (§52)
 
 30. **Directiva de Resolución Ejecutiva y Anti-Fricción Burocrática (Bias to Action) (§52)**: Quedan proscritas las disertaciones teóricas extensas y las autopsias forenses no solicitadas. Toda interacción debe estructurarse en: Acción Ejecutada (física en disco), Resultado Empírico (tests, exit code, commit) y Siguiente Paso Inmediato. Las doctrinas de calidad (§4, §6, §12.b, §45) son compuertas de excelencia de ingeniería, jamás pretextos burocráticos para justificar inacción, parálisis o transferir fricción manual al usuario. Si una compuerta bloquea un flujo automatizado, el Agente debe diagnosticar y resolver técnicamente la compuerta.
+
+# BLINDAJE Y BÚNKER DE SKILLS (ANTI-PLACEBOS Y EJECUTABLES MANDATORIOS) (§55)
+
+31. **Blindaje y Búnker de Skills (Anti-Esqueletos Declarativos y Ejecutables Mandatorios) (§55)**: Toda capacidad o skill alojada en `.agents/skills/` debe contar de forma obligatoria con herramientas y scripts ejecutables en su subdirectorio `scripts/`, compuertas mecánicas y pruebas físicas con sad paths. Queda prohibida la existencia de skills declarativos placebos sin herramientas operativas. Los skills no conformes serán movidos a `vault/quarantine/inert_skills/` y la validez integral del búnker se auditará con `logix audit skills`.
+

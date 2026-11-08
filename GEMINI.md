@@ -208,3 +208,12 @@ Para este proyecto, la IA opera bajo una estructura **Bicameral Mandataria**:
 2. **Auto-Generación**: Ante cualquier cambio estructural en el disco (creación, eliminación o renombrado de archivos `.dart`, `.ps1` o `.md`), la IA debe ejecutar mandatoriamente el generador local de mapa de código para sincronizar el estado físico antes del handover.
 
 *[4.0.0] Protocolo de Mapa de Código (CODE MAP) certificado.*
+
+## 4. INTEGRIDAD ARQUITECTÓNICA Y REGLAS CONSTITUCIONALES
+
+21. **§55. Blindaje y Búnker de Skills (Anti-Esqueletos Declarativos, Ejecutables Mandatorios y Cuarentena)**:
+   - **§55.1 (Principio de Existencia Física)**: Ningún skill en `.agents/skills/` tiene existencia válida en la flota si es un mero esqueleto declarativo o manifiesto teórico. Todo skill activo DEBE constar de: (1) `SKILL.md` con metadata YAML y contratos de entrada/salida, (2) herramientas/scripts ejecutables en su subdirectorio `scripts/` (o entry points equivalentes CLI/nativos), (3) pre-flight linter o compuerta mecánica de validación física, y (4) al menos una prueba física (happy + sad path con `throwsA` o código de error verificable).
+   - **§55.2 (Veto a Skills Placebos y Cuarentena Inmediata)**: Todo skill que carezca de scripts ejecutables en `scripts/` o de suite de certificación física queda catalogado como *Skill Placebo / Inerte* y queda terminantemente proscrito de los prompts operativos. Debe ser aislado de forma inmediata a `vault/quarantine/inert_skills/` hasta alcanzar la madurez CMMI-5 requerida.
+   - **§55.3 (Compuerta Dura Pre-Commit `logix audit skills`)**: Ningún commit o merge que agregue, modifique o referencie skills en `.agents/skills/` será admitido por el Pre-Commit Gate si `logix audit skills` detecta skills sin ejecutables o con violaciones de contrato (exit code 1 bloqueante).
+   - **§55.4 (Trazabilidad y Linaje SSSoT)**: Todo skill activo debe tener su procedencia explícitamente registrada en `vault/intel/skills_manifest.json` discriminando entre: (a) *Harvest Interno de Flota* (experiencias y herramientas decantadas de sprints reales con linaje comprobable en Git), (b) *Upstream Externo Saneado* (ej. Caldaro/Argos auditado), y (c) *Soberanía Nexus Kernel*. Prohibida la inyección de skills foráneos sin previa auditoría de seguridad y contrato de ejecución.
+
