@@ -1,6 +1,6 @@
 # SPRINT S63 - Sprint Activo
 **Objetivo**: Implementar inhabilitación de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detección de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarquía estricta de delivery fee.
-**Fecha**: 2026-11-08
+**Fecha**: 2026-11-09
 
 - [x] **TASK-63-01** [TECH/AUTH-USER-STATUS] Inhabilitación de clientes por administración en DB, login y panel /admin/clients
 - [x] **TASK-63-02** [TECH/AUTH-BACKEND-SMS-OTP] Endpoints y motor backend para SMS OTP determinista sin reCAPTCHA
