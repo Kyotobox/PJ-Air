@@ -233,26 +233,48 @@ async function run() {
     const adminUser = adminAuth?.user || { id: 'admin-id', email: ADMIN_EMAIL, role: 'admin' };
     console.log(`[AUTH] Administrador autenticado: ${adminUser.email}`);
 
-    // Configurar cookies y localStorage para el dashboard de administración
+    // Configurar cookies y localStorage persistente previo a navegación
     const parsedUrl = new URL(BASE_URL);
     await context.addCookies([
       { name: 'auth_token', value: adminToken, domain: parsedUrl.hostname, path: '/' },
       { name: 'session_role', value: 'admin', domain: parsedUrl.hostname, path: '/' },
     ]);
 
-    await page.goto(`${BASE_URL}/admin/clients`, { waitUntil: 'domcontentloaded', timeout: 35000 });
-    await page.evaluate((auth) => {
+    await context.addInitScript((auth) => {
       if (auth?.session) {
-        localStorage.setItem('local_session', JSON.stringify(auth));
+        window.localStorage.setItem('local_session', JSON.stringify(auth));
+        window.localStorage.setItem('app_default_locale', 'es');
+        window.localStorage.setItem('app_user_locale', 'es');
+        window.localStorage.setItem('language', 'es');
       }
     }, adminAuth);
 
+    // Sembrar también en la página actual antes del goto
+    await page.evaluate((auth) => {
+      if (auth?.session) {
+        window.localStorage.setItem('local_session', JSON.stringify(auth));
+        window.localStorage.setItem('app_default_locale', 'es');
+        window.localStorage.setItem('app_user_locale', 'es');
+        window.localStorage.setItem('language', 'es');
+      }
+    }, adminAuth);
+
+    console.log('[Paso 4] Navegando a /admin/clients con sesión activa...');
+    await page.goto(`${BASE_URL}/admin/clients`, { waitUntil: 'domcontentloaded', timeout: 35000 });
+    await page.waitForTimeout(3000);
+
     console.log('[Paso 4] Esperando carga de la tabla de clientes mayoristas...');
-    const editBtn = page.locator('button:has-text("Editar")').first();
-    await editBtn.waitFor({ state: 'visible', timeout: 20000 });
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('table tbody tr', { timeout: 25000 });
+    await page.waitForTimeout(1500);
+
+    // Priorizar fila que contenga pill de fachada registrada
+    const facadeRow = page.locator('tr:has-text("Fachada")').first();
+    const editBtn = (await facadeRow.count() > 0)
+      ? facadeRow.locator('button:has-text("Editar")').first()
+      : page.locator('button:has-text("Editar")').first();
 
     console.log('[Paso 4] Abriendo modal de detalle de cliente mayorista...');
+    await editBtn.waitFor({ state: 'visible', timeout: 15000 });
     await editBtn.click();
 
     console.log('[Paso 4] Esperando drawer modal de cliente...');
@@ -264,16 +286,16 @@ async function run() {
     await page.evaluate(() => {
       const scrollable = document.querySelector('aside .overflow-y-auto');
       if (scrollable) {
-        scrollable.scrollTop = 700;
+        scrollable.scrollTop = 800;
       }
-    });
-    await page.waitForTimeout(1500);
-
-    console.log('[Paso 4] Localizando visor de fachada y badge de IA...');
-    await page.evaluate(() => {
-      const facadeTitle = Array.from(document.querySelectorAll('span, h3, h4')).find(el => el.textContent && el.textContent.includes('Foto de Fachada'));
-      if (facadeTitle) {
-        facadeTitle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const facadeBadge = document.querySelector('[data-testid="admin-facade-ai-badge"]');
+      if (facadeBadge) {
+        facadeBadge.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        const facadeTitle = Array.from(document.querySelectorAll('span, h3, h4')).find(el => el.textContent && el.textContent.includes('Foto de Fachada'));
+        if (facadeTitle) {
+          facadeTitle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
     });
 
