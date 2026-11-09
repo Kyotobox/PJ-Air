@@ -3,7 +3,7 @@ export declare const UPLOAD_PATH: string;
 export declare const DATABASE_PATH: string | undefined;
 export declare const JWT_SECRET: string | undefined;
 export declare const SUPABASE_KEY: string | undefined;
-export declare const GOOGLE_MAPS_KEY: string | undefined;
+export declare const GOOGLE_MAPS_KEY: string;
 export declare const NODE_ENV: string | undefined;
 export declare const SITE_URL: string;
 export declare const SMTP_HOST: string | undefined;

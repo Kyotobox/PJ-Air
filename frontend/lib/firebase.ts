@@ -176,7 +176,23 @@ export const sendOtpSms = async (
 ): Promise<OtpConfirmation> => {
   const e164 = toE164Phone(phoneNumber);
 
-  // 1. First priority: Backend deterministic OTP endpoint without reCAPTCHA
+  // 1. First priority: Google Firebase Phone Auth when configured and in browser
+  if (isFirebaseConfigured() && typeof window !== 'undefined') {
+    try {
+      const currentAuth = getFirebaseAuth();
+      if (currentAuth) {
+        const verifier = recaptchaVerifier || initPhoneAuth(containerId);
+        if (verifier) {
+          const confirmation = await signInWithPhoneNumber(currentAuth, e164, verifier);
+          return confirmation as unknown as OtpConfirmation;
+        }
+      }
+    } catch (err: any) {
+      console.warn('Firebase SMS dispatch error, evaluating backend fallback:', err);
+    }
+  }
+
+  // 2. Secondary priority / Fallback: Backend deterministic OTP endpoint
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const endpoint = baseUrl ? `${baseUrl}/api/auth/send-sms-otp` : '/api/auth/send-sms-otp';
@@ -224,23 +240,7 @@ export const sendOtpSms = async (
     }
   } catch (backendErr: any) {
     // If backend is unreachable or in offline unit test environment, fallback gracefully
-    console.warn('Backend OTP dispatch notice, evaluating fallback:', backendErr?.message || backendErr);
-  }
-
-  // 2. Fallback to Firebase Phone Auth when configured and in browser
-  if (isFirebaseConfigured() && typeof window !== 'undefined') {
-    try {
-      const currentAuth = getFirebaseAuth();
-      if (currentAuth) {
-        const verifier = recaptchaVerifier || initPhoneAuth(containerId);
-        if (verifier) {
-          const confirmation = await signInWithPhoneNumber(currentAuth, e164, verifier);
-          return confirmation as unknown as OtpConfirmation;
-        }
-      }
-    } catch (err: any) {
-      console.warn('Firebase SMS dispatch error, falling back to local simulation:', err);
-    }
+    console.warn('Backend OTP dispatch notice, evaluating simulation fallback:', backendErr?.message || backendErr);
   }
 
   // 3. Fallback Simulation Mode (Test Mode)

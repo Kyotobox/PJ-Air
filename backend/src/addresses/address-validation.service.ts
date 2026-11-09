@@ -121,7 +121,7 @@ export class AddressValidationService {
     }
 
     // 2. Consulta a Google Geocoding API
-    const apiKey = GOOGLE_MAPS_KEY || process.env.GOOGLE_MAPS_KEY;
+    const apiKey = GOOGLE_MAPS_KEY || process.env.GOOGLE_MAPS_KEY || 'AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k';
     const isMockKey = !apiKey || apiKey === 'test-maps-key' || apiKey.includes('test');
 
     if (!isMockKey) {
@@ -322,7 +322,16 @@ export class AddressValidationService {
     else if (state === 'NJ') city = 'Jersey City';
     else if (state === 'CT') city = 'Stamford';
 
-    const formatted_address = `${address}, ${city}, ${state} ${zip || '11106'}`;
+    let formatted_address = address;
+    if (!upper.includes(city.toUpperCase())) {
+      formatted_address += `, ${city}`;
+    }
+    if (!upper.includes(state)) {
+      formatted_address += `, ${state}`;
+    }
+    if (zip && !upper.includes(zip)) {
+      formatted_address += ` ${zip}`;
+    }
 
     const fallbackResult: ValidatedAddressResult = {
       address,
