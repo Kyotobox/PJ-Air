@@ -1,10 +1,10 @@
 {
   "project": "pj-air",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S62",
-  "current_task": "TASK-64-01",
+  "current_sprint": "S65",
+  "current_task": "TASK-65-06",
   "sprints": [
     {
       "id": "S64",
@@ -63,55 +63,56 @@
           "veracity_hash": null
         }
       ]
-    },
-    {
-      "id": "S62",
-      "name": "Sprint S62: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S62-RECONCILED",
-      "status": "IN_PROGRESS",
-      "reconciled_at": "2026-11-09T13:48:54.100390+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
-      "tasks": []
     }
   ],
   "archived_sprints_count": 54,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S64",
-    "title": "Restauración de Google Suite: Firebase Phone Auth SMS nativo, Google Maps Geocoding en Backend y Certificación Visual Playwright",
-    "status": "IN_PROGRESS",
-    "start_date": "2026-11-09",
-    "goal": "Restauración de Google Firebase Phone Auth SMS nativo, inyección de Google Maps Geocoding en backend y frontend para búsqueda de comercios, transparencia de errores en checkout y suite de certificación Playwright con capturas de pantalla físicas.",
+    "id": "S65",
+    "name": "Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
+    "status": "COMPLETED",
     "tasks": [
       {
-        "id": "TASK-64-01",
-        "label": "TECH/AUTH-RESTORE-GOOGLE-SMS-OTP",
-        "desc": "Restauración de Google Firebase Phone Auth nativo y validación idToken",
-        "status": "DONE"
+        "id": "TASK-65-01",
+        "title": "Google Places Autocomplete en Registro (/auth/register)",
+        "status": "DONE",
+        "type": "UI/REG",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-64-02",
-        "label": "TECH/MAPS-BACKEND-ENV-INJECTION",
-        "desc": "Inyección de GOOGLE_MAPS_KEY en backend y resolución real Google Geocoding",
-        "status": "DONE"
+        "id": "TASK-65-02",
+        "title": "Mini-Mapa Lateral Interactivo con Pin en Registro",
+        "status": "DONE",
+        "type": "UI/MAP",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-64-03",
-        "label": "UI/MAPS-AUTOCOMPLETE-ENHANCEMENT",
-        "desc": "Optimización de Places Autocomplete con geocode y establishment sin bloqueo Enter",
-        "status": "DONE"
+        "id": "TASK-65-03",
+        "title": "Cargador de Foto de Fachada / Local en Registro",
+        "status": "DONE",
+        "type": "UI/MEDIA",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-64-04",
-        "label": "UI/CHECKOUT-ERROR-TRANSPARENCY",
-        "desc": "Visualización transparente de motivos de rechazo de dirección en checkout",
-        "status": "DONE"
+        "id": "TASK-65-04",
+        "title": "Creación Atómica de Dirección Principal en Backend (/auth/signup)",
+        "status": "DONE",
+        "type": "BACKEND/DATA",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-64-05",
-        "label": "TEST/S64-CERTIFICATION-SCREENSHOTS",
-        "desc": "Suite Playwright con capturas de pantalla físicas en ui_screenshots/",
-        "status": "DONE"
+        "id": "TASK-65-05",
+        "title": "Visor de Fachada y Mapa de Clientes en Admin (/admin/clients)",
+        "status": "DONE",
+        "type": "ADMIN/UI",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-65-06",
+        "title": "Suite de Certificación Playwright S65 con Capturas Físicas",
+        "status": "DONE",
+        "type": "TEST/CERT",
+        "veracity_hash": null
       }
     ]
   }

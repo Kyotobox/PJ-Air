@@ -397,5 +397,40 @@
     "exile_name": "broker_approved_1793979795232_TCK-PJ-AIR-S63A-1793979787895.json",
     "verdict": "APPROVED",
     "reason": "Ticket canónico validado y autorizado formalmente."
+  },
+  {
+    "timestamp": "2026-11-09T13:54:29.347728",
+    "original_name": "ARCHITECTURE.md",
+    "exile_name": "1794232469346_ARCHITECTURE.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/ARCHITECTURE.md"
+  },
+  {
+    "timestamp": "2026-11-09T13:54:29.349337",
+    "original_name": "PO-Executive-Map.md",
+    "exile_name": "1794232469348_PO-Executive-Map.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/PO-Executive-Map.md"
+  },
+  {
+    "timestamp": "2026-11-09T13:54:29.350725",
+    "original_name": "inference_queue.db",
+    "exile_name": "1794232469350_inference_queue.db",
+    "hash": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "original_path": "/home/opc/code/pj-air/inference_queue.db"
+  },
+  {
+    "timestamp": "2026-11-09T13:54:29.357607",
+    "original_name": "database.sqlite",
+    "exile_name": "1794232469351_database.sqlite",
+    "hash": "EBA76FA69CBC76FEE2483553FC8E6B3F57C9ED90DC1684CEDFE6A70CA80059D5",
+    "original_path": "/home/opc/code/pj-air/database.sqlite"
+  },
+  {
+    "timestamp": "2026-11-09T13:54:29.358822",
+    "original_name": "deploy-testing.sh",
+    "exile_name": "1794232469358_deploy-testing.sh",
+    "hash": "F5F52B77C6A2919CEA7229E1863B877040F3EA3090B7C5D906D96B90FDB78AFE",
+    "original_path": "/home/opc/code/pj-air/deploy-testing.sh"
   }
 ]
