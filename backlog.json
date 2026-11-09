@@ -1,112 +1,22 @@
 {
   "project": "pj-air",
   "version": "4.0.0",
-  "kernel_version": "5.3.1",
+  "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S65",
   "current_task": "TASK-64-01",
   "sprints": [
     {
-      "id": "S61",
-      "title": "Reportes y Filtros Basados en Fecha de Despacho/Entrega (Admin, Producci\u00f3n, Pedidos y Estado de Cuenta B2B)",
-      "status": "COMPLETED",
-      "start_date": "2026-11-04",
-      "goal": "Ajustar la arquitectura de consulta, agregaci\u00f3n, exportaci\u00f3n (Excel/PDF) y filtrado de reportes en backend y frontend para que operen con base en la Fecha de Despacho/Entrega (delivery_date) en lugar de la fecha de creaci\u00f3n del pedido, agregando este dato expl\u00edcitamente en reportes y tablas.",
-      "tasks": [
-        {
-          "id": "TASK-61-01",
-          "label": "BACKEND/REPORTING-DISPATCH-RANGE",
-          "desc": "Refactorizar findInRange en orders.service.ts para consultar y filtrar pedidos primariamente por order.delivery_date (con fallback seguro a created_at)",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-61-02",
-          "label": "BACKEND/EXCEL-EXPORT-DISPATCH-COLUMNS",
-          "desc": "Actualizar excel.service.ts (exportIndividual y exportConsolidated) para incluir y resaltar columna y metadato de Fecha de Despacho/Entrega",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-61-03",
-          "label": "UI/ADMIN-REPORTS-DELIVERY-FILTERS",
-          "desc": "Ajustar vistas admin/reports y produccion/reports: filtros y selectores por Fecha de Despacho y visualizaci\u00f3n de entrega en tablas y cards",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-61-04",
-          "label": "UI/ADMIN-ORDERS-DELIVERY-FILTER-AND-COLUMN",
-          "desc": "En admin/orders/page.tsx: filtro de fechas Desde/Hasta por delivery_date y adici\u00f3n de columna/dato visible de Fecha de Entrega en tabla de pedidos",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-61-05",
-          "label": "DOMAIN/B2B-STATEMENT-DELIVERY-DATE-REPORTS",
-          "desc": "Ajustar b2b-statement-helper.ts y modal de Estado de Cuenta B2B en orders/page.tsx: filtros y exportaciones PDF/Excel basados en Fecha de Despacho",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-61-06",
-          "label": "TEST/S61-DISPATCH-REPORTS-CERTIFICATION",
-          "desc": "Suite de pruebas de certificaci\u00f3n unitaria y de integraci\u00f3n para filtrado y reportes por fecha de despacho (happy y sad path)",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
-      "id": "S62",
-      "title": "Refinamiento UX/UI: Facturas en Ingl\u00e9s, Tax ID \u00danico, Login Limpio y Ajustes de Hoja de Cocina",
-      "status": "COMPLETED",
-      "start_date": "2026-11-06",
-      "goal": "Implementar los ajustes directos solicitados por la operaci\u00f3n: unificar campo Tax ID en registro mayorista, login exclusivo por email/clave, facturas de clientes estrictamente en ingl\u00e9s, correcci\u00f3n de textos i18n en checkout/Zelle y fix de paginaci\u00f3n/direcci\u00f3n en hoja de cocina.",
-      "tasks": [
-        {
-          "id": "TASK-62-01",
-          "label": "UI/AUTH-SINGLE-TAX-ID",
-          "desc": "Eliminar el campo duplicado de Tax ID/EIN en el formulario de registro mayorista dejando una sola entrada unificada",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-62-02",
-          "label": "UI/AUTH-CLEAN-EMAIL-LOGIN",
-          "desc": "Simplificar el login para acceso exclusivo mediante Correo Electr\u00f3nico y Contrase\u00f1a sin username",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-62-03",
-          "label": "UI/INVOICE-PRINT-STRICT-ENGLISH",
-          "desc": "Actualizar la plantilla de impresi\u00f3n de factura/recibo del cliente para que est\u00e9 estrictamente en idioma ingl\u00e9s",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-62-04",
-          "label": "UI/CHECKOUT-I18N-PICKUP-ZELLE",
-          "desc": "Corregir textos en espa\u00f1ol residuales en checkout cuando est\u00e1 en ingl\u00e9s (Pick up, bot\u00f3n de comprobante Zelle)",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-62-05",
-          "label": "UI/KITCHEN-PAGE-BREAK-AND-ADDRESS-FIX",
-          "desc": "Ajustar hoja de cocina: suprimir paginaci\u00f3n fantasma MORE INFORMATION si no desborda y asegurar direcci\u00f3n visible",
-          "status": "DONE"
-        },
-        {
-          "id": "TASK-62-06",
-          "label": "TEST/S62-CERTIFICATION",
-          "desc": "Suite de pruebas de certificaci\u00f3n y verificaci\u00f3n de build de producci\u00f3n Next.js limpio",
-          "status": "DONE"
-        }
-      ]
-    },
-    {
       "id": "S63",
-      "title": "Inhabilitaci\u00f3n de Clientes, Motor SMS OTP Backend, Saldo a Favor, Pedidos Complementarios y Facturas por Email",
+      "title": "Inhabilitación de Clientes, Motor SMS OTP Backend, Saldo a Favor, Pedidos Complementarios y Facturas por Email",
       "status": "COMPLETED",
       "start_date": "2026-11-06",
-      "goal": "Implementar inhabilitaci\u00f3n de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detecci\u00f3n de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarqu\u00eda estricta de delivery fee.",
+      "goal": "Implementar inhabilitación de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detección de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarquía estricta de delivery fee.",
       "tasks": [
         {
           "id": "TASK-63-01",
           "label": "TECH/AUTH-USER-STATUS",
-          "desc": "Inhabilitaci\u00f3n de clientes por administraci\u00f3n en DB, login y panel /admin/clients",
+          "desc": "Inhabilitación de clientes por administración en DB, login y panel /admin/clients",
           "status": "DONE"
         },
         {
@@ -118,7 +28,7 @@
         {
           "id": "TASK-63-03",
           "label": "DOMAIN/STORE-CREDIT-WALLET",
-          "desc": "Bolsa de saldo a favor (store_credit) con descuento autom\u00e1tico en checkout y estado de cuenta",
+          "desc": "Bolsa de saldo a favor (store_credit) con descuento automático en checkout y estado de cuenta",
           "status": "DONE"
         },
         {
@@ -130,7 +40,7 @@
         {
           "id": "TASK-63-05",
           "label": "TECH/EMAIL-INVOICE-DISPATCH",
-          "desc": "Despacho de facturas oficiales en ingl\u00e9s por correo electr\u00f3nico (PDF adjunto)",
+          "desc": "Despacho de facturas oficiales en inglés por correo electrónico (PDF adjunto)",
           "status": "DONE"
         },
         {
@@ -142,7 +52,7 @@
         {
           "id": "TASK-63-07",
           "label": "TEST/S63-CERTIFICATION",
-          "desc": "Suite de certificaci\u00f3n integral de Sprint S63 y verificaci\u00f3n de build Next.js/NestJS",
+          "desc": "Suite de certificación integral de Sprint S63 y verificación de build Next.js/NestJS",
           "status": "DONE"
         }
       ]
@@ -153,48 +63,39 @@
       "dag_id": "SPRINT-S64-RECONCILED",
       "status": "COMPLETED",
       "reconciled_at": "2026-11-09T10:30:22.908213+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
       "tasks": []
     },
     {
       "id": "S65",
-      "name": "Sprint S65: Onboarding Integral 360\u00b0 \u2014 Validaci\u00f3n de Direcci\u00f3n Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
+      "name": "Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
       "status": "IN_PROGRESS",
       "tasks": [
         {
           "id": "TASK-65-01",
           "title": "Google Places Autocomplete en Registro (/auth/register)",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "UI/REG",
-          "files": [
-            "frontend/components/auth/RegisterForm.tsx",
-            "frontend/app/auth/register/page.tsx"
-          ]
+          "veracity_hash": null
         },
         {
           "id": "TASK-65-02",
           "title": "Mini-Mapa Lateral Interactivo con Pin en Registro",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "UI/MAP",
-          "files": [
-            "frontend/components/auth/RegisterAddressMapCard.tsx",
-            "frontend/components/auth/RegisterForm.tsx"
-          ]
+          "veracity_hash": null
         },
         {
           "id": "TASK-65-03",
           "title": "Cargador de Foto de Fachada / Local en Registro",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "UI/MEDIA",
-          "files": [
-            "frontend/components/auth/FacadePhotoUploader.tsx",
-            "frontend/components/auth/RegisterForm.tsx"
-          ]
+          "veracity_hash": null
         },
         {
           "id": "TASK-65-04",
-          "title": "Creaci\u00f3n At\u00f3mica de Direcci\u00f3n Principal en Backend (/auth/signup)",
-          "status": "IN_PROGRESS",
+          "title": "Creación Atómica de Dirección Principal en Backend (/auth/signup)",
+          "status": "TODO",
           "type": "BACKEND/DATA",
           "files": [
             "backend/src/auth/auth.service.ts",
@@ -204,7 +105,7 @@
         {
           "id": "TASK-65-05",
           "title": "Visor de Fachada y Mapa de Clientes en Admin (/admin/clients)",
-          "status": "IN_PROGRESS",
+          "status": "TODO",
           "type": "ADMIN/UI",
           "files": [
             "frontend/app/admin/clients/page.tsx"
@@ -212,8 +113,8 @@
         },
         {
           "id": "TASK-65-06",
-          "title": "Suite de Certificaci\u00f3n Playwright S65 con Capturas F\u00edsicas",
-          "status": "IN_PROGRESS",
+          "title": "Suite de Certificación Playwright S65 con Capturas Físicas",
+          "status": "TODO",
           "type": "TEST/CERT",
           "files": [
             "tool/run_sprint65_certification.js"
@@ -222,43 +123,43 @@
       ]
     }
   ],
-  "archived_sprints_count": 53,
+  "archived_sprints_count": 2,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S64",
-    "title": "Restauraci\u00f3n de Google Suite: Firebase Phone Auth SMS nativo, Google Maps Geocoding en Backend y Certificaci\u00f3n Visual Playwright",
+    "title": "Restauración de Google Suite: Firebase Phone Auth SMS nativo, Google Maps Geocoding en Backend y Certificación Visual Playwright",
     "status": "IN_PROGRESS",
     "start_date": "2026-11-09",
-    "goal": "Restauraci\u00f3n de Google Firebase Phone Auth SMS nativo, inyecci\u00f3n de Google Maps Geocoding en backend y frontend para b\u00fasqueda de comercios, transparencia de errores en checkout y suite de certificaci\u00f3n Playwright con capturas de pantalla f\u00edsicas.",
+    "goal": "Restauración de Google Firebase Phone Auth SMS nativo, inyección de Google Maps Geocoding en backend y frontend para búsqueda de comercios, transparencia de errores en checkout y suite de certificación Playwright con capturas de pantalla físicas.",
     "tasks": [
       {
         "id": "TASK-64-01",
         "label": "TECH/AUTH-RESTORE-GOOGLE-SMS-OTP",
-        "desc": "Restauraci\u00f3n de Google Firebase Phone Auth nativo y validaci\u00f3n idToken",
+        "desc": "Restauración de Google Firebase Phone Auth nativo y validación idToken",
         "status": "DONE"
       },
       {
         "id": "TASK-64-02",
         "label": "TECH/MAPS-BACKEND-ENV-INJECTION",
-        "desc": "Inyecci\u00f3n de GOOGLE_MAPS_KEY en backend y resoluci\u00f3n real Google Geocoding",
+        "desc": "Inyección de GOOGLE_MAPS_KEY en backend y resolución real Google Geocoding",
         "status": "DONE"
       },
       {
         "id": "TASK-64-03",
         "label": "UI/MAPS-AUTOCOMPLETE-ENHANCEMENT",
-        "desc": "Optimizaci\u00f3n de Places Autocomplete con geocode y establishment sin bloqueo Enter",
+        "desc": "Optimización de Places Autocomplete con geocode y establishment sin bloqueo Enter",
         "status": "DONE"
       },
       {
         "id": "TASK-64-04",
         "label": "UI/CHECKOUT-ERROR-TRANSPARENCY",
-        "desc": "Visualizaci\u00f3n transparente de motivos de rechazo de direcci\u00f3n en checkout",
+        "desc": "Visualización transparente de motivos de rechazo de dirección en checkout",
         "status": "DONE"
       },
       {
         "id": "TASK-64-05",
         "label": "TEST/S64-CERTIFICATION-SCREENSHOTS",
-        "desc": "Suite Playwright con capturas de pantalla f\u00edsicas en ui_screenshots/",
+        "desc": "Suite Playwright con capturas de pantalla físicas en ui_screenshots/",
         "status": "DONE"
       }
     ]

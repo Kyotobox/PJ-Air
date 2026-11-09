@@ -1,13 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
     Mail, Lock, User, Phone, Building2, Loader2, ArrowRight, 
     CheckCircle2, Smartphone, FileText, ChevronDown, ChevronUp, 
     Scale, AlertTriangle, ShieldCheck, Clock, CalendarX, PhoneCall 
 } from 'lucide-react';
+import { Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatPhoneNumber } from '@/lib/firebase';
+import { GOOGLE_MAPS_KEY } from '@/lib/config';
+import { RegisterAddressMapCard } from './RegisterAddressMapCard';
+import { FacadePhotoUploader } from './FacadePhotoUploader';
+
+const libraries: ('places')[] = ['places'];
 
 interface RegisterFormProps {
     formData: any;
@@ -34,6 +40,58 @@ export const RegisterForm = ({
 }: RegisterFormProps) => {
     const { t, locale } = useLanguage();
     const [isTermsAccordionOpen, setIsTermsAccordionOpen] = useState(false);
+
+    const { isLoaded } = useJsApiLoader({
+        id: 'google-map-script',
+        googleMapsApiKey: GOOGLE_MAPS_KEY || '',
+        libraries,
+    });
+
+    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+
+    const onAutocompleteLoad = useCallback((auto: google.maps.places.Autocomplete) => {
+        setAutocomplete(auto);
+    }, []);
+
+    const onPlaceChanged = useCallback(() => {
+        if (autocomplete !== null) {
+            const place = autocomplete.getPlace();
+            let lat: number | null = null;
+            let lng: number | null = null;
+            if (place.geometry && place.geometry.location) {
+                lat = place.geometry.location.lat();
+                lng = place.geometry.location.lng();
+            }
+
+            let city = '';
+            let postalCode = '';
+            if (place.address_components) {
+                for (const comp of place.address_components) {
+                    if (comp.types.includes('locality')) {
+                        city = comp.long_name;
+                    } else if (!city && comp.types.includes('sublocality_level_1')) {
+                        city = comp.long_name;
+                    } else if (!city && comp.types.includes('neighborhood')) {
+                        city = comp.long_name;
+                    }
+                    if (comp.types.includes('postal_code')) {
+                        postalCode = comp.long_name;
+                    }
+                }
+            }
+
+            const formattedAddress = place.formatted_address || place.name || '';
+
+            setFormData((prev: any) => ({
+                ...prev,
+                business_address: formattedAddress,
+                address_lat: lat ?? prev.address_lat,
+                address_lng: lng ?? prev.address_lng,
+                address_city: city || prev.address_city,
+                address_zip: postalCode || prev.address_zip,
+            }));
+        }
+    }, [autocomplete, setFormData]);
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formatted = formatPhoneNumber(e.target.value);
@@ -251,18 +309,79 @@ export const RegisterForm = ({
                         />
                     </div>
 
-                    <div className="space-y-2 md:col-span-2">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
-                            {locale === 'en' ? 'Commercial Address (Billing & Delivery) *' : 'Dirección Comercial (Facturación y Entrega) *'}
-                        </label>
-                        <input
-                            required
-                            type="text"
-                            placeholder={locale === 'en' ? '123 Main St, Suite 400, Brooklyn, NY 11201' : '123 Main St, Suite 400, Brooklyn, NY 11201'}
-                            className="premium-input text-xs"
-                            value={formData.business_address || ''}
-                            onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
-                        />
+                    {/* TASK-65-01 / TASK-65-02 / TASK-65-03: Dirección Comercial con Autocomplete, Foto de Fachada y Mini-Mapa */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:col-span-2 pt-1">
+                        {/* Columna Izquierda (lg:col-span-7): Autocomplete + Cargador de Fachada */}
+                        <div className="lg:col-span-7 space-y-4 flex flex-col justify-between">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center justify-between">
+                                    <span>{locale === 'en' ? 'Commercial Address (Billing & Delivery) *' : 'Dirección Comercial (Facturación y Entrega) *'}</span>
+                                    {formData.address_lat && formData.address_lng && (
+                                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            GPS ✓
+                                        </span>
+                                    )}
+                                </label>
+                                {isLoaded ? (
+                                    <Autocomplete
+                                        onLoad={onAutocompleteLoad}
+                                        onPlaceChanged={onPlaceChanged}
+                                        options={{
+                                            componentRestrictions: { country: 'us' },
+                                            fields: ['address_components', 'geometry', 'formatted_address', 'name'],
+                                            types: ['geocode', 'establishment'],
+                                        }}
+                                    >
+                                        <input
+                                            required
+                                            type="text"
+                                            placeholder={locale === 'en' ? 'Search store name or street (e.g. C-Town Supermarket Astoria)' : 'Buscar local o calle (ej. C-Town Supermarket Astoria)'}
+                                            className="premium-input text-xs w-full"
+                                            value={formData.business_address || ''}
+                                            onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                        />
+                                    </Autocomplete>
+                                ) : (
+                                    <input
+                                        required
+                                        type="text"
+                                        placeholder={locale === 'en' ? '123 Main St, Suite 400, Brooklyn, NY 11201' : '123 Main St, Suite 400, Brooklyn, NY 11201'}
+                                        className="premium-input text-xs w-full"
+                                        value={formData.business_address || ''}
+                                        onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
+                                    />
+                                )}
+                                <p className="text-[10px] text-muted-foreground ml-1">
+                                    {locale === 'en'
+                                        ? 'Powered by Google Places. Search by store name or physical address.'
+                                        : 'Con Google Places. Busca por nombre comercial o dirección física.'}
+                                </p>
+                            </div>
+
+                            {/* TASK-65-03: Cargador de Foto de Fachada del Local */}
+                            <FacadePhotoUploader
+                                value={formData.facade_image_url}
+                                onChange={(url) => setFormData({ ...formData, facade_image_url: url })}
+                                locale={locale}
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        {/* Columna Derecha (lg:col-span-5): TASK-65-02 Mini-Mapa Lateral Interactivo */}
+                        <div className="lg:col-span-5 flex flex-col">
+                            <RegisterAddressMapCard
+                                lat={formData.address_lat}
+                                lng={formData.address_lng}
+                                formattedAddress={formData.business_address}
+                                isLoaded={isLoaded}
+                                locale={locale}
+                            />
+                        </div>
                     </div>
 
                     {/* Tax ID / EIN & ST-120 Resale Certificate */}

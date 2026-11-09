@@ -1,10 +1,10 @@
-# SPRINT S65 - Sprint Activo
-**Objetivo**: Onboarding Integral 360° — Validación de Dirección comercial con Google Places Autocomplete, Mini-Mapa lateral interactivo con Pin y badge de validación, cargador de foto de fachada del negocio en `/auth/register`, creación atómica de dirección principal en backend, visualizador de fachada en `/admin/clients` y certificación Playwright con capturas de pantalla físicas.
+# SPRINT S65 - Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro
+**Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-09
 
-- [ ] **TASK-65-01** [UI/REG] Google Places Autocomplete en Registro (`/auth/register`)
-- [ ] **TASK-65-02** [UI/MAP] Mini-Mapa Lateral Interactivo con Pin en Registro
-- [ ] **TASK-65-03** [UI/MEDIA] Cargador de Foto de Fachada / Local en Registro
-- [ ] **TASK-65-04** [BACKEND/DATA] Creación Atómica de Dirección Principal en Backend (`/auth/signup`)
-- [ ] **TASK-65-05** [ADMIN/UI] Visor de Fachada y Mapa de Clientes en Admin (`/admin/clients`)
-- [ ] **TASK-65-06** [TEST/CERT] Suite de Certificación Playwright S65 con Capturas Físicas
+- [x] **TASK-65-01** [TASK] Google Places Autocomplete en Registro (/auth/register)
+- [x] **TASK-65-02** [TASK] Mini-Mapa Lateral Interactivo con Pin en Registro
+- [x] **TASK-65-03** [TASK] Cargador de Foto de Fachada / Local en Registro
+- [ ] **TASK-65-04** [TASK] Creación Atómica de Dirección Principal en Backend (/auth/signup)
+- [ ] **TASK-65-05** [TASK] Visor de Fachada y Mapa de Clientes en Admin (/admin/clients)
+- [ ] **TASK-65-06** [TASK] Suite de Certificación Playwright S65 con Capturas Físicas
