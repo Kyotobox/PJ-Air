@@ -2,9 +2,9 @@
   "project": "pj-air",
   "version": "4.0.0",
   "kernel_version": "5.0.0",
-  "status": "COMPLETED",
-  "current_sprint": "S63",
-  "current_task": "TASK-63-07",
+  "status": "IN_PROGRESS",
+  "current_sprint": "S64",
+  "current_task": "TASK-64-01",
   "sprints": [
     {
       "id": "S61",
@@ -151,53 +151,41 @@
   "archived_sprints_count": 53,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S63",
-    "title": "Inhabilitación de Clientes, Motor SMS OTP Backend, Saldo a Favor, Pedidos Complementarios y Facturas por Email",
-    "status": "COMPLETED",
-    "start_date": "2026-11-06",
-    "goal": "Implementar inhabilitación de clientes en admin y login, motor backend determinista para SMS OTP sin reCAPTCHA, bolsa de saldo a favor (store_credit), detección de pedidos complementarios con flete $0, despacho de facturas oficiales por email y jerarquía estricta de delivery fee.",
+    "id": "S64",
+    "title": "Restauración de Google Suite: Firebase Phone Auth SMS nativo, Google Maps Geocoding en Backend y Certificación Visual Playwright",
+    "status": "IN_PROGRESS",
+    "start_date": "2026-11-09",
+    "goal": "Restauración de Google Firebase Phone Auth SMS nativo, inyección de Google Maps Geocoding en backend y frontend para búsqueda de comercios, transparencia de errores en checkout y suite de certificación Playwright con capturas de pantalla físicas.",
     "tasks": [
       {
-        "id": "TASK-63-01",
-        "label": "TECH/AUTH-USER-STATUS",
-        "desc": "Inhabilitación de clientes por administración en DB, login y panel /admin/clients",
-        "status": "DONE"
+        "id": "TASK-64-01",
+        "label": "TECH/AUTH-RESTORE-GOOGLE-SMS-OTP",
+        "desc": "Restauración de Google Firebase Phone Auth nativo y validación idToken",
+        "status": "TODO"
       },
       {
-        "id": "TASK-63-02",
-        "label": "TECH/AUTH-BACKEND-SMS-OTP",
-        "desc": "Endpoints y motor backend para SMS OTP determinista sin reCAPTCHA",
-        "status": "DONE"
+        "id": "TASK-64-02",
+        "label": "TECH/MAPS-BACKEND-ENV-INJECTION",
+        "desc": "Inyección de GOOGLE_MAPS_KEY en backend y resolución real Google Geocoding",
+        "status": "TODO"
       },
       {
-        "id": "TASK-63-03",
-        "label": "DOMAIN/STORE-CREDIT-WALLET",
-        "desc": "Bolsa de saldo a favor (store_credit) con descuento automático en checkout y estado de cuenta",
-        "status": "DONE"
+        "id": "TASK-64-03",
+        "label": "UI/MAPS-AUTOCOMPLETE-ENHANCEMENT",
+        "desc": "Optimización de Places Autocomplete con geocode y establishment sin bloqueo Enter",
+        "status": "TODO"
       },
       {
-        "id": "TASK-63-04",
-        "label": "DOMAIN/COMPLEMENTARY-ORDERS",
-        "desc": "Regla de pedidos complementarios con tarifa de flete a $0.00",
-        "status": "DONE"
+        "id": "TASK-64-04",
+        "label": "UI/CHECKOUT-ERROR-TRANSPARENCY",
+        "desc": "Visualización transparente de motivos de rechazo de dirección en checkout",
+        "status": "TODO"
       },
       {
-        "id": "TASK-63-05",
-        "label": "TECH/EMAIL-INVOICE-DISPATCH",
-        "desc": "Despacho de facturas oficiales en inglés por correo electrónico (PDF adjunto)",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-63-06",
-        "label": "DOMAIN/DELIVERY-FEE-HIERARCHY",
-        "desc": "Precedencia de tarifa personalizada del cliente sobre matriz de millaje",
-        "status": "DONE"
-      },
-      {
-        "id": "TASK-63-07",
-        "label": "TEST/S63-CERTIFICATION",
-        "desc": "Suite de certificación integral de Sprint S63 y verificación de build Next.js/NestJS",
-        "status": "DONE"
+        "id": "TASK-64-05",
+        "label": "TEST/S64-CERTIFICATION-SCREENSHOTS",
+        "desc": "Suite Playwright con capturas de pantalla físicas en ui_screenshots/",
+        "status": "TODO"
       }
     ]
   }
