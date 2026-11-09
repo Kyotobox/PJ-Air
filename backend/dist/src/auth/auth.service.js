@@ -50,6 +50,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const users_service_1 = require("../users/users.service");
+const address_entity_1 = require("../addresses/address.entity");
 const system_config_entity_1 = require("../system-configs/system-config.entity");
 const sms_service_1 = require("../sms/sms.service");
 const nodemailer = __importStar(require("nodemailer"));
@@ -61,14 +62,16 @@ let AuthService = class AuthService {
     usersService;
     systemConfigRepository;
     smsService;
+    addressRepository;
     otpStore = new Map();
-    constructor(usersService, systemConfigRepository, smsService) {
+    constructor(usersService, systemConfigRepository, smsService, addressRepository) {
         this.usersService = usersService;
         this.systemConfigRepository = systemConfigRepository;
         this.smsService = smsService;
+        this.addressRepository = addressRepository;
     }
     async signup(body) {
-        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared } = body;
+        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared, business_address, address_lat, address_lng, address_city, facade_image_url, } = body;
         const userRole = role || 'client';
         const cleanCompany = (company_name || '').trim();
         if (userRole === 'client' && !cleanCompany) {
@@ -131,6 +134,29 @@ let AuthService = class AuthService {
             st120_status: initialSt120Status,
             tax_exempt: false,
         });
+        let createdAddress = null;
+        const cleanBusinessAddress = business_address && typeof business_address === 'string' ? business_address.trim() : '';
+        if (cleanBusinessAddress && this.addressRepository) {
+            const cleanCity = address_city && typeof address_city === 'string' && address_city.trim() ? address_city.trim() : 'New York';
+            const latNum = typeof address_lat === 'number' ? address_lat : (address_lat !== null && address_lat !== undefined && !isNaN(parseFloat(address_lat)) ? parseFloat(address_lat) : null);
+            const lngNum = typeof address_lng === 'number' ? address_lng : (address_lng !== null && address_lng !== undefined && !isNaN(parseFloat(address_lng)) ? parseFloat(address_lng) : null);
+            let deliveryPhotosJson = null;
+            if (facade_image_url && typeof facade_image_url === 'string' && facade_image_url.trim()) {
+                deliveryPhotosJson = JSON.stringify([facade_image_url.trim()]);
+            }
+            const addressEntity = this.addressRepository.create({
+                user_id: user.id,
+                alias: 'Principal / Facturación',
+                address: cleanBusinessAddress,
+                city: cleanCity,
+                lat: latNum !== null && !isNaN(latNum) ? latNum : undefined,
+                lng: lngNum !== null && !isNaN(lngNum) ? lngNum : undefined,
+                is_default: true,
+                is_temporary: false,
+                ...(deliveryPhotosJson ? { delivery_photos_json: deliveryPhotosJson } : {}),
+            });
+            createdAddress = await this.addressRepository.save(addressEntity);
+        }
         const payload = { id: user.id, email: user.email, role: user.role };
         const access_token = (0, crypto_util_1.signJwt)(payload);
         return {
@@ -149,7 +175,8 @@ let AuthService = class AuthService {
                 expires_in: 3600,
                 token_type: 'bearer',
                 user: { id: user.id, email: user.email },
-            }
+            },
+            ...(createdAddress ? { address: createdAddress } : {}),
         };
     }
     async register(body) {
@@ -482,8 +509,11 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, typeorm_1.InjectRepository)(system_config_entity_1.SystemConfig)),
     __param(2, (0, common_1.Optional)()),
+    __param(3, (0, common_1.Optional)()),
+    __param(3, (0, typeorm_1.InjectRepository)(address_entity_1.Address)),
     __metadata("design:paramtypes", [users_service_1.UsersService,
         typeorm_2.Repository,
-        sms_service_1.SmsService])
+        sms_service_1.SmsService,
+        typeorm_2.Repository])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

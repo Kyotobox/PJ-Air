@@ -7,7 +7,8 @@ import {
     Users, Search, Loader2, AlertCircle, User, Mail, Phone,
     CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Clock, Edit, Trash2,
     ChevronLeft, ListFilter, Percent, Tag, DollarSign, CreditCard, ShieldCheck, ShieldAlert,
-    ExternalLink, FileText, Activity, TrendingUp, Sparkles, AlertTriangle, Key, Truck, Heart, Calendar
+    ExternalLink, FileText, Activity, TrendingUp, Sparkles, AlertTriangle, Key, Truck, Heart, Calendar,
+    Camera, Building2, Navigation
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
@@ -26,6 +27,11 @@ interface Address {
     key_location?: string;
     fridge_access_required?: boolean;
     notes?: string;
+    lat?: number;
+    lng?: number;
+    refined_lat?: number;
+    refined_lng?: number;
+    delivery_photos_json?: string;
 }
 interface OrderItem { 
     id: string; 
@@ -57,6 +63,12 @@ interface UserRecord {
     st120_status?: string;
     st120_document_url?: string;
     tax_exempt?: boolean;
+    legal_business_name?: string;
+    dba?: string;
+    ein?: string;
+    business_address?: string;
+    facade_image_url?: string;
+    company_name?: string;
     profile?: {
         full_name?: string;
         username?: string;
@@ -71,6 +83,58 @@ interface UserRecord {
     };
     addresses?: Address[];
     orders?: Order[];
+}
+
+function extractClientFacade(user: UserRecord | null): string | null {
+    if (!user) return null;
+    if (user.addresses && Array.isArray(user.addresses)) {
+        for (const addr of user.addresses) {
+            if (addr.delivery_photos_json) {
+                try {
+                    const photos = JSON.parse(addr.delivery_photos_json);
+                    if (Array.isArray(photos) && photos.length > 0 && typeof photos[0] === 'string' && photos[0].trim()) {
+                        return photos[0].trim();
+                    }
+                } catch {}
+            }
+        }
+    }
+    if (user.facade_image_url && typeof user.facade_image_url === 'string' && user.facade_image_url.trim()) {
+        return user.facade_image_url.trim();
+    }
+    return null;
+}
+
+function extractAddressPhoto(addr: Address | null): string | null {
+    if (!addr?.delivery_photos_json) return null;
+    try {
+        const photos = JSON.parse(addr.delivery_photos_json);
+        if (Array.isArray(photos) && photos.length > 0 && typeof photos[0] === 'string' && photos[0].trim()) {
+            return photos[0].trim();
+        }
+    } catch {}
+    return null;
+}
+
+function resolveImageUrl(url: string | null): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+        return url;
+    }
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    return `${API_URL || ''}${cleanUrl}`;
+}
+
+function getGoogleMapsSearchUrl(addr?: Address | null, fallbackAddress?: string | null): string {
+    if (addr && typeof addr.lat === 'number' && typeof addr.lng === 'number' && !isNaN(addr.lat) && !isNaN(addr.lng)) {
+        return `https://www.google.com/maps/search/?api=1&query=${addr.lat},${addr.lng}`;
+    }
+    const query = addr?.address || fallbackAddress || '';
+    if (query) {
+        const fullQuery = addr?.city ? `${query}, ${addr.city}` : query;
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullQuery)}`;
+    }
+    return 'https://www.google.com/maps';
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -127,6 +191,20 @@ export default function AdminClientsPage() {
 
     // ST-120 Tax Exemption Audit Modal state
     const [auditModalUser, setAuditModalUser] = useState<UserRecord | null>(null);
+
+    // TASK-65-05: Selected Client Primary Address, Facade Photo & Google Maps URL
+    const selectedUserPrimaryAddress = useMemo(() => {
+        if (!selectedUser) return null;
+        return selectedUser.addresses?.find(a => a.is_default) || selectedUser.addresses?.[0] || null;
+    }, [selectedUser]);
+
+    const selectedUserFacadePhoto = useMemo(() => {
+        return extractClientFacade(selectedUser);
+    }, [selectedUser]);
+
+    const selectedUserGoogleMapsUrl = useMemo(() => {
+        return getGoogleMapsSearchUrl(selectedUserPrimaryAddress, selectedUser?.business_address);
+    }, [selectedUserPrimaryAddress, selectedUser?.business_address]);
 
     // TASK-63-01: Toggle Client Active/Inactive State
     const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
@@ -788,13 +866,20 @@ export default function AdminClientsPage() {
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-center">
-                                        <div className="inline-flex gap-3 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-                                            <div className="flex items-center gap-1 text-[10px] font-black text-slate-400" title="Direcciones">
-                                                <MapPin size={14} /> {u.addresses?.length || 0}
+                                        <div className="inline-flex items-center gap-2 flex-wrap justify-center">
+                                            <div className="inline-flex gap-3 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                                                <div className="flex items-center gap-1 text-[10px] font-black text-slate-500" title="Direcciones registradas">
+                                                    <MapPin size={13} className="text-blue-500" /> {u.addresses?.length || 0}
+                                                </div>
+                                                <div className="flex items-center gap-1 text-[10px] font-black text-slate-500" title="Pedidos">
+                                                    <ShoppingBag size={13} className="text-amber-500" /> {u.orders?.length || 0}
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1 text-[10px] font-black text-slate-400" title="Pedidos">
-                                                <ShoppingBag size={14} /> {u.orders?.length || 0}
-                                            </div>
+                                            {extractClientFacade(u) && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200" title="Foto de fachada registrada">
+                                                    <Camera size={11} /> Fachada
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
@@ -1149,33 +1234,199 @@ export default function AdminClientsPage() {
                                 </div>
                             </section>
 
-                            {/* Section: Addresses */}
+                            {/* Section: Validated Commercial Address & Store Facade (TASK-65-05) */}
+                            <section>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                                        <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">
+                                            Dirección Comercial y Fachada de Local
+                                        </h3>
+                                    </div>
+                                    {selectedUserPrimaryAddress && (
+                                        <a
+                                            href={selectedUserGoogleMapsUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                        >
+                                            <Navigation size={13} className="text-blue-600" />
+                                            <span>Ver en Google Maps</span>
+                                            <ExternalLink size={12} />
+                                        </a>
+                                    )}
+                                </div>
+
+                                {/* Facade Viewer Card */}
+                                <div className="bg-slate-50/80 rounded-[2.5rem] p-6 border border-slate-200 space-y-6">
+                                    {selectedUserFacadePhoto ? (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                                                    <Camera size={14} className="text-blue-600" />
+                                                    Foto de Fachada del Establecimiento
+                                                </span>
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                                                    <CheckCircle2 size={11} />
+                                                    Foto Registrada
+                                                </span>
+                                            </div>
+                                            <div className="relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 group shadow-sm max-h-80">
+                                                <img
+                                                    src={resolveImageUrl(selectedUserFacadePhoto)}
+                                                    alt="Fachada del comercio"
+                                                    className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-300"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-5">
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <div>
+                                                            <p className="text-white font-bold text-sm">
+                                                                {selectedUser.company_name || selectedUser.profile?.company_name || selectedUser.legal_business_name || 'Comercio Mayorista'}
+                                                            </p>
+                                                            <p className="text-slate-300 text-xs">
+                                                                {selectedUserPrimaryAddress?.address || selectedUser.business_address || 'Dirección registrada'}
+                                                            </p>
+                                                        </div>
+                                                        <a
+                                                            href={selectedUserGoogleMapsUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/95 hover:bg-white text-slate-900 text-xs font-black uppercase tracking-wider rounded-xl shadow-lg transition-all"
+                                                        >
+                                                            <ExternalLink size={13} className="text-blue-600" />
+                                                            <span>Abrir Maps</span>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-6 bg-white border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-2">
+                                            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                                                <Camera size={22} />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-700">Sin foto de fachada registrada</p>
+                                                <p className="text-[11px] text-slate-400">El cliente aún no ha subido una fotografía frontal de su bodega o local comercial.</p>
+                                            </div>
+                                            {selectedUserPrimaryAddress && (
+                                                <a
+                                                    href={selectedUserGoogleMapsUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+                                                >
+                                                    <ExternalLink size={12} />
+                                                    <span>Ver ubicación en Google Maps</span>
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Validated Address Details & GPS Coordinates */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                                                Dirección Comercial
+                                            </label>
+                                            <p className="font-bold text-slate-800 text-sm">
+                                                {selectedUserPrimaryAddress?.address || selectedUser.business_address || 'Sin dirección registrada'}
+                                            </p>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                {selectedUserPrimaryAddress?.city || 'New York'}, {selectedUserPrimaryAddress?.state || 'NY'} {selectedUserPrimaryAddress?.zip_code || ''}
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">
+                                                Coordenadas GPS / Geocodificación
+                                            </label>
+                                            {selectedUserPrimaryAddress?.lat && selectedUserPrimaryAddress?.lng ? (
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                        <p className="font-mono font-bold text-slate-800 text-xs">
+                                                            Lat: {Number(selectedUserPrimaryAddress.lat).toFixed(6)} | Lng: {Number(selectedUserPrimaryAddress.lng).toFixed(6)}
+                                                        </p>
+                                                    </div>
+                                                    <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                                        <CheckCircle2 size={11} /> Coordenadas Validadas (Google Places)
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <p className="text-xs text-slate-400 italic">Coordenadas GPS no capturadas</p>
+                                                    <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                                        Pendiente de geocodificación
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Section: Addresses List */}
                             <section>
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="w-1.5 h-6 bg-blue-500 rounded-full" />
-                                    <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Direcciones</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Todas las Direcciones Registradas</h3>
                                 </div>
                                 <div className="grid gap-3">
-                                    {selectedUser.addresses?.map(addr => (
-                                        <div key={addr.id} className="p-5 bg-white border border-slate-200 rounded-[2rem] flex items-center justify-between group hover:border-blue-400 transition-all">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><MapPin size={18} /></div>
-                                                <div>
-                                                    <p className="font-bold text-slate-700 text-sm">{addr.address}</p>
-                                                    <p className="text-xs text-slate-400 font-medium">{addr.city}, {addr.state}</p>
+                                    {selectedUser.addresses?.map(addr => {
+                                        const addrPhoto = extractAddressPhoto(addr);
+                                        const addrMapsUrl = getGoogleMapsSearchUrl(addr);
+                                        return (
+                                            <div key={addr.id} className="p-5 bg-white border border-slate-200 rounded-[2rem] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group hover:border-blue-400 transition-all">
+                                                <div className="flex items-center gap-4">
+                                                    {addrPhoto ? (
+                                                        <img
+                                                            src={resolveImageUrl(addrPhoto)}
+                                                            alt="Miniatura fachada"
+                                                            className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-xs"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                                                            <MapPin size={18} />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <p className="font-bold text-slate-700 text-sm">{addr.address}</p>
+                                                            {addr.is_default && (
+                                                                <span className="bg-blue-500 text-white px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                                                    Principal
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-slate-400 font-medium">
+                                                            {addr.city}, {addr.state || 'NY'} {addr.zip_code || ''}
+                                                            {addr.lat && addr.lng ? ` · GPS: ${Number(addr.lat).toFixed(4)}, ${Number(addr.lng).toFixed(4)}` : ''}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 self-end md:self-auto">
+                                                    <a
+                                                        href={addrMapsUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                        title="Ver en Google Maps"
+                                                    >
+                                                        <ExternalLink size={12} />
+                                                        <span>Maps</span>
+                                                    </a>
+                                                    <button 
+                                                        onClick={() => { setEditingAddress(addr); setAddrFormData(addr); }}
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-all"
+                                                        title="Editar dirección"
+                                                    >
+                                                        <Edit size={14} />
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                {addr.is_default && <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider mr-2">Principal</span>}
-                                                <button 
-                                                    onClick={() => { setEditingAddress(addr); setAddrFormData(addr); }}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-all"
-                                                >
-                                                    <Edit size={14} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )) || <p className="text-sm font-medium text-slate-400 italic">No hay direcciones guardadas</p>}
+                                        );
+                                    }) || <p className="text-sm font-medium text-slate-400 italic">No hay direcciones guardadas</p>}
                                 </div>
                             </section>
 

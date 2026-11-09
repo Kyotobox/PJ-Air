@@ -8,12 +8,13 @@ import { RolesGuard } from './roles.guard';
 import { UsersModule } from '../users/users.module';
 import { SmsModule } from '../sms/sms.module';
 import { SystemConfig } from '../system-configs/system-config.entity';
+import { Address } from '../addresses/address.entity';
 
 @Module({
   imports: [
     UsersModule,
     SmsModule,
-    TypeOrmModule.forFeature([SystemConfig]),
+    TypeOrmModule.forFeature([SystemConfig, Address]),
   ],
   providers: [AuthService, AuthGuard, RolesGuard, Reflector],
   controllers: [AuthController],

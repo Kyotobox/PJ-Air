@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
+import { Address } from '../addresses/address.entity';
 import { SystemConfig } from '../system-configs/system-config.entity';
 import { SmsService } from '../sms/sms.service';
 import * as nodemailer from 'nodemailer';
@@ -21,10 +22,30 @@ export class AuthService {
     private systemConfigRepository: Repository<SystemConfig>,
     @Optional()
     private smsService?: SmsService,
+    @Optional()
+    @InjectRepository(Address)
+    private addressRepository?: Repository<Address>,
   ) {}
 
   async signup(body: any) {
-    const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared } = body;
+    const {
+      email,
+      password,
+      full_name,
+      username,
+      phone,
+      company_name,
+      role,
+      phone_verified,
+      idToken,
+      tax_id,
+      st120_declared,
+      business_address,
+      address_lat,
+      address_lng,
+      address_city,
+      facade_image_url,
+    } = body;
 
     const userRole = role || 'client';
     const cleanCompany = (company_name || '').trim();
@@ -98,6 +119,34 @@ export class AuthService {
       tax_exempt: false,
     });
 
+    // TASK-65-04: Creación Atómica de Dirección Principal en Signup
+    let createdAddress: Address | null = null;
+    const cleanBusinessAddress = business_address && typeof business_address === 'string' ? business_address.trim() : '';
+    if (cleanBusinessAddress && this.addressRepository) {
+      const cleanCity = address_city && typeof address_city === 'string' && address_city.trim() ? address_city.trim() : 'New York';
+      const latNum = typeof address_lat === 'number' ? address_lat : (address_lat !== null && address_lat !== undefined && !isNaN(parseFloat(address_lat)) ? parseFloat(address_lat) : null);
+      const lngNum = typeof address_lng === 'number' ? address_lng : (address_lng !== null && address_lng !== undefined && !isNaN(parseFloat(address_lng)) ? parseFloat(address_lng) : null);
+
+      let deliveryPhotosJson: string | null = null;
+      if (facade_image_url && typeof facade_image_url === 'string' && facade_image_url.trim()) {
+        deliveryPhotosJson = JSON.stringify([facade_image_url.trim()]);
+      }
+
+      const addressEntity = this.addressRepository.create({
+        user_id: user.id,
+        alias: 'Principal / Facturación',
+        address: cleanBusinessAddress,
+        city: cleanCity,
+        lat: latNum !== null && !isNaN(latNum) ? latNum : undefined,
+        lng: lngNum !== null && !isNaN(lngNum) ? lngNum : undefined,
+        is_default: true,
+        is_temporary: false,
+        ...(deliveryPhotosJson ? { delivery_photos_json: deliveryPhotosJson } : {}),
+      });
+
+      createdAddress = await this.addressRepository.save(addressEntity);
+    }
+
     const payload = { id: user.id, email: user.email, role: user.role };
     const access_token = signJwt(payload);
 
@@ -118,7 +167,8 @@ export class AuthService {
         expires_in: 3600,
         token_type: 'bearer',
         user: { id: user.id, email: user.email },
-      }
+      },
+      ...(createdAddress ? { address: createdAddress } : {}),
     };
   }
 

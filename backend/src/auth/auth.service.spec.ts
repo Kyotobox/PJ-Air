@@ -6,6 +6,7 @@ import * as nodemailer from 'nodemailer';
 import { hashPassword, verifyJwt } from './crypto.util';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { SystemConfig } from '../system-configs/system-config.entity';
+import { Address } from '../addresses/address.entity';
 
 jest.mock('nodemailer');
 
@@ -29,12 +30,19 @@ describe('AuthService', () => {
     delete: jest.fn().mockResolvedValue(true),
   };
 
+  const mockAddressRepository = {
+    create: jest.fn((dto) => ({ id: 'addr-uuid-123', ...dto })),
+    save: jest.fn((entity) => Promise.resolve({ id: 'addr-uuid-123', ...entity })),
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsersService, useValue: mockUsersService },
         { provide: getRepositoryToken(SystemConfig), useValue: mockSystemConfigRepository },
+        { provide: getRepositoryToken(Address), useValue: mockAddressRepository },
       ],
     }).compile();
 
@@ -128,6 +136,113 @@ describe('AuthService', () => {
       expect(mockUsersService.createProfile).toHaveBeenCalled();
       expect(result).toHaveProperty('session');
       expect(verifyJwt(result.session.access_token)).not.toBeNull();
+    });
+
+    it('should atomically create primary Address with coordinates, city, and facade photo JSON when business_address is provided (TASK-65-04 Happy Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-uuid-99', email: 'wholesale@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+
+      const result = await service.signup({
+        email: 'wholesale@bakery.com',
+        password: 'password',
+        full_name: 'Wholesale Baker',
+        company_name: 'Sunset Bakery',
+        tax_id: '12-3456789',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+        business_address: '74-12 Metropolitan Ave',
+        address_lat: 40.7135,
+        address_lng: -73.8821,
+        address_city: 'Middle Village',
+        facade_image_url: 'https://cdn.example.com/facade.jpg',
+      });
+
+      expect(mockAddressRepository.create).toHaveBeenCalledWith({
+        user_id: 'user-uuid-99',
+        alias: 'Principal / Facturación',
+        address: '74-12 Metropolitan Ave',
+        city: 'Middle Village',
+        lat: 40.7135,
+        lng: -73.8821,
+        is_default: true,
+        is_temporary: false,
+        delivery_photos_json: JSON.stringify(['https://cdn.example.com/facade.jpg']),
+      });
+      expect(mockAddressRepository.save).toHaveBeenCalled();
+      expect(result.address).toBeDefined();
+      expect(result.address?.alias).toBe('Principal / Facturación');
+      expect(result.address?.city).toBe('Middle Village');
+    });
+
+    it('should reject signup if addressRepository.save fails (TASK-65-04 Sad Path - Atomic DB failure)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-uuid-99', email: 'fail@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+      mockAddressRepository.save.mockRejectedValueOnce(new Error('Database disk error during address creation'));
+
+      await expect(service.signup({
+        email: 'fail@bakery.com',
+        password: 'password',
+        full_name: 'Wholesale Baker',
+        company_name: 'Sunset Bakery',
+        tax_id: '12-3456789',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+        business_address: '74-12 Metropolitan Ave',
+      })).rejects.toThrow('Database disk error during address creation');
+    });
+
+    it('should fallback city to New York and omit delivery_photos_json when optional fields are missing (TASK-65-04 Boundary Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-uuid-88', email: 'defaultcity@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+
+      await service.signup({
+        email: 'defaultcity@bakery.com',
+        password: 'password',
+        full_name: 'Default City Baker',
+        company_name: 'Default Bakery',
+        tax_id: '12-3456789',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+        business_address: '100 Main St',
+      });
+
+      expect(mockAddressRepository.create).toHaveBeenCalledWith({
+        user_id: 'user-uuid-88',
+        alias: 'Principal / Facturación',
+        address: '100 Main St',
+        city: 'New York',
+        lat: undefined,
+        lng: undefined,
+        is_default: true,
+        is_temporary: false,
+      });
+    });
+
+    it('should not invoke addressRepository if business_address is not provided (TASK-65-04 Omitted Address)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-uuid-77', email: 'noaddr@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+      mockAddressRepository.create.mockClear();
+
+      const result = await service.signup({
+        email: 'noaddr@bakery.com',
+        password: 'password',
+        full_name: 'No Address Baker',
+        company_name: 'No Address Bakery',
+        tax_id: '12-3456789',
+        phone: '+13055550100',
+        phone_verified: true,
+        idToken: 'mock-valid-firebase-token',
+      });
+
+      expect(mockAddressRepository.create).not.toHaveBeenCalled();
+      expect(result.address).toBeUndefined();
     });
   });
 

@@ -3,6 +3,7 @@ export declare class AuthController {
     private authService;
     constructor(authService: AuthService);
     signup(body: any): Promise<{
+        address?: import("../addresses/address.entity").Address | undefined;
         message: string;
         user: {
             id: any;

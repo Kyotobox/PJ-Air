@@ -95,30 +95,33 @@
         {
           "id": "TASK-65-04",
           "title": "Creación Atómica de Dirección Principal en Backend (/auth/signup)",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/DATA",
           "files": [
             "backend/src/auth/auth.service.ts",
             "backend/src/auth/auth.controller.ts"
-          ]
+          ],
+          "veracity_hash": null
         },
         {
           "id": "TASK-65-05",
           "title": "Visor de Fachada y Mapa de Clientes en Admin (/admin/clients)",
-          "status": "TODO",
+          "status": "DONE",
           "type": "ADMIN/UI",
           "files": [
             "frontend/app/admin/clients/page.tsx"
-          ]
+          ],
+          "veracity_hash": null
         },
         {
           "id": "TASK-65-06",
           "title": "Suite de Certificación Playwright S65 con Capturas Físicas",
-          "status": "TODO",
+          "status": "DONE",
           "type": "TEST/CERT",
           "files": [
             "tool/run_sprint65_certification.js"
-          ]
+          ],
+          "veracity_hash": null
         }
       ]
     }

@@ -1,14 +1,17 @@
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
+import { Address } from '../addresses/address.entity';
 import { SystemConfig } from '../system-configs/system-config.entity';
 import { SmsService } from '../sms/sms.service';
 export declare class AuthService {
     private usersService;
     private systemConfigRepository;
     private smsService?;
+    private addressRepository?;
     private otpStore;
-    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>, smsService?: SmsService | undefined);
+    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>, smsService?: SmsService | undefined, addressRepository?: Repository<Address> | undefined);
     signup(body: any): Promise<{
+        address?: Address | undefined;
         message: string;
         user: {
             id: any;
@@ -32,6 +35,7 @@ export declare class AuthService {
         };
     }>;
     register(body: any): Promise<{
+        address?: Address | undefined;
         message: string;
         user: {
             id: any;
