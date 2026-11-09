@@ -6,16 +6,18 @@ import * as fs from 'fs';
 import { UPLOAD_PATH } from '../config';
 import { AddressesService } from './addresses.service';
 import { AddressValidationService } from './address-validation.service';
+import { FacadeVisionService } from './facade-vision.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { ResourceOwnershipGuard } from '../auth/resource-ownership.guard';
 
 @Controller('addresses')
-@UseGuards(AuthGuard)
 export class AddressesController {
   constructor(
     private readonly addressesService: AddressesService,
     @Optional()
     private readonly addressValidationService?: AddressValidationService,
+    @Optional()
+    private readonly facadeVisionService?: FacadeVisionService,
   ) {}
 
   @Post('upload-photo')
@@ -41,6 +43,77 @@ export class AddressesController {
     return { url: `/uploads/addresses/${file.filename}` };
   }
 
+  @Post('upload-facade')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const uploadPath = join(resolve(UPLOAD_PATH), 'addresses');
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+      }
+    })
+  }))
+  async uploadFacade(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded or file type not allowed');
+    }
+    return { url: `/uploads/addresses/${file.filename}` };
+  }
+
+  @Post('validate-facade')
+  @UseInterceptors(FileInterceptor('file'))
+  async validateFacade(
+    @UploadedFile() file?: Express.Multer.File,
+    @Body() body?: any,
+  ) {
+    if (!this.facadeVisionService) {
+      return {
+        success: true,
+        isValid: true,
+        category: 'STOREFRONT',
+        confidence: 0.5,
+        status: 'PENDING_AUDIT',
+        message: 'Servicio de visión no configurado, encolado para auditoría manual.',
+      };
+    }
+
+    let buffer: Buffer | null = null;
+    let mimeType = 'image/jpeg';
+
+    if (file && file.buffer) {
+      buffer = file.buffer;
+      mimeType = file.mimetype || 'image/jpeg';
+    } else if (body?.image_url) {
+      const resolved = this.facadeVisionService.resolveBufferFromUrlOrPath(body.image_url);
+      buffer = resolved.buffer;
+      mimeType = resolved.mimeType;
+    } else if (body?.file_base64) {
+      const resolved = this.facadeVisionService.resolveBufferFromUrlOrPath(body.file_base64);
+      buffer = resolved.buffer;
+      mimeType = resolved.mimeType;
+    }
+
+    if (!buffer || buffer.length === 0) {
+      throw new BadRequestException('Debe proporcionar un archivo de imagen o image_url para validar la fachada.');
+    }
+
+    const result = await this.facadeVisionService.validateFacade(buffer, mimeType);
+    return {
+      success: true,
+      isValid: result.isValid,
+      category: result.category,
+      confidence: result.confidence,
+      status: result.status,
+      message: result.reason || (result.isValid ? 'Fachada válida' : 'Fachada no válida'),
+    };
+  }
+
   @Post('validate')
   async validateAddress(@Body() body: any) {
     if (!body?.address) {
@@ -58,6 +131,7 @@ export class AddressesController {
   }
 
   @Post()
+  @UseGuards(AuthGuard)
   async create(@Body() body: any, @Req() req: any) {
     const targetUserId = (req.user?.role === 'admin' && body.userId) ? body.userId : req.user.id;
     const { userId, ...addressData } = body;
@@ -65,7 +139,7 @@ export class AddressesController {
   }
 
   @Get('user/:userId')
-  @UseGuards(ResourceOwnershipGuard)
+  @UseGuards(AuthGuard, ResourceOwnershipGuard)
   async findByUser(@Param('userId') userId: string, @Req() req: any) {
     if (req.user?.role !== 'admin' && req.user?.id !== userId) {
       throw new ForbiddenException('Cannot access other user addresses');
@@ -74,6 +148,7 @@ export class AddressesController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard)
   async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
     const address = await this.addressesService.findOne(id);
     if (req.user?.role !== 'admin' && address.user_id !== req.user.id) {
@@ -84,6 +159,7 @@ export class AddressesController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   async delete(@Param('id') id: string, @Req() req: any) {
     const address = await this.addressesService.findOne(id);
     if (req.user?.role !== 'admin' && address.user_id !== req.user.id) {

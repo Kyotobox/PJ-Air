@@ -11,7 +11,16 @@
  * 4. Nginx Server Block: testing.jhoanes.com (Proxy 3200 frontend, 3201 backend /api/).
  */
 
-const { Client } = require('ssh2');
+let Client;
+try {
+    Client = require('ssh2').Client;
+} catch (e) {
+    try {
+        Client = require(path.join(__dirname, '../node_modules/ssh2')).Client;
+    } catch (e2) {
+        Client = require(path.join(__dirname, '../../node_modules/ssh2')).Client;
+    }
+}
 const fs = require('fs');
 const path = require('path');
 
@@ -43,7 +52,8 @@ const sshHost = process.env.REMOTE_SSH_HOST || '187.124.67.53';
 const sshPort = parseInt(process.env.REMOTE_SSH_PORT || '22', 10);
 const sshUser = process.env.REMOTE_SSH_USER || 'root';
 const sshPassword = process.env.REMOTE_SSH_PASSWORD;
-const sshKeyPath = process.env.REMOTE_SSH_KEY_PATH;
+const defaultKeyPath = path.resolve(process.env.HOME || '/home/opc', '.ssh', 'id_ed25519_ruben');
+const sshKeyPath = process.env.REMOTE_SSH_KEY_PATH || (fs.existsSync(defaultKeyPath) ? defaultKeyPath : (fs.existsSync('/root/.ssh/id_ed25519_ruben') ? '/root/.ssh/id_ed25519_ruben' : undefined));
 
 const targetBranch = process.env.REMOTE_GIT_BRANCH || 'conext';
 
@@ -70,7 +80,7 @@ const testingDeployCommands = [
     `echo "=== 4. Construyendo Backend Testing ==="`,
     `cd "${TESTING_DIR}/backend"`,
     `npm install --production=false`,
-    `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" npm run build`,
+    `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" npm run build`,
 
     // 5. Frontend build with correct testing API URL
     `echo "=== 5. Construyendo Frontend Testing ==="`,

@@ -94,6 +94,145 @@ describe('AddressesController', () => {
       });
     });
 
+      describe('uploadFacade', () => {
+        it('should return uploaded facade file URL', async () => {
+          const file = {
+            filename: 'facade-photo-456.jpg',
+            originalname: 'facade456.jpg',
+          } as Express.Multer.File;
+
+          const result = await controller.uploadFacade(file);
+          expect(result).toEqual({ url: '/uploads/addresses/facade-photo-456.jpg' });
+        });
+
+        it('sad path: should throw BadRequestException when no file is uploaded to uploadFacade', async () => {
+          await expect(
+            controller.uploadFacade(undefined as any),
+          ).rejects.toThrow('No file uploaded or file type not allowed');
+        });
+      });
+
+      describe('validateFacade', () => {
+        it('should validate a storefront photo via file upload (Happy Path)', async () => {
+          const mockVisionService = {
+            validateFacade: jest.fn().mockResolvedValue({
+              isValid: true,
+              category: 'STOREFRONT',
+              confidence: 0.95,
+              status: 'VERIFIED',
+              reason: 'Fachada comercial verificada correctamente.',
+            }),
+            resolveBufferFromUrlOrPath: jest.fn(),
+          };
+
+          const ctrl = new AddressesController(
+            mockAddressesService as any,
+            undefined,
+            mockVisionService as any,
+          );
+
+          const file = {
+            buffer: Buffer.from('FAKE_STOREFRONT_IMAGE'),
+            mimetype: 'image/jpeg',
+          } as Express.Multer.File;
+
+          const result = await ctrl.validateFacade(file);
+
+          expect(result.success).toBe(true);
+          expect(result.isValid).toBe(true);
+          expect(result.category).toBe('STOREFRONT');
+          expect(result.confidence).toBe(0.95);
+          expect(result.status).toBe('VERIFIED');
+          expect(mockVisionService.validateFacade).toHaveBeenCalledWith(file.buffer, 'image/jpeg');
+        });
+
+        it('should validate a storefront photo via body image_url (Happy Path)', async () => {
+          const mockVisionService = {
+            validateFacade: jest.fn().mockResolvedValue({
+              isValid: true,
+              category: 'STOREFRONT',
+              confidence: 0.95,
+              status: 'VERIFIED',
+            }),
+            resolveBufferFromUrlOrPath: jest.fn().mockReturnValue({
+              buffer: Buffer.from('RESOLVED_IMAGE_BUFFER'),
+              mimeType: 'image/png',
+            }),
+          };
+
+          const ctrl = new AddressesController(
+            mockAddressesService as any,
+            undefined,
+            mockVisionService as any,
+          );
+
+          const result = await ctrl.validateFacade(undefined, { image_url: '/uploads/addresses/facade.png' });
+
+          expect(result.success).toBe(true);
+          expect(result.isValid).toBe(true);
+          expect(mockVisionService.resolveBufferFromUrlOrPath).toHaveBeenCalledWith('/uploads/addresses/facade.png');
+          expect(mockVisionService.validateFacade).toHaveBeenCalled();
+        });
+
+        it('sad path: rejects food products (bread) returning isValid: false', async () => {
+          const mockVisionService = {
+            validateFacade: jest.fn().mockResolvedValue({
+              isValid: false,
+              category: 'FOOD_PRODUCT',
+              confidence: 0.98,
+              status: 'REJECTED',
+              reason: 'Detectamos un producto alimenticio (pan/pastelería) en lugar de la fachada exterior de su local comercial.',
+            }),
+            resolveBufferFromUrlOrPath: jest.fn(),
+          };
+
+          const ctrl = new AddressesController(
+            mockAddressesService as any,
+            undefined,
+            mockVisionService as any,
+          );
+
+          const file = {
+            buffer: Buffer.from('FAKE_BREAD_IMAGE'),
+            mimetype: 'image/jpeg',
+          } as Express.Multer.File;
+
+          const result = await ctrl.validateFacade(file);
+
+          expect(result.success).toBe(true);
+          expect(result.isValid).toBe(false);
+          expect(result.category).toBe('FOOD_PRODUCT');
+          expect(result.confidence).toBe(0.98);
+          expect(result.message).toContain('producto alimenticio');
+        });
+
+        it('sad path: throws BadRequestException when neither file nor image_url is provided', async () => {
+          const mockVisionService = {
+            validateFacade: jest.fn(),
+            resolveBufferFromUrlOrPath: jest.fn(),
+          };
+
+          const ctrl = new AddressesController(
+            mockAddressesService as any,
+            undefined,
+            mockVisionService as any,
+          );
+
+          await expect(ctrl.validateFacade(undefined, {})).rejects.toThrow(
+            'Debe proporcionar un archivo de imagen o image_url para validar la fachada.',
+          );
+        });
+
+        it('fallback: returns PENDING_AUDIT when facadeVisionService is not configured', async () => {
+          const ctrl = new AddressesController(mockAddressesService as any);
+          const result = await ctrl.validateFacade(undefined, { image_url: '/some/image.jpg' });
+
+          expect(result.success).toBe(true);
+          expect(result.isValid).toBe(true);
+          expect(result.status).toBe('PENDING_AUDIT');
+        });
+      });
+
     describe('validateAddress', () => {
       it('should validate an address using addressValidationService', async () => {
         const mockValidation = {

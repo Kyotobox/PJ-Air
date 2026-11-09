@@ -1,11 +1,24 @@
 import { AddressesService } from './addresses.service';
 import { AddressValidationService } from './address-validation.service';
+import { FacadeVisionService } from './facade-vision.service';
 export declare class AddressesController {
     private readonly addressesService;
     private readonly addressValidationService?;
-    constructor(addressesService: AddressesService, addressValidationService?: AddressValidationService | undefined);
+    private readonly facadeVisionService?;
+    constructor(addressesService: AddressesService, addressValidationService?: AddressValidationService | undefined, facadeVisionService?: FacadeVisionService | undefined);
     uploadPhoto(file: Express.Multer.File): Promise<{
         url: string;
+    }>;
+    uploadFacade(file: Express.Multer.File): Promise<{
+        url: string;
+    }>;
+    validateFacade(file?: Express.Multer.File, body?: any): Promise<{
+        success: boolean;
+        isValid: boolean;
+        category: string;
+        confidence: number;
+        status: string;
+        message: string;
     }>;
     validateAddress(body: any): Promise<{
         valid: boolean;
