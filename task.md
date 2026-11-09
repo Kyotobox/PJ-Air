@@ -1,9 +1,10 @@
-# SPRINT S64 - Sprint Activo
-**Objetivo**: Restauración de Google Firebase Phone Auth SMS nativo, inyección de Google Maps Geocoding en backend y frontend para búsqueda de comercios, transparencia de errores en checkout y suite de certificación Playwright con capturas de pantalla físicas.
+# SPRINT S65 - Sprint Activo
+**Objetivo**: Onboarding Integral 360° — Validación de Dirección comercial con Google Places Autocomplete, Mini-Mapa lateral interactivo con Pin y badge de validación, cargador de foto de fachada del negocio en `/auth/register`, creación atómica de dirección principal en backend, visualizador de fachada en `/admin/clients` y certificación Playwright con capturas de pantalla físicas.
 **Fecha**: 2026-11-09
 
-- [x] **TASK-64-01** [TECH/AUTH-RESTORE-GOOGLE-SMS-OTP] Restauración de Google Firebase Phone Auth nativo y validación idToken
-- [x] **TASK-64-02** [TECH/MAPS-BACKEND-ENV-INJECTION] Inyección de GOOGLE_MAPS_KEY en backend y resolución real Google Geocoding
-- [x] **TASK-64-03** [UI/MAPS-AUTOCOMPLETE-ENHANCEMENT] Optimización de Places Autocomplete con geocode y establishment sin bloqueo Enter
-- [x] **TASK-64-04** [UI/CHECKOUT-ERROR-TRANSPARENCY] Visualización transparente de motivos de rechazo de dirección en checkout
-- [x] **TASK-64-05** [TEST/S64-CERTIFICATION-SCREENSHOTS] Suite Playwright con capturas de pantalla físicas en ui_screenshots/
+- [ ] **TASK-65-01** [UI/REG] Google Places Autocomplete en Registro (`/auth/register`)
+- [ ] **TASK-65-02** [UI/MAP] Mini-Mapa Lateral Interactivo con Pin en Registro
+- [ ] **TASK-65-03** [UI/MEDIA] Cargador de Foto de Fachada / Local en Registro
+- [ ] **TASK-65-04** [BACKEND/DATA] Creación Atómica de Dirección Principal en Backend (`/auth/signup`)
+- [ ] **TASK-65-05** [ADMIN/UI] Visor de Fachada y Mapa de Clientes en Admin (`/admin/clients`)
+- [ ] **TASK-65-06** [TEST/CERT] Suite de Certificación Playwright S65 con Capturas Físicas
