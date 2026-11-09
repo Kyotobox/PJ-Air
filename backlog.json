@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S65",
-  "current_task": "TASK-65-06",
+  "current_sprint": "S66",
+  "current_task": "TASK-66-01",
   "sprints": [
     {
       "id": "S64",
@@ -12,12 +12,12 @@
       "dag_id": "SPRINT-S64-RECONCILED",
       "status": "COMPLETED",
       "reconciled_at": "2026-11-09T10:30:22.908213+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
       "tasks": []
     },
     {
       "id": "S65",
-      "name": "Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
+      "name": "Sprint S65: Onboarding Integral 360\u00b0 \u2014 Validaci\u00f3n de Direcci\u00f3n Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
       "status": "COMPLETED",
       "tasks": [
         {
@@ -43,7 +43,7 @@
         },
         {
           "id": "TASK-65-04",
-          "title": "Creación Atómica de Dirección Principal en Backend (/auth/signup)",
+          "title": "Creaci\u00f3n At\u00f3mica de Direcci\u00f3n Principal en Backend (/auth/signup)",
           "status": "DONE",
           "type": "BACKEND/DATA",
           "veracity_hash": null
@@ -57,62 +57,87 @@
         },
         {
           "id": "TASK-65-06",
-          "title": "Suite de Certificación Playwright S65 con Capturas Físicas",
+          "title": "Suite de Certificaci\u00f3n Playwright S65 con Capturas F\u00edsicas",
           "status": "DONE",
           "type": "TEST/CERT",
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S66",
+      "name": "Sprint S66: Renderizado Real de Google Maps en Testing y Validador Inteligente de Fachada con IA (Anti-Pan)",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-66-01",
+          "title": "Despliegue de paridad a VPS testing (testing.jhoanes.com) con Google Maps",
+          "status": "TODO",
+          "type": "TECH/DEPLOY"
+        },
+        {
+          "id": "TASK-66-02",
+          "title": "Servicio FacadeVisionService y endpoint POST /addresses/validate-facade",
+          "status": "TODO",
+          "type": "BACKEND/DATA"
+        },
+        {
+          "id": "TASK-66-03",
+          "title": "Integraci\u00f3n en FacadePhotoUploader de escaneo AI en vivo y bloqueo de fotos de pan",
+          "status": "TODO",
+          "type": "UI/MEDIA"
+        },
+        {
+          "id": "TASK-66-04",
+          "title": "Visor de auditor\u00eda de fachada en /admin/clients con badges de IA",
+          "status": "TODO",
+          "type": "ADMIN/UI"
+        },
+        {
+          "id": "TASK-66-05",
+          "title": "Suite Playwright con mapas reales y prueba de rechazo de pan",
+          "status": "TODO",
+          "type": "TEST/CERT"
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 54,
+  "archived_sprints_count": 57,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S65",
-    "name": "Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
-    "status": "COMPLETED",
+    "id": "S66",
+    "name": "Sprint S66: Renderizado Real de Google Maps en Testing y Validador Inteligente de Fachada con IA (Anti-Pan)",
+    "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-65-01",
-        "title": "Google Places Autocomplete en Registro (/auth/register)",
-        "status": "DONE",
-        "type": "UI/REG",
-        "veracity_hash": null
+        "id": "TASK-66-01",
+        "title": "Despliegue de paridad a VPS testing (testing.jhoanes.com) con Google Maps",
+        "status": "TODO",
+        "type": "TECH/DEPLOY"
       },
       {
-        "id": "TASK-65-02",
-        "title": "Mini-Mapa Lateral Interactivo con Pin en Registro",
-        "status": "DONE",
-        "type": "UI/MAP",
-        "veracity_hash": null
+        "id": "TASK-66-02",
+        "title": "Servicio FacadeVisionService y endpoint POST /addresses/validate-facade",
+        "status": "TODO",
+        "type": "BACKEND/DATA"
       },
       {
-        "id": "TASK-65-03",
-        "title": "Cargador de Foto de Fachada / Local en Registro",
-        "status": "DONE",
-        "type": "UI/MEDIA",
-        "veracity_hash": null
+        "id": "TASK-66-03",
+        "title": "Integraci\u00f3n en FacadePhotoUploader de escaneo AI en vivo y bloqueo de fotos de pan",
+        "status": "TODO",
+        "type": "UI/MEDIA"
       },
       {
-        "id": "TASK-65-04",
-        "title": "Creación Atómica de Dirección Principal en Backend (/auth/signup)",
-        "status": "DONE",
-        "type": "BACKEND/DATA",
-        "veracity_hash": null
+        "id": "TASK-66-04",
+        "title": "Visor de auditor\u00eda de fachada en /admin/clients con badges de IA",
+        "status": "TODO",
+        "type": "ADMIN/UI"
       },
       {
-        "id": "TASK-65-05",
-        "title": "Visor de Fachada y Mapa de Clientes en Admin (/admin/clients)",
-        "status": "DONE",
-        "type": "ADMIN/UI",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-65-06",
-        "title": "Suite de Certificación Playwright S65 con Capturas Físicas",
-        "status": "DONE",
-        "type": "TEST/CERT",
-        "veracity_hash": null
+        "id": "TASK-66-05",
+        "title": "Suite Playwright con mapas reales y prueba de rechazo de pan",
+        "status": "TODO",
+        "type": "TEST/CERT"
       }
     ]
   }

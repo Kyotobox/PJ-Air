@@ -1,10 +1,9 @@
-# SPRINT S65 - Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro
-**Objetivo**: Sin objetivo especificado
+# SPRINT S66 - Sprint S66: Renderizado Real de Google Maps en Testing y Validador Inteligente de Fachada con IA (Anti-Pan)
+**Objetivo**: Desplegar componentes de Google Maps a testing.jhoanes.com para visualización real de mapas y crear el validador de fachada comercial con IA para rechazo de alimentos (pan/pastelería) y fotos inválidas
 **Fecha**: 2026-11-09
 
-- [x] **TASK-65-01** [TASK] Google Places Autocomplete en Registro (/auth/register)
-- [x] **TASK-65-02** [TASK] Mini-Mapa Lateral Interactivo con Pin en Registro
-- [x] **TASK-65-03** [TASK] Cargador de Foto de Fachada / Local en Registro
-- [x] **TASK-65-04** [TASK] Creación Atómica de Dirección Principal en Backend (/auth/signup)
-- [x] **TASK-65-05** [TASK] Visor de Fachada y Mapa de Clientes en Admin (/admin/clients)
-- [x] **TASK-65-06** [TASK] Suite de Certificación Playwright S65 con Capturas Físicas
+- [ ] **TASK-66-01** [TECH/DEPLOY-S65-TESTING] Despliegue de paridad a VPS testing (testing.jhoanes.com) con Google Maps
+- [ ] **TASK-66-02** [BACKEND/FACADE-VISION-SERVICE] Servicio FacadeVisionService y endpoint POST /addresses/validate-facade
+- [ ] **TASK-66-03** [UI/FACADE-SMART-UPLOADER] Integración en FacadePhotoUploader de escaneo AI en vivo y bloqueo de fotos de pan
+- [ ] **TASK-66-04** [ADMIN/FACADE-AUDIT-VIEWER] Visor de auditoría de fachada en /admin/clients con badges de IA
+- [ ] **TASK-66-05** [TEST/LIVE-CERTIFICATION-MAPS-FACADE] Suite Playwright con mapas reales y prueba de rechazo de pan
