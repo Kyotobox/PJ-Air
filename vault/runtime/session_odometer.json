@@ -13,10 +13,10 @@
   "hwc_complete": false,
   "last_update": "2026-11-09T13:02:10.903089",
   "input_pressure": 0,
-  "degraded_ops_count": 0,
+  "degraded_ops_count": 1,
   "session_count": 8,
   "test_warning_count": 0,
   "takeover_bytes_offset": 0,
   "conversation_uuid": "07cd93f4-9ca5-4252-99e2-e3f670c32ec5",
-  "peak_depth": 15.68766
+  "peak_depth": 16.14339
 }
