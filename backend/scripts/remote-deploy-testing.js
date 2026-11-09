@@ -70,21 +70,21 @@ const testingDeployCommands = [
     `echo "=== 4. Construyendo Backend Testing ==="`,
     `cd "${TESTING_DIR}/backend"`,
     `npm install --production=false`,
-    `npm run build`,
+    `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" npm run build`,
 
     // 5. Frontend build with correct testing API URL
     `echo "=== 5. Construyendo Frontend Testing ==="`,
     `cd "${TESTING_DIR}/frontend"`,
     `npm install --production=false`,
-    `NEXT_PUBLIC_API_URL="https://testing.jhoanes.com/api" npm run build`,
+    `NEXT_PUBLIC_API_URL="https://testing.jhoanes.com/api" NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" npm run build`,
 
     // 6. PM2 Restart on dedicated testing ports (3200 & 3201)
     `echo "=== 6. Desplegando procesos PM2 de testing ==="`,
     `cd "${TESTING_DIR}"`,
     `pm2 delete ${TESTING_BACKEND_PM2} || true`,
     `pm2 delete ${TESTING_FRONTEND_PM2} || true`,
-    `NODE_PATH="${TESTING_DIR}/backend/node_modules" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name ${TESTING_BACKEND_PM2} --cwd "${TESTING_DIR}/backend"`,
-    `PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start "$([ -f "${TESTING_DIR}/frontend/node_modules/next/dist/bin/next" ] && echo "${TESTING_DIR}/frontend/node_modules/next/dist/bin/next" || echo "${TESTING_DIR}/node_modules/next/dist/bin/next")" --name ${TESTING_FRONTEND_PM2} --cwd "${TESTING_DIR}/frontend" -- start -p 3200`,
+    `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NODE_PATH="${TESTING_DIR}/backend/node_modules" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name ${TESTING_BACKEND_PM2} --cwd "${TESTING_DIR}/backend"`,
+    `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start "$([ -f "${TESTING_DIR}/frontend/node_modules/next/dist/bin/next" ] && echo "${TESTING_DIR}/frontend/node_modules/next/dist/bin/next" || echo "${TESTING_DIR}/node_modules/next/dist/bin/next")" --name ${TESTING_FRONTEND_PM2} --cwd "${TESTING_DIR}/frontend" -- start -p 3200`,
     `pm2 save`,
     `echo "=== 7. TESTING.JHOANES.COM EN LÍNEA ==="`
 ];

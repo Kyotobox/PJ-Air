@@ -1,7 +1,7 @@
 {
   "project": "pj-air",
   "version": "4.0.0",
-  "kernel_version": "5.0.0",
+  "kernel_version": "5.3.1",
   "status": "IN_PROGRESS",
   "current_sprint": "S64",
   "current_task": "TASK-64-01",
@@ -161,31 +161,31 @@
         "id": "TASK-64-01",
         "label": "TECH/AUTH-RESTORE-GOOGLE-SMS-OTP",
         "desc": "Restauración de Google Firebase Phone Auth nativo y validación idToken",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-64-02",
         "label": "TECH/MAPS-BACKEND-ENV-INJECTION",
         "desc": "Inyección de GOOGLE_MAPS_KEY en backend y resolución real Google Geocoding",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-64-03",
         "label": "UI/MAPS-AUTOCOMPLETE-ENHANCEMENT",
         "desc": "Optimización de Places Autocomplete con geocode y establishment sin bloqueo Enter",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-64-04",
         "label": "UI/CHECKOUT-ERROR-TRANSPARENCY",
         "desc": "Visualización transparente de motivos de rechazo de dirección en checkout",
-        "status": "TODO"
+        "status": "DONE"
       },
       {
         "id": "TASK-64-05",
         "label": "TEST/S64-CERTIFICATION-SCREENSHOTS",
         "desc": "Suite Playwright con capturas de pantalla físicas en ui_screenshots/",
-        "status": "TODO"
+        "status": "DONE"
       }
     ]
   }

@@ -120,6 +120,8 @@ function InlineAddressForm({
                 map?.panTo(newPos);
                 if (place.formatted_address) {
                     setAddress(place.formatted_address);
+                } else if (place.name) {
+                    setAddress(place.name);
                 }
             }
         }
@@ -204,23 +206,31 @@ function InlineAddressForm({
         });
     };
 
-    const forwardGeocode = () => {
-        if (typeof google === 'undefined' || !address) return;
+    const forwardGeocode = (): Promise<{ lat: number; lng: number } | null> => {
+        if (typeof google === 'undefined' || !address.trim()) return Promise.resolve(null);
         setIsGeocoding(true);
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: address }, (results, status) => {
-            setIsGeocoding(false);
-            if (status === 'OK' && results && results[0]) {
-                const newPos = {
-                    lat: results[0].geometry.location.lat(),
-                    lng: results[0].geometry.location.lng()
-                };
-                setMarkerPos(newPos);
-                setGeocodedPos(newPos);
-                setIsManualAdjustment(false);
-                setRefinedPos(null);
-                map?.panTo(newPos);
-            }
+        return new Promise((resolve) => {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: address.trim() }, (results, status) => {
+                setIsGeocoding(false);
+                if (status === 'OK' && results && results[0]) {
+                    const newPos = {
+                        lat: results[0].geometry.location.lat(),
+                        lng: results[0].geometry.location.lng()
+                    };
+                    setMarkerPos(newPos);
+                    setGeocodedPos(newPos);
+                    setIsManualAdjustment(false);
+                    setRefinedPos(null);
+                    map?.panTo(newPos);
+                    if (results[0].formatted_address) {
+                        setAddress(results[0].formatted_address);
+                    }
+                    resolve(newPos);
+                } else {
+                    resolve(null);
+                }
+            });
         });
     };
 
@@ -252,8 +262,8 @@ function InlineAddressForm({
                             onPlaceChanged={onPlaceChanged}
                             options={{
                                 componentRestrictions: { country: 'us' },
-                                fields: ['address_components', 'geometry', 'formatted_address'],
-                                types: ['address'],
+                                fields: ['address_components', 'geometry', 'formatted_address', 'name'],
+                                types: ['geocode', 'establishment'],
                             }}
                         >
                             <input
@@ -265,6 +275,12 @@ function InlineAddressForm({
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault();
+                                        forwardGeocode();
+                                    }
+                                }}
+                                onBlur={() => {
+                                    if (!geocodedPos && address.trim()) {
+                                        forwardGeocode();
                                     }
                                 }}
                                 className="premium-input px-4 py-3 pr-24 w-full"
@@ -1198,8 +1214,12 @@ export default function CheckoutPage() {
                 }) as any;
                 finalAddressId = newAddr.id;
                 deliveryAddressText = otherAddrData.address;
-            } catch (e) {
-                showNotification(lbl('Error guardando la dirección. Intenta de nuevo.', 'Error saving address. Please try again.'), 'error');
+            } catch (e: any) {
+                const rawMsg = e.response?.data?.message || e.message;
+                const errorMsg = Array.isArray(rawMsg)
+                    ? rawMsg.join(', ')
+                    : (rawMsg || lbl('Error guardando la dirección. Intenta de nuevo.', 'Error saving address. Please try again.'));
+                showNotification(errorMsg, 'error');
                 return;
             }
         }

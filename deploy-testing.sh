@@ -38,23 +38,27 @@ else
     cp "database-testing.sqlite" "database-testing.sqlite.bak_$(date +%Y%m%d_%H%M%S)"
 fi
 
+# Inyección mandatoria de variables Google Suite
+export GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k"
+export NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k"
+
 echo "=== 4. Compilando Backend Testing ==="
 cd "$TESTING_DIR/backend"
 npm install --production=false
-npm run build
+GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" npm run build
 
 echo "=== 5. Compilando Frontend Testing ==="
 cd "$TESTING_DIR/frontend"
 npm install --production=false
-NEXT_PUBLIC_API_URL="https://testing.jhoanes.com/api" npm run build
+NEXT_PUBLIC_API_URL="https://testing.jhoanes.com/api" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" npm run build
 
 echo "=== 6. Levantando procesos PM2 en puertos 3200 y 3201 ==="
 cd "$TESTING_DIR"
 pm2 delete pj-air-backend-testing || true
 pm2 delete pj-air-frontend-testing || true
 
-BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name pj-air-backend-testing --cwd "$TESTING_DIR/backend"
-PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start "$TESTING_DIR/node_modules/next/dist/bin/next" --name pj-air-frontend-testing --cwd "$TESTING_DIR/frontend" -- start -p 3200
+GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name pj-air-backend-testing --cwd "$TESTING_DIR/backend"
+GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start "$TESTING_DIR/node_modules/next/dist/bin/next" --name pj-air-frontend-testing --cwd "$TESTING_DIR/frontend" -- start -p 3200
 pm2 save
 
 echo "=========================================================="

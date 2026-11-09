@@ -90,6 +90,8 @@ function NewAddressContent() {
                 map?.panTo(newPos);
                 if (place.formatted_address) {
                     setAddress(place.formatted_address);
+                } else if (place.name) {
+                    setAddress(place.name);
                 }
             }
         }
@@ -115,27 +117,34 @@ function NewAddressContent() {
         });
     };
 
-    const forwardGeocode = () => {
-        if (typeof google === 'undefined' || !address) return;
+    const forwardGeocode = (): Promise<{ lat: number; lng: number } | null> => {
+        if (typeof google === 'undefined' || !address.trim()) return Promise.resolve(null);
         setIsLoading(true);
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: address }, (results, status) => {
-            setIsLoading(false);
-            if (status === 'OK' && results && results[0]) {
-                const newPos = {
-                    lat: results[0].geometry.location.lat(),
-                    lng: results[0].geometry.location.lng()
-                };
-                setMarkerPos(newPos);
-                setGeocodedPos(newPos);
-                setIsManualAdjustment(false);
-                setRefinedPos(null);
-                map?.panTo(newPos);
-            } else {
-                setError(locale === 'en'
-                    ? 'Could not find location on map. Please try a more specific address.'
-                    : 'No se pudo encontrar la ubicación en el mapa. Por favor, intenta con una dirección más específica.');
-            }
+        return new Promise((resolve) => {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: address.trim() }, (results, status) => {
+                setIsLoading(false);
+                if (status === 'OK' && results && results[0]) {
+                    const newPos = {
+                        lat: results[0].geometry.location.lat(),
+                        lng: results[0].geometry.location.lng()
+                    };
+                    setMarkerPos(newPos);
+                    setGeocodedPos(newPos);
+                    setIsManualAdjustment(false);
+                    setRefinedPos(null);
+                    map?.panTo(newPos);
+                    if (results[0].formatted_address) {
+                        setAddress(results[0].formatted_address);
+                    }
+                    resolve(newPos);
+                } else {
+                    setError(locale === 'en'
+                        ? 'Could not find location on map. Please try a more specific address.'
+                        : 'No se pudo encontrar la ubicación en el mapa. Por favor, intenta con una dirección más específica.');
+                    resolve(null);
+                }
+            });
         });
     };
 
@@ -203,13 +212,24 @@ function NewAddressContent() {
                 return;
             }
 
+            let effectiveLat = geocodedPos?.lat;
+            let effectiveLng = geocodedPos?.lng;
+
+            if ((!effectiveLat || !effectiveLng) && address.trim()) {
+                const resolved = await forwardGeocode();
+                if (resolved) {
+                    effectiveLat = resolved.lat;
+                    effectiveLng = resolved.lng;
+                }
+            }
+
             await api.post('/addresses', {
                 userId: user.id,
                 alias: alias.trim() || (locale === 'en' ? 'Main Address' : 'Dirección Principal'),
                 address,
                 notes,
-                lat: geocodedPos?.lat || markerPos.lat,
-                lng: geocodedPos?.lng || markerPos.lng,
+                lat: effectiveLat || markerPos.lat,
+                lng: effectiveLng || markerPos.lng,
                 refined_lat: isManualAdjustment ? refinedPos?.lat : null,
                 refined_lng: isManualAdjustment ? refinedPos?.lng : null,
                 access_code: accessCode.trim() || null,
@@ -221,7 +241,9 @@ function NewAddressContent() {
 
             router.push(redirect || '/');
         } catch (err: any) {
-            setError(err.message || (locale === 'en' ? 'Error saving address' : 'Error al guardar la dirección'));
+            const rawMsg = err.response?.data?.message || err.message;
+            const errMsg = Array.isArray(rawMsg) ? rawMsg.join(', ') : (rawMsg || (locale === 'en' ? 'Error saving address' : 'Error al guardar la dirección'));
+            setError(errMsg);
         } finally {
             setIsLoading(false);
         }
@@ -346,8 +368,8 @@ function NewAddressContent() {
                                         onPlaceChanged={onPlaceChanged}
                                         options={{
                                             componentRestrictions: { country: 'us' },
-                                            fields: ['address_components', 'geometry', 'formatted_address'],
-                                            types: ['address'],
+                                            fields: ['address_components', 'geometry', 'formatted_address', 'name'],
+                                            types: ['geocode', 'establishment'],
                                         }}
                                     >
                                         <input
@@ -360,6 +382,12 @@ function NewAddressContent() {
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     e.preventDefault();
+                                                    forwardGeocode();
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                if (!geocodedPos && address.trim()) {
+                                                    forwardGeocode();
                                                 }
                                             }}
                                         />
