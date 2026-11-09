@@ -68,6 +68,8 @@ interface UserRecord {
     ein?: string;
     business_address?: string;
     facade_image_url?: string;
+    facade_audit_status?: string;
+    facade_rejection_reason?: string;
     company_name?: string;
     profile?: {
         full_name?: string;
@@ -95,7 +97,12 @@ function extractClientFacade(user: UserRecord | null): string | null {
                     if (Array.isArray(photos) && photos.length > 0 && typeof photos[0] === 'string' && photos[0].trim()) {
                         return photos[0].trim();
                     }
-                } catch {}
+                } catch {
+                    const cleaned = addr.delivery_photos_json.replace(/[\[\]"]/g, '').trim();
+                    if (cleaned.startsWith('http') || cleaned.startsWith('/uploads')) {
+                        return cleaned;
+                    }
+                }
             }
         }
     }
@@ -112,7 +119,12 @@ function extractAddressPhoto(addr: Address | null): string | null {
         if (Array.isArray(photos) && photos.length > 0 && typeof photos[0] === 'string' && photos[0].trim()) {
             return photos[0].trim();
         }
-    } catch {}
+    } catch {
+        const cleaned = addr.delivery_photos_json.replace(/[\[\]"]/g, '').trim();
+        if (cleaned.startsWith('http') || cleaned.startsWith('/uploads')) {
+            return cleaned;
+        }
+    }
     return null;
 }
 
@@ -205,6 +217,26 @@ export default function AdminClientsPage() {
     const selectedUserGoogleMapsUrl = useMemo(() => {
         return getGoogleMapsSearchUrl(selectedUserPrimaryAddress, selectedUser?.business_address);
     }, [selectedUserPrimaryAddress, selectedUser?.business_address]);
+
+    // TASK-66-04: Facade AI Audit Status (VERIFIED, REJECTED, PENDING)
+    const selectedUserFacadeStatus = useMemo(() => {
+        if (!selectedUserFacadePhoto) return null;
+        const raw = (selectedUser?.facade_audit_status || (selectedUser as any)?.profile?.facade_audit_status || (selectedUserPrimaryAddress as any)?.facade_audit_status || '').toUpperCase();
+        if (raw === 'REJECTED' || raw.includes('REJECT') || raw === 'INVALID') {
+            return 'REJECTED';
+        }
+        if (raw === 'PENDING' || raw === 'PENDING_INSPECTION' || raw === 'PENDING_AUDIT' || raw === 'UNVERIFIED') {
+            return 'PENDING';
+        }
+        return 'VERIFIED';
+    }, [selectedUser, selectedUserFacadePhoto, selectedUserPrimaryAddress]);
+
+    const handleUpdateFacadeAuditStatus = (status: 'VERIFIED' | 'REJECTED' | 'PENDING') => {
+        if (!selectedUser) return;
+        setSelectedUser(prev => prev ? { ...prev, facade_audit_status: status } : null);
+        setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, facade_audit_status: status } : u));
+        showToast(`Auditoría de fachada actualizada: ${status}`);
+    };
 
     // TASK-63-01: Toggle Client Active/Inactive State
     const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
@@ -1261,15 +1293,40 @@ export default function AdminClientsPage() {
                                 <div className="bg-slate-50/80 rounded-[2.5rem] p-6 border border-slate-200 space-y-6">
                                     {selectedUserFacadePhoto ? (
                                         <div className="space-y-3">
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex items-center justify-between flex-wrap gap-2">
                                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                                                     <Camera size={14} className="text-blue-600" />
                                                     Foto de Fachada del Establecimiento
                                                 </span>
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                                                    <CheckCircle2 size={11} />
-                                                    Foto Registrada
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    {selectedUserFacadeStatus === 'VERIFIED' && (
+                                                        <span
+                                                            data-testid="admin-facade-ai-badge"
+                                                            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shadow-sm"
+                                                        >
+                                                            <span>🟢</span>
+                                                            <span>Fachada Verificada por IA</span>
+                                                        </span>
+                                                    )}
+                                                    {selectedUserFacadeStatus === 'REJECTED' && (
+                                                        <span
+                                                            data-testid="admin-facade-ai-badge"
+                                                            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1 shadow-sm"
+                                                        >
+                                                            <span>🔴</span>
+                                                            <span>Foto Rechazada / Requiere Cambio</span>
+                                                        </span>
+                                                    )}
+                                                    {selectedUserFacadeStatus === 'PENDING' && (
+                                                        <span
+                                                            data-testid="admin-facade-ai-badge"
+                                                            className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1 shadow-sm"
+                                                        >
+                                                            <span>🟡</span>
+                                                            <span>Pendiente de Inspección</span>
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="relative rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-900 group shadow-sm max-h-80">
                                                 <img
@@ -1297,6 +1354,49 @@ export default function AdminClientsPage() {
                                                             <span>Abrir Maps</span>
                                                         </a>
                                                     </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs shadow-sm">
+                                                <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                                                    <span>Auditoría de Fachada IA:</span>
+                                                </span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleUpdateFacadeAuditStatus('VERIFIED')}
+                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                            selectedUserFacadeStatus === 'VERIFIED'
+                                                                ? 'bg-emerald-600 text-white shadow-sm'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                                                        }`}
+                                                        title="Marcar como Verificada por IA"
+                                                    >
+                                                        🟢 Verificada
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleUpdateFacadeAuditStatus('REJECTED')}
+                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                            selectedUserFacadeStatus === 'REJECTED'
+                                                                ? 'bg-rose-600 text-white shadow-sm'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700'
+                                                        }`}
+                                                        title="Rechazar foto de fachada"
+                                                    >
+                                                        🔴 Rechazar
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleUpdateFacadeAuditStatus('PENDING')}
+                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                            selectedUserFacadeStatus === 'PENDING'
+                                                                ? 'bg-amber-500 text-white shadow-sm'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-amber-50 hover:text-amber-700'
+                                                        }`}
+                                                        title="Marcar como Pendiente de Inspección"
+                                                    >
+                                                        🟡 Pendiente
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

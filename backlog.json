@@ -86,20 +86,23 @@
         {
           "id": "TASK-66-03",
           "title": "Integración en FacadePhotoUploader de escaneo AI en vivo y bloqueo de fotos de pan",
-          "status": "TODO",
-          "type": "UI/MEDIA"
+          "status": "DONE",
+          "type": "UI/MEDIA",
+          "veracity_hash": null
         },
         {
           "id": "TASK-66-04",
           "title": "Visor de auditoría de fachada en /admin/clients con badges de IA",
-          "status": "TODO",
-          "type": "ADMIN/UI"
+          "status": "DONE",
+          "type": "ADMIN/UI",
+          "veracity_hash": null
         },
         {
           "id": "TASK-66-05",
           "title": "Suite Playwright con mapas reales y prueba de rechazo de pan",
-          "status": "TODO",
-          "type": "TEST/CERT"
+          "status": "DONE",
+          "type": "TEST/CERT",
+          "veracity_hash": null
         }
       ]
     }
