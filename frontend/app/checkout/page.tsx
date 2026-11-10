@@ -18,6 +18,15 @@ import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-m
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
 import { calculateProcessingFee } from '@/lib/fee-calculator';
+import {
+    DeliveryScheduleConfig,
+    DEFAULT_DELIVERY_SCHEDULE,
+    isDateAvailableForDelivery,
+    calculateDynamicMinDeliveryDate,
+    parseDateString,
+    DAY_NAMES_ES,
+    DAY_NAMES_EN,
+} from '@/lib/delivery-schedule';
 
 const libraries: ('places')[] = ['places'];
 
@@ -609,6 +618,7 @@ export default function CheckoutPage() {
     const [showMinAmountModal, setShowMinAmountModal] = useState(false);
     const [minOrderAmount, setMinOrderAmount] = useState<number>(500);
     const [cutoffHour, setCutoffHour] = useState<number>(12);
+    const [deliverySchedule, setDeliverySchedule] = useState<DeliveryScheduleConfig>(DEFAULT_DELIVERY_SCHEDULE);
     const [termsAccepted, setTermsAccepted] = useState(false);
 
     // Payment method state
@@ -727,6 +737,23 @@ export default function CheckoutPage() {
                 }
             })
             .catch(err => console.error('Error fetching cutoff_hour:', err));
+
+        // TASK-68-04: Cargar cronograma de despacho (días semanales, feriados y excepciones)
+        api.get('/configs/delivery-schedule')
+            .then((res: any) => {
+                if (res && typeof res === 'object') {
+                    setDeliverySchedule({
+                        workingDays: Array.isArray(res.workingDays) ? res.workingDays : DEFAULT_DELIVERY_SCHEDULE.workingDays,
+                        holidays: Array.isArray(res.holidays) ? res.holidays : DEFAULT_DELIVERY_SCHEDULE.holidays,
+                        exceptionalDays: Array.isArray(res.exceptionalDays) ? res.exceptionalDays : [],
+                        cutoffHour: typeof res.cutoffHour === 'number' ? res.cutoffHour : 12,
+                    });
+                    if (typeof res.cutoffHour === 'number') {
+                        setCutoffHour(res.cutoffHour);
+                    }
+                }
+            })
+            .catch(err => console.warn('Error fetching delivery-schedule, using offline fallback (§45):', err));
     }, []);
 
     // ── Delivery Zone Resolution Engine ───────────────────────────────────────
@@ -918,7 +945,7 @@ export default function CheckoutPage() {
         }
     }, [isAchAvailable, isCheckAvailable, paymentMethod]);
 
-    // ── Delivery date (NY timezone & 12:00 PM cutoff guard - TASK-49-04) ──────
+    // ── Delivery date (NY timezone & 12:00 PM cutoff guard - TASK-49-04 & TASK-68-04) ──────
     useEffect(() => {
         const nowNY = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
         const currentHour = nowNY.getHours();
@@ -926,22 +953,17 @@ export default function CheckoutPage() {
         setIsPastCutoff(pastCutoff);
         setIsBeforeCutoff(!pastCutoff);
 
-        // TASK-49-04: 48h lead time formula: T+2 if pre-12 PM, T+3 if past-12 PM
-        const daysToAdd = pastCutoff ? 3 : 2;
-        const minDate = new Date(nowNY);
-        minDate.setDate(nowNY.getDate() + daysToAdd);
+        // TASK-68-04: Cálculo dinámico de fecha mínima de entrega
+        const effectiveConfig: DeliveryScheduleConfig = {
+            ...deliverySchedule,
+            cutoffHour,
+        };
 
-        // Regla de corte S55: La panadería NO despacha los martes (getDay() === 2)
-        // Si minDate cae en martes, saltar automáticamente al miércoles (+1 día)
-        if (minDate.getDay() === 2) {
-            minDate.setDate(minDate.getDate() + 1);
-        }
-
-        const yyyy = minDate.getFullYear();
-        const mm = String(minDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(minDate.getDate()).padStart(2, '0');
-        const minStr = `${yyyy}-${mm}-${dd}`;
+        const minStr = calculateDynamicMinDeliveryDate(nowNY, effectiveConfig);
         setMinSelectableDate(minStr);
+
+        const { year, month, day } = parseDateString(minStr);
+        const minDate = new Date(year, month - 1, day);
 
         const formattedNext = minDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
             weekday: 'long',
@@ -957,20 +979,21 @@ export default function CheckoutPage() {
         const payDate = new Date(minDate);
         payDate.setDate(minDate.getDate() + 6);
         setPaymentDate(payDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
-    }, [cutoffHour, locale]);
+    }, [cutoffHour, deliverySchedule, locale]);
 
     const handleDeliveryDateChange = (newDateStr: string) => {
         if (!newDateStr) return;
 
-        // Regla de corte S55: Impedir la selección de cualquier martes
-        const [y, m, d] = newDateStr.split('-').map(Number);
-        const dateObj = new Date(y, m - 1, d);
-        if (dateObj.getDay() === 2) {
+        const effectiveConfig: DeliveryScheduleConfig = {
+            ...deliverySchedule,
+            cutoffHour,
+        };
+
+        // TASK-68-04: Validación dinámica contra feriados, días no operativos y excepciones
+        const availability = isDateAvailableForDelivery(newDateStr, effectiveConfig, locale as any);
+        if (!availability.available) {
             showNotification(
-                lbl(
-                    'Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles',
-                    'Jhoanes Bakery does not make deliveries on Tuesdays. Please select from Wednesday onwards'
-                ),
+                availability.reason || lbl('Fecha no disponible para despacho', 'Date not available for dispatch'),
                 'warning'
             );
             return;
@@ -986,12 +1009,38 @@ export default function CheckoutPage() {
             );
             return;
         }
+
+        const { year, month, day } = parseDateString(newDateStr);
+        const dateObj = new Date(year, month - 1, day);
         setRawDeliveryDate(newDateStr);
         setDeliveryDate(dateObj.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
         const payDate = new Date(dateObj);
         payDate.setDate(dateObj.getDate() + 6);
         setPaymentDate(payDate.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long' }));
     };
+
+    // TASK-68-04: Días operativos formateados dinámicamente
+    const activeWorkingDaysFormatted = useMemo(() => {
+        const days = deliverySchedule.workingDays || DEFAULT_DELIVERY_SCHEDULE.workingDays;
+        const labels = locale === 'en' ? DAY_NAMES_EN : DAY_NAMES_ES;
+        return days.map(d => labels[d]).join(', ');
+    }, [deliverySchedule.workingDays, locale]);
+
+    // TASK-68-04: Próximo feriado cercano
+    const upcomingHoliday = useMemo(() => {
+        if (!deliverySchedule.holidays || deliverySchedule.holidays.length === 0) return null;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const upcoming = deliverySchedule.holidays
+            .filter(h => h.date >= todayStr)
+            .sort((a, b) => a.date.localeCompare(b.date))[0];
+        return upcoming || null;
+    }, [deliverySchedule.holidays]);
+
+    // TASK-68-04: Si la fecha seleccionada es un día extraordinario
+    const isSelectedDateExceptional = useMemo(() => {
+        if (!rawDeliveryDate || !deliverySchedule.exceptionalDays) return null;
+        return deliverySchedule.exceptionalDays.find(d => d.date === rawDeliveryDate) || null;
+    }, [rawDeliveryDate, deliverySchedule.exceptionalDays]);
 
     const handleReceiptFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -1563,7 +1612,7 @@ export default function CheckoutPage() {
                                     )}
 
                                     {/* Date Selector input with min limit */}
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-2 space-y-3">
                                         <label className="text-xs font-bold text-white/70 block uppercase tracking-wider">
                                             {lbl('Selecciona o confirma la fecha:', 'Select or confirm date:')}
                                         </label>
@@ -1573,16 +1622,48 @@ export default function CheckoutPage() {
                                                 min={minSelectableDate}
                                                 value={rawDeliveryDate}
                                                 onChange={e => handleDeliveryDateChange(e.target.value)}
-                                                className="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-primary text-sm w-full sm:w-auto"
+                                                className="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-primary text-sm w-full sm:w-auto cursor-pointer"
                                             />
                                             <p className="text-2xl font-black text-white capitalize">{deliveryDate}</p>
                                         </div>
-                                        <p className="text-[11px] text-white/75 font-medium">
-                                            {lbl(
-                                                'Nota operativa: Panadería Jhoanes no realiza entregas los días martes. Selecciona a partir del miércoles.',
-                                                'Operational note: Jhoanes Bakery does not make deliveries on Tuesdays. Please select from Wednesday onwards.'
+
+                                        {/* Badge de fecha extraordinaria si aplica */}
+                                        {isSelectedDateExceptional && (
+                                            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-200 text-xs font-bold">
+                                                <Sparkles size={14} className="text-amber-300" />
+                                                <span>
+                                                    {lbl(
+                                                        `⭐ Fecha especial de despacho habilitada: ${isSelectedDateExceptional.name}`,
+                                                        `⭐ Special delivery date enabled: ${isSelectedDateExceptional.name}`
+                                                    )}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Resumen dinámico de días operativos y feriado cercano */}
+                                        <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl text-xs space-y-1.5 text-white/80">
+                                            <p className="flex items-center gap-2 font-medium">
+                                                <Calendar size={14} className="text-amber-300 shrink-0" />
+                                                <span>
+                                                    <strong className="text-white">
+                                                        {lbl('Días de despacho activos: ', 'Operating delivery days: ')}
+                                                    </strong>
+                                                    {activeWorkingDaysFormatted}
+                                                </span>
+                                            </p>
+
+                                            {upcomingHoliday && (
+                                                <p className="flex items-center gap-2 text-[11px] text-amber-200/90 font-medium pt-1.5 border-t border-white/10">
+                                                    <AlertCircle size={13} className="text-amber-300 shrink-0" />
+                                                    <span>
+                                                        {lbl(
+                                                            `Próximo feriado no laborable: ${upcomingHoliday.name} (${upcomingHoliday.date})`,
+                                                            `Upcoming non-working holiday: ${upcomingHoliday.name} (${upcomingHoliday.date})`
+                                                        )}
+                                                    </span>
+                                                </p>
                                             )}
-                                        </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

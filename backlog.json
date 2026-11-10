@@ -1,7 +1,7 @@
 {
   "project": "pj-air",
   "version": "5.0.0",
-  "kernel_version": "5.0.0",
+  "kernel_version": "5.3.1",
   "status": "IN_PROGRESS",
   "current_sprint": "S68",
   "current_task": "TASK-68-01",
@@ -112,21 +112,21 @@
         {
           "id": "TASK-68-03",
           "title": "Apartado dedicado /admin/dispatch con selector semanal, feriados NY/US y excepciones",
-          "status": "TODO",
+          "status": "DONE",
           "type": "ADMIN/UI",
           "veracity_hash": null
         },
         {
           "id": "TASK-68-04",
           "title": "Integración en checkout/page.tsx con bloqueo de feriados y advertencias",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/CHECKOUT",
           "veracity_hash": null
         },
         {
           "id": "TASK-68-05",
           "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
-          "status": "TODO",
+          "status": "DONE",
           "type": "TEST/DEPLOY",
           "veracity_hash": null
         },
