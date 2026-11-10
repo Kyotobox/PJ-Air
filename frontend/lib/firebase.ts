@@ -239,32 +239,10 @@ export const sendOtpSms = async (
       }
     }
   } catch (backendErr: any) {
-    // If backend is unreachable or in offline unit test environment, fallback gracefully
-    console.warn('Backend OTP dispatch notice, evaluating simulation fallback:', backendErr?.message || backendErr);
+    console.error('Backend OTP dispatch failed:', backendErr?.message || backendErr);
   }
 
-  // 3. Fallback Simulation Mode (Test Mode)
-  // Supports test numbers (+1 305 555 0100) or local development
-  return {
-    verificationId: 'simulated-verification-' + Date.now(),
-    confirm: async (verificationCode: string) => {
-      const trimmedCode = verificationCode.trim();
-      const expectedCode = '123456';
-
-      if (trimmedCode === expectedCode) {
-        return {
-          user: {
-            getIdToken: async () => 'mock-valid-firebase-token',
-            phoneNumber: e164,
-          },
-        };
-      }
-
-      const error = new Error('Invalid or expired verification code');
-      (error as any).code = 'auth/invalid-verification-code';
-      throw error;
-    },
-  };
+  throw new Error('No se pudo enviar el código de verificación SMS. Verifique la conexión o el servicio.');
 };
 
 /**

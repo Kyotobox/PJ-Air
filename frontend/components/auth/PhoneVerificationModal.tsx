@@ -84,23 +84,10 @@ export const PhoneVerificationModal = ({
       let idToken: string | undefined;
 
       if (confirmationResult) {
-        try {
-          const res = await confirmOtpCode(confirmationResult, cleanCode);
-          idToken = res.idToken;
-        } catch (confirmErr: any) {
-          // If code is test code 123456 or confirmationResult fails
-          if (cleanCode === '123456') {
-            idToken = 'mock-valid-firebase-token';
-          } else {
-            throw confirmErr;
-          }
-        }
+        const res = await confirmOtpCode(confirmationResult, cleanCode);
+        idToken = res.idToken;
       } else {
-        if (cleanCode === '123456') {
-          idToken = 'mock-valid-firebase-token';
-        } else {
-          throw new Error('Invalid or expired verification code');
-        }
+        throw new Error(locale === 'en' ? 'No active verification session. Please request a new code.' : 'No hay sesión activa de verificación. Solicita un nuevo código.');
       }
 
       await onVerified({
@@ -173,7 +160,7 @@ export const PhoneVerificationModal = ({
                 maxLength={6}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder="123456"
+                placeholder="000000"
                 value={code}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -234,11 +221,6 @@ export const PhoneVerificationModal = ({
             </button>
           </div>
         </form>
-
-        {/* Testing hint */}
-        <p className="mt-5 text-[10px] text-muted-foreground/70 font-medium">
-          {locale === 'en' ? 'Test mode: Use code 123456' : 'Modo de prueba: Usa el código 123456'}
-        </p>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, InternalServerErrorException, BadRequestException, Optional } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, InternalServerErrorException, BadRequestException, Optional, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
@@ -14,6 +14,7 @@ import { getFirebaseAdmin } from './firebase-admin.util';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private otpStore = new Map<string, { code: string; expiresAt: number; verificationId: string }>();
 
   constructor(
@@ -440,12 +441,15 @@ export class AuthService {
       }
     }
 
-    const testOtpCode = process.env.TEST_PHONE_OTP_CODE || '123456';
     let verified = false;
 
     if (verificationCode) {
-      if (verificationCode === testOtpCode) {
+      const e164 = cleanPhone.startsWith('+') ? `+${digitsOnly}` : (digitsOnly.length === 10 ? `+1${digitsOnly}` : `+${digitsOnly}`);
+      const stored = this.otpStore.get(e164) || this.otpStore.get(cleanPhone);
+      if (stored && stored.code === verificationCode.trim() && Date.now() <= stored.expiresAt) {
         verified = true;
+        this.otpStore.delete(e164);
+        this.otpStore.delete(cleanPhone);
       } else {
         throw new BadRequestException('Invalid or expired verification code');
       }
@@ -488,19 +492,19 @@ export class AuthService {
     }
     const e164 = cleanPhone.startsWith('+') ? `+${digits}` : (digits.length === 10 ? `+1${digits}` : `+${digits}`);
 
-    const isTestEnv = process.env.NODE_ENV === 'test';
-    const testCode = process.env.TEST_PHONE_OTP_CODE || '123456';
-    const code = (digits.endsWith('0100') || isTestEnv) ? testCode : Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate non-deterministic 6-digit real random code (100000 - 999999)
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     const verificationId = `otp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     this.otpStore.set(e164, { code, expiresAt, verificationId });
+    this.logger.log(`[SMS_OTP] Código OTP generado para ${e164}: ${code} (válido por 10 min)`);
 
     if (this.smsService) {
       try {
         await this.smsService.sendSms(e164, `Tu código de verificación de Jhoanes Bakery es: ${code}`);
       } catch (err: any) {
-        console.warn(`[AuthService] SMS dispatch notice: ${err?.message || err}`);
+        this.logger.warn(`[AuthService] SMS dispatch notice: ${err?.message || err}`);
       }
     }
 
@@ -522,19 +526,11 @@ export class AuthService {
     const e164 = cleanPhone.startsWith('+') ? `+${digits}` : (digits.length === 10 ? `+1${digits}` : `+${digits}`);
 
     const stored = this.otpStore.get(e164);
-    const testCode = process.env.TEST_PHONE_OTP_CODE || '123456';
-
-    let isValid = false;
-    if (stored && stored.code === code.trim() && Date.now() <= stored.expiresAt) {
-      isValid = true;
-      this.otpStore.delete(e164);
-    } else if (code.trim() === testCode) {
-      isValid = true;
-    }
-
-    if (!isValid) {
+    if (!stored || stored.code !== code.trim() || Date.now() > stored.expiresAt) {
       throw new BadRequestException('Invalid or expired verification code');
     }
+
+    this.otpStore.delete(e164);
 
     const idToken = `valid-test-token-otp-${Date.now()}`;
     return {

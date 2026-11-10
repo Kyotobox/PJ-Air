@@ -106,7 +106,7 @@ describe('AuthController', () => {
       (authService.verifyPhone as jest.Mock).mockResolvedValue(mockResult);
 
       const req = { user: { id: 'user-123' } };
-      const body = { phone: '+13055550100', verificationCode: '123456' };
+      const body = { phone: '+13055550100', verificationCode: '849201' };
 
       const result = await controller.verifyPhone(req, body);
       expect(authService.verifyPhone).toHaveBeenCalledWith('user-123', body);

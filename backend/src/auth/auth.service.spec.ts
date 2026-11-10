@@ -331,16 +331,21 @@ describe('AuthService', () => {
   });
 
   describe('verifyPhone', () => {
-    it('should successfully verify phone with valid code (123456)', async () => {
+    it('should successfully verify phone with valid generated OTP code', async () => {
       mockUsersService.updateProfile.mockResolvedValue({
         id: 'user-1',
         phone: '+13055550100',
         phone_verified: true,
       });
 
+      await service.sendSmsOtp({ phone: '+13055550100' });
+      const stored = (service as any).otpStore.get('+13055550100');
+      expect(stored).toBeDefined();
+      expect(stored.code).toMatch(/^\d{6}$/);
+
       const result = await service.verifyPhone('user-1', {
         phone: '+13055550100',
-        verificationCode: '123456',
+        verificationCode: stored.code,
       });
 
       expect(mockUsersService.updateProfile).toHaveBeenCalledWith('user-1', {
@@ -354,7 +359,18 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw BadRequestException if code is invalid', async () => {
+    it('should throw BadRequestException if code is invalid or hardcoded 123456', async () => {
+      await service.sendSmsOtp({ phone: '+13055550100' });
+      const stored = (service as any).otpStore.get('+13055550100');
+      if (stored.code === '123456') stored.code = '654321';
+
+      await expect(
+        service.verifyPhone('user-1', {
+          phone: '+13055550100',
+          verificationCode: '123456',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
       await expect(
         service.verifyPhone('user-1', {
           phone: '+13055550100',
@@ -367,7 +383,7 @@ describe('AuthService', () => {
       await expect(
         service.verifyPhone('user-1', {
           phone: '12345',
-          verificationCode: '123456',
+          verificationCode: '849201',
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -376,7 +392,7 @@ describe('AuthService', () => {
       await expect(
         service.verifyPhone('user-1', {
           phone: '',
-          verificationCode: '123456',
+          verificationCode: '849201',
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -385,7 +401,7 @@ describe('AuthService', () => {
       await expect(
         service.verifyPhone('', {
           phone: '+13055550100',
-          verificationCode: '123456',
+          verificationCode: '849201',
         }),
       ).rejects.toThrow(UnauthorizedException);
     });
@@ -423,26 +439,34 @@ describe('AuthService', () => {
       expect(res.message).toBe('Código de verificación enviado exitosamente');
     });
 
-    it('verifies standard test OTP code (123456) and returns valid idToken (Happy Path)', async () => {
+    it('verifies real generated OTP code and returns valid idToken (Happy Path)', async () => {
       await service.sendSmsOtp({ phone: '+13055550199' });
-      const res = await service.verifySmsOtp({ phone: '+13055550199', code: '123456' });
+      const stored = (service as any).otpStore.get('+13055550199');
+      expect(stored).toBeDefined();
+      expect(stored.code).toMatch(/^\d{6}$/);
+
+      const res = await service.verifySmsOtp({ phone: '+13055550199', code: stored.code });
 
       expect(res.success).toBe(true);
       expect(res.phone).toBe('+13055550199');
       expect(res.idToken).toMatch(/^valid-test-token-otp-/);
     });
 
+    it('throws BadRequestException when verifying with obsolete hardcoded 123456 or invalid code (Sad Path §6)', async () => {
+      await service.sendSmsOtp({ phone: '+13055550199' });
+      const stored = (service as any).otpStore.get('+13055550199');
+      if (stored.code === '123456') stored.code = '654321';
+
+      await expect(service.verifySmsOtp({ phone: '+13055550199', code: '123456' })).rejects.toThrow(BadRequestException);
+      await expect(service.verifySmsOtp({ phone: '+13055550199', code: '999999' })).rejects.toThrow(BadRequestException);
+    });
+
     it('throws BadRequestException when phone is missing in sendSmsOtp (Sad Path §6)', async () => {
       await expect(service.sendSmsOtp({ phone: '' })).rejects.toThrow(BadRequestException);
     });
 
-    it('throws BadRequestException when verifying with invalid code (Sad Path §6)', async () => {
-      await service.sendSmsOtp({ phone: '+13055550199' });
-      await expect(service.verifySmsOtp({ phone: '+13055550199', code: '999999' })).rejects.toThrow(BadRequestException);
-    });
-
     it('throws BadRequestException when phone or code is missing in verifySmsOtp (Sad Path §6)', async () => {
-      await expect(service.verifySmsOtp({ phone: '', code: '123456' })).rejects.toThrow(BadRequestException);
+      await expect(service.verifySmsOtp({ phone: '', code: '849201' })).rejects.toThrow(BadRequestException);
       await expect(service.verifySmsOtp({ phone: '+13055550199', code: '' })).rejects.toThrow(BadRequestException);
     });
   });
