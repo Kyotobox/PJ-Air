@@ -18,6 +18,7 @@ import {
 import Link from 'next/link';
 import { API_URL } from '@/lib/config';
 import ScheduleOrdersModal from '@/components/modals/ScheduleOrdersModal';
+import TemporarilyClosed from '@/components/landing/TemporarilyClosed';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Login Modal — shown when user requests authentication
@@ -458,9 +459,16 @@ function CategoryCarousel({
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
+    const { user, profile, isLoading: authLoading } = useAuth();
+    const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
+
+    // Cerrado temporalmente para todo público externo
+    if (!isAdmin) {
+        return <TemporarilyClosed />;
+    }
+
     const { addToCart, cart } = useCart();
     const { t, locale } = useLanguage();
-    const { user, profile, isLoading: authLoading } = useAuth();
 
     // Login modal controlled by user action
     const [showLoginModal, setShowLoginModal] = useState(false);
