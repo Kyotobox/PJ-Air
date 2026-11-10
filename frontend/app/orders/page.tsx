@@ -596,7 +596,7 @@ export default function ClientOrdersPage() {
             </table>
 
             <div class="footer">
-                Jhoanes Bakery & Coffee LLC • (347) 761-2687 • Chefjhoanes@gmail.com • Brooklyn, NY
+                Jhoanes Bakery & Coffee LLC • (347) 761-2687 • Contact@jhoanesbakery.com • Brooklyn, NY
             </div>
             <script>window.onload=function(){window.print();};<\/script>
         </body></html>`;

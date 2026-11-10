@@ -236,7 +236,7 @@ export class MailService {
 
           <div style="margin-top: 32px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 12px; color: #64748b; text-align: center;">
             <p style="margin: 0 0 4px 0; font-weight: 600; color: #334155;">Thank you for your business with Jhoanes Bakery Wholesale.</p>
-            <p style="margin: 0;">For inquiries or delivery instructions, contact operations at support@jhoanes.com</p>
+            <p style="margin: 0;">For inquiries or delivery instructions, contact operations at Contact@jhoanesbakery.com</p>
           </div>
         </div>
       `;

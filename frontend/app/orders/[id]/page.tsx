@@ -170,7 +170,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             <h3>Issuer / Provider:</h3>
             <p>Jhoanes Bakery & Coffee LLC</p>
             <p>3304 Broadway, Astoria, NY 11106</p>
-            <p>accounting@jhoanes.com</p>
+            <p>Contact@jhoanesbakery.com</p>
         </div>
         <div class="party">
             <h3>Bill To / Customer Details:</h3>
