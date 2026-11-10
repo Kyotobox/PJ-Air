@@ -3,51 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S69",
-  "current_task": "TASK-69-01",
+  "current_sprint": "S70",
+  "current_task": "TASK-70-01",
   "sprints": [
-    {
-      "id": "S67",
-      "name": "Sprint S67: Erradicación Integral de Username en Registro/Admin/Perfil y Políticas Mayoristas en Inglés",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-67-01",
-          "title": "Erradicar input username en registro y unificar acceso por email",
-          "status": "DONE",
-          "type": "UI/AUTH",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-67-02",
-          "title": "Limpiar referencias de @username en paneles de administración",
-          "status": "DONE",
-          "type": "ADMIN/UI",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-67-03",
-          "title": "Eliminar campo username en perfil de usuario",
-          "status": "DONE",
-          "type": "UI/PROFILE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-67-04",
-          "title": "Desplegar cláusulas del acuerdo mayorista en inglés oficial en registro",
-          "status": "DONE",
-          "type": "UI/LEGAL",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-67-05",
-          "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
-          "status": "DONE",
-          "type": "TEST/DEPLOY",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S68",
       "name": "Sprint S68: Apartado de Días de Despacho en Admin, Calendario de Feriados y Motor Dinámico de Entrega",
@@ -100,7 +58,7 @@
     {
       "id": "S69",
       "name": "Sprint S69: Transición de Datos en Producción, Preservación de Órdenes Activas y Depuración de Clientes para Re-registro",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-69-01",
@@ -131,38 +89,86 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S70",
+      "name": "Sprint S70: Despliegue a Producción con Acceso Administrativo Protegido y Verificación de Panel",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-70-01",
+          "title": "Sincronización de código fuente (S66-S69) y unificación de base de datos e imágenes en /var/www/pj-air",
+          "status": "DONE",
+          "type": "TECH/SYNC",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-70-02",
+          "title": "Compilación física de Backend (NestJS) y Frontend (Next.js) en producción",
+          "status": "DONE",
+          "type": "BUILD/PROD",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-70-03",
+          "title": "Orquestación de procesos de producción con PM2 en puertos 3000 y 3001",
+          "status": "DONE",
+          "type": "SERVICE/PM2",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-70-04",
+          "title": "Configuración de Nginx para validación privada (acceso a /admin y /auth/login con / en mantenimiento)",
+          "status": "DONE",
+          "type": "NET/NGINX",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-70-05",
+          "title": "Smoke test de autenticación administrativa y verificación de los 3 pedidos en /admin/orders",
+          "status": "DONE",
+          "type": "SMOKE/CERT",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 60,
+  "archived_sprints_count": 61,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S69",
-    "name": "Sprint S69: Transición de Datos en Producción, Preservación de Órdenes Activas y Depuración de Clientes para Re-registro",
+    "id": "S70",
+    "name": "Sprint S70: Despliegue a Producción con Acceso Administrativo Protegido y Verificación de Panel",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-69-01",
-        "title": "Snapshot físico inmutable y certificación de respaldo de /root/database.sqlite",
+        "id": "TASK-70-01",
+        "title": "Sincronización de código fuente (S66-S69) y unificación de base de datos e imágenes en /var/www/pj-air",
         "status": "IN_PROGRESS",
-        "type": "TECH/BACKUP"
+        "type": "TECH/SYNC"
       },
       {
-        "id": "TASK-69-02",
-        "title": "Creación de perfiles temporales de transición y reasignación de los 3 pedidos en tránsito",
+        "id": "TASK-70-02",
+        "title": "Compilación física de Backend (NestJS) y Frontend (Next.js) en producción",
         "status": "TODO",
-        "type": "DATA/MIGRATION"
+        "type": "BUILD/PROD"
       },
       {
-        "id": "TASK-69-03",
-        "title": "Purga relacional de clientes antiguos y pedidos cerrados con blindaje de administradores",
+        "id": "TASK-70-03",
+        "title": "Orquestación de procesos de producción con PM2 en puertos 3000 y 3001",
         "status": "TODO",
-        "type": "DATA/PURGE"
+        "type": "SERVICE/PM2"
       },
       {
-        "id": "TASK-69-04",
-        "title": "Certificación DDL (foreign_key_check), integridad referencial y smoke test",
+        "id": "TASK-70-04",
+        "title": "Configuración de Nginx para validación privada (acceso a /admin y /auth/login con / en mantenimiento)",
         "status": "TODO",
-        "type": "DDL/VERIFY"
+        "type": "NET/NGINX"
+      },
+      {
+        "id": "TASK-70-05",
+        "title": "Smoke test de autenticación administrativa y verificación de los 3 pedidos en /admin/orders",
+        "status": "TODO",
+        "type": "SMOKE/CERT"
       }
     ]
   }
