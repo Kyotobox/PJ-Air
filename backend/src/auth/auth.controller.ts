@@ -32,6 +32,14 @@ export class AuthController {
     return this.authService.recoverPassword(body.identifier);
   }
 
+  @Post('reset-password')
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    if (!body || !body.token || !body.newPassword) {
+      throw new BadRequestException('Token y nueva contraseña son requeridos');
+    }
+    return this.authService.resetPassword(body.token, body.newPassword);
+  }
+
   @Patch('change-password')
   async changePassword(@Body() body: any) {
     const { userId, currentPassword, newPassword } = body;

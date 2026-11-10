@@ -37,6 +37,8 @@ export declare class User {
     stripe_payment_method_id?: string | null;
     check_enabled: boolean;
     is_active: boolean;
+    reset_password_token?: string | null;
+    reset_password_expires?: Date | null;
     credit_balance: number;
     productDiscounts: ProductDiscount[];
 }

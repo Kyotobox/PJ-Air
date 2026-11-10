@@ -19,6 +19,9 @@ export declare class UsersService {
     updateRole(id: string, role: string): Promise<User>;
     findByEmailWithRole(email: string): Promise<User | null>;
     updatePassword(userId: string, newPassword: string): Promise<void>;
+    setResetPasswordToken(userId: string, token: string, expires: Date): Promise<void>;
+    findByResetPasswordToken(token: string): Promise<User | null>;
+    clearResetPasswordToken(userId: string): Promise<void>;
     updateGeneralDiscount(userId: string, discount: number): Promise<void>;
     updateDeliveryFee(userId: string, fee: number): Promise<void>;
     updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void>;

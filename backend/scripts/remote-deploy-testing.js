@@ -91,9 +91,10 @@ const testingDeployCommands = [
     // 6. PM2 Restart on dedicated testing ports (3200 & 3201)
     `echo "=== 6. Desplegando procesos PM2 de testing ==="`,
     `cd "${TESTING_DIR}"`,
+    `sqlite3 "${TESTING_DIR}/database-testing.sqlite" "ALTER TABLE users ADD COLUMN reset_password_token VARCHAR; ALTER TABLE users ADD COLUMN reset_password_expires DATETIME;" 2>/dev/null || true`,
     `pm2 delete ${TESTING_BACKEND_PM2} || true`,
     `pm2 delete ${TESTING_FRONTEND_PM2} || true`,
-    `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NODE_PATH="${TESTING_DIR}/backend/node_modules" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name ${TESTING_BACKEND_PM2} --cwd "${TESTING_DIR}/backend"`,
+    `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NODE_PATH="${TESTING_DIR}/backend/node_modules" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite SITE_URL=https://testing.jhoanes.com FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name ${TESTING_BACKEND_PM2} --cwd "${TESTING_DIR}/backend"`,
     `GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k" PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start "$([ -f "${TESTING_DIR}/frontend/node_modules/next/dist/bin/next" ] && echo "${TESTING_DIR}/frontend/node_modules/next/dist/bin/next" || echo "${TESTING_DIR}/node_modules/next/dist/bin/next")" --name ${TESTING_FRONTEND_PM2} --cwd "${TESTING_DIR}/frontend" -- start -p 3200`,
     `pm2 save`,
     `echo "=== 7. TESTING.JHOANES.COM EN LÍNEA ==="`

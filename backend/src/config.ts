@@ -23,7 +23,7 @@ export const JWT_SECRET = process.env.JWT_SECRET;
 export const SUPABASE_KEY = process.env.SUPABASE_KEY;
 export const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_KEY || 'AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k';
 export const NODE_ENV = process.env.NODE_ENV;
-export const SITE_URL = process.env.SITE_URL || 'http://localhost:3000';
+export const SITE_URL = process.env.SITE_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
 export const SMTP_HOST = process.env.SMTP_HOST;
 export const SMTP_PORT = process.env.SMTP_PORT || '587';
 export const SMTP_SECURE = process.env.SMTP_SECURE === 'true';

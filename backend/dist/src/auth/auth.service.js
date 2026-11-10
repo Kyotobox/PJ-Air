@@ -44,6 +44,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -53,20 +54,22 @@ const users_service_1 = require("../users/users.service");
 const address_entity_1 = require("../addresses/address.entity");
 const system_config_entity_1 = require("../system-configs/system-config.entity");
 const sms_service_1 = require("../sms/sms.service");
-const nodemailer = __importStar(require("nodemailer"));
+const mail_service_1 = require("../mail/mail.service");
 const crypto = __importStar(require("crypto"));
-const config_1 = require("../config");
 const crypto_util_1 = require("./crypto.util");
 const firebase_admin_util_1 = require("./firebase-admin.util");
-let AuthService = class AuthService {
+let AuthService = AuthService_1 = class AuthService {
     usersService;
     systemConfigRepository;
+    mailService;
     smsService;
     addressRepository;
+    logger = new common_1.Logger(AuthService_1.name);
     otpStore = new Map();
-    constructor(usersService, systemConfigRepository, smsService, addressRepository) {
+    constructor(usersService, systemConfigRepository, mailService, smsService, addressRepository) {
         this.usersService = usersService;
         this.systemConfigRepository = systemConfigRepository;
+        this.mailService = mailService;
         this.smsService = smsService;
         this.addressRepository = addressRepository;
     }
@@ -256,87 +259,43 @@ let AuthService = class AuthService {
         if (!user) {
             throw new common_1.UnauthorizedException(`No hemos conseguido un usuario o email que coincida con: ${identifier}`);
         }
-        const siteUrl = config_1.SITE_URL;
-        const tempPassword = crypto.randomBytes(6).toString('hex');
-        const hashedPassword = (0, crypto_util_1.hashPassword)(tempPassword);
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const expires = new Date(Date.now() + 60 * 60 * 1000);
+        await this.usersService.setResetPasswordToken(user.id, resetToken, expires);
+        const clientName = user.profile?.full_name || user.signer_name || user.legal_business_name || undefined;
+        if (this.mailService) {
+            await this.mailService.sendPasswordResetEmail(user.email, resetToken, clientName);
+        }
+        else {
+            this.logger.warn(`MailService not available, cannot send reset link to ${user.email}`);
+        }
+        return {
+            success: true,
+            message: `Hemos enviado un enlace a ${user.email} para restablecer tu contraseña. El enlace es válido por 1 hora.`,
+            email: user.email,
+        };
+    }
+    async resetPassword(token, newPassword) {
+        if (!token || typeof token !== 'string') {
+            throw new common_1.BadRequestException('Token de restablecimiento inválido o ausente');
+        }
+        if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+            throw new common_1.BadRequestException('La nueva contraseña debe tener al menos 8 caracteres');
+        }
+        const user = await this.usersService.findByResetPasswordToken(token);
+        if (!user) {
+            throw new common_1.BadRequestException('El enlace de restablecimiento es inválido o no existe');
+        }
+        if (!user.reset_password_expires || new Date(user.reset_password_expires).getTime() < Date.now()) {
+            throw new common_1.BadRequestException('El enlace de restablecimiento ha expirado. Por favor, solicita uno nuevo');
+        }
+        const hashedPassword = (0, crypto_util_1.hashPassword)(newPassword);
         await this.usersService.updatePassword(user.id, hashedPassword);
-        try {
-            let transporterParams;
-            if (config_1.SMTP_HOST) {
-                transporterParams = {
-                    host: config_1.SMTP_HOST,
-                    port: parseInt(config_1.SMTP_PORT),
-                    secure: config_1.SMTP_SECURE,
-                    auth: {
-                        user: config_1.SMTP_USER,
-                        pass: config_1.SMTP_PASS,
-                    },
-                };
-            }
-            else {
-                transporterParams = {
-                    host: 'smtp.ethereal.email',
-                    port: 587,
-                    secure: false,
-                    auth: {
-                        user: 'mckenna.beier@ethereal.email',
-                        pass: 'JSF9re7Xh3bTzH4JUK',
-                    },
-                    tls: {
-                        rejectUnauthorized: false
-                    }
-                };
-            }
-            let transporter = nodemailer.createTransport(transporterParams);
-            try {
-                await transporter.verify();
-            }
-            catch (e) {
-                console.log("SMTP verify failed, creating dynamic Ethereal test account...");
-                const testAccount = await nodemailer.createTestAccount();
-                transporter = nodemailer.createTransport({
-                    host: 'smtp.ethereal.email',
-                    port: 587,
-                    secure: false,
-                    auth: {
-                        user: testAccount.user,
-                        pass: testAccount.pass,
-                    },
-                    tls: {
-                        rejectUnauthorized: false
-                    }
-                });
-            }
-            const info = await transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Jhoanes Bakery, Order System" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery, Order System" <noresponder@jhpanesbakery.com>',
-                to: user.email,
-                subject: "Password Recovery - Temporary Password",
-                text: `Estimado cliente, su nueva contraseña temporal es: ${tempPassword}\n\nPor seguridad, cambie su contraseña una vez inicie sesión.\n\nIr a la tienda: ${siteUrl}/auth/login`,
-                html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333;">Password Recovery</h2>
-            <p>Estimado cliente, su nueva contraseña temporal es: <strong>${tempPassword}</strong></p>
-            <p style="color: #666; font-size: 14px;">Por seguridad, le recomendamos cambiar su contraseña una vez que inicie sesión.</p>
-            <br/>
-            <p>
-              <a href="${siteUrl}/auth/login" 
-                 style="display: inline-block; background-color: #b8860b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                Ir a la tienda
-              </a>
-            </p>
-          </div>`,
-            });
-            console.log("Message sent: %s", info.messageId);
-            console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-            return {
-                message: `Gracias, su nueva contraseña temporal se ha enviado al correo ${user.email}`,
-                email: user.email,
-            };
-        }
-        catch (error) {
-            console.error('Error sending email:', error);
-            throw new common_1.InternalServerErrorException('Error al enviar el correo de recuperación');
-        }
+        await this.usersService.clearResetPasswordToken(user.id);
+        return {
+            success: true,
+            message: 'Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tu nueva clave.',
+        };
     }
     async changePassword(userId, currentPassword, newPassword) {
         const tempUser = await this.usersService.findOne(userId);
@@ -408,11 +367,14 @@ let AuthService = class AuthService {
                 throw new common_1.BadRequestException('Invalid phone number format');
             }
         }
-        const testOtpCode = process.env.TEST_PHONE_OTP_CODE || '123456';
         let verified = false;
         if (verificationCode) {
-            if (verificationCode === testOtpCode) {
+            const e164 = cleanPhone.startsWith('+') ? `+${digitsOnly}` : (digitsOnly.length === 10 ? `+1${digitsOnly}` : `+${digitsOnly}`);
+            const stored = this.otpStore.get(e164) || this.otpStore.get(cleanPhone);
+            if (stored && stored.code === verificationCode.trim() && Date.now() <= stored.expiresAt) {
                 verified = true;
+                this.otpStore.delete(e164);
+                this.otpStore.delete(cleanPhone);
             }
             else {
                 throw new common_1.BadRequestException('Invalid or expired verification code');
@@ -454,18 +416,17 @@ let AuthService = class AuthService {
             throw new common_1.BadRequestException('Número de teléfono inválido (mínimo 10 dígitos)');
         }
         const e164 = cleanPhone.startsWith('+') ? `+${digits}` : (digits.length === 10 ? `+1${digits}` : `+${digits}`);
-        const isTestEnv = process.env.NODE_ENV === 'test';
-        const testCode = process.env.TEST_PHONE_OTP_CODE || '123456';
-        const code = (digits.endsWith('0100') || isTestEnv) ? testCode : Math.floor(100000 + Math.random() * 900000).toString();
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
         const verificationId = `otp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
         const expiresAt = Date.now() + 10 * 60 * 1000;
         this.otpStore.set(e164, { code, expiresAt, verificationId });
+        this.logger.log(`[SMS_OTP] Código OTP generado para ${e164}: ${code} (válido por 10 min)`);
         if (this.smsService) {
             try {
                 await this.smsService.sendSms(e164, `Tu código de verificación de Jhoanes Bakery es: ${code}`);
             }
             catch (err) {
-                console.warn(`[AuthService] SMS dispatch notice: ${err?.message || err}`);
+                this.logger.warn(`[AuthService] SMS dispatch notice: ${err?.message || err}`);
             }
         }
         return {
@@ -484,18 +445,10 @@ let AuthService = class AuthService {
         const digits = cleanPhone.replace(/\D/g, '');
         const e164 = cleanPhone.startsWith('+') ? `+${digits}` : (digits.length === 10 ? `+1${digits}` : `+${digits}`);
         const stored = this.otpStore.get(e164);
-        const testCode = process.env.TEST_PHONE_OTP_CODE || '123456';
-        let isValid = false;
-        if (stored && stored.code === code.trim() && Date.now() <= stored.expiresAt) {
-            isValid = true;
-            this.otpStore.delete(e164);
-        }
-        else if (code.trim() === testCode) {
-            isValid = true;
-        }
-        if (!isValid) {
+        if (!stored || stored.code !== code.trim() || Date.now() > stored.expiresAt) {
             throw new common_1.BadRequestException('Invalid or expired verification code');
         }
+        this.otpStore.delete(e164);
         const idToken = `valid-test-token-otp-${Date.now()}`;
         return {
             success: true,
@@ -505,14 +458,16 @@ let AuthService = class AuthService {
     }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, typeorm_1.InjectRepository)(system_config_entity_1.SystemConfig)),
     __param(2, (0, common_1.Optional)()),
     __param(3, (0, common_1.Optional)()),
-    __param(3, (0, typeorm_1.InjectRepository)(address_entity_1.Address)),
+    __param(4, (0, common_1.Optional)()),
+    __param(4, (0, typeorm_1.InjectRepository)(address_entity_1.Address)),
     __metadata("design:paramtypes", [users_service_1.UsersService,
         typeorm_2.Repository,
+        mail_service_1.MailService,
         sms_service_1.SmsService,
         typeorm_2.Repository])
 ], AuthService);

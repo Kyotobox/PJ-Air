@@ -102,12 +102,31 @@ const es: Translations = {
   // ── Auth – Forgot Password ──────────────────────────────────────────────────
   forgotPassword: {
     title: 'Recuperar Acceso',
-    subtitle: 'Ingresa tu correo electrónico registrado y te enviaremos tu clave directamente a tu email.',
+    subtitle: 'Ingresa tu correo electrónico registrado y te enviaremos un enlace seguro para restablecer tu contraseña.',
     emailOrUser: 'Correo Electrónico',
-    submit: 'Enviar Contraseña',
+    submit: 'Enviar Enlace de Recuperación',
     loading: 'Enviando...',
     backToLogin: 'Regresar al Login',
     successLink: 'Volver al Inicio',
+  },
+
+  // ── Auth – Reset Password ───────────────────────────────────────────────────
+  resetPassword: {
+    title: 'Establecer Nueva Contraseña',
+    subtitle: 'Ingresa tu nueva contraseña a continuación para recuperar el acceso a tu cuenta.',
+    newPassword: 'Nueva Contraseña',
+    confirmPassword: 'Confirmar Contraseña',
+    submit: 'Actualizar Contraseña',
+    loading: 'Actualizando...',
+    successTitle: '¡Contraseña Actualizada!',
+    successMessage: 'Tu contraseña ha sido restablecida con éxito. Ya puedes iniciar sesión con tus nuevas credenciales.',
+    goToLogin: 'Iniciar Sesión',
+    errorMismatch: 'Las contraseñas no coinciden',
+    errorLength: 'La contraseña debe tener al menos 8 caracteres',
+    invalidTokenTitle: 'Enlace Inválido o Expirado',
+    invalidTokenDesc: 'Este enlace de recuperación no es válido o ha expirado. Por favor, solicita uno nuevo.',
+    requestNewLink: 'Solicitar Nuevo Enlace',
+    backToLogin: 'Regresar al Login',
   },
 
   // ── Profile ─────────────────────────────────────────────────────────────────

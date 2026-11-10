@@ -54,7 +54,7 @@ exports.JWT_SECRET = process.env.JWT_SECRET;
 exports.SUPABASE_KEY = process.env.SUPABASE_KEY;
 exports.GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_KEY || 'AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k';
 exports.NODE_ENV = process.env.NODE_ENV;
-exports.SITE_URL = process.env.SITE_URL || 'http://localhost:3000';
+exports.SITE_URL = process.env.SITE_URL || process.env.FRONTEND_URL || 'http://localhost:3000';
 exports.SMTP_HOST = process.env.SMTP_HOST;
 exports.SMTP_PORT = process.env.SMTP_PORT || '587';
 exports.SMTP_SECURE = process.env.SMTP_SECURE === 'true';

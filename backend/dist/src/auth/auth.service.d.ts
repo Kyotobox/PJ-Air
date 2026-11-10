@@ -3,13 +3,16 @@ import { UsersService } from '../users/users.service';
 import { Address } from '../addresses/address.entity';
 import { SystemConfig } from '../system-configs/system-config.entity';
 import { SmsService } from '../sms/sms.service';
+import { MailService } from '../mail/mail.service';
 export declare class AuthService {
     private usersService;
     private systemConfigRepository;
+    private mailService?;
     private smsService?;
     private addressRepository?;
+    private readonly logger;
     private otpStore;
-    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>, smsService?: SmsService | undefined, addressRepository?: Repository<Address> | undefined);
+    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>, mailService?: MailService | undefined, smsService?: SmsService | undefined, addressRepository?: Repository<Address> | undefined);
     signup(body: any): Promise<{
         address?: Address | undefined;
         message: string;
@@ -60,8 +63,13 @@ export declare class AuthService {
     }>;
     login(identifierInput: string, password: string): Promise<any>;
     recoverPassword(identifier: string): Promise<{
+        success: boolean;
         message: string;
         email: string;
+    }>;
+    resetPassword(token: string, newPassword: string): Promise<{
+        success: boolean;
+        message: string;
     }>;
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{
         message: string;

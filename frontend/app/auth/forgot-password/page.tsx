@@ -72,10 +72,10 @@ export default function ForgotPasswordPage() {
                                 {t.forgotPassword.emailOrUser}
                             </label>
                             <div className="relative">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={18} />
                                 <input
                                     required
-                                    type="text"
+                                    type="email"
                                     placeholder="ejemplo@correo.com"
                                     className="premium-input pl-12 h-14"
                                     value={identifier}

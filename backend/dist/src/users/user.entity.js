@@ -50,6 +50,8 @@ let User = class User {
     stripe_payment_method_id;
     check_enabled;
     is_active;
+    reset_password_token;
+    reset_password_expires;
     credit_balance;
     productDiscounts;
 };
@@ -190,6 +192,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: true }),
     __metadata("design:type", Boolean)
 ], User.prototype, "is_active", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "reset_password_token", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "reset_password_expires", void 0);
 __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)

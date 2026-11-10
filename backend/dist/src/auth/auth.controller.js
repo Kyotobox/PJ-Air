@@ -42,6 +42,12 @@ let AuthController = class AuthController {
         }
         return this.authService.recoverPassword(body.identifier);
     }
+    async resetPassword(body) {
+        if (!body || !body.token || !body.newPassword) {
+            throw new common_1.BadRequestException('Token y nueva contraseña son requeridos');
+        }
+        return this.authService.resetPassword(body.token, body.newPassword);
+    }
     async changePassword(body) {
         const { userId, currentPassword, newPassword } = body;
         if (!userId || !currentPassword || !newPassword) {
@@ -92,6 +98,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "recoverPassword", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 __decorate([
     (0, common_1.Patch)('change-password'),
     __param(0, (0, common_1.Body)()),

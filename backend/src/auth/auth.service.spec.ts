@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { MailService } from '../mail/mail.service';
 import { UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { hashPassword, verifyJwt } from './crypto.util';
@@ -23,6 +24,13 @@ describe('AuthService', () => {
     findOne: jest.fn(),
     updatePassword: jest.fn(),
     updateProfile: jest.fn(),
+    setResetPasswordToken: jest.fn().mockResolvedValue(true),
+    findByResetPasswordToken: jest.fn(),
+    clearResetPasswordToken: jest.fn().mockResolvedValue(true),
+  };
+
+  const mockMailService = {
+    sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
   };
 
   const mockSystemConfigRepository = {
@@ -41,6 +49,7 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         { provide: UsersService, useValue: mockUsersService },
+        { provide: MailService, useValue: mockMailService },
         { provide: getRepositoryToken(SystemConfig), useValue: mockSystemConfigRepository },
         { provide: getRepositoryToken(Address), useValue: mockAddressRepository },
       ],
@@ -284,30 +293,86 @@ describe('AuthService', () => {
   });
 
   describe('recoverPassword', () => {
-    it('should throw UnauthorizedException if user not found', async () => {
+    it('should throw UnauthorizedException if user not found (Sad Path)', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
       mockUsersService.findByIdentifier.mockResolvedValue(null);
       await expect(service.recoverPassword('test@example.com')).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should trigger recovery email with temporary password and update it in DB', async () => {
-      mockUsersService.findByEmail.mockResolvedValue({ id: '1', email: 'test@example.com', password: 'mypassword' });
-      
-      const mockSendMail = jest.fn().mockResolvedValue({ messageId: '123' });
-      const mockVerify = jest.fn().mockResolvedValue(true);
-      (nodemailer.createTransport as jest.Mock).mockReturnValue({
-        verify: mockVerify,
-        sendMail: mockSendMail,
+    it('Happy Path: should generate 64-char hex reset token, persist it with expiration, and send email via MailService without mutating password', async () => {
+      mockUsersService.findByEmail.mockResolvedValue({
+        id: 'user-uuid-1',
+        email: 'client@example.com',
+        signer_name: 'John Doe',
       });
 
-      const result = await service.recoverPassword('test@example.com');
-      expect(mockUsersService.updatePassword).toHaveBeenCalled();
-      expect(mockSendMail).toHaveBeenCalled();
+      const result = await service.recoverPassword('client@example.com');
       
-      // The email should contain a temporary password (which is a 12-char hex string)
-      const emailText = mockSendMail.mock.calls[0][0].text;
-      expect(emailText).toContain('nueva contraseña temporal');
-      expect(result).toHaveProperty('message');
+      expect(mockUsersService.setResetPasswordToken).toHaveBeenCalledWith(
+        'user-uuid-1',
+        expect.stringMatching(/^[a-f0-9]{64}$/),
+        expect.any(Date),
+      );
+      expect(mockMailService.sendPasswordResetEmail).toHaveBeenCalledWith(
+        'client@example.com',
+        expect.stringMatching(/^[a-f0-9]{64}$/),
+        'John Doe',
+      );
+      // Ensure password was NOT modified
+      expect(mockUsersService.updatePassword).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Hemos enviado un enlace a client@example.com');
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('Happy Path: should successfully reset password when token is valid and unexpired', async () => {
+      const validToken = 'valid-token-64-chars';
+      mockUsersService.findByResetPasswordToken.mockResolvedValue({
+        id: 'user-uuid-1',
+        email: 'client@example.com',
+        reset_password_token: validToken,
+        reset_password_expires: new Date(Date.now() + 1800000), // 30 min future
+      });
+
+      const result = await service.resetPassword(validToken, 'NewSecurePassword123!');
+      
+      expect(mockUsersService.updatePassword).toHaveBeenCalledWith('user-uuid-1', expect.any(String));
+      expect(mockUsersService.clearResetPasswordToken).toHaveBeenCalledWith('user-uuid-1');
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Tu contraseña ha sido restablecida');
+    });
+
+    it('Sad Path 1: should throw BadRequestException if token is missing or empty', async () => {
+      await expect(service.resetPassword('', 'ValidPassword123!')).rejects.toThrow(
+        new BadRequestException('Token de restablecimiento inválido o ausente')
+      );
+    });
+
+    it('Sad Path 2: should throw BadRequestException if new password is too short (< 8 chars)', async () => {
+      await expect(service.resetPassword('some-token', 'short')).rejects.toThrow(
+        new BadRequestException('La nueva contraseña debe tener al menos 8 caracteres')
+      );
+    });
+
+    it('Sad Path 3: should throw BadRequestException if token is not found in database', async () => {
+      mockUsersService.findByResetPasswordToken.mockResolvedValue(null);
+      await expect(service.resetPassword('unknown-token', 'ValidPassword123!')).rejects.toThrow(
+        new BadRequestException('El enlace de restablecimiento es inválido o no existe')
+      );
+    });
+
+    it('Sad Path 4: should throw BadRequestException if token has expired', async () => {
+      mockUsersService.findByResetPasswordToken.mockResolvedValue({
+        id: 'user-uuid-1',
+        email: 'client@example.com',
+        reset_password_token: 'expired-token',
+        reset_password_expires: new Date(Date.now() - 5000), // expired 5 seconds ago
+      });
+
+      await expect(service.resetPassword('expired-token', 'ValidPassword123!')).rejects.toThrow(
+        new BadRequestException('El enlace de restablecimiento ha expirado. Por favor, solicita uno nuevo')
+      );
     });
   });
 

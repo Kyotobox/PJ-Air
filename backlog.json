@@ -129,6 +129,13 @@
           "status": "TODO",
           "type": "TEST/DEPLOY",
           "veracity_hash": null
+        },
+        {
+          "id": "TASK-68-06",
+          "title": "Flujo seguro de restablecimiento de contraseña vía enlace firmado (MailService & SMTP Postfix)",
+          "status": "DONE",
+          "type": "AUTH/SECURITY",
+          "veracity_hash": null
         }
       ]
     }

@@ -16,6 +16,7 @@ const auth_guard_1 = require("./auth.guard");
 const roles_guard_1 = require("./roles.guard");
 const users_module_1 = require("../users/users.module");
 const sms_module_1 = require("../sms/sms.module");
+const mail_module_1 = require("../mail/mail.module");
 const system_config_entity_1 = require("../system-configs/system-config.entity");
 const address_entity_1 = require("../addresses/address.entity");
 let AuthModule = class AuthModule {
@@ -26,6 +27,7 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             users_module_1.UsersModule,
             sms_module_1.SmsModule,
+            mail_module_1.MailModule,
             typeorm_1.TypeOrmModule.forFeature([system_config_entity_1.SystemConfig, address_entity_1.Address]),
         ],
         providers: [auth_service_1.AuthService, auth_guard_1.AuthGuard, roles_guard_1.RolesGuard, core_1.Reflector],

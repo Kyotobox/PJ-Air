@@ -100,12 +100,31 @@ const en = {
   // ── Auth – Forgot Password ──────────────────────────────────────────────────
   forgotPassword: {
     title: 'Recover Access',
-    subtitle: 'Enter your registered email address and we will send your password to your email.',
+    subtitle: 'Enter your registered email address and we will send you a secure password reset link.',
     emailOrUser: 'Email Address',
-    submit: 'Send Password',
+    submit: 'Send Reset Link',
     loading: 'Sending...',
     backToLogin: 'Back to Login',
     successLink: 'Back to Home',
+  },
+
+  // ── Auth – Reset Password ───────────────────────────────────────────────────
+  resetPassword: {
+    title: 'Set New Password',
+    subtitle: 'Enter your new password below to regain access to your account.',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    submit: 'Update Password',
+    loading: 'Updating...',
+    successTitle: 'Password Updated!',
+    successMessage: 'Your password has been reset successfully. You can now sign in with your new password.',
+    goToLogin: 'Sign In to Your Account',
+    errorMismatch: 'Passwords do not match',
+    errorLength: 'Password must be at least 8 characters long',
+    invalidTokenTitle: 'Invalid or Expired Link',
+    invalidTokenDesc: 'This password reset link is invalid or has expired. Please request a new link.',
+    requestNewLink: 'Request New Link',
+    backToLogin: 'Back to Login',
   },
 
   // ── Profile ─────────────────────────────────────────────────────────────────

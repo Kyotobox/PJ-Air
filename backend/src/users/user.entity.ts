@@ -108,6 +108,12 @@ export class User {
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
+  @Column({ type: 'varchar', nullable: true })
+  reset_password_token?: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  reset_password_expires?: Date | null;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   credit_balance: number;
 

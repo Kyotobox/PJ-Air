@@ -129,6 +129,23 @@ let UsersService = class UsersService {
     async updatePassword(userId, newPassword) {
         await this.userRepository.update(userId, { password: newPassword });
     }
+    async setResetPasswordToken(userId, token, expires) {
+        await this.userRepository.update(userId, {
+            reset_password_token: token,
+            reset_password_expires: expires,
+        });
+    }
+    async findByResetPasswordToken(token) {
+        return this.userRepository.findOne({
+            where: { reset_password_token: token },
+        });
+    }
+    async clearResetPasswordToken(userId) {
+        await this.userRepository.update(userId, {
+            reset_password_token: null,
+            reset_password_expires: null,
+        });
+    }
     async updateGeneralDiscount(userId, discount) {
         await this.userRepository.update(userId, { general_discount: discount });
     }

@@ -133,6 +133,26 @@ export class UsersService {
     await this.userRepository.update(userId, { password: newPassword });
   }
 
+  async setResetPasswordToken(userId: string, token: string, expires: Date): Promise<void> {
+    await this.userRepository.update(userId, {
+      reset_password_token: token,
+      reset_password_expires: expires,
+    });
+  }
+
+  async findByResetPasswordToken(token: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { reset_password_token: token },
+    });
+  }
+
+  async clearResetPasswordToken(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      reset_password_token: null,
+      reset_password_expires: null,
+    });
+  }
+
   async updateGeneralDiscount(userId: string, discount: number): Promise<void> {
     await this.userRepository.update(userId, { general_discount: discount });
   }

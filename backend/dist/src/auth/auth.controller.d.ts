@@ -30,8 +30,16 @@ export declare class AuthController {
     recoverPassword(body: {
         identifier: string;
     }): Promise<{
+        success: boolean;
         message: string;
         email: string;
+    }>;
+    resetPassword(body: {
+        token: string;
+        newPassword: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
     }>;
     changePassword(body: any): Promise<{
         message: string;

@@ -6,6 +6,7 @@ import { User } from '../users/user.entity';
 import { Address } from '../addresses/address.entity';
 import { SystemConfig } from '../system-configs/system-config.entity';
 import { SmsService } from '../sms/sms.service';
+import { MailService } from '../mail/mail.service';
 import * as nodemailer from 'nodemailer';
 import * as crypto from 'crypto';
 import { SITE_URL, SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS } from '../config';
@@ -21,6 +22,8 @@ export class AuthService {
     private usersService: UsersService,
     @InjectRepository(SystemConfig)
     private systemConfigRepository: Repository<SystemConfig>,
+    @Optional()
+    private mailService?: MailService,
     @Optional()
     private smsService?: SmsService,
     @Optional()
@@ -268,95 +271,53 @@ export class AuthService {
       );
     }
 
-    const siteUrl = SITE_URL;
+    // Generate secure 64-char hex token with 1-hour expiration
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    // Generate a secure temporary password, hash it and save it
-    const tempPassword = crypto.randomBytes(6).toString('hex'); // 12 characters
-    const hashedPassword = hashPassword(tempPassword);
-    await this.usersService.updatePassword(user.id, hashedPassword);
+    await this.usersService.setResetPasswordToken(user.id, resetToken, expires);
 
-    try {
-      // SMTP configuration - use env vars if available, fallback to Ethereal for dev
-      let transporterParams: any;
-
-      if (SMTP_HOST) {
-        transporterParams = {
-          host: SMTP_HOST,
-          port: parseInt(SMTP_PORT),
-          secure: SMTP_SECURE,
-          auth: {
-            user: SMTP_USER,
-            pass: SMTP_PASS,
-          },
-        };
-      } else {
-        // Fallback to Ethereal for local development
-        transporterParams = {
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: {
-            user: 'mckenna.beier@ethereal.email',
-            pass: 'JSF9re7Xh3bTzH4JUK',
-          },
-          tls: {
-            rejectUnauthorized: false
-          }
-        };
-      }
-
-      let transporter: any = nodemailer.createTransport(transporterParams);
-
-      try {
-        await transporter.verify();
-      } catch (e) {
-        console.log("SMTP verify failed, creating dynamic Ethereal test account...");
-        const testAccount = await nodemailer.createTestAccount();
-        transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
-          },
-          tls: {
-            rejectUnauthorized: false
-          }
-        });
-      }
-
-      const info = await transporter.sendMail({
-        from: SMTP_USER ? `"Jhoanes Bakery, Order System" <${SMTP_USER}>` : '"Jhoanes Bakery, Order System" <noresponder@jhpanesbakery.com>',
-        to: user.email,
-        subject: "Password Recovery - Temporary Password",
-        text: `Estimado cliente, su nueva contraseña temporal es: ${tempPassword}\n\nPor seguridad, cambie su contraseña una vez inicie sesión.\n\nIr a la tienda: ${siteUrl}/auth/login`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333;">Password Recovery</h2>
-            <p>Estimado cliente, su nueva contraseña temporal es: <strong>${tempPassword}</strong></p>
-            <p style="color: #666; font-size: 14px;">Por seguridad, le recomendamos cambiar su contraseña una vez que inicie sesión.</p>
-            <br/>
-            <p>
-              <a href="${siteUrl}/auth/login" 
-                 style="display: inline-block; background-color: #b8860b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                Ir a la tienda
-              </a>
-            </p>
-          </div>`,
-      });
-
-      console.log("Message sent: %s", info.messageId);
-      console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info as any));
-
-      return {
-        message: `Gracias, su nueva contraseña temporal se ha enviado al correo ${user.email}`,
-        email: user.email,
-      };
-    } catch (error) {
-      console.error('Error sending email:', error);
-      throw new InternalServerErrorException('Error al enviar el correo de recuperación');
+    // Send email via dedicated MailService (connected to Postfix SMTP)
+    const clientName = user.profile?.full_name || user.signer_name || user.legal_business_name || undefined;
+    if (this.mailService) {
+      await this.mailService.sendPasswordResetEmail(user.email, resetToken, clientName);
+    } else {
+      this.logger.warn(`MailService not available, cannot send reset link to ${user.email}`);
     }
+
+    return {
+      success: true,
+      message: `Hemos enviado un enlace a ${user.email} para restablecer tu contraseña. El enlace es válido por 1 hora.`,
+      email: user.email,
+    };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    if (!token || typeof token !== 'string') {
+      throw new BadRequestException('Token de restablecimiento inválido o ausente');
+    }
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+      throw new BadRequestException('La nueva contraseña debe tener al menos 8 caracteres');
+    }
+
+    const user = await this.usersService.findByResetPasswordToken(token);
+    if (!user) {
+      throw new BadRequestException('El enlace de restablecimiento es inválido o no existe');
+    }
+
+    if (!user.reset_password_expires || new Date(user.reset_password_expires).getTime() < Date.now()) {
+      throw new BadRequestException('El enlace de restablecimiento ha expirado. Por favor, solicita uno nuevo');
+    }
+
+    const hashedPassword = hashPassword(newPassword);
+    await this.usersService.updatePassword(user.id, hashedPassword);
+    await this.usersService.clearResetPasswordToken(user.id);
+
+    return {
+      success: true,
+      message: 'Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tu nueva clave.',
+    };
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {

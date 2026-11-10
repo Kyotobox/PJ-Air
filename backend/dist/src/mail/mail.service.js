@@ -263,7 +263,7 @@ let MailService = MailService_1 = class MailService {
 
           <div style="margin-top: 32px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 12px; color: #64748b; text-align: center;">
             <p style="margin: 0 0 4px 0; font-weight: 600; color: #334155;">Thank you for your business with Jhoanes Bakery Wholesale.</p>
-            <p style="margin: 0;">For inquiries or delivery instructions, contact operations at support@jhoanes.com</p>
+            <p style="margin: 0;">For inquiries or delivery instructions, contact operations at Contact@jhoanesbakery.com</p>
           </div>
         </div>
       `;
@@ -856,6 +856,71 @@ let MailService = MailService_1 = class MailService {
         }
         catch (err) {
             this.logger.error(`Error sending financial report: ${err.message}`);
+            return false;
+        }
+    }
+    async sendPasswordResetEmail(userEmail, resetToken, clientName) {
+        if (!this.transporter || !userEmail)
+            return false;
+        const resetUrl = `${config_1.SITE_URL}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
+        const recipientName = clientName || 'Estimado Cliente';
+        const html = `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #b8860b; font-size: 26px; margin: 0; font-weight: 800; letter-spacing: -0.5px;">Jhoanes Bakery</h1>
+          <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Wholesale & B2B Orders</p>
+        </div>
+        
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 20px;">
+          <h2 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Restablecimiento de Contraseña / Password Reset</h2>
+          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+            Hola <strong>${recipientName}</strong>,
+          </p>
+          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+            Hemos recibido una solicitud para restablecer la contraseña de tu cuenta asociada a <strong>${userEmail}</strong>.
+          </p>
+          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+            Para definir una nueva contraseña, haz clic en el siguiente botón:
+          </p>
+          
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${resetUrl}" 
+               style="display: inline-block; background-color: #b8860b; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(184, 134, 11, 0.2);">
+              Restablecer Contraseña / Reset Password
+            </a>
+          </div>
+
+          <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
+            Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:<br/>
+            <a href="${resetUrl}" style="color: #b8860b; word-break: break-all;">${resetUrl}</a>
+          </p>
+          
+          <div style="background-color: #f8fafc; border-left: 4px solid #b8860b; padding: 12px 16px; border-radius: 4px; margin-top: 24px;">
+            <p style="color: #475569; font-size: 12px; margin: 0; line-height: 1.4;">
+              <strong>Aviso de Seguridad:</strong> Este enlace tiene una vigencia de <strong>1 hora</strong>. Si tú no solicitaste este cambio, puedes ignorar este correo; tu contraseña actual permanece segura y sin modificaciones.
+            </p>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #f1f5f9; margin-top: 24px; padding-top: 16px; text-align: center;">
+          <p style="color: #94a3b8; font-size: 11px; margin: 0;">
+            © ${new Date().getFullYear()} Jhoanes Bakery Wholesale. Todos los derechos reservados.
+          </p>
+        </div>
+      </div>
+    `;
+        try {
+            const info = await this.transporter.sendMail({
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery" <no-reply@jhoanes.com>',
+                to: userEmail,
+                subject: '🔒 Restablece tu Contraseña — Jhoanes Bakery Wholesale',
+                html,
+            });
+            this.logger.log(`Password reset email sent to ${userEmail} (ID: ${info.messageId})`);
+            return true;
+        }
+        catch (err) {
+            this.logger.error(`Error sending password reset email to ${userEmail}: ${err.message}`);
             return false;
         }
     }
