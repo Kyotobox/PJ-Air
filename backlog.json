@@ -3,51 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S68",
-  "current_task": "TASK-68-01",
+  "current_sprint": "S69",
+  "current_task": "TASK-69-01",
   "sprints": [
-    {
-      "id": "S66",
-      "name": "Sprint S66: Renderizado Real de Google Maps en Testing y Validador Inteligente de Fachada con IA (Anti-Pan)",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-66-01",
-          "title": "Despliegue de paridad a VPS testing (testing.jhoanes.com) con Google Maps",
-          "status": "DONE",
-          "type": "TECH/DEPLOY",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-66-02",
-          "title": "Servicio FacadeVisionService y endpoint POST /addresses/validate-facade",
-          "status": "DONE",
-          "type": "BACKEND/DATA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-66-03",
-          "title": "Integración en FacadePhotoUploader de escaneo AI en vivo y bloqueo de fotos de pan",
-          "status": "DONE",
-          "type": "UI/MEDIA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-66-04",
-          "title": "Visor de auditoría de fachada en /admin/clients con badges de IA",
-          "status": "DONE",
-          "type": "ADMIN/UI",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-66-05",
-          "title": "Suite Playwright con mapas reales y prueba de rechazo de pan",
-          "status": "DONE",
-          "type": "TEST/CERT",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S67",
       "name": "Sprint S67: Erradicación Integral de Username en Registro/Admin/Perfil y Políticas Mayoristas en Inglés",
@@ -93,7 +51,7 @@
     {
       "id": "S68",
       "name": "Sprint S68: Apartado de Días de Despacho en Admin, Calendario de Feriados y Motor Dinámico de Entrega",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-68-01",
@@ -138,44 +96,73 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S69",
+      "name": "Sprint S69: Transición de Datos en Producción, Preservación de Órdenes Activas y Depuración de Clientes para Re-registro",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-69-01",
+          "title": "Snapshot físico inmutable y certificación de respaldo de /root/database.sqlite",
+          "status": "DONE",
+          "type": "TECH/BACKUP",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-69-02",
+          "title": "Creación de perfiles temporales de transición y reasignación de los 3 pedidos en tránsito",
+          "status": "DONE",
+          "type": "DATA/MIGRATION",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-69-03",
+          "title": "Purga relacional de clientes antiguos y pedidos cerrados con blindaje de administradores",
+          "status": "DONE",
+          "type": "DATA/PURGE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-69-04",
+          "title": "Certificación DDL (foreign_key_check), integridad referencial y smoke test",
+          "status": "DONE",
+          "type": "DDL/VERIFY",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 59,
+  "archived_sprints_count": 60,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S68",
-    "name": "Sprint S68: Apartado de Días de Despacho en Admin, Calendario de Feriados y Motor Dinámico de Entrega",
+    "id": "S69",
+    "name": "Sprint S69: Transición de Datos en Producción, Preservación de Órdenes Activas y Depuración de Clientes para Re-registro",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-68-01",
-        "title": "Servicio y endpoint unificado GET/PATCH /configs/delivery-schedule",
+        "id": "TASK-69-01",
+        "title": "Snapshot físico inmutable y certificación de respaldo de /root/database.sqlite",
         "status": "IN_PROGRESS",
-        "type": "BACKEND/DATA"
+        "type": "TECH/BACKUP"
       },
       {
-        "id": "TASK-68-02",
-        "title": "Motor dinámico en OrdersService (calculateMinDeliveryDate & validateCutoffTime)",
+        "id": "TASK-69-02",
+        "title": "Creación de perfiles temporales de transición y reasignación de los 3 pedidos en tránsito",
         "status": "TODO",
-        "type": "BACKEND/LOGIC"
+        "type": "DATA/MIGRATION"
       },
       {
-        "id": "TASK-68-03",
-        "title": "Apartado dedicado /admin/dispatch con selector semanal, feriados NY/US y excepciones",
+        "id": "TASK-69-03",
+        "title": "Purga relacional de clientes antiguos y pedidos cerrados con blindaje de administradores",
         "status": "TODO",
-        "type": "ADMIN/UI"
+        "type": "DATA/PURGE"
       },
       {
-        "id": "TASK-68-04",
-        "title": "Integración en checkout/page.tsx con bloqueo de feriados y advertencias",
+        "id": "TASK-69-04",
+        "title": "Certificación DDL (foreign_key_check), integridad referencial y smoke test",
         "status": "TODO",
-        "type": "FRONTEND/CHECKOUT"
-      },
-      {
-        "id": "TASK-68-05",
-        "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
-        "status": "TODO",
-        "type": "TEST/DEPLOY"
+        "type": "DDL/VERIFY"
       }
     ]
   }
