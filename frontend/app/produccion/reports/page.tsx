@@ -255,7 +255,7 @@ function ReportsPageContent() {
                 }
             } else {
                 const cid = order.user_id;
-                const name = order.user?.profile?.full_name || order.user?.profile?.username || order.user?.email || 'Unknown';
+                const name = order.user?.profile?.full_name || order.user?.email || 'Unknown';
                 const dType = order.delivery_type || 'pickup';
                 const addressLabel = order.address?.alias || order.delivery_address_text || '';
                 key = `${cid}__${dType}__${addressLabel}`;

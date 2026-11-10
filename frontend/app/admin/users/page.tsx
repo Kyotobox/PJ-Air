@@ -276,7 +276,7 @@ export default function AdminUsersPage() {
         const matchesSearch = 
             u.email?.toLowerCase().includes(search.toLowerCase()) ||
             u.profile?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-            u.profile?.username?.toLowerCase().includes(search.toLowerCase());
+            u.profile?.phone?.toLowerCase().includes(search.toLowerCase());
         
         const matchesRole = roleFilter === 'all' || u.role === roleFilter;
         
@@ -374,8 +374,8 @@ export default function AdminUsersPage() {
                                                     <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center"><User size={16} /></div>
                                                 )}
                                                 <div>
-                                                    <p className="font-semibold text-sm">{u.profile?.full_name || u.profile?.username || '—'}</p>
-                                                    <p className="text-xs text-muted-foreground">@{u.profile?.username || 'sin usuario'}</p>
+                                                    <p className="font-semibold text-sm">{u.profile?.full_name || u.email || '—'}</p>
+                                                    {u.profile?.phone && <p className="text-xs text-muted-foreground">{u.profile.phone}</p>}
                                                 </div>
                                             </div>
                                         </td>
@@ -448,7 +448,7 @@ export default function AdminUsersPage() {
                                     </div>
                                 )}
                                 <div>
-                                    <p className="font-bold text-lg leading-tight">{selectedUser.profile?.full_name || selectedUser.profile?.username || 'Sin nombre'}</p>
+                                    <p className="font-bold text-lg leading-tight">{selectedUser.profile?.full_name || selectedUser.email || 'Sin nombre'}</p>
                                     <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
                                 </div>
                             </div>
@@ -466,7 +466,6 @@ export default function AdminUsersPage() {
                                 <div className="bg-muted/40 rounded-2xl p-5 space-y-3 text-sm">
                                     <div className="flex justify-between"><span className="text-muted-foreground">ID</span><span className="font-mono text-xs">{selectedUser.id.slice(0, 16)}…</span></div>
                                     <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span className="font-medium">{selectedUser.email}</span></div>
-                                    <div className="flex justify-between"><span className="text-muted-foreground">Usuario</span><span>@{selectedUser.profile?.username || '—'}</span></div>
                                     <div className="flex justify-between"><span className="text-muted-foreground">Teléfono</span><span>{selectedUser.profile?.phone || '—'}</span></div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-muted-foreground">Rol</span>

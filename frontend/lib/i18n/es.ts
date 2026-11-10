@@ -102,8 +102,8 @@ const es: Translations = {
   // ── Auth – Forgot Password ──────────────────────────────────────────────────
   forgotPassword: {
     title: 'Recuperar Acceso',
-    subtitle: 'Ingresa tu correo o nombre de usuario y te enviaremos tu clave directamente a tu email.',
-    emailOrUser: 'Email o Usuario',
+    subtitle: 'Ingresa tu correo electrónico registrado y te enviaremos tu clave directamente a tu email.',
+    emailOrUser: 'Correo Electrónico',
     submit: 'Enviar Contraseña',
     loading: 'Enviando...',
     backToLogin: 'Regresar al Login',

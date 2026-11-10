@@ -25,7 +25,6 @@ export default function RegisterPage() {
 
     const [formData, setFormData] = useState({
         full_name: '',
-        username: '',
         email: '',
         phone: '',
         company_name: '',
@@ -120,7 +119,6 @@ export default function RegisterPage() {
                 email: sanitizedEmail,
                 password: formData.password,
                 full_name: formData.full_name,
-                username: formData.username,
                 phone: formData.phone,
                 phone_verified: true,
                 idToken: phoneIdToken,

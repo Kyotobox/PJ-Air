@@ -154,23 +154,6 @@ export const RegisterForm = ({
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
-                            {t.register.username} *
-                        </label>
-                        <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-[11px] font-bold">@</div>
-                            <input
-                                required
-                                type="text"
-                                placeholder="johndoe_b2b"
-                                className="premium-input pl-11 text-xs"
-                                value={formData.username}
-                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
                             {t.register.email} *
                         </label>
                         <div className="relative">
@@ -518,21 +501,43 @@ export const RegisterForm = ({
                         <h4 className="font-bold text-foreground uppercase tracking-wider text-xs">
                             Jhoanes Bakery & Coffee Wholesale Agreement (v2026.10.29)
                         </h4>
-                        <p>
-                            <b>1. Política de Corte de Producción (36h):</b> Todo pedido mayorista debe confirmarse con un mínimo de 36 horas de antelación al día de despacho. Las cancelaciones posteriores al corte incurren en el 100% del costo de horneado.
-                        </p>
-                        <p>
-                            <b>2. Calendario Operativo de Entregas:</b> Los despachos se ejecutan de miércoles a lunes. <u>No se realizan entregas los martes</u> bajo ninguna circunstancia debido a mantenimiento mayor y sanitización de plantas.
-                        </p>
-                        <p>
-                            <b>3. Condiciones de Crédito y Cobro:</b> Las cuentas comerciales bajo modalidad de crédito gozan de un plazo de 7 días naturales. Los saldos vencidos no liquidados generan un interés moratorio del 1.5% mensual (18% anual) o el máximo legal permitido por el Estado de New York.
-                        </p>
-                        <p>
-                            <b>4. Autorización de Tarjeta en Archivo (Stripe Card-on-File):</b> El cliente autoriza a Jhoanes Bakery a tokenizar de forma segura una tarjeta de crédito o débito mediante Stripe sin cobro inicial ($0.00 SetupIntent), y autoriza su débito automático para cubrir cualquier balance vencido o interés por mora no cubierto oportunamente.
-                        </p>
-                        <p>
-                            <b>5. Firma Electrónica Vinculante (NY ESRA / E-SIGN Act):</b> Ambas partes acuerdan que la adopción del nombre escrito y la marcación de casillas electrónicas constituye una firma digital vinculante con plena validez legal y admisibilidad probatoria de conformidad con la New York Electronic Signatures and Records Act (State Technology Law §§ 301-309) y el Federal E-SIGN Act (15 U.S.C. § 7001).
-                        </p>
+                        {locale === 'en' ? (
+                            <>
+                                <p>
+                                    <b>1. Production Cutoff Policy (36h):</b> All wholesale orders must be confirmed at least 36 hours prior to the scheduled delivery day. Cancellations requested after the production cutoff will incur 100% of the baking and preparation cost.
+                                </p>
+                                <p>
+                                    <b>2. Operating Delivery Schedule:</b> Deliveries are conducted Wednesday through Monday. <u>No deliveries are scheduled on Tuesdays</u> under any circumstances due to mandatory facility sanitization and major maintenance.
+                                </p>
+                                <p>
+                                    <b>3. Credit & Payment Terms:</b> Approved commercial credit accounts operate under net 7-day terms. Any delinquent, unliquidated balances accrue a late fee of 1.5% per month (18% per annum) or the maximum legal rate allowed under New York State law.
+                                </p>
+                                <p>
+                                    <b>4. Stripe Card-on-File Authorization:</b> Customer authorizes Jhoanes Bakery to securely tokenize a debit or credit card via Stripe without initial charge ($0.00 SetupIntent), and grants automatic recurring debit authorization to cover any past-due balance, unpaid invoices, or applicable late fees.
+                                </p>
+                                <p>
+                                    <b>5. Binding Electronic Signature (NY ESRA / Federal E-SIGN Act):</b> Both parties agree that adopting the typed legal name and checking electronic boxes constitutes a legally binding digital signature with full evidentiary admissibility pursuant to the New York Electronic Signatures and Records Act (State Technology Law §§ 301-309) and the Federal E-SIGN Act (15 U.S.C. § 7001).
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p>
+                                    <b>1. Política de Corte de Producción (36h):</b> Todo pedido mayorista debe confirmarse con un mínimo de 36 horas de antelación al día de despacho. Las cancelaciones posteriores al corte incurren en el 100% del costo de horneado.
+                                </p>
+                                <p>
+                                    <b>2. Calendario Operativo de Entregas:</b> Los despachos se ejecutan de miércoles a lunes. <u>No se realizan entregas los martes</u> bajo ninguna circunstancia debido a mantenimiento mayor y sanitización de plantas.
+                                </p>
+                                <p>
+                                    <b>3. Condiciones de Crédito y Cobro:</b> Las cuentas comerciales bajo modalidad de crédito gozan de un plazo de 7 días naturales. Los saldos vencidos no liquidados generan un interés moratorio del 1.5% mensual (18% anual) o el máximo legal permitido por el Estado de New York.
+                                </p>
+                                <p>
+                                    <b>4. Autorización de Tarjeta en Archivo (Stripe Card-on-File):</b> El cliente autoriza a Jhoanes Bakery a tokenizar de forma segura una tarjeta de crédito o débito mediante Stripe sin cobro inicial ($0.00 SetupIntent), y autoriza su débito automático para cubrir cualquier balance vencido o interés por mora no cubierto oportunamente.
+                                </p>
+                                <p>
+                                    <b>5. Firma Electrónica Vinculante (NY ESRA / E-SIGN Act):</b> Ambas partes acuerdan que la adopción del nombre escrito y la marcación de casillas electrónicas constituye una firma digital vinculante con plena validez legal y admisibilidad probatoria de conformidad con la New York Electronic Signatures and Records Act (State Technology Law §§ 301-309) y el Federal E-SIGN Act (15 U.S.C. § 7001).
+                                </p>
+                            </>
+                        )}
                     </div>
                 )}
             </div>

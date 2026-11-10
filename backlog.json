@@ -3,18 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S66",
-  "current_task": "TASK-66-01",
+  "current_sprint": "S67",
+  "current_task": "TASK-67-01",
   "sprints": [
-    {
-      "id": "S64",
-      "name": "Sprint S64: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S64-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-09T10:30:22.908213+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
-      "tasks": []
-    },
     {
       "id": "S65",
       "name": "Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
@@ -67,7 +58,7 @@
     {
       "id": "S66",
       "name": "Sprint S66: Renderizado Real de Google Maps en Testing y Validador Inteligente de Fachada con IA (Anti-Pan)",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-66-01",
@@ -105,44 +96,86 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S67",
+      "name": "Sprint S67: Erradicación Integral de Username en Registro/Admin/Perfil y Políticas Mayoristas en Inglés",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-67-01",
+          "title": "Erradicar input username en registro y unificar acceso por email",
+          "status": "DONE",
+          "type": "UI/AUTH",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-67-02",
+          "title": "Limpiar referencias de @username en paneles de administración",
+          "status": "DONE",
+          "type": "ADMIN/UI",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-67-03",
+          "title": "Eliminar campo username en perfil de usuario",
+          "status": "DONE",
+          "type": "UI/PROFILE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-67-04",
+          "title": "Desplegar cláusulas del acuerdo mayorista en inglés oficial en registro",
+          "status": "DONE",
+          "type": "UI/LEGAL",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-67-05",
+          "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
+          "status": "DONE",
+          "type": "TEST/DEPLOY",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 57,
+  "archived_sprints_count": 58,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S66",
-    "name": "Sprint S66: Renderizado Real de Google Maps en Testing y Validador Inteligente de Fachada con IA (Anti-Pan)",
+    "id": "S67",
+    "name": "Sprint S67: Erradicación Integral de Username en Registro/Admin/Perfil y Políticas Mayoristas en Inglés",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-66-01",
-        "title": "Despliegue de paridad a VPS testing (testing.jhoanes.com) con Google Maps",
-        "status": "TODO",
-        "type": "TECH/DEPLOY"
+        "id": "TASK-67-01",
+        "title": "Erradicar input username en registro y unificar acceso por email",
+        "status": "IN_PROGRESS",
+        "type": "UI/AUTH"
       },
       {
-        "id": "TASK-66-02",
-        "title": "Servicio FacadeVisionService y endpoint POST /addresses/validate-facade",
-        "status": "TODO",
-        "type": "BACKEND/DATA"
-      },
-      {
-        "id": "TASK-66-03",
-        "title": "Integración en FacadePhotoUploader de escaneo AI en vivo y bloqueo de fotos de pan",
-        "status": "TODO",
-        "type": "UI/MEDIA"
-      },
-      {
-        "id": "TASK-66-04",
-        "title": "Visor de auditoría de fachada en /admin/clients con badges de IA",
+        "id": "TASK-67-02",
+        "title": "Limpiar referencias de @username en paneles de administración",
         "status": "TODO",
         "type": "ADMIN/UI"
       },
       {
-        "id": "TASK-66-05",
-        "title": "Suite Playwright con mapas reales y prueba de rechazo de pan",
+        "id": "TASK-67-03",
+        "title": "Eliminar campo username en perfil de usuario",
         "status": "TODO",
-        "type": "TEST/CERT"
+        "type": "UI/PROFILE"
+      },
+      {
+        "id": "TASK-67-04",
+        "title": "Desplegar cláusulas del acuerdo mayorista en inglés oficial en registro",
+        "status": "TODO",
+        "type": "UI/LEGAL"
+      },
+      {
+        "id": "TASK-67-05",
+        "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
+        "status": "TODO",
+        "type": "TEST/DEPLOY"
       }
     ]
   }

@@ -100,8 +100,8 @@ const en = {
   // ── Auth – Forgot Password ──────────────────────────────────────────────────
   forgotPassword: {
     title: 'Recover Access',
-    subtitle: 'Enter your email or username and we will send your password to your email.',
-    emailOrUser: 'Email or Username',
+    subtitle: 'Enter your registered email address and we will send your password to your email.',
+    emailOrUser: 'Email Address',
     submit: 'Send Password',
     loading: 'Sending...',
     backToLogin: 'Back to Login',

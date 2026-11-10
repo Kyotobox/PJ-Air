@@ -23,7 +23,6 @@ export default function ProfilePage() {
     const [addresses, setAddresses] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         full_name: '',
-        username: '',
         phone: ''
     });
     const [passwordData, setPasswordData] = useState({
@@ -69,7 +68,6 @@ export default function ProfilePage() {
                 setAddresses(userData.addresses || []);
                 setFormData({
                     full_name: userData.profile?.full_name || '',
-                    username: userData.profile?.username || '',
                     phone: userData.profile?.phone || ''
                 });
             } catch (err) {
@@ -225,14 +223,12 @@ export default function ProfilePage() {
 
             await api.patch(`/users/${user.id}/profile`, {
                 full_name: formData.full_name,
-                username: formData.username,
             });
 
             const verifiedPhone = verifyRes.phone || verifiedData.phone;
             setProfile((prev: any) => ({
                 ...prev,
                 full_name: formData.full_name,
-                username: formData.username,
                 phone: verifiedPhone,
                 phone_verified: true,
             }));
@@ -391,27 +387,15 @@ export default function ProfilePage() {
                                     </div>
                                 )}
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2 tracking-widest">{t.profile.fullName}</label>
-                                        <input 
-                                            type="text"
-                                            className="premium-input px-6 h-14 font-bold"
-                                            value={formData.full_name}
-                                            onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2 tracking-widest">{t.profile.username}</label>
-                                        <input 
-                                            type="text"
-                                            className="premium-input px-6 h-14 font-bold"
-                                            value={formData.username}
-                                            onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                            required
-                                        />
-                                    </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2 tracking-widest">{t.profile.fullName}</label>
+                                    <input 
+                                        type="text"
+                                        className="premium-input px-6 h-14 font-bold"
+                                        value={formData.full_name}
+                                        onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                                        required
+                                    />
                                 </div>
 
                                 <div className="space-y-2">

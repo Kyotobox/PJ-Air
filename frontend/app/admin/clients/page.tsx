@@ -644,7 +644,8 @@ export default function AdminClientsPage() {
         return (
             u.email?.toLowerCase().includes(s) ||
             u.profile?.full_name?.toLowerCase().includes(s) ||
-            u.profile?.username?.toLowerCase().includes(s) ||
+            u.company_name?.toLowerCase().includes(s) ||
+            u.legal_business_name?.toLowerCase().includes(s) ||
             u.profile?.nickname?.toLowerCase().includes(s) ||
             u.id?.toLowerCase().includes(s)
         );
@@ -791,7 +792,7 @@ export default function AdminClientsPage() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-slate-900">{u.profile?.nickname ? `${u.profile.nickname} (${u.profile.full_name})` : (u.profile?.full_name || 'Sin Nombre')}</p>
-                                                <p className="text-xs text-slate-400 font-medium italic">@{u.profile?.username || 'sin_usuario'}</p>
+                                                <p className="text-xs text-slate-400 font-medium italic">{u.company_name || u.profile?.company_name || u.legal_business_name || u.email}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -1164,8 +1165,8 @@ export default function AdminClientsPage() {
                                         <p className="font-bold text-slate-700">{selectedUser.profile?.phone || 'No registrado'}</p>
                                     </div>
                                     <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Usuario</label>
-                                        <p className="font-bold text-slate-700">@{selectedUser.profile?.username || '—'}</p>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Empresa / Negocio</label>
+                                        <p className="font-bold text-slate-700">{selectedUser.company_name || selectedUser.profile?.company_name || selectedUser.legal_business_name || '—'}</p>
                                     </div>
                                 </div>
                                 <div className="mt-4 flex flex-wrap justify-between items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">

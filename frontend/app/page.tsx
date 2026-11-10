@@ -109,7 +109,7 @@ function LoginModal({ onSuccess, onClose }: { onSuccess: () => void; onClose?: (
                             <input
                                 required
                                 type="text"
-                                placeholder={locale === 'en' ? 'Email or username' : 'Email o usuario'}
+                                placeholder={locale === 'en' ? 'Email Address' : 'Correo Electrónico'}
                                 value={identifier}
                                 onChange={e => setIdentifier(e.target.value)}
                                 className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-border/60 bg-muted/30 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 transition-all"
