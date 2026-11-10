@@ -1,1 +1,23 @@
-{"session_uuid":"099997ce7c594636fac34d115106b3a9","session_start_ts":"2026-11-09T20:16:44.272468","total_bytes":0,"total_bytes_out":0,"context_base_bytes":0,"cli_bytes":0,"chat_bytes":0,"total_tokens":0,"turns":0,"peak_bytes":0,"strike_count":0,"hwc_complete":false,"last_update":"2026-11-09T20:16:44.272483","input_pressure":0,"degraded_ops_count":1,"session_count":3,"test_warning_count":0,"takeover_bytes_offset":0,"conversation_uuid":"48df59be-10d0-4349-a51f-26800befc596","peak_depth":15.90195}
+{
+  "session_uuid": "617e2090041717fcd02ce9f008323d23",
+  "session_start_ts": "2026-11-09T23:51:35.243993",
+  "total_bytes": 0,
+  "total_bytes_out": 0,
+  "context_base_bytes": 0,
+  "cli_bytes": 0,
+  "chat_bytes": 0,
+  "total_tokens": 0,
+  "turns": 0,
+  "peak_bytes": 0,
+  "strike_count": 0,
+  "hwc_complete": true,
+  "last_update": "2026-11-09T23:51:35.244001",
+  "input_pressure": 0,
+  "degraded_ops_count": 1,
+  "session_count": 4,
+  "test_warning_count": 0,
+  "takeover_bytes_offset": 0,
+  "conversation_uuid": "68730431-9095-4167-ad02-a8f8042ec60e",
+  "peak_depth": 15.46053,
+  "hwc_ts": "2026-11-10T02:18:18.053111"
+}
