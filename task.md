@@ -1,9 +1,9 @@
-# SPRINT S67 - Sprint S67: Erradicación Integral de Username en Registro/Admin/Perfil y Políticas Mayoristas en Inglés
+# SPRINT S68 - Sprint S68: Apartado de Días de Despacho en Admin, Calendario de Feriados y Motor Dinámico de Entrega
 **Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-10
 
-- [x] **TASK-67-01** [TASK] Erradicar input username en registro y unificar acceso por email
-- [x] **TASK-67-02** [TASK] Limpiar referencias de @username en paneles de administración
-- [x] **TASK-67-03** [TASK] Eliminar campo username en perfil de usuario
-- [x] **TASK-67-04** [TASK] Desplegar cláusulas del acuerdo mayorista en inglés oficial en registro
-- [x] **TASK-67-05** [TASK] Suite de pruebas y despliegue a VPS testing.jhoanes.com
+- [/] **TASK-68-01** [TASK] Servicio y endpoint unificado GET/PATCH /configs/delivery-schedule
+- [ ] **TASK-68-02** [TASK] Motor dinámico en OrdersService (calculateMinDeliveryDate & validateCutoffTime)
+- [ ] **TASK-68-03** [TASK] Apartado dedicado /admin/dispatch con selector semanal, feriados NY/US y excepciones
+- [ ] **TASK-68-04** [TASK] Integración en checkout/page.tsx con bloqueo de feriados y advertencias
+- [ ] **TASK-68-05** [TASK] Suite de pruebas y despliegue a VPS testing.jhoanes.com

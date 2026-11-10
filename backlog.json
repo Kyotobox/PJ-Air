@@ -3,58 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S67",
-  "current_task": "TASK-67-01",
+  "current_sprint": "S68",
+  "current_task": "TASK-68-01",
   "sprints": [
-    {
-      "id": "S65",
-      "name": "Sprint S65: Onboarding Integral 360° — Validación de Dirección Google Maps, Mini-Mapa Lateral y Captura de Fachada en Registro",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-65-01",
-          "title": "Google Places Autocomplete en Registro (/auth/register)",
-          "status": "DONE",
-          "type": "UI/REG",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-65-02",
-          "title": "Mini-Mapa Lateral Interactivo con Pin en Registro",
-          "status": "DONE",
-          "type": "UI/MAP",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-65-03",
-          "title": "Cargador de Foto de Fachada / Local en Registro",
-          "status": "DONE",
-          "type": "UI/MEDIA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-65-04",
-          "title": "Creación Atómica de Dirección Principal en Backend (/auth/signup)",
-          "status": "DONE",
-          "type": "BACKEND/DATA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-65-05",
-          "title": "Visor de Fachada y Mapa de Clientes en Admin (/admin/clients)",
-          "status": "DONE",
-          "type": "ADMIN/UI",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-65-06",
-          "title": "Suite de Certificación Playwright S65 con Capturas Físicas",
-          "status": "DONE",
-          "type": "TEST/CERT",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S66",
       "name": "Sprint S66: Renderizado Real de Google Maps en Testing y Validador Inteligente de Fachada con IA (Anti-Pan)",
@@ -100,7 +51,7 @@
     {
       "id": "S67",
       "name": "Sprint S67: Erradicación Integral de Username en Registro/Admin/Perfil y Políticas Mayoristas en Inglés",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-67-01",
@@ -138,41 +89,83 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S68",
+      "name": "Sprint S68: Apartado de Días de Despacho en Admin, Calendario de Feriados y Motor Dinámico de Entrega",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-68-01",
+          "title": "Servicio y endpoint unificado GET/PATCH /configs/delivery-schedule",
+          "status": "IN_PROGRESS",
+          "type": "BACKEND/DATA",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-68-02",
+          "title": "Motor dinámico en OrdersService (calculateMinDeliveryDate & validateCutoffTime)",
+          "status": "TODO",
+          "type": "BACKEND/LOGIC",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-68-03",
+          "title": "Apartado dedicado /admin/dispatch con selector semanal, feriados NY/US y excepciones",
+          "status": "TODO",
+          "type": "ADMIN/UI",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-68-04",
+          "title": "Integración en checkout/page.tsx con bloqueo de feriados y advertencias",
+          "status": "TODO",
+          "type": "FRONTEND/CHECKOUT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-68-05",
+          "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
+          "status": "TODO",
+          "type": "TEST/DEPLOY",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 58,
+  "archived_sprints_count": 59,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S67",
-    "name": "Sprint S67: Erradicación Integral de Username en Registro/Admin/Perfil y Políticas Mayoristas en Inglés",
+    "id": "S68",
+    "name": "Sprint S68: Apartado de Días de Despacho en Admin, Calendario de Feriados y Motor Dinámico de Entrega",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-67-01",
-        "title": "Erradicar input username en registro y unificar acceso por email",
+        "id": "TASK-68-01",
+        "title": "Servicio y endpoint unificado GET/PATCH /configs/delivery-schedule",
         "status": "IN_PROGRESS",
-        "type": "UI/AUTH"
+        "type": "BACKEND/DATA"
       },
       {
-        "id": "TASK-67-02",
-        "title": "Limpiar referencias de @username en paneles de administración",
+        "id": "TASK-68-02",
+        "title": "Motor dinámico en OrdersService (calculateMinDeliveryDate & validateCutoffTime)",
+        "status": "TODO",
+        "type": "BACKEND/LOGIC"
+      },
+      {
+        "id": "TASK-68-03",
+        "title": "Apartado dedicado /admin/dispatch con selector semanal, feriados NY/US y excepciones",
         "status": "TODO",
         "type": "ADMIN/UI"
       },
       {
-        "id": "TASK-67-03",
-        "title": "Eliminar campo username en perfil de usuario",
+        "id": "TASK-68-04",
+        "title": "Integración en checkout/page.tsx con bloqueo de feriados y advertencias",
         "status": "TODO",
-        "type": "UI/PROFILE"
+        "type": "FRONTEND/CHECKOUT"
       },
       {
-        "id": "TASK-67-04",
-        "title": "Desplegar cláusulas del acuerdo mayorista en inglés oficial en registro",
-        "status": "TODO",
-        "type": "UI/LEGAL"
-      },
-      {
-        "id": "TASK-67-05",
+        "id": "TASK-68-05",
         "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
         "status": "TODO",
         "type": "TEST/DEPLOY"
