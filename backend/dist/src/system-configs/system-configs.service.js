@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const system_config_entity_1 = require("./system-config.entity");
 let SystemConfigsService = class SystemConfigsService {
     repo;
+    cachedSchedule = null;
     constructor(repo) {
         this.repo = repo;
     }
@@ -91,6 +92,134 @@ Order adjustments or cancellations must be requested prior to the 12:00 PM produ
             await this.repo.save({ key: 'accounting_report_emails', value: 'accounting@jhoanes.com' });
             console.log('[CONFIG] Seeded default accounting_report_emails = accounting@jhoanes.com');
         }
+        const workingDaysConfig = await this.repo.findOne({ where: { key: 'delivery_working_days' } });
+        if (!workingDaysConfig) {
+            await this.repo.save({ key: 'delivery_working_days', value: '[0,1,3,4,5,6]' });
+            console.log('[CONFIG] Seeded default delivery_working_days = [0,1,3,4,5,6]');
+        }
+        const holidaysConfig = await this.repo.findOne({ where: { key: 'delivery_holidays' } });
+        if (!holidaysConfig) {
+            const defaultHolidays = JSON.stringify([
+                { date: '2026-11-26', name: 'Thanksgiving Day' },
+                { date: '2026-12-25', name: 'Christmas Day' },
+                { date: '2027-01-01', name: "New Year's Day" },
+            ]);
+            await this.repo.save({ key: 'delivery_holidays', value: defaultHolidays });
+            console.log('[CONFIG] Seeded default delivery_holidays');
+        }
+        const exceptionalDaysConfig = await this.repo.findOne({ where: { key: 'delivery_exceptional_days' } });
+        if (!exceptionalDaysConfig) {
+            await this.repo.save({ key: 'delivery_exceptional_days', value: '[]' });
+            console.log('[CONFIG] Seeded default delivery_exceptional_days = []');
+        }
+        await this.getDeliverySchedule();
+    }
+    getCachedDeliverySchedule() {
+        return this.cachedSchedule;
+    }
+    async getDeliverySchedule() {
+        const [workingDaysRaw, holidaysRaw, exceptionalDaysRaw, cutoffHourRaw] = await Promise.all([
+            this.get('delivery_working_days', '[0,1,3,4,5,6]'),
+            this.get('delivery_holidays', '[]'),
+            this.get('delivery_exceptional_days', '[]'),
+            this.get('cutoff_hour', '12'),
+        ]);
+        let workingDays = [0, 1, 3, 4, 5, 6];
+        try {
+            const parsed = JSON.parse(workingDaysRaw);
+            if (Array.isArray(parsed)) {
+                workingDays = parsed
+                    .map((n) => Number(n))
+                    .filter((n) => !isNaN(n) && Number.isInteger(n) && n >= 0 && n <= 6);
+            }
+        }
+        catch {
+            workingDays = [0, 1, 3, 4, 5, 6];
+        }
+        let holidays = [];
+        try {
+            const parsed = JSON.parse(holidaysRaw);
+            if (Array.isArray(parsed)) {
+                holidays = parsed.filter((item) => item && typeof item.date === 'string' && typeof item.name === 'string');
+            }
+        }
+        catch {
+            holidays = [];
+        }
+        let exceptionalDays = [];
+        try {
+            const parsed = JSON.parse(exceptionalDaysRaw);
+            if (Array.isArray(parsed)) {
+                exceptionalDays = parsed.filter((item) => item && typeof item.date === 'string' && typeof item.name === 'string');
+            }
+        }
+        catch {
+            exceptionalDays = [];
+        }
+        let cutoffHour = 12;
+        const parsedCutoff = parseInt(cutoffHourRaw, 10);
+        if (!isNaN(parsedCutoff) && parsedCutoff >= 0 && parsedCutoff <= 23) {
+            cutoffHour = parsedCutoff;
+        }
+        const schedule = {
+            workingDays,
+            holidays,
+            exceptionalDays,
+            cutoffHour,
+        };
+        this.cachedSchedule = schedule;
+        return schedule;
+    }
+    async updateDeliverySchedule(data) {
+        if (data.workingDays !== undefined) {
+            if (!Array.isArray(data.workingDays)) {
+                throw new common_1.BadRequestException('workingDays must be an array of numbers (0..6)');
+            }
+            for (const d of data.workingDays) {
+                if (typeof d !== 'number' || !Number.isInteger(d) || d < 0 || d > 6) {
+                    throw new common_1.BadRequestException('Each item in workingDays must be an integer between 0 and 6');
+                }
+            }
+        }
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (data.holidays !== undefined) {
+            if (!Array.isArray(data.holidays)) {
+                throw new common_1.BadRequestException('holidays must be an array of { date: YYYY-MM-DD, name: string }');
+            }
+            for (const h of data.holidays) {
+                if (!h ||
+                    typeof h.date !== 'string' ||
+                    !dateRegex.test(h.date) ||
+                    typeof h.name !== 'string' ||
+                    !h.name.trim()) {
+                    throw new common_1.BadRequestException('Each holiday must have a valid date (YYYY-MM-DD) and a non-empty name');
+                }
+            }
+        }
+        if (data.exceptionalDays !== undefined) {
+            if (!Array.isArray(data.exceptionalDays)) {
+                throw new common_1.BadRequestException('exceptionalDays must be an array of { date: YYYY-MM-DD, name: string }');
+            }
+            for (const e of data.exceptionalDays) {
+                if (!e ||
+                    typeof e.date !== 'string' ||
+                    !dateRegex.test(e.date) ||
+                    typeof e.name !== 'string' ||
+                    !e.name.trim()) {
+                    throw new common_1.BadRequestException('Each exceptional day must have a valid date (YYYY-MM-DD) and a non-empty name');
+                }
+            }
+        }
+        if (data.workingDays !== undefined) {
+            await this.update('delivery_working_days', JSON.stringify(data.workingDays));
+        }
+        if (data.holidays !== undefined) {
+            await this.update('delivery_holidays', JSON.stringify(data.holidays));
+        }
+        if (data.exceptionalDays !== undefined) {
+            await this.update('delivery_exceptional_days', JSON.stringify(data.exceptionalDays));
+        }
+        return this.getDeliverySchedule();
     }
     async get(key, defaultValue = '') {
         const config = await this.repo.findOne({ where: { key } });

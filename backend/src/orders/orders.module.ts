@@ -15,6 +15,7 @@ import { CreditModule } from '../credit/credit.module';
 import { LogisticsModule } from '../logistics/logistics.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { AddressesModule } from '../addresses/addresses.module';
+import { SystemConfigsModule } from '../system-configs/system-configs.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AddressesModule } from '../addresses/addresses.module';
     ZonesModule,
     CreditModule,
     LogisticsModule,
+    SystemConfigsModule,
     forwardRef(() => PaymentsModule),
     forwardRef(() => AddressesModule),
   ],

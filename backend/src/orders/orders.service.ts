@@ -13,6 +13,7 @@ import { FeeCalculatorService } from './fee-calculator.service';
 import { MileageFreightService } from '../logistics/mileage-freight.service';
 import { PaymentsService } from '../payments/payments.service';
 import { AddressValidationService } from '../addresses/address-validation.service';
+import { SystemConfigsService } from '../system-configs/system-configs.service';
 
 @Injectable()
 export class OrdersService {
@@ -44,9 +45,11 @@ export class OrdersService {
     private paymentsService?: PaymentsService,
     @Optional()
     private addressValidationService?: AddressValidationService,
+    @Optional()
+    private systemConfigsService?: SystemConfigsService,
   ) {}
 
-  calculateMinDeliveryDate(referenceDate?: Date, cutoffHour = 12): string {
+  calculateMinDeliveryDate(referenceDate?: Date, cutoffHour = 12, scheduleConfig?: any): string {
     const now = referenceDate || new Date();
     const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
@@ -68,16 +71,59 @@ export class OrdersService {
     const timeParts = nyTimeFormatter.formatToParts(now);
     const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
 
-    const pastCutoff = nyHour >= cutoffHour;
+    const config = scheduleConfig || this.systemConfigsService?.getCachedDeliverySchedule?.();
+    const effectiveCutoff = config?.cutoffHour ?? cutoffHour;
+    const pastCutoff = nyHour >= effectiveCutoff;
     const daysToAdd = pastCutoff ? 3 : 2;
 
     const minDateNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
     minDateNY.setUTCDate(minDateNY.getUTCDate() + daysToAdd);
 
-    // Regla de corte S55: La panadería NO despacha los martes (getUTCDay() === 2)
-    // Si minDate cae en martes, saltar automáticamente al miércoles (+1 día)
-    if (minDateNY.getUTCDay() === 2) {
-      minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+    if (config) {
+      const workingDays: number[] = Array.isArray(config.workingDays)
+        ? config.workingDays
+        : [0, 1, 3, 4, 5, 6];
+      const holidays: Array<{ date: string; name: string }> = Array.isArray(config.holidays)
+        ? config.holidays
+        : [];
+      const exceptionalDays: Array<{ date: string; name: string }> = Array.isArray(config.exceptionalDays)
+        ? config.exceptionalDays
+        : [];
+
+      let attempts = 0;
+      while (attempts++ < 365) {
+        const cYr = minDateNY.getUTCFullYear();
+        const cMo = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
+        const cDa = String(minDateNY.getUTCDate()).padStart(2, '0');
+        const candidateDateStr = `${cYr}-${cMo}-${cDa}`;
+        const dayOfWeek = minDateNY.getUTCDay();
+
+        // 1. Si la fecha está en exceptionalDays -> DISPONIBLE (override)
+        if (exceptionalDays.some(e => e.date === candidateDateStr)) {
+          break;
+        }
+
+        // 2. Si la fecha está en holidays -> NO DISPONIBLE (feriado)
+        if (holidays.some(h => h.date === candidateDateStr)) {
+          minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+          continue;
+        }
+
+        // 3. Si el día de la semana no está en workingDays -> NO DISPONIBLE (inactivo)
+        if (!workingDays.includes(dayOfWeek)) {
+          minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+          continue;
+        }
+
+        // 4. De lo contrario -> DISPONIBLE
+        break;
+      }
+    } else {
+      // Regla de corte histórica S55: La panadería NO despacha los martes (getUTCDay() === 2)
+      // Si minDate cae en martes, saltar automáticamente al miércoles (+1 día)
+      if (minDateNY.getUTCDay() === 2) {
+        minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+      }
     }
 
     const yrMin = minDateNY.getUTCFullYear();
@@ -86,21 +132,57 @@ export class OrdersService {
     return `${yrMin}-${moMin}-${daMin}`;
   }
 
-  validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour = 12): void {
+  validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour = 12, scheduleConfig?: any): void {
     if (!deliveryDateStr) return;
 
     const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
-
-    // Regla de corte S55: La panadería no realiza entregas los martes
     const [tYr, tMo, tDa] = targetDate.split('-').map(Number);
     const targetDateObj = new Date(Date.UTC(tYr, tMo - 1, tDa));
-    if (targetDateObj.getUTCDay() === 2) {
-      throw new BadRequestException(
-        'Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles.'
-      );
+
+    const config = scheduleConfig || this.systemConfigsService?.getCachedDeliverySchedule?.();
+
+    if (config) {
+      const workingDays: number[] = Array.isArray(config.workingDays)
+        ? config.workingDays
+        : [0, 1, 3, 4, 5, 6];
+      const holidays: Array<{ date: string; name: string }> = Array.isArray(config.holidays)
+        ? config.holidays
+        : [];
+      const exceptionalDays: Array<{ date: string; name: string }> = Array.isArray(config.exceptionalDays)
+        ? config.exceptionalDays
+        : [];
+
+      const isExceptional = exceptionalDays.some(e => e.date === targetDate);
+
+      if (!isExceptional) {
+        // Verificar si es feriado
+        const holiday = holidays.find(h => h.date === targetDate);
+        if (holiday) {
+          throw new BadRequestException(
+            `Panadería Jhoanes no realiza entregas el ${targetDate}: ${holiday.name}.`,
+          );
+        }
+
+        // Verificar si es día de la semana no operativo
+        const dayOfWeek = targetDateObj.getUTCDay();
+        if (!workingDays.includes(dayOfWeek)) {
+          const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+          const dayName = dayNames[dayOfWeek] || 'este día';
+          throw new BadRequestException(
+            `Panadería Jhoanes no realiza entregas los días ${dayName}. Por favor selecciona un día operativo.`,
+          );
+        }
+      }
+    } else {
+      // Regla de corte histórica S55: La panadería no realiza entregas los martes
+      if (targetDateObj.getUTCDay() === 2) {
+        throw new BadRequestException(
+          'Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles.',
+        );
+      }
     }
 
-    const minDeliveryDateStr = this.calculateMinDeliveryDate(referenceDate, cutoffHour);
+    const minDeliveryDateStr = this.calculateMinDeliveryDate(referenceDate, cutoffHour, config);
 
     const now = referenceDate || new Date();
     const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -123,7 +205,8 @@ export class OrdersService {
 
     const timeParts = nyTimeFormatter.formatToParts(now);
     const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
-    const pastCutoff = nyHour >= cutoffHour;
+    const effectiveCutoff = config?.cutoffHour ?? cutoffHour;
+    const pastCutoff = nyHour >= effectiveCutoff;
 
     if (targetDate < minDeliveryDateStr) {
       if (targetDate < nyDateStr) {
@@ -134,8 +217,8 @@ export class OrdersService {
       }
       throw new BadRequestException(
         pastCutoff
-          ? `Corte de producción superado (${cutoffHour}:00 PM ET). Para pedidos después de las 12 PM, la fecha de entrega más temprana es ${minDeliveryDateStr} (T+3).`
-          : `Lead time de producción de 48h requerido. La fecha de entrega más temprana es ${minDeliveryDateStr} (T+2).`
+          ? `Corte de producción superado (${effectiveCutoff}:00 PM ET). Para pedidos después de las 12 PM, la fecha de entrega más temprana es ${minDeliveryDateStr} (T+3).`
+          : `Lead time de producción de 48h requerido. La fecha de entrega más temprana es ${minDeliveryDateStr} (T+2).`,
       );
     }
   }

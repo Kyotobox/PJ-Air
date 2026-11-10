@@ -21,6 +21,16 @@ let SystemConfigsController = class SystemConfigsController {
     constructor(configsService) {
         this.configsService = configsService;
     }
+    async getDeliverySchedule() {
+        return this.configsService.getDeliverySchedule();
+    }
+    async updateDeliverySchedule(body, req) {
+        const userRole = req.user?.role?.toLowerCase();
+        if (userRole !== 'admin') {
+            throw new common_1.ForbiddenException('Only admin users can modify system configurations');
+        }
+        return this.configsService.updateDeliverySchedule(body);
+    }
     async get(key) {
         const value = await this.configsService.get(key);
         if (value === '') {
@@ -37,6 +47,21 @@ let SystemConfigsController = class SystemConfigsController {
     }
 };
 exports.SystemConfigsController = SystemConfigsController;
+__decorate([
+    (0, common_1.Get)('delivery-schedule'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SystemConfigsController.prototype, "getDeliverySchedule", null);
+__decorate([
+    (0, common_1.Patch)('delivery-schedule'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], SystemConfigsController.prototype, "updateDeliverySchedule", null);
 __decorate([
     (0, common_1.Get)(':key'),
     __param(0, (0, common_1.Param)('key')),

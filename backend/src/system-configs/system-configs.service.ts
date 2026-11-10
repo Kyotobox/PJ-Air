@@ -1,10 +1,17 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SystemConfig } from './system-config.entity';
 
 @Injectable()
 export class SystemConfigsService implements OnModuleInit {
+  private cachedSchedule: {
+    workingDays: number[];
+    holidays: Array<{ date: string; name: string }>;
+    exceptionalDays: Array<{ date: string; name: string }>;
+    cutoffHour: number;
+  } | null = null;
+
   constructor(
     @InjectRepository(SystemConfig)
     private readonly repo: Repository<SystemConfig>,
@@ -92,6 +99,184 @@ Order adjustments or cancellations must be requested prior to the 12:00 PM produ
       await this.repo.save({ key: 'accounting_report_emails', value: 'accounting@jhoanes.com' });
       console.log('[CONFIG] Seeded default accounting_report_emails = accounting@jhoanes.com');
     }
+
+    // Seed default delivery_working_days if not exists
+    const workingDaysConfig = await this.repo.findOne({ where: { key: 'delivery_working_days' } });
+    if (!workingDaysConfig) {
+      await this.repo.save({ key: 'delivery_working_days', value: '[0,1,3,4,5,6]' });
+      console.log('[CONFIG] Seeded default delivery_working_days = [0,1,3,4,5,6]');
+    }
+
+    // Seed default delivery_holidays if not exists
+    const holidaysConfig = await this.repo.findOne({ where: { key: 'delivery_holidays' } });
+    if (!holidaysConfig) {
+      const defaultHolidays = JSON.stringify([
+        { date: '2026-11-26', name: 'Thanksgiving Day' },
+        { date: '2026-12-25', name: 'Christmas Day' },
+        { date: '2027-01-01', name: "New Year's Day" },
+      ]);
+      await this.repo.save({ key: 'delivery_holidays', value: defaultHolidays });
+      console.log('[CONFIG] Seeded default delivery_holidays');
+    }
+
+    // Seed default delivery_exceptional_days if not exists
+    const exceptionalDaysConfig = await this.repo.findOne({ where: { key: 'delivery_exceptional_days' } });
+    if (!exceptionalDaysConfig) {
+      await this.repo.save({ key: 'delivery_exceptional_days', value: '[]' });
+      console.log('[CONFIG] Seeded default delivery_exceptional_days = []');
+    }
+
+    // Cache initial delivery schedule
+    await this.getDeliverySchedule();
+  }
+
+  getCachedDeliverySchedule(): {
+    workingDays: number[];
+    holidays: Array<{ date: string; name: string }>;
+    exceptionalDays: Array<{ date: string; name: string }>;
+    cutoffHour: number;
+  } | null {
+    return this.cachedSchedule;
+  }
+
+  async getDeliverySchedule(): Promise<{
+    workingDays: number[];
+    holidays: Array<{ date: string; name: string }>;
+    exceptionalDays: Array<{ date: string; name: string }>;
+    cutoffHour: number;
+  }> {
+    const [workingDaysRaw, holidaysRaw, exceptionalDaysRaw, cutoffHourRaw] = await Promise.all([
+      this.get('delivery_working_days', '[0,1,3,4,5,6]'),
+      this.get('delivery_holidays', '[]'),
+      this.get('delivery_exceptional_days', '[]'),
+      this.get('cutoff_hour', '12'),
+    ]);
+
+    let workingDays: number[] = [0, 1, 3, 4, 5, 6];
+    try {
+      const parsed = JSON.parse(workingDaysRaw);
+      if (Array.isArray(parsed)) {
+        workingDays = parsed
+          .map((n) => Number(n))
+          .filter((n) => !isNaN(n) && Number.isInteger(n) && n >= 0 && n <= 6);
+      }
+    } catch {
+      workingDays = [0, 1, 3, 4, 5, 6];
+    }
+
+    let holidays: Array<{ date: string; name: string }> = [];
+    try {
+      const parsed = JSON.parse(holidaysRaw);
+      if (Array.isArray(parsed)) {
+        holidays = parsed.filter(
+          (item) => item && typeof item.date === 'string' && typeof item.name === 'string',
+        );
+      }
+    } catch {
+      holidays = [];
+    }
+
+    let exceptionalDays: Array<{ date: string; name: string }> = [];
+    try {
+      const parsed = JSON.parse(exceptionalDaysRaw);
+      if (Array.isArray(parsed)) {
+        exceptionalDays = parsed.filter(
+          (item) => item && typeof item.date === 'string' && typeof item.name === 'string',
+        );
+      }
+    } catch {
+      exceptionalDays = [];
+    }
+
+    let cutoffHour = 12;
+    const parsedCutoff = parseInt(cutoffHourRaw, 10);
+    if (!isNaN(parsedCutoff) && parsedCutoff >= 0 && parsedCutoff <= 23) {
+      cutoffHour = parsedCutoff;
+    }
+
+    const schedule = {
+      workingDays,
+      holidays,
+      exceptionalDays,
+      cutoffHour,
+    };
+
+    this.cachedSchedule = schedule;
+    return schedule;
+  }
+
+  async updateDeliverySchedule(data: {
+    workingDays?: number[];
+    holidays?: Array<{ date: string; name: string }>;
+    exceptionalDays?: Array<{ date: string; name: string }>;
+  }): Promise<{
+    workingDays: number[];
+    holidays: Array<{ date: string; name: string }>;
+    exceptionalDays: Array<{ date: string; name: string }>;
+    cutoffHour: number;
+  }> {
+    if (data.workingDays !== undefined) {
+      if (!Array.isArray(data.workingDays)) {
+        throw new BadRequestException('workingDays must be an array of numbers (0..6)');
+      }
+      for (const d of data.workingDays) {
+        if (typeof d !== 'number' || !Number.isInteger(d) || d < 0 || d > 6) {
+          throw new BadRequestException('Each item in workingDays must be an integer between 0 and 6');
+        }
+      }
+    }
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (data.holidays !== undefined) {
+      if (!Array.isArray(data.holidays)) {
+        throw new BadRequestException('holidays must be an array of { date: YYYY-MM-DD, name: string }');
+      }
+      for (const h of data.holidays) {
+        if (
+          !h ||
+          typeof h.date !== 'string' ||
+          !dateRegex.test(h.date) ||
+          typeof h.name !== 'string' ||
+          !h.name.trim()
+        ) {
+          throw new BadRequestException(
+            'Each holiday must have a valid date (YYYY-MM-DD) and a non-empty name',
+          );
+        }
+      }
+    }
+
+    if (data.exceptionalDays !== undefined) {
+      if (!Array.isArray(data.exceptionalDays)) {
+        throw new BadRequestException('exceptionalDays must be an array of { date: YYYY-MM-DD, name: string }');
+      }
+      for (const e of data.exceptionalDays) {
+        if (
+          !e ||
+          typeof e.date !== 'string' ||
+          !dateRegex.test(e.date) ||
+          typeof e.name !== 'string' ||
+          !e.name.trim()
+        ) {
+          throw new BadRequestException(
+            'Each exceptional day must have a valid date (YYYY-MM-DD) and a non-empty name',
+          );
+        }
+      }
+    }
+
+    if (data.workingDays !== undefined) {
+      await this.update('delivery_working_days', JSON.stringify(data.workingDays));
+    }
+    if (data.holidays !== undefined) {
+      await this.update('delivery_holidays', JSON.stringify(data.holidays));
+    }
+    if (data.exceptionalDays !== undefined) {
+      await this.update('delivery_exceptional_days', JSON.stringify(data.exceptionalDays));
+    }
+
+    return this.getDeliverySchedule();
   }
 
   async get(key: string, defaultValue = ''): Promise<string> {

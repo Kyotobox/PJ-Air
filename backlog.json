@@ -98,14 +98,14 @@
         {
           "id": "TASK-68-01",
           "title": "Servicio y endpoint unificado GET/PATCH /configs/delivery-schedule",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "BACKEND/DATA",
           "veracity_hash": null
         },
         {
           "id": "TASK-68-02",
           "title": "Motor dinámico en OrdersService (calculateMinDeliveryDate & validateCutoffTime)",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/LOGIC",
           "veracity_hash": null
         },

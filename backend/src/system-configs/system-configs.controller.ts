@@ -6,6 +6,21 @@ import { AuthGuard } from '../auth/auth.guard';
 export class SystemConfigsController {
   constructor(private readonly configsService: SystemConfigsService) {}
 
+  @Get('delivery-schedule')
+  async getDeliverySchedule() {
+    return this.configsService.getDeliverySchedule();
+  }
+
+  @Patch('delivery-schedule')
+  @UseGuards(AuthGuard)
+  async updateDeliverySchedule(@Body() body: any, @Req() req: any) {
+    const userRole = req.user?.role?.toLowerCase();
+    if (userRole !== 'admin') {
+      throw new ForbiddenException('Only admin users can modify system configurations');
+    }
+    return this.configsService.updateDeliverySchedule(body);
+  }
+
   @Get(':key')
   async get(@Param('key') key: string) {
     const value = await this.configsService.get(key);

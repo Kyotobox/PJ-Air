@@ -28,6 +28,7 @@ const fee_calculator_service_1 = require("./fee-calculator.service");
 const mileage_freight_service_1 = require("../logistics/mileage-freight.service");
 const payments_service_1 = require("../payments/payments.service");
 const address_validation_service_1 = require("../addresses/address-validation.service");
+const system_configs_service_1 = require("../system-configs/system-configs.service");
 let OrdersService = class OrdersService {
     orderRepository;
     orderItemRepository;
@@ -42,7 +43,8 @@ let OrdersService = class OrdersService {
     mileageFreightService;
     paymentsService;
     addressValidationService;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService, paymentsService, addressValidationService) {
+    systemConfigsService;
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService, paymentsService, addressValidationService, systemConfigsService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -56,8 +58,9 @@ let OrdersService = class OrdersService {
         this.mileageFreightService = mileageFreightService;
         this.paymentsService = paymentsService;
         this.addressValidationService = addressValidationService;
+        this.systemConfigsService = systemConfigsService;
     }
-    calculateMinDeliveryDate(referenceDate, cutoffHour = 12) {
+    calculateMinDeliveryDate(referenceDate, cutoffHour = 12, scheduleConfig) {
         const now = referenceDate || new Date();
         const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/New_York',
@@ -76,28 +79,90 @@ let OrdersService = class OrdersService {
         const da = dateParts.find(p => p.type === 'day')?.value || '01';
         const timeParts = nyTimeFormatter.formatToParts(now);
         const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
-        const pastCutoff = nyHour >= cutoffHour;
+        const config = scheduleConfig || this.systemConfigsService?.getCachedDeliverySchedule?.();
+        const effectiveCutoff = config?.cutoffHour ?? cutoffHour;
+        const pastCutoff = nyHour >= effectiveCutoff;
         const daysToAdd = pastCutoff ? 3 : 2;
         const minDateNY = new Date(Date.UTC(Number(yr), Number(mo) - 1, Number(da)));
         minDateNY.setUTCDate(minDateNY.getUTCDate() + daysToAdd);
-        if (minDateNY.getUTCDay() === 2) {
-            minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+        if (config) {
+            const workingDays = Array.isArray(config.workingDays)
+                ? config.workingDays
+                : [0, 1, 3, 4, 5, 6];
+            const holidays = Array.isArray(config.holidays)
+                ? config.holidays
+                : [];
+            const exceptionalDays = Array.isArray(config.exceptionalDays)
+                ? config.exceptionalDays
+                : [];
+            let attempts = 0;
+            while (attempts++ < 365) {
+                const cYr = minDateNY.getUTCFullYear();
+                const cMo = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
+                const cDa = String(minDateNY.getUTCDate()).padStart(2, '0');
+                const candidateDateStr = `${cYr}-${cMo}-${cDa}`;
+                const dayOfWeek = minDateNY.getUTCDay();
+                if (exceptionalDays.some(e => e.date === candidateDateStr)) {
+                    break;
+                }
+                if (holidays.some(h => h.date === candidateDateStr)) {
+                    minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+                    continue;
+                }
+                if (!workingDays.includes(dayOfWeek)) {
+                    minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+                    continue;
+                }
+                break;
+            }
+        }
+        else {
+            if (minDateNY.getUTCDay() === 2) {
+                minDateNY.setUTCDate(minDateNY.getUTCDate() + 1);
+            }
         }
         const yrMin = minDateNY.getUTCFullYear();
         const moMin = String(minDateNY.getUTCMonth() + 1).padStart(2, '0');
         const daMin = String(minDateNY.getUTCDate()).padStart(2, '0');
         return `${yrMin}-${moMin}-${daMin}`;
     }
-    validateCutoffTime(deliveryDateStr, referenceDate, cutoffHour = 12) {
+    validateCutoffTime(deliveryDateStr, referenceDate, cutoffHour = 12, scheduleConfig) {
         if (!deliveryDateStr)
             return;
         const targetDate = deliveryDateStr.split('T')[0].split(' ')[0];
         const [tYr, tMo, tDa] = targetDate.split('-').map(Number);
         const targetDateObj = new Date(Date.UTC(tYr, tMo - 1, tDa));
-        if (targetDateObj.getUTCDay() === 2) {
-            throw new common_1.BadRequestException('Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles.');
+        const config = scheduleConfig || this.systemConfigsService?.getCachedDeliverySchedule?.();
+        if (config) {
+            const workingDays = Array.isArray(config.workingDays)
+                ? config.workingDays
+                : [0, 1, 3, 4, 5, 6];
+            const holidays = Array.isArray(config.holidays)
+                ? config.holidays
+                : [];
+            const exceptionalDays = Array.isArray(config.exceptionalDays)
+                ? config.exceptionalDays
+                : [];
+            const isExceptional = exceptionalDays.some(e => e.date === targetDate);
+            if (!isExceptional) {
+                const holiday = holidays.find(h => h.date === targetDate);
+                if (holiday) {
+                    throw new common_1.BadRequestException(`Panadería Jhoanes no realiza entregas el ${targetDate}: ${holiday.name}.`);
+                }
+                const dayOfWeek = targetDateObj.getUTCDay();
+                if (!workingDays.includes(dayOfWeek)) {
+                    const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                    const dayName = dayNames[dayOfWeek] || 'este día';
+                    throw new common_1.BadRequestException(`Panadería Jhoanes no realiza entregas los días ${dayName}. Por favor selecciona un día operativo.`);
+                }
+            }
         }
-        const minDeliveryDateStr = this.calculateMinDeliveryDate(referenceDate, cutoffHour);
+        else {
+            if (targetDateObj.getUTCDay() === 2) {
+                throw new common_1.BadRequestException('Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles.');
+            }
+        }
+        const minDeliveryDateStr = this.calculateMinDeliveryDate(referenceDate, cutoffHour, config);
         const now = referenceDate || new Date();
         const nyDateFormatter = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/New_York',
@@ -117,7 +182,8 @@ let OrdersService = class OrdersService {
         const nyDateStr = `${yr}-${mo}-${da}`;
         const timeParts = nyTimeFormatter.formatToParts(now);
         const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
-        const pastCutoff = nyHour >= cutoffHour;
+        const effectiveCutoff = config?.cutoffHour ?? cutoffHour;
+        const pastCutoff = nyHour >= effectiveCutoff;
         if (targetDate < minDeliveryDateStr) {
             if (targetDate < nyDateStr) {
                 throw new common_1.BadRequestException('La fecha de entrega no puede ser en el pasado.');
@@ -126,7 +192,7 @@ let OrdersService = class OrdersService {
                 throw new common_1.BadRequestException('No se permiten entregas para el mismo día de la orden. Lead time mínimo de 48 horas requerido.');
             }
             throw new common_1.BadRequestException(pastCutoff
-                ? `Corte de producción superado (${cutoffHour}:00 PM ET). Para pedidos después de las 12 PM, la fecha de entrega más temprana es ${minDeliveryDateStr} (T+3).`
+                ? `Corte de producción superado (${effectiveCutoff}:00 PM ET). Para pedidos después de las 12 PM, la fecha de entrega más temprana es ${minDeliveryDateStr} (T+3).`
                 : `Lead time de producción de 48h requerido. La fecha de entrega más temprana es ${minDeliveryDateStr} (T+2).`);
         }
     }
@@ -1115,6 +1181,7 @@ exports.OrdersService = OrdersService = __decorate([
     __param(11, (0, common_1.Optional)()),
     __param(11, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
     __param(12, (0, common_1.Optional)()),
+    __param(13, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -1127,6 +1194,7 @@ exports.OrdersService = OrdersService = __decorate([
         fee_calculator_service_1.FeeCalculatorService,
         mileage_freight_service_1.MileageFreightService,
         payments_service_1.PaymentsService,
-        address_validation_service_1.AddressValidationService])
+        address_validation_service_1.AddressValidationService,
+        system_configs_service_1.SystemConfigsService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

@@ -1304,6 +1304,132 @@ describe('OrdersService', () => {
         }).toThrow(BadRequestException);
       });
     });
+
+    describe('Dynamic Delivery Schedule Rules (S68A)', () => {
+      const baseScheduleConfig = {
+        workingDays: [0, 1, 3, 4, 5, 6],
+        holidays: [
+          { date: '2026-11-26', name: 'Thanksgiving Day' },
+          { date: '2026-12-25', name: 'Christmas Day' },
+        ],
+        exceptionalDays: [],
+        cutoffHour: 12,
+      };
+
+      it('Happy path: Entrega en día hábil normal', () => {
+        // Miércoles 21 Octubre 2026 a las 10:00 AM NY (14:00 UTC)
+        const wednesday10AM = new Date('2026-10-21T14:00:00Z');
+
+        const minDate = service.calculateMinDeliveryDate(wednesday10AM, 12, baseScheduleConfig);
+        // T+2 pre-cutoff = Viernes 23 Octubre 2026 (día hábil)
+        expect(minDate).toBe('2026-10-23');
+
+        expect(() => {
+          service.validateCutoffTime('2026-10-23', wednesday10AM, 12, baseScheduleConfig);
+        }).not.toThrow();
+      });
+
+      it('Happy path: Entrega en fecha extraordinaria aprobada (que caería en martes pero se permite por override)', () => {
+        // Domingo 25 Octubre 2026 a las 10:00 AM NY (14:00 UTC)
+        const sunday10AM = new Date('2026-10-25T14:00:00Z');
+
+        // Martes 27 Octubre normalmente está inactivo, pero está en exceptionalDays
+        const scheduleWithOverride = {
+          ...baseScheduleConfig,
+          exceptionalDays: [{ date: '2026-10-27', name: 'Special Tuesday Bake' }],
+        };
+
+        const minDate = service.calculateMinDeliveryDate(sunday10AM, 12, scheduleWithOverride);
+        expect(minDate).toBe('2026-10-27');
+
+        expect(() => {
+          service.validateCutoffTime('2026-10-27', sunday10AM, 12, scheduleWithOverride);
+        }).not.toThrow();
+      });
+
+      it('Sad path (§6): Intento de pedido en día feriado (ej. 2026-11-26 Thanksgiving) lanza BadRequestException', () => {
+        // Lunes 23 Noviembre 2026 a las 10:00 AM NY (15:00 UTC)
+        const monday10AM = new Date('2026-11-23T15:00:00Z');
+
+        expect(() => {
+          service.validateCutoffTime('2026-11-26', monday10AM, 12, baseScheduleConfig);
+        }).toThrow(BadRequestException);
+
+        try {
+          service.validateCutoffTime('2026-11-26', monday10AM, 12, baseScheduleConfig);
+        } catch (err: any) {
+          expect(err.message).toBe(
+            'Panadería Jhoanes no realiza entregas el 2026-11-26: Thanksgiving Day.',
+          );
+        }
+
+        // Verificar que calculateMinDeliveryDate avanza saltándose el feriado
+        // Martes 24 Noviembre 2026 10:00 AM -> T+2 normalmente sería Jueves 26 (Thanksgiving)
+        // Como Jueves 26 es feriado, debe saltar al Viernes 27
+        const tuesday10AM = new Date('2026-11-24T15:00:00Z');
+        const minDate = service.calculateMinDeliveryDate(tuesday10AM, 12, baseScheduleConfig);
+        expect(minDate).toBe('2026-11-27');
+      });
+
+      it('Sad path (§6): Intento de pedido en día de la semana deshabilitado lanza BadRequestException', () => {
+        // Configuración donde el domingo (0) está cerrado
+        const scheduleNoSundays = {
+          workingDays: [1, 2, 3, 4, 5, 6], // Lunes a Sábado, Domingo inactivo
+          holidays: [],
+          exceptionalDays: [],
+          cutoffHour: 12,
+        };
+
+        // Miércoles 21 Octubre 2026 a las 10:00 AM NY
+        const wednesday10AM = new Date('2026-10-21T14:00:00Z');
+
+        // Domingo 25 Octubre 2026 es día 0 (cerrado)
+        expect(() => {
+          service.validateCutoffTime('2026-10-25', wednesday10AM, 12, scheduleNoSundays);
+        }).toThrow(BadRequestException);
+
+        try {
+          service.validateCutoffTime('2026-10-25', wednesday10AM, 12, scheduleNoSundays);
+        } catch (err: any) {
+          expect(err.message).toBe(
+            'Panadería Jhoanes no realiza entregas los días domingo. Por favor selecciona un día operativo.',
+          );
+        }
+      });
+
+      it('Happy/Sad integration: uses injected SystemConfigsService cached schedule when scheduleConfig argument is omitted', () => {
+        const mockConfigService = {
+          getCachedDeliverySchedule: jest.fn().mockReturnValue({
+            workingDays: [0, 1, 3, 4, 5, 6],
+            holidays: [{ date: '2026-12-25', name: 'Christmas Day' }],
+            exceptionalDays: [],
+            cutoffHour: 12,
+          }),
+        };
+
+        (service as any).systemConfigsService = mockConfigService;
+
+        const wednesday10AM = new Date('2026-12-23T15:00:00Z');
+
+        // calculateMinDeliveryDate debe saltarse el feriado 2026-12-25 (Viernes) y retornar 2026-12-26 (Sábado)
+        const minDate = service.calculateMinDeliveryDate(wednesday10AM, 12);
+        expect(minDate).toBe('2026-12-26');
+
+        // Intentar ordenar para el 25 de Diciembre lanza BadRequestException por feriado
+        expect(() => {
+          service.validateCutoffTime('2026-12-25', wednesday10AM, 12);
+        }).toThrow(BadRequestException);
+
+        try {
+          service.validateCutoffTime('2026-12-25', wednesday10AM, 12);
+        } catch (err: any) {
+          expect(err.message).toBe('Panadería Jhoanes no realiza entregas el 2026-12-25: Christmas Day.');
+        }
+
+        // Limpiar mock inyectado
+        (service as any).systemConfigsService = undefined;
+      });
+    });
   });
 
   describe('findInRange', () => {

@@ -11,6 +11,7 @@ import { FeeCalculatorService } from './fee-calculator.service';
 import { MileageFreightService } from '../logistics/mileage-freight.service';
 import { PaymentsService } from '../payments/payments.service';
 import { AddressValidationService } from '../addresses/address-validation.service';
+import { SystemConfigsService } from '../system-configs/system-configs.service';
 export declare class OrdersService {
     private orderRepository;
     private orderItemRepository;
@@ -25,9 +26,10 @@ export declare class OrdersService {
     private mileageFreightService?;
     private paymentsService?;
     private addressValidationService?;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined, paymentsService?: PaymentsService | undefined, addressValidationService?: AddressValidationService | undefined);
-    calculateMinDeliveryDate(referenceDate?: Date, cutoffHour?: number): string;
-    validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour?: number): void;
+    private systemConfigsService?;
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined, paymentsService?: PaymentsService | undefined, addressValidationService?: AddressValidationService | undefined, systemConfigsService?: SystemConfigsService | undefined);
+    calculateMinDeliveryDate(referenceDate?: Date, cutoffHour?: number, scheduleConfig?: any): string;
+    validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour?: number, scheduleConfig?: any): void;
     normalizeStatus(status: string): string;
     validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string): string;
     private calculateOrderPricesAndTotal;
