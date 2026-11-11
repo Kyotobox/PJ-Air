@@ -1,11 +1,10 @@
-# SPRINT S70 - Sprint S70: Despliegue a Producción con Acceso Administrativo Protegido y Verificación de Panel
+# SPRINT S71 - Sprint S71: Corrección de Flete y Conciliación de Pagos Stripe, Restricción de Métodos ACH y Configuración de Mínimo
 **Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-11
 
-- [x] **TASK-70-01** [TASK] Sincronización de código fuente (S66-S69) y unificación de base de datos e imágenes en /var/www/pj-air
-- [x] **TASK-70-02** [TASK] Compilación física de Backend (NestJS) y Frontend (Next.js) en producción
-- [x] **TASK-70-03** [TASK] Orquestación de procesos de producción con PM2 en puertos 3000 y 3001
-- [x] **TASK-70-04** [TASK] Configuración de Nginx para validación privada (acceso a /admin y /auth/login con / en mantenimiento)
-- [x] **TASK-70-05** [TASK] Smoke test de autenticación administrativa y verificación de los 3 pedidos en /admin/orders
-- [x] **TASK-70-06** [TASK] Apertura oficial de app.jhoanes.com, retiro de guarda de cerrado temporal y restauración de proxy en Nginx
-- [x] **TASK-S70-07** [STRIPE] Integración de credenciales reales Stripe y erradicación de mocks de pasarela de pago
+- [x] **TASK-71-01** [TASK] Reparación física de la Orden #50552F84 en base de datos de producción (remover flete de $40, dejar total en $86.88, vincular Stripe y marcar paid con balance 0)
+- [/] **TASK-71-02** [TASK] Prevalencia estricta de regla de zonas con flete bonificado ($0) sobre sobreescritura de mileageFreightService en orders.service.ts con tests unitarios y sad path (§6)
+- [ ] **TASK-71-03** [TASK] Endpoint autorizado y seguro para confirmación de pago Stripe del cliente propietario de la orden (resolución HTTP 403) con tests unitarios y sad path (§6)
+- [ ] **TASK-71-04** [TASK] Restricción en Stripe Elements: excluir us_bank_account para clientes estándar, dejando solo tarjeta y wallets digitales
+- [ ] **TASK-71-05** [TASK] Verificación y soporte de Monto Mínimo de Pedido configurable en panel de administración (/admin) a nivel global y por cliente
+- [ ] **TASK-71-06** [TASK] Compilación física de Backend y Frontend, sincronización y despliegue a producción (187.124.67.53), recarga de PM2 y certificación en vivo

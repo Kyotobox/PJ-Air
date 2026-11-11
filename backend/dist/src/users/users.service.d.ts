@@ -24,6 +24,7 @@ export declare class UsersService {
     clearResetPasswordToken(userId: string): Promise<void>;
     updateGeneralDiscount(userId: string, discount: number): Promise<void>;
     updateDeliveryFee(userId: string, fee: number): Promise<void>;
+    updateMinOrderAmount(userId: string, minAmount: number | null): Promise<void>;
     updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void>;
     updateCreditSettings(userId: string, data: {
         account_type?: 'cash' | 'credit';

@@ -44,6 +44,7 @@ interface StripePaymentModalProps {
     onSuccess: () => void;
     onCancel: () => void;
     locale: string;
+    isVip?: boolean;
 }
 
 function CheckoutForm({
@@ -161,6 +162,7 @@ export default function StripePaymentModal({
     onSuccess,
     onCancel,
     locale,
+    isVip,
 }: StripePaymentModalProps) {
     const lbl = (es: string, en: string) => locale === 'en' ? en : es;
 
@@ -321,18 +323,20 @@ export default function StripePaymentModal({
                                 <CreditCard size={14} />
                                 <span>{lbl('Tarjeta Crédito/Débito', 'Card')}</span>
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab('ach')}
-                                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                                    activeTab === 'ach'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-900'
-                                }`}
-                            >
-                                <Building2 size={14} />
-                                <span>{lbl('Transferencia ACH', 'ACH Bank')}</span>
-                            </button>
+                            {isVip && (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('ach')}
+                                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                        activeTab === 'ach'
+                                            ? 'bg-white text-slate-900 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                >
+                                    <Building2 size={14} />
+                                    <span>{lbl('Transferencia ACH', 'ACH Bank')}</span>
+                                </button>
+                            )}
                         </div>
 
                         {/* TAB 1: 1-Click Saved Payment Methods */}

@@ -112,6 +112,10 @@ let UsersController = class UsersController {
     async updateDeliveryFee(id, body) {
         return this.usersService.updateDeliveryFee(id, body.fee);
     }
+    async updateMinOrderAmount(id, body) {
+        await this.usersService.updateMinOrderAmount(id, body.min_order_amount);
+        return { success: true, min_order_amount: body.min_order_amount };
+    }
     async updateCredit(id, body) {
         return this.usersService.updateCreditSettings(id, body);
     }
@@ -276,6 +280,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateDeliveryFee", null);
+__decorate([
+    (0, common_1.Patch)(':id/min-order-amount'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateMinOrderAmount", null);
 __decorate([
     (0, common_1.Patch)(':id/credit'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),

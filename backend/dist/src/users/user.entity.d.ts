@@ -40,5 +40,6 @@ export declare class User {
     reset_password_token?: string | null;
     reset_password_expires?: Date | null;
     credit_balance: number;
+    min_order_amount?: number | null;
     productDiscounts: ProductDiscount[];
 }

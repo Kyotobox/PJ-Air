@@ -152,4 +152,51 @@ describe('OrdersController', () => {
       expect(result).toEqual({ id: 'order-123', total: 150 });
     });
   });
+
+  describe('updatePaymentStatus (TASK-71-03)', () => {
+    it('should allow admin to update payment status to any valid status', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'ord-admin-1', user_id: 'client-other' });
+      mockOrdersService.update.mockResolvedValue({ id: 'ord-admin-1', payment_status: 'paid' });
+
+      const req = { user: { id: 'admin-1', role: 'admin' } };
+      const res = await controller.updatePaymentStatus('ord-admin-1', 'paid', 'pi_live_123', req as any);
+
+      expect(service.update).toHaveBeenCalledWith('ord-admin-1', {
+        payment_status: 'paid',
+        stripe_payment_id: 'pi_live_123',
+      }, 'admin');
+      expect(res).toEqual({ id: 'ord-admin-1', payment_status: 'paid' });
+    });
+
+    it('should allow client owner to confirm payment_status: paid with stripe_payment_id', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'ord-client-1', user_id: 'client-owner' });
+      mockOrdersService.update.mockResolvedValue({ id: 'ord-client-1', payment_status: 'paid', pending_balance: 0 });
+
+      const req = { user: { id: 'client-owner', role: 'client' } };
+      const res = await controller.updatePaymentStatus('ord-client-1', 'paid', 'pi_test_abc', req as any);
+
+      expect(service.update).toHaveBeenCalledWith('ord-client-1', {
+        payment_status: 'paid',
+        pending_balance: 0,
+        stripe_payment_id: 'pi_test_abc',
+      }, 'client');
+      expect(res).toEqual({ id: 'ord-client-1', payment_status: 'paid', pending_balance: 0 });
+    });
+
+    it('Sad path: client attempting to confirm payment on another client order throws ForbiddenException (§6)', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'ord-other-user', user_id: 'victim-client' });
+      const req = { user: { id: 'attacker-client', role: 'client' } };
+
+      await expect(controller.updatePaymentStatus('ord-other-user', 'paid', undefined, req as any))
+        .rejects.toThrow('No tiene permisos para modificar el estado de pago de esta orden');
+    });
+
+    it('Sad path: client attempting to set status other than paid throws ForbiddenException (§6)', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'ord-own', user_id: 'client-owner' });
+      const req = { user: { id: 'client-owner', role: 'client' } };
+
+      await expect(controller.updatePaymentStatus('ord-own', 'refunded', undefined, req as any))
+        .rejects.toThrow('Clientes solo pueden confirmar pagos completados');
+    });
+  });
 });

@@ -138,6 +138,9 @@ export class AppModule implements OnModuleInit {
       if (!userColNames.includes('tax_exempt')) {
         await qr.query(`ALTER TABLE users ADD COLUMN tax_exempt BOOLEAN DEFAULT 0;`);
       }
+      if (!userColNames.includes('min_order_amount')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN min_order_amount DECIMAL(10,2);`);
+      }
       if (!userColNames.includes('legal_business_name')) {
         await qr.query(`ALTER TABLE users ADD COLUMN legal_business_name VARCHAR;`);
       }

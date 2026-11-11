@@ -53,6 +53,7 @@ interface Order {
 }
 interface UserRecord {
     id: string; email: string; role: string; general_discount?: number; delivery_fee?: number;
+    min_order_amount?: number | null;
     account_type?: 'cash' | 'credit';
     credit_limit?: number;
     credit_override?: boolean;
@@ -183,6 +184,8 @@ export default function AdminClientsPage() {
     const [isSavingDiscount, setIsSavingDiscount] = useState(false);
     const [deliveryFee, setDeliveryFee] = useState<number>(0);
     const [isSavingFee, setIsSavingFee] = useState(false);
+    const [clientMinOrder, setClientMinOrder] = useState<number | string>('');
+    const [isSavingMinOrder, setIsSavingMinOrder] = useState(false);
 
     // Credit states
     const [accountType, setAccountType] = useState<'cash' | 'credit'>('cash');
@@ -316,6 +319,7 @@ export default function AdminClientsPage() {
         setSelectedUser(user);
         setGeneralDiscount(Number(user.general_discount) || 0);
         setDeliveryFee(Number(user.delivery_fee) || 0);
+        setClientMinOrder(user.min_order_amount !== null && user.min_order_amount !== undefined ? user.min_order_amount : '');
         setNickname(user.profile?.nickname || '');
         setAccountType(user.account_type || 'cash');
         setCreditLimit(Number(user.credit_limit) || 0);
@@ -328,6 +332,7 @@ export default function AdminClientsPage() {
             setSelectedUser(detail);
             setGeneralDiscount(Number(detail.general_discount) || 0);
             setDeliveryFee(Number(detail.delivery_fee) || 0);
+            setClientMinOrder(detail.min_order_amount !== null && detail.min_order_amount !== undefined ? detail.min_order_amount : '');
             setNickname(detail.profile?.nickname || '');
             setAccountType(detail.account_type || 'cash');
             setCreditLimit(Number(detail.credit_limit) || 0);
@@ -567,6 +572,18 @@ export default function AdminClientsPage() {
             setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, delivery_fee: deliveryFee } : u));
         } catch (err: any) { showToast(`❌ ${err.message}`); }
         finally { setIsSavingFee(false); }
+    };
+
+    const handleUpdateMinOrderAmount = async () => {
+        if (!selectedUser) return;
+        setIsSavingMinOrder(true);
+        try {
+            const val = clientMinOrder === '' ? null : Number(clientMinOrder);
+            await api.patch(`/users/${selectedUser.id}/min-order-amount`, { min_order_amount: val });
+            showToast('✅ Monto mínimo del cliente actualizado');
+            setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, min_order_amount: val } : u));
+        } catch (err: any) { showToast(`❌ ${err.message}`); }
+        finally { setIsSavingMinOrder(false); }
     };
 
     const handleUpdateAddress = async (e: React.FormEvent) => {
@@ -1767,7 +1784,7 @@ export default function AdminClientsPage() {
                                     <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Ofertas y Tarifas Especiales</h3>
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-6 mb-10">
+                                <div className="grid md:grid-cols-3 gap-6 mb-10">
                                     {/* General Discount */}
                                     <div className="bg-green-50/50 border border-green-200 rounded-[2.5rem] p-8">
                                         <div className="flex items-center gap-2 mb-4">
@@ -1814,6 +1831,31 @@ export default function AdminClientsPage() {
                                             </button>
                                         </div>
                                         <p className="text-[10px] font-bold text-amber-600/60 mt-4 italic">Costo fijo de delivery para este cliente.</p>
+                                    </div>
+
+                                    {/* Custom Minimum Order Amount */}
+                                    <div className="bg-blue-50/50 border border-blue-200 rounded-[2.5rem] p-8">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><DollarSign size={18} /></div>
+                                            <span className="text-xs font-black uppercase text-blue-700">Mínimo Pedido</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="number" 
+                                                placeholder="Global"
+                                                value={clientMinOrder}
+                                                onChange={e => setClientMinOrder(e.target.value)}
+                                                className="w-full px-5 py-3.5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-300 font-black text-blue-900 bg-white shadow-inner"
+                                            />
+                                            <button 
+                                                onClick={handleUpdateMinOrderAmount}
+                                                disabled={isSavingMinOrder}
+                                                className="bg-blue-600 text-white px-6 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50"
+                                            >
+                                                OK
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-blue-600/60 mt-4 italic">Personalizado para este cliente (vacío = global).</p>
                                     </div>
                                 </div>
 

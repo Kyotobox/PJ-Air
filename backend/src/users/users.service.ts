@@ -161,6 +161,10 @@ export class UsersService {
     await this.userRepository.update(userId, { delivery_fee: fee });
   }
 
+  async updateMinOrderAmount(userId: string, minAmount: number | null): Promise<void> {
+    await this.userRepository.update(userId, { min_order_amount: minAmount !== null && minAmount !== undefined ? Number(minAmount) : null });
+  }
+
   async updateStripeCustomerId(userId: string, stripeCustomerId: string): Promise<void> {
     await this.userRepository.update(userId, { stripe_customer_id: stripeCustomerId });
   }

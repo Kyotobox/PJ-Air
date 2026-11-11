@@ -136,8 +136,26 @@ let OrdersController = class OrdersController {
         }
         return this.ordersService.updateStatus(id, status, role);
     }
-    async updatePaymentStatus(id, paymentStatus) {
-        return this.ordersService.update(id, { payment_status: paymentStatus }, 'admin');
+    async updatePaymentStatus(id, paymentStatus, stripePaymentId, req) {
+        const order = await this.ordersService.findOne(id);
+        const role = req.user?.role;
+        if (role === 'admin') {
+            return this.ordersService.update(id, {
+                payment_status: paymentStatus,
+                ...(stripePaymentId ? { stripe_payment_id: stripePaymentId } : {}),
+            }, 'admin');
+        }
+        if (order.user_id === req.user?.id) {
+            if (paymentStatus === 'paid') {
+                return this.ordersService.update(id, {
+                    payment_status: 'paid',
+                    pending_balance: 0,
+                    ...(stripePaymentId ? { stripe_payment_id: stripePaymentId } : {}),
+                }, role);
+            }
+            throw new common_1.ForbiddenException('Clientes solo pueden confirmar pagos completados');
+        }
+        throw new common_1.ForbiddenException('No tiene permisos para modificar el estado de pago de esta orden');
     }
     async approveZelle(id) {
         return this.ordersService.approveZellePayment(id);
@@ -272,12 +290,13 @@ __decorate([
 ], OrdersController.prototype, "updateStatus", null);
 __decorate([
     (0, common_1.Patch)(':id/payment-status'),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)('payment_status')),
+    __param(2, (0, common_1.Body)('stripe_payment_id')),
+    __param(3, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "updatePaymentStatus", null);
 __decorate([

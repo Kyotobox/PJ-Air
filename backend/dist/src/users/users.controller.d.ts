@@ -18,6 +18,12 @@ export declare class UsersController {
     updateDeliveryFee(id: string, body: {
         fee: number;
     }): Promise<void>;
+    updateMinOrderAmount(id: string, body: {
+        min_order_amount: number | null;
+    }): Promise<{
+        success: boolean;
+        min_order_amount: number | null;
+    }>;
     updateCredit(id: string, body: {
         account_type?: 'cash' | 'credit';
         credit_limit?: number;

@@ -715,6 +715,135 @@ describe('OrdersService', () => {
         }),
       );
     });
+
+    describe('Delivery Fee Precedence Matrix (TASK-71-02)', () => {
+      it('should prioritize zone resolution with min_free_delivery_amount ($0 fee) over mileageFreightService even when dest_lat/dest_lng are present', async () => {
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-zone-precedence',
+          account_type: 'cash',
+          orders: [],
+          productDiscounts: [],
+        });
+        productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
+
+        const createdOrder = { id: 'order-zone-01', total: 100 };
+        mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+        mockManager.save.mockResolvedValue(createdOrder);
+        service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+        (service as any).zonesService = {
+          resolveZip: jest.fn().mockResolvedValue({
+            id: 'zone-1',
+            name: 'Astoria',
+            base_fee: 10,
+            min_free_delivery_amount: 50,
+          }),
+        };
+        (service as any).mileageFreightService = {
+          calculateDistanceMiles: jest.fn().mockReturnValue(12),
+          calculateFreight: jest.fn().mockReturnValue({ cost: 40, requiresSpecialQuote: false }),
+        };
+
+        await service.create('user-zone-precedence', {
+          items: [{ productId: 1, quantity: 1 }],
+          delivery_type: 'delivery',
+          payment_method: 'stripe',
+          zip_code: '11105',
+          dest_lat: 40.768,
+          dest_lng: -73.921,
+        });
+
+        expect((service as any).zonesService.resolveZip).toHaveBeenCalledWith('11105');
+        expect((service as any).mileageFreightService.calculateFreight).not.toHaveBeenCalled();
+        expect(mockManager.create).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            delivery_fee_charged: 0,
+          }),
+        );
+
+        (service as any).zonesService = undefined;
+        (service as any).mileageFreightService = undefined;
+      });
+
+      it('should fallback to mileageFreightService when ZIP is unmapped and coordinates are provided', async () => {
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-unmapped-zip',
+          account_type: 'cash',
+          orders: [],
+          productDiscounts: [],
+        });
+        productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
+
+        const createdOrder = { id: 'order-mileage-01', total: 100 };
+        mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+        mockManager.save.mockResolvedValue(createdOrder);
+        service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+        (service as any).zonesService = {
+          resolveZip: jest.fn().mockResolvedValue(null),
+        };
+        (service as any).mileageFreightService = {
+          calculateDistanceMiles: jest.fn().mockReturnValue(15),
+          calculateFreight: jest.fn().mockReturnValue({ cost: 60, requiresSpecialQuote: false }),
+        };
+
+        await service.create('user-unmapped-zip', {
+          items: [{ productId: 1, quantity: 1 }],
+          delivery_type: 'delivery',
+          payment_method: 'stripe',
+          zip_code: '99999',
+          dest_lat: 41.0,
+          dest_lng: -73.0,
+        });
+
+        expect((service as any).mileageFreightService.calculateFreight).toHaveBeenCalledWith(15, 'shared');
+        expect(mockManager.create).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            delivery_fee_charged: 60,
+          }),
+        );
+
+        (service as any).zonesService = undefined;
+        (service as any).mileageFreightService = undefined;
+      });
+
+      it('Sad path: fallback to contingency fee ($15.00) when neither zone matches nor coordinates are provided (§6)', async () => {
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-contingency',
+          account_type: 'cash',
+          orders: [],
+          productDiscounts: [],
+        });
+        productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
+
+        const createdOrder = { id: 'order-contingency-01', total: 100 };
+        mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+        mockManager.save.mockResolvedValue(createdOrder);
+        service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+        (service as any).zonesService = {
+          resolveZip: jest.fn().mockResolvedValue(null),
+        };
+
+        await service.create('user-contingency', {
+          items: [{ productId: 1, quantity: 1 }],
+          delivery_type: 'delivery',
+          payment_method: 'stripe',
+          zip_code: '99999',
+        });
+
+        expect(mockManager.create).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            delivery_fee_charged: 15,
+          }),
+        );
+
+        (service as any).zonesService = undefined;
+      });
+    });
   });
 
   describe('settleBatch - Batch Settlement (TASK-48-04)', () => {

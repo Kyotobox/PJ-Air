@@ -53,6 +53,7 @@ let User = class User {
     reset_password_token;
     reset_password_expires;
     credit_balance;
+    min_order_amount;
     productDiscounts;
 };
 exports.User = User;
@@ -204,6 +205,10 @@ __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)
 ], User.prototype, "credit_balance", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "min_order_amount", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

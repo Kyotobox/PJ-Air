@@ -141,10 +141,32 @@ export class OrdersController {
   }
 
   @Patch(':id/payment-status')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin')
-  async updatePaymentStatus(@Param('id') id: string, @Body('payment_status') paymentStatus: string) {
-    return this.ordersService.update(id, { payment_status: paymentStatus }, 'admin');
+  @UseGuards(AuthGuard)
+  async updatePaymentStatus(
+    @Param('id') id: string,
+    @Body('payment_status') paymentStatus: string,
+    @Body('stripe_payment_id') stripePaymentId: string | undefined,
+    @Req() req: any,
+  ) {
+    const order = await this.ordersService.findOne(id);
+    const role = req.user?.role;
+    if (role === 'admin') {
+      return this.ordersService.update(id, {
+        payment_status: paymentStatus,
+        ...(stripePaymentId ? { stripe_payment_id: stripePaymentId } : {}),
+      }, 'admin');
+    }
+    if (order.user_id === req.user?.id) {
+      if (paymentStatus === 'paid') {
+        return this.ordersService.update(id, {
+          payment_status: 'paid',
+          pending_balance: 0,
+          ...(stripePaymentId ? { stripe_payment_id: stripePaymentId } : {}),
+        }, role);
+      }
+      throw new ForbiddenException('Clientes solo pueden confirmar pagos completados');
+    }
+    throw new ForbiddenException('No tiene permisos para modificar el estado de pago de esta orden');
   }
 
   @Patch(':id/approve-zelle')

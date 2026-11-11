@@ -616,7 +616,7 @@ export default function CheckoutPage() {
     const [minSelectableDate, setMinSelectableDate] = useState('');
     const [nextAvailableDateFormatted, setNextAvailableDateFormatted] = useState('');
     const [showMinAmountModal, setShowMinAmountModal] = useState(false);
-    const [minOrderAmount, setMinOrderAmount] = useState<number>(500);
+    const [minOrderAmount, setMinOrderAmount] = useState<number>(30);
     const [cutoffHour, setCutoffHour] = useState<number>(12);
     const [deliverySchedule, setDeliverySchedule] = useState<DeliveryScheduleConfig>(DEFAULT_DELIVERY_SCHEDULE);
     const [termsAccepted, setTermsAccepted] = useState(false);
@@ -689,7 +689,11 @@ export default function CheckoutPage() {
     const handleStripePaymentSuccess = async () => {
         if (!stripePaymentData) return;
         try {
-            await api.patch(`/orders/${stripePaymentData.orderId}/payment-status`, { payment_status: 'paid' });
+            const piId = stripePaymentData.clientSecret ? stripePaymentData.clientSecret.split('_secret')[0] : undefined;
+            await api.patch(`/orders/${stripePaymentData.orderId}/payment-status`, { 
+                payment_status: 'paid',
+                stripe_payment_id: piId,
+            });
         } catch (e) {
             console.error('Error updating payment status:', e);
         }
@@ -717,6 +721,9 @@ export default function CheckoutPage() {
             if ((creditData as any)?.account_type === 'credit') {
                 setPaymentMethod('credit');
             }
+            if ((userData as any)?.min_order_amount !== null && (userData as any)?.min_order_amount !== undefined && Number((userData as any).min_order_amount) > 0) {
+                setMinOrderAmount(Number((userData as any).min_order_amount));
+            }
         }).finally(() => setIsFetchingAddresses(false));
     }, [user]);
 
@@ -725,7 +732,12 @@ export default function CheckoutPage() {
         api.get('/configs/min_order_amount')
             .then((res: any) => {
                 if (res && res.value) {
-                    setMinOrderAmount(Number(res.value) || 500);
+                    const globalVal = Number(res.value) || 30;
+                    setMinOrderAmount(current => {
+                        return ((userDiscounts as any)?.min_order_amount && Number((userDiscounts as any).min_order_amount) > 0)
+                            ? Number((userDiscounts as any).min_order_amount)
+                            : globalVal;
+                    });
                 }
             })
             .catch(err => console.error('Error fetching min_order_amount:', err));
@@ -2565,6 +2577,7 @@ export default function CheckoutPage() {
                     clientSecret={stripePaymentData.clientSecret}
                     amount={stripePaymentData.amount}
                     orderId={stripePaymentData.orderId}
+                    isVip={user?.account_type === 'credit' || !!(user as any)?.is_vip}
                     onSuccess={handleStripePaymentSuccess}
                     onCancel={async () => {
                         const cancelledOrderId = stripePaymentData.orderId;

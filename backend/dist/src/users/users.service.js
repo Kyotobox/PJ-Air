@@ -152,6 +152,9 @@ let UsersService = class UsersService {
     async updateDeliveryFee(userId, fee) {
         await this.userRepository.update(userId, { delivery_fee: fee });
     }
+    async updateMinOrderAmount(userId, minAmount) {
+        await this.userRepository.update(userId, { min_order_amount: minAmount !== null && minAmount !== undefined ? Number(minAmount) : null });
+    }
     async updateStripeCustomerId(userId, stripeCustomerId) {
         await this.userRepository.update(userId, { stripe_customer_id: stripeCustomerId });
     }

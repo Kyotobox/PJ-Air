@@ -14,6 +14,7 @@ describe('UsersController', () => {
     updateAvatar: jest.fn(),
     updateGeneralDiscount: jest.fn(),
     updateDeliveryFee: jest.fn(),
+    updateMinOrderAmount: jest.fn(),
     getProductDiscounts: jest.fn(),
     setProductDiscount: jest.fn(),
     deleteProductDiscount: jest.fn(),
@@ -72,6 +73,13 @@ describe('UsersController', () => {
       mockUsersService.updateGeneralDiscount.mockResolvedValue(undefined);
       await controller.updateGeneralDiscount('1', { discount: 10 });
       expect(service.updateGeneralDiscount).toHaveBeenCalledWith('1', 10);
+    });
+
+    it('should update client min order amount (TASK-71-05)', async () => {
+      mockUsersService.updateMinOrderAmount.mockResolvedValue(undefined);
+      const res = await controller.updateMinOrderAmount('1', { min_order_amount: 45 });
+      expect(service.updateMinOrderAmount).toHaveBeenCalledWith('1', 45);
+      expect(res).toEqual({ success: true, min_order_amount: 45 });
     });
 
     it('should get product discounts', async () => {

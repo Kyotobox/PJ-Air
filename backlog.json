@@ -3,58 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S70",
-  "current_task": "TASK-70-01",
+  "current_sprint": "S71",
+  "current_task": "TASK-71-01",
   "sprints": [
-    {
-      "id": "S68",
-      "name": "Sprint S68: Apartado de Días de Despacho en Admin, Calendario de Feriados y Motor Dinámico de Entrega",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-68-01",
-          "title": "Servicio y endpoint unificado GET/PATCH /configs/delivery-schedule",
-          "status": "DONE",
-          "type": "BACKEND/DATA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-68-02",
-          "title": "Motor dinámico en OrdersService (calculateMinDeliveryDate & validateCutoffTime)",
-          "status": "DONE",
-          "type": "BACKEND/LOGIC",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-68-03",
-          "title": "Apartado dedicado /admin/dispatch con selector semanal, feriados NY/US y excepciones",
-          "status": "DONE",
-          "type": "ADMIN/UI",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-68-04",
-          "title": "Integración en checkout/page.tsx con bloqueo de feriados y advertencias",
-          "status": "DONE",
-          "type": "FRONTEND/CHECKOUT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-68-05",
-          "title": "Suite de pruebas y despliegue a VPS testing.jhoanes.com",
-          "status": "DONE",
-          "type": "TEST/DEPLOY",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-68-06",
-          "title": "Flujo seguro de restablecimiento de contraseña vía enlace firmado (MailService & SMTP Postfix)",
-          "status": "DONE",
-          "type": "AUTH/SECURITY",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S69",
       "name": "Sprint S69: Transición de Datos en Producción, Preservación de Órdenes Activas y Depuración de Clientes para Re-registro",
@@ -93,7 +44,7 @@
     {
       "id": "S70",
       "name": "Sprint S70: Despliegue a Producción con Acceso Administrativo Protegido y Verificación de Panel",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-70-01",
@@ -146,44 +97,99 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S71",
+      "name": "Sprint S71: Corrección de Flete y Conciliación de Pagos Stripe, Restricción de Métodos ACH y Configuración de Mínimo",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-71-01",
+          "title": "Reparación física de la Orden #50552F84 en base de datos de producción (remover flete de $40, dejar total en $86.88, vincular Stripe y marcar paid con balance 0)",
+          "status": "IN_PROGRESS",
+          "type": "PROD/DATA",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-02",
+          "title": "Prevalencia estricta de regla de zonas con flete bonificado ($0) sobre sobreescritura de mileageFreightService en orders.service.ts con tests unitarios y sad path (§6)",
+          "status": "TODO",
+          "type": "CORE/LOGIC",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-03",
+          "title": "Endpoint autorizado y seguro para confirmación de pago Stripe del cliente propietario de la orden (resolución HTTP 403) con tests unitarios y sad path (§6)",
+          "status": "TODO",
+          "type": "PAYMENTS/SECURITY",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-04",
+          "title": "Restricción en Stripe Elements: excluir us_bank_account para clientes estándar, dejando solo tarjeta y wallets digitales",
+          "status": "TODO",
+          "type": "UI/STRIPE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-05",
+          "title": "Verificación y soporte de Monto Mínimo de Pedido configurable en panel de administración (/admin) a nivel global y por cliente",
+          "status": "TODO",
+          "type": "ADMIN/CONFIG",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-06",
+          "title": "Compilación física de Backend y Frontend, sincronización y despliegue a producción (187.124.67.53), recarga de PM2 y certificación en vivo",
+          "status": "TODO",
+          "type": "DEPLOY/PROD",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 61,
+  "archived_sprints_count": 62,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S70",
-    "name": "Sprint S70: Despliegue a Producción con Acceso Administrativo Protegido y Verificación de Panel",
+    "id": "S71",
+    "name": "Sprint S71: Corrección de Flete y Conciliación de Pagos Stripe, Restricción de Métodos ACH y Configuración de Mínimo",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-70-01",
-        "title": "Sincronización de código fuente (S66-S69) y unificación de base de datos e imágenes en /var/www/pj-air",
+        "id": "TASK-71-01",
+        "title": "Reparación física de la Orden #50552F84 en base de datos de producción (remover flete de $40, dejar total en $86.88, vincular Stripe y marcar paid con balance 0)",
         "status": "IN_PROGRESS",
-        "type": "TECH/SYNC"
+        "type": "PROD/DATA"
       },
       {
-        "id": "TASK-70-02",
-        "title": "Compilación física de Backend (NestJS) y Frontend (Next.js) en producción",
+        "id": "TASK-71-02",
+        "title": "Prevalencia estricta de regla de zonas con flete bonificado ($0) sobre sobreescritura de mileageFreightService en orders.service.ts con tests unitarios y sad path (§6)",
         "status": "TODO",
-        "type": "BUILD/PROD"
+        "type": "CORE/LOGIC"
       },
       {
-        "id": "TASK-70-03",
-        "title": "Orquestación de procesos de producción con PM2 en puertos 3000 y 3001",
+        "id": "TASK-71-03",
+        "title": "Endpoint autorizado y seguro para confirmación de pago Stripe del cliente propietario de la orden (resolución HTTP 403) con tests unitarios y sad path (§6)",
         "status": "TODO",
-        "type": "SERVICE/PM2"
+        "type": "PAYMENTS/SECURITY"
       },
       {
-        "id": "TASK-70-04",
-        "title": "Configuración de Nginx para validación privada (acceso a /admin y /auth/login con / en mantenimiento)",
+        "id": "TASK-71-04",
+        "title": "Restricción en Stripe Elements: excluir us_bank_account para clientes estándar, dejando solo tarjeta y wallets digitales",
         "status": "TODO",
-        "type": "NET/NGINX"
+        "type": "UI/STRIPE"
       },
       {
-        "id": "TASK-70-05",
-        "title": "Smoke test de autenticación administrativa y verificación de los 3 pedidos en /admin/orders",
+        "id": "TASK-71-05",
+        "title": "Verificación y soporte de Monto Mínimo de Pedido configurable en panel de administración (/admin) a nivel global y por cliente",
         "status": "TODO",
-        "type": "SMOKE/CERT"
+        "type": "ADMIN/CONFIG"
+      },
+      {
+        "id": "TASK-71-06",
+        "title": "Compilación física de Backend y Frontend, sincronización y despliegue a producción (187.124.67.53), recarga de PM2 y certificación en vivo",
+        "status": "TODO",
+        "type": "DEPLOY/PROD"
       }
     ]
   }

@@ -162,6 +162,14 @@ export class UsersController {
     return this.usersService.updateDeliveryFee(id, body.fee);
   }
 
+  @Patch(':id/min-order-amount')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async updateMinOrderAmount(@Param('id') id: string, @Body() body: { min_order_amount: number | null }) {
+    await this.usersService.updateMinOrderAmount(id, body.min_order_amount);
+    return { success: true, min_order_amount: body.min_order_amount };
+  }
+
   @Patch(':id/credit')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')
