@@ -115,7 +115,11 @@ export const RegisterForm = ({
         formData.signature_text.trim().length >= 3
     );
 
-    const isSubmitDisabled = isLoading || !isPhoneVerified || !isAllConsentChecked || !hasSignature;
+    const phoneDigits = formData.phone ? formData.phone.replace(/\D/g, '') : '';
+    const phoneFormatRegex = /^[+]?[\d\s\-()]{10,25}$/;
+    const isPhoneValid = Boolean(formData.phone && phoneFormatRegex.test(formData.phone.trim()) && phoneDigits.length >= 10 && phoneDigits.length <= 15);
+
+    const isSubmitDisabled = isLoading || !isPhoneValid || !isAllConsentChecked || !hasSignature;
 
     return (
         <form onSubmit={onSubmit} className="space-y-8">
@@ -172,24 +176,13 @@ export const RegisterForm = ({
                     <div className="space-y-2">
                         <div className="flex items-center justify-between ml-1">
                             <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                                {t.register.phone} (SMS) *
+                                {t.register.phone} *
                             </label>
-                            {isPhoneVerified ? (
+                            {isPhoneValid && (
                                 <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                                     <CheckCircle2 size={10} />
-                                    <span>{locale === 'en' ? 'Verified ✓' : 'Verificado ✓'}</span>
+                                    <span>{locale === 'en' ? 'Valid ✓' : 'Válido ✓'}</span>
                                 </span>
-                            ) : (
-                                formData.phone && formData.phone.replace(/\D/g, '').length >= 10 && onVerifyPhoneClick && (
-                                    <button
-                                        type="button"
-                                        onClick={onVerifyPhoneClick}
-                                        className="text-[10px] font-black text-primary hover:underline uppercase tracking-wider flex items-center gap-1 cursor-pointer"
-                                    >
-                                        <Smartphone size={11} />
-                                        <span>{locale === 'en' ? 'Verify SMS' : 'Verificar SMS'}</span>
-                                    </button>
-                                )
                             )}
                         </div>
                         <div className="relative">
@@ -198,7 +191,7 @@ export const RegisterForm = ({
                                 required
                                 type="tel"
                                 placeholder="+1 (305) 555-0100"
-                                className={`premium-input pl-11 text-xs ${isPhoneVerified ? 'border-emerald-500 bg-emerald-50/20' : ''}`}
+                                className={`premium-input pl-11 text-xs ${isPhoneValid ? 'border-emerald-500 bg-emerald-50/20' : ''}`}
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
                             />
@@ -652,14 +645,14 @@ export const RegisterForm = ({
                 </button>
 
                 {/* Validaciones pendientes indicativas */}
-                {!isPhoneVerified && (
+                {!isPhoneValid && formData.phone && formData.phone.trim().length > 0 && (
                     <p className="text-[11px] text-center text-amber-700/80 font-bold mt-2.5 animate-fade-in">
                         {locale === 'en'
-                            ? '⚠ SMS phone verification is required to enable wholesale account registration'
-                            : '⚠ Se requiere verificación de teléfono vía SMS para habilitar el registro mayorista'}
+                            ? '⚠ Please enter a valid phone number (10 to 15 digits)'
+                            : '⚠ Por favor ingresa un número de teléfono válido (10 a 15 dígitos)'}
                     </p>
                 )}
-                {isPhoneVerified && (!isAllConsentChecked || !hasSignature) && (
+                {isPhoneValid && (!isAllConsentChecked || !hasSignature) && (
                     <p className="text-[11px] text-center text-slate-500 font-bold mt-2.5 animate-fade-in">
                         {locale === 'en'
                             ? '⚠ Please mark all 3 consent checkboxes and enter your electronic signature to proceed'

@@ -95,8 +95,10 @@ export default function RegisterPage() {
             return;
         }
 
-        if (!isPhoneVerified || !phoneIdToken) {
-            setError(locale === 'en' ? 'You must verify your phone number via SMS before proceeding' : 'Debes verificar tu número de teléfono por SMS antes de continuar');
+        const phoneDigits = formData.phone ? formData.phone.replace(/\D/g, '') : '';
+        const phoneFormatRegex = /^[+]?[\d\s\-()]{10,25}$/;
+        if (!formData.phone || !phoneFormatRegex.test(formData.phone.trim()) || phoneDigits.length < 10 || phoneDigits.length > 15) {
+            setError(locale === 'en' ? 'Please enter a valid phone number (10 to 15 digits)' : 'Ingresa un número de teléfono válido (10 a 15 dígitos)');
             return;
         }
 
@@ -120,8 +122,7 @@ export default function RegisterPage() {
                 password: formData.password,
                 full_name: formData.full_name,
                 phone: formData.phone,
-                phone_verified: true,
-                idToken: phoneIdToken,
+                phone_verified: false,
                 company_name: formData.company_name,
                 tax_id: normalizedTaxId || undefined,
                 st120_declared: Boolean(formData.st120_declared),

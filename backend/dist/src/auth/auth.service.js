@@ -85,15 +85,13 @@ let AuthService = AuthService_1 = class AuthService {
             if (!cleanTax) {
                 throw new common_1.BadRequestException('El Tax ID / NY Resale Certificate # es obligatorio para registros mayoristas');
             }
-            if (!phone || typeof phone !== 'string' || phone.replace(/\D/g, '').length < 10) {
-                throw new common_1.BadRequestException('Valid phone number (minimum 10 digits) is required for wholesale registration');
+            if (!phone || typeof phone !== 'string') {
+                throw new common_1.BadRequestException('Phone number is required for wholesale registration');
             }
-            if (phone_verified !== true) {
-                throw new common_1.BadRequestException('Phone number verification via SMS is mandatory for B2B wholesale registration');
-            }
-            const isTokenValid = await this.verifyFirebasePhoneToken(phone, idToken);
-            if (!isTokenValid) {
-                throw new common_1.BadRequestException('Invalid or unverified phone verification token');
+            const cleanDigits = phone.replace(/\D/g, '');
+            const phoneFormatRegex = /^[+]?[\d\s\-()]{10,25}$/;
+            if (!phoneFormatRegex.test(phone.trim()) || cleanDigits.length < 10 || cleanDigits.length > 15) {
+                throw new common_1.BadRequestException('Invalid phone number format or length (must contain 10 to 15 digits)');
             }
         }
         const existingUser = await this.usersService.findByEmail(email);
@@ -132,7 +130,7 @@ let AuthService = AuthService_1 = class AuthService {
             username: username || email.split('@')[0],
             phone,
             company_name: cleanCompany,
-            phone_verified: userRole === 'client' ? true : Boolean(phone_verified),
+            phone_verified: Boolean(phone_verified),
             tax_id: cleanTaxId,
             st120_status: initialSt120Status,
             tax_exempt: false,

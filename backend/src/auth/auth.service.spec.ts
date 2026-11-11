@@ -93,24 +93,30 @@ describe('AuthService', () => {
       })).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException if phone is not verified', async () => {
+    it('should throw BadRequestException if phone has invalid characters', async () => {
       await expect(service.signup({
         email: 'test@example.com',
         company_name: 'Test Bakery',
         tax_id: '12-3456789',
-        phone: '+13055550100',
-        phone_verified: false,
+        phone: '+1305abc0100',
       })).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException if idToken is invalid', async () => {
+    it('should throw BadRequestException if phone has more than 15 digits', async () => {
       await expect(service.signup({
         email: 'test@example.com',
         company_name: 'Test Bakery',
         tax_id: '12-3456789',
-        phone: '+13055550100',
-        phone_verified: true,
-        idToken: 'invalid-token',
+        phone: '+13055550100999999',
+      })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if phone has fewer than 10 digits', async () => {
+      await expect(service.signup({
+        email: 'test@example.com',
+        company_name: 'Test Bakery',
+        tax_id: '12-3456789',
+        phone: '123456789',
       })).rejects.toThrow(BadRequestException);
     });
 
