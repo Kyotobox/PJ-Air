@@ -94,14 +94,15 @@ let AuthService = AuthService_1 = class AuthService {
                 throw new common_1.BadRequestException('Invalid phone number format or length (must contain 10 to 15 digits)');
             }
         }
-        const existingUser = await this.usersService.findByEmail(email);
+        const normalizedEmail = (email || '').trim().toLowerCase();
+        const existingUser = await this.usersService.findByEmail(normalizedEmail);
         if (existingUser)
             throw new common_1.ConflictException('Email already registered');
         const cleanTaxId = tax_id && typeof tax_id === 'string' ? tax_id.trim() : undefined;
         const initialSt120Status = st120_declared || cleanTaxId ? 'PENDING' : 'NONE';
         const hashedPassword = (0, crypto_util_1.hashPassword)(password);
         const userResult = await this.usersService.create({
-            email,
+            email: normalizedEmail,
             password: hashedPassword,
             role: userRole,
             tax_id: cleanTaxId,
@@ -122,6 +123,7 @@ let AuthService = AuthService_1 = class AuthService {
             ...(body.card_last4 ? { card_last4: body.card_last4 } : {}),
             ...(body.stripe_payment_method_id ? { stripe_payment_method_id: body.stripe_payment_method_id } : {}),
             ...(body.check_enabled !== undefined ? { check_enabled: Boolean(body.check_enabled) } : {}),
+            ...(body.ach_enabled !== undefined ? { ach_enabled: Boolean(body.ach_enabled) } : {}),
         });
         const user = Array.isArray(userResult) ? userResult[0] : userResult;
         await this.usersService.createProfile({
@@ -252,8 +254,9 @@ let AuthService = AuthService_1 = class AuthService {
         return response;
     }
     async recoverPassword(identifier) {
-        const user = await this.usersService.findByEmail(identifier) ||
-            await this.usersService.findByIdentifier(identifier);
+        const cleanId = (identifier || '').trim().toLowerCase();
+        const user = await this.usersService.findByEmail(cleanId) ||
+            await this.usersService.findByIdentifier(cleanId);
         if (!user) {
             throw new common_1.UnauthorizedException(`No hemos conseguido un usuario o email que coincida con: ${identifier}`);
         }

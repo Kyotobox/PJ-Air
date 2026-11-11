@@ -36,6 +36,7 @@ export declare class User {
     card_last4?: string | null;
     stripe_payment_method_id?: string | null;
     check_enabled: boolean;
+    ach_enabled: boolean;
     is_active: boolean;
     reset_password_token?: string | null;
     reset_password_expires?: Date | null;

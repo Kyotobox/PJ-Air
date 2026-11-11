@@ -46,24 +46,29 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
-      where: { email },
-      select: ['id', 'email', 'password', 'role'],
-      relations: ['profile']
-    });
+    if (!email) return null;
+    const normalized = email.trim().toLowerCase();
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .where('LOWER(user.email) = LOWER(:email)', { email: normalized })
+      .getOne();
   }
 
   async findByIdentifier(identifier: string): Promise<User | null> {
-    // Check email
-    const userByEmail = await this.findByEmail(identifier);
+    if (!identifier) return null;
+    const normalized = identifier.trim().toLowerCase();
+    const userByEmail = await this.findByEmail(normalized);
     if (userByEmail) return userByEmail;
 
     // Check username
-    return this.userRepository.findOne({
-      where: { profile: { username: identifier } },
-      select: ['id', 'email', 'password', 'role'],
-      relations: ['profile']
-    });
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .where('LOWER(profile.username) = LOWER(:username)', { username: normalized })
+      .getOne();
   }
 
   async create(userData: any): Promise<User> {
@@ -122,11 +127,7 @@ export class UsersService {
   }
 
   async findByEmailWithRole(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
-      where: { email },
-      select: ['id', 'email', 'password', 'role'],
-      relations: ['profile']
-    });
+    return this.findByEmail(email);
   }
 
   async updatePassword(userId: string, newPassword: string): Promise<void> {
@@ -171,13 +172,14 @@ export class UsersService {
 
   async updateCreditSettings(
     userId: string, 
-    data: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean; check_enabled?: boolean }
+    data: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean; check_enabled?: boolean; ach_enabled?: boolean }
   ): Promise<User> {
     const user = await this.findOne(userId);
     if (data.account_type !== undefined) user.account_type = data.account_type;
     if (data.credit_limit !== undefined) user.credit_limit = Number(data.credit_limit) || 0;
     if (data.credit_override !== undefined) user.credit_override = Boolean(data.credit_override);
     if (data.check_enabled !== undefined) user.check_enabled = Boolean(data.check_enabled);
+    if (data.ach_enabled !== undefined) user.ach_enabled = Boolean(data.ach_enabled);
     
     await this.userRepository.save(user);
     return this.findOne(userId);
@@ -188,6 +190,7 @@ export class UsersService {
     credit_limit: number;
     credit_override: boolean;
     check_enabled: boolean;
+    ach_enabled: boolean;
     used_credit: number;
     available_credit: number;
     is_overdraft: boolean;
@@ -212,6 +215,7 @@ export class UsersService {
       credit_limit,
       credit_override: Boolean(user.credit_override),
       check_enabled: Boolean(user.check_enabled),
+      ach_enabled: Boolean(user.ach_enabled),
       used_credit: Math.round(used_credit * 100) / 100,
       available_credit: Math.round(available_credit * 100) / 100,
       is_overdraft,
@@ -245,6 +249,9 @@ export class UsersService {
     }
     if (data.check_enabled !== undefined) {
       user.check_enabled = Boolean(data.check_enabled);
+    }
+    if (data.ach_enabled !== undefined) {
+      user.ach_enabled = Boolean(data.ach_enabled);
     }
     if (data.general_discount !== undefined) {
       user.general_discount = Number(data.general_discount);
@@ -294,6 +301,7 @@ export class UsersService {
       'card_last4',
       'stripe_payment_method_id',
       'check_enabled',
+      'ach_enabled',
     ];
     for (const field of allowedFields) {
       if ((data as any)[field] !== undefined) {

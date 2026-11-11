@@ -74,11 +74,20 @@ function ReportsPageContent() {
     const { t } = useLanguage();
     const searchParams = useSearchParams();
 
+    const getNYDate = () => {
+        const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const yr = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const da = String(d.getDate()).padStart(2, '0');
+        return `${yr}-${mo}-${da}`;
+    };
+
     // --- State ---
     const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>('daily');
     const [viewMode, setViewMode] = useState<'general' | 'all-clients' | 'specific-client'>('general');
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(getNYDate());
+    const [endDate, setEndDate] = useState(getNYDate());
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedClientId, setSelectedClientId] = useState('');
     const [clientSearch, setClientSearch] = useState('');
     const [clients, setClients] = useState<any[]>([]);
@@ -614,12 +623,40 @@ function ReportsPageContent() {
                                         <Printer size={16} className="group-hover:scale-110 transition-transform" />
                                         Imprimir
                                     </button>
-                                    <button onClick={() => window.location.href = `${API_URL}/orders/reports/export-individual?startDate=${startDate}&endDate=${endDate}`}
-                                        className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-green-600/20 group print:hidden">
+                                    <button 
+                                        type="button"
+                                        onClick={async () => {
+                                            try {
+                                                setIsExporting(true);
+                                                await api.download(`/orders/reports/export-individual?startDate=${startDate}&endDate=${endDate}`, `ORDENES_INDIVIDUALES_${startDate}_${endDate}.xlsx`);
+                                            } catch (err: any) {
+                                                setError(err.message || 'Error al exportar reporte individual');
+                                            } finally {
+                                                setIsExporting(false);
+                                            }
+                                        }}
+                                        disabled={isExporting}
+                                        className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-green-600/20 group print:hidden disabled:opacity-50"
+                                    >
+                                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : null}
                                         Exportar Individual
                                     </button>
-                                    <button onClick={() => window.location.href = `${API_URL}/orders/reports/export-consolidated?startDate=${startDate}&endDate=${endDate}`}
-                                        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-emerald-600/20 group print:hidden">
+                                    <button 
+                                        type="button"
+                                        onClick={async () => {
+                                            try {
+                                                setIsExporting(true);
+                                                await api.download(`/orders/reports/export-consolidated?startDate=${startDate}&endDate=${endDate}`, `ORDENES_CONSOLIDADO_${startDate}_${endDate}.xlsx`);
+                                            } catch (err: any) {
+                                                setError(err.message || 'Error al exportar reporte consolidado');
+                                            } finally {
+                                                setIsExporting(false);
+                                            }
+                                        }}
+                                        disabled={isExporting}
+                                        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-emerald-600/20 group print:hidden disabled:opacity-50"
+                                    >
+                                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : null}
                                         Exportar Consolidado
                                     </button>
                                 </div>

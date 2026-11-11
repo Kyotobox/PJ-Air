@@ -49,8 +49,8 @@ function NewAddressContent() {
     const [isManualAdjustment, setIsManualAdjustment] = useState(false);
     const [error, setError] = useState('');
 
-    // ── Early Morning Delivery Instructions (Sprint S51) ──────────────────────
-    const [showEarlyMorning, setShowEarlyMorning] = useState(false);
+    // ── Early Morning Delivery Instructions (Sprint S51 / TASK-73-03: Desplegado por defecto) ──
+    const [showEarlyMorning, setShowEarlyMorning] = useState(true);
     const [accessCode, setAccessCode] = useState('');
     const [hasKey, setHasKey] = useState(false);
     const [keyLocation, setKeyLocation] = useState('');
@@ -726,7 +726,7 @@ function NewAddressContent() {
                             </div>
                         </div>
 
-                        {/* Actions */}
+                        {/* Actions (TASK-73-03: Eliminado skipBtn para forzar registro de dirección de entrega) */}
                         <div className="space-y-4 pt-4">
                             <button
                                 type="submit"
@@ -736,14 +736,6 @@ function NewAddressContent() {
                                 {isLoading ? <Loader2 className="animate-spin" size={24} /> : (
                                     <>{s.saveBtn} <ChevronRight size={20} /></>
                                 )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => router.push('/')}
-                                className="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors bg-muted/30 rounded-[28px] border border-transparent hover:border-primary/10"
-                            >
-                                {s.skipBtn}
                             </button>
                         </div>
                     </form>

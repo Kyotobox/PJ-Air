@@ -49,6 +49,7 @@ let User = class User {
     card_last4;
     stripe_payment_method_id;
     check_enabled;
+    ach_enabled;
     is_active;
     reset_password_token;
     reset_password_expires;
@@ -189,6 +190,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "check_enabled", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "ach_enabled", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: true }),
     __metadata("design:type", Boolean)

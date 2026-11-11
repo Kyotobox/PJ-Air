@@ -74,7 +74,8 @@ export class AuthService {
       }
     }
 
-    const existingUser = await this.usersService.findByEmail(email);
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const existingUser = await this.usersService.findByEmail(normalizedEmail);
     if (existingUser) throw new ConflictException('Email already registered');
 
     const cleanTaxId = tax_id && typeof tax_id === 'string' ? tax_id.trim() : undefined;
@@ -83,7 +84,7 @@ export class AuthService {
     // Create user with hashed password
     const hashedPassword = hashPassword(password);
     const userResult = await this.usersService.create({
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role: userRole,
       tax_id: cleanTaxId,
@@ -104,6 +105,7 @@ export class AuthService {
       ...(body.card_last4 ? { card_last4: body.card_last4 } : {}),
       ...(body.stripe_payment_method_id ? { stripe_payment_method_id: body.stripe_payment_method_id } : {}),
       ...(body.check_enabled !== undefined ? { check_enabled: Boolean(body.check_enabled) } : {}),
+      ...(body.ach_enabled !== undefined ? { ach_enabled: Boolean(body.ach_enabled) } : {}),
     });
     const user = Array.isArray(userResult) ? userResult[0] : userResult;
 
@@ -259,8 +261,9 @@ export class AuthService {
   }
 
   async recoverPassword(identifier: string) {
-    const user = await this.usersService.findByEmail(identifier) ||
-                 await this.usersService.findByIdentifier(identifier);
+    const cleanId = (identifier || '').trim().toLowerCase();
+    const user = await this.usersService.findByEmail(cleanId) ||
+                 await this.usersService.findByIdentifier(cleanId);
                  
     if (!user) {
       throw new UnauthorizedException(

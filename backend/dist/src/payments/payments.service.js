@@ -296,7 +296,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 }
                 catch (_) { }
             }
-            let checkoutUrl = `https://testing.jhoanes.com/orders/${order.id}`;
+            const baseUrl = (process.env.SITE_URL || 'https://app.jhoanes.com').replace('http://', 'https://').replace(/\/$/, '');
+            let checkoutUrl = `${baseUrl}/orders/${order.id}`;
             if (this.stripe) {
                 try {
                     const lineItems = [
@@ -338,8 +339,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                             feeAmount: String(feeAmount),
                             feeMethod: feeMethod,
                         },
-                        success_url: `https://testing.jhoanes.com/orders/${order.id}?settled=true`,
-                        cancel_url: `https://testing.jhoanes.com/orders/${order.id}?cancelled=true`,
+                        success_url: `${baseUrl}/orders/${order.id}?settled=true`,
+                        cancel_url: `${baseUrl}/orders/${order.id}?cancelled=true`,
                     });
                     if (session.url)
                         checkoutUrl = session.url;
@@ -381,10 +382,11 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 : Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
             return sum + net;
         }, 0);
+        const baseUrl = (process.env.SITE_URL || 'https://app.jhoanes.com').replace('http://', 'https://').replace(/\/$/, '');
         const roundedDebt = Math.round(totalDebt * 100) / 100;
         if (roundedDebt <= 0) {
             return {
-                url: `https://testing.jhoanes.com/orders`,
+                url: `${baseUrl}/orders`,
                 totalDebt: 0,
                 orderCount: 0,
                 customerEmail: user.email,
@@ -392,7 +394,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         }
         const feeAmount = fee_calculator_service_1.FeeCalculatorService.calculateFee(roundedDebt, feeMethod);
         const amountToPay = Math.round((roundedDebt + feeAmount) * 100) / 100;
-        let checkoutUrl = `https://testing.jhoanes.com/orders?pay_debt=${user.id}`;
+        let checkoutUrl = `${baseUrl}/orders?pay_debt=${user.id}`;
         if (this.stripe) {
             try {
                 const lineItems = [
@@ -434,8 +436,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                         feeAmount: String(feeAmount),
                         feeMethod: feeMethod,
                     },
-                    success_url: `https://testing.jhoanes.com/orders?settled=true`,
-                    cancel_url: `https://testing.jhoanes.com/orders?cancelled=true`,
+                    success_url: `${baseUrl}/orders?settled=true`,
+                    cancel_url: `${baseUrl}/orders?cancelled=true`,
                 });
                 if (session.url)
                     checkoutUrl = session.url;

@@ -190,4 +190,51 @@ describe('UsersService', () => {
       ).rejects.toThrow();
     });
   });
+
+  describe('updateCreditSettings and getUserCreditSummary (TASK-73-01)', () => {
+    it('should update credit settings including ach_enabled and check_enabled independently (happy path)', async () => {
+      const mockUser: any = {
+        id: 'u-ach-1',
+        email: 'ach@client.com',
+        account_type: 'cash',
+        credit_limit: 0,
+        credit_override: false,
+        check_enabled: false,
+        ach_enabled: false,
+        orders: [],
+      };
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockImplementation(async (u) => u);
+
+      const result = await service.updateCreditSettings('u-ach-1', {
+        account_type: 'credit',
+        credit_limit: 2500,
+        credit_override: true,
+        check_enabled: false,
+        ach_enabled: true,
+      });
+
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result.account_type).toBe('credit');
+      expect(result.credit_limit).toBe(2500);
+      expect(result.credit_override).toBe(true);
+      expect(result.check_enabled).toBe(false);
+      expect(result.ach_enabled).toBe(true);
+
+      const summary = await service.getUserCreditSummary('u-ach-1');
+      expect(summary.ach_enabled).toBe(true);
+      expect(summary.check_enabled).toBe(false);
+      expect(summary.can_order).toBe(true);
+    });
+
+    it('should throw NotFoundException when updating credit for non-existent user (sad path)', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateCreditSettings('invalid-uuid-404', {
+          ach_enabled: true,
+        }),
+      ).rejects.toThrow();
+    });
+  });
 });

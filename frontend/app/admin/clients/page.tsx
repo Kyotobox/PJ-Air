@@ -58,6 +58,7 @@ interface UserRecord {
     credit_limit?: number;
     credit_override?: boolean;
     check_enabled?: boolean;
+    ach_enabled?: boolean;
     is_active?: boolean;
     credit_balance?: number;
     tax_id?: string;
@@ -192,6 +193,7 @@ export default function AdminClientsPage() {
     const [creditLimit, setCreditLimit] = useState<number>(0);
     const [creditOverride, setCreditOverride] = useState<boolean>(false);
     const [checkEnabled, setCheckEnabled] = useState<boolean>(false);
+    const [achEnabled, setAchEnabled] = useState<boolean>(false);
     const [isSavingCredit, setIsSavingCredit] = useState(false);
     const [creditSummary, setCreditSummary] = useState<any>(null);
 
@@ -325,6 +327,7 @@ export default function AdminClientsPage() {
         setCreditLimit(Number(user.credit_limit) || 0);
         setCreditOverride(Boolean(user.credit_override));
         setCheckEnabled(Boolean(user.check_enabled));
+        setAchEnabled(Boolean(user.ach_enabled));
         
         try {
             setLoadingDetail(true);
@@ -338,6 +341,7 @@ export default function AdminClientsPage() {
             setCreditLimit(Number(detail.credit_limit) || 0);
             setCreditOverride(Boolean(detail.credit_override));
             setCheckEnabled(Boolean(detail.check_enabled));
+            setAchEnabled(Boolean(detail.ach_enabled));
             
             // Get product discounts
             const discounts = await api.get(`/users/${detail.id}/product-discounts`) as any[];
@@ -366,14 +370,16 @@ export default function AdminClientsPage() {
                 credit_limit: creditLimit,
                 credit_override: creditOverride,
                 check_enabled: checkEnabled,
+                ach_enabled: achEnabled,
             });
-            showToast('✅ Configuración comercial y de cheques actualizada');
+            showToast('✅ Configuración comercial, de cheques y banco actualizada');
             setUsers(prev => prev.map(u => u.id === selectedUser.id ? {
                 ...u,
                 account_type: accountType,
                 credit_limit: creditLimit,
                 credit_override: creditOverride,
                 check_enabled: checkEnabled,
+                ach_enabled: achEnabled,
             } : u));
             setSelectedUser(prev => prev ? {
                 ...prev,
@@ -381,6 +387,7 @@ export default function AdminClientsPage() {
                 credit_limit: creditLimit,
                 credit_override: creditOverride,
                 check_enabled: checkEnabled,
+                ach_enabled: achEnabled,
             } : null);
 
             // Refresh credit summary
@@ -845,6 +852,11 @@ export default function AdminClientsPage() {
                                             {u.check_enabled && (
                                                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200" title="Pago con cheque habilitado">
                                                     Cheque ON
+                                                </span>
+                                            )}
+                                            {u.ach_enabled && (
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200" title="Transferencia ACH habilitada">
+                                                    ACH ON
                                                 </span>
                                             )}
                                         </div>
@@ -1712,6 +1724,49 @@ export default function AdminClientsPage() {
                                         </div>
                                     </div>
 
+                                    {/* Toggle ACH / Bank Direct Debit (TASK-73-01) */}
+                                    <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xs shrink-0">
+                                                    ACH
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-800 uppercase">Habilitar Transferencia Bancaria (ACH)</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">
+                                                        Débito directo en cuenta bancaria comercial vía Stripe (0.8%, máx $5.00)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                data-testid="toggle-ach-enabled"
+                                                onClick={() => setAchEnabled(!achEnabled)}
+                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    achEnabled ? 'bg-emerald-600' : 'bg-slate-300'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                                        achEnabled ? 'translate-x-5' : 'translate-x-0'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2 pt-1 border-t border-emerald-100">
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                achEnabled ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                                {achEnabled ? 'ACH Habilitado [ON]' : 'ACH Deshabilitado [OFF]'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {achEnabled
+                                                    ? 'Permite al cliente pagar con débito bancario ACH en el checkout.'
+                                                    : 'Opción de banco oculta en el checkout para este cliente.'}
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     <div className="flex justify-end pt-2">
                                         <button
                                             type="button"
@@ -1786,76 +1841,102 @@ export default function AdminClientsPage() {
 
                                 <div className="grid md:grid-cols-3 gap-6 mb-10">
                                     {/* General Discount */}
-                                    <div className="bg-green-50/50 border border-green-200 rounded-[2.5rem] p-8">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 bg-green-100 text-green-600 rounded-xl"><Percent size={18} /></div>
-                                            <span className="text-xs font-black uppercase text-green-700">Descuento Global</span>
+                                    <div className="bg-green-50/50 border border-green-200 rounded-3xl p-6 flex flex-col justify-between shadow-xs">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="p-2 bg-green-100 text-green-600 rounded-xl"><Percent size={18} /></div>
+                                                <span className="text-xs font-black uppercase text-green-700">Descuento Global</span>
+                                            </div>
+                                            <p className="text-[11px] font-bold text-green-700/70 mb-3 italic">Se aplica a toda la factura final.</p>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="number" 
-                                                value={generalDiscount}
-                                                onChange={e => setGeneralDiscount(Number(e.target.value))}
-                                                onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()}
-                                                className="w-full px-5 py-3.5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-green-300 font-black text-green-900 bg-white shadow-inner"
-                                            />
+                                        <div className="space-y-2.5 mt-2">
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-sm text-green-700">%</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    max="100"
+                                                    step="1"
+                                                    value={generalDiscount}
+                                                    onChange={e => setGeneralDiscount(Number(e.target.value))}
+                                                    onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()}
+                                                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-green-200 outline-none focus:ring-2 focus:ring-green-400 font-black text-lg text-green-900 bg-white shadow-inner"
+                                                />
+                                            </div>
                                             <button 
+                                                type="button"
                                                 onClick={handleUpdateGeneralDiscount}
-                                                className="bg-green-600 text-white px-6 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-green-700 transition-all"
+                                                className="w-full py-2.5 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-green-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98"
                                             >
-                                                OK
+                                                <span>Guardar Descuento</span>
                                             </button>
                                         </div>
-                                        <p className="text-[10px] font-bold text-green-600/60 mt-4 italic">Se aplica a toda la factura final.</p>
                                     </div>
 
                                     {/* Delivery Fee */}
-                                    <div className="bg-amber-50/50 border border-amber-200 rounded-[2.5rem] p-8">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><DollarSign size={18} /></div>
-                                            <span className="text-xs font-black uppercase text-amber-700">Costo Envío</span>
+                                    <div className="bg-amber-50/50 border border-amber-200 rounded-3xl p-6 flex flex-col justify-between shadow-xs">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><DollarSign size={18} /></div>
+                                                <span className="text-xs font-black uppercase text-amber-700">Costo Envío</span>
+                                            </div>
+                                            <p className="text-[11px] font-bold text-amber-700/70 mb-3 italic">Costo fijo de delivery para este cliente.</p>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="number" 
-                                                value={deliveryFee}
-                                                onChange={e => setDeliveryFee(Number(e.target.value))}
-                                                onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()}
-                                                className="w-full px-5 py-3.5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-amber-300 font-black text-amber-900 bg-white shadow-inner"
-                                            />
+                                        <div className="space-y-2.5 mt-2">
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-sm text-amber-700">$</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    step="0.5"
+                                                    value={deliveryFee}
+                                                    onChange={e => setDeliveryFee(Number(e.target.value))}
+                                                    onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()}
+                                                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-amber-200 outline-none focus:ring-2 focus:ring-amber-400 font-black text-lg text-amber-900 bg-white shadow-inner"
+                                                />
+                                            </div>
                                             <button 
+                                                type="button"
                                                 onClick={handleUpdateDeliveryFee}
-                                                className="bg-amber-600 text-white px-6 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-700 transition-all"
+                                                className="w-full py-2.5 bg-amber-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98"
                                             >
-                                                OK
+                                                <span>Guardar Costo Envío</span>
                                             </button>
                                         </div>
-                                        <p className="text-[10px] font-bold text-amber-600/60 mt-4 italic">Costo fijo de delivery para este cliente.</p>
                                     </div>
 
                                     {/* Custom Minimum Order Amount */}
-                                    <div className="bg-blue-50/50 border border-blue-200 rounded-[2.5rem] p-8">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><DollarSign size={18} /></div>
-                                            <span className="text-xs font-black uppercase text-blue-700">Mínimo Pedido</span>
+                                    <div className="bg-blue-50/50 border border-blue-200 rounded-3xl p-6 flex flex-col justify-between shadow-xs">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><DollarSign size={18} /></div>
+                                                <span className="text-xs font-black uppercase text-blue-700">Mínimo Pedido</span>
+                                            </div>
+                                            <p className="text-[11px] font-bold text-blue-700/70 mb-3 italic">Personalizado para este cliente (vacío = global).</p>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="number" 
-                                                placeholder="Global"
-                                                value={clientMinOrder}
-                                                onChange={e => setClientMinOrder(e.target.value)}
-                                                className="w-full px-5 py-3.5 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-300 font-black text-blue-900 bg-white shadow-inner"
-                                            />
+                                        <div className="space-y-2.5 mt-2">
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-sm text-blue-700">$</span>
+                                                <input 
+                                                    type="number" 
+                                                    min="0"
+                                                    step="10"
+                                                    placeholder="Global"
+                                                    value={clientMinOrder}
+                                                    onChange={e => setClientMinOrder(e.target.value)}
+                                                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-blue-200 outline-none focus:ring-2 focus:ring-blue-400 font-black text-lg text-blue-900 bg-white shadow-inner"
+                                                />
+                                            </div>
                                             <button 
+                                                type="button"
                                                 onClick={handleUpdateMinOrderAmount}
                                                 disabled={isSavingMinOrder}
-                                                className="bg-blue-600 text-white px-6 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50"
+                                                className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50"
                                             >
-                                                OK
+                                                {isSavingMinOrder ? <Loader2 size={12} className="animate-spin" /> : null}
+                                                <span>Guardar Mínimo</span>
                                             </button>
                                         </div>
-                                        <p className="text-[10px] font-bold text-blue-600/60 mt-4 italic">Personalizado para este cliente (vacío = global).</p>
                                     </div>
                                 </div>
 
@@ -2132,17 +2213,19 @@ export default function AdminClientsPage() {
                     isOpen={Boolean(auditModalUser)}
                     user={auditModalUser}
                     onClose={() => setAuditModalUser(null)}
-                    onStatusUpdated={(userId, newStatus, taxExempt) => {
+                    onStatusUpdated={(userId, newStatus, taxExempt, newDocUrl) => {
                         setUsers(prev => prev.map(u => {
                             if (u.id === userId) {
                                 return {
                                     ...u,
                                     st120_status: newStatus,
                                     tax_exempt: taxExempt,
+                                    ...(newDocUrl ? { st120_document_url: newDocUrl } : {}),
                                     profile: {
                                         ...(u.profile || {}),
                                         st120_status: newStatus,
                                         tax_exempt: taxExempt,
+                                        ...(newDocUrl ? { st120_document_url: newDocUrl } : {}),
                                     }
                                 };
                             }
@@ -2153,10 +2236,12 @@ export default function AdminClientsPage() {
                                 ...prev,
                                 st120_status: newStatus,
                                 tax_exempt: taxExempt,
+                                ...(newDocUrl ? { st120_document_url: newDocUrl } : {}),
                                 profile: {
                                     ...(prev.profile || {}),
                                     st120_status: newStatus,
                                     tax_exempt: taxExempt,
+                                    ...(newDocUrl ? { st120_document_url: newDocUrl } : {}),
                                 }
                             } : null);
                         }
@@ -2165,14 +2250,16 @@ export default function AdminClientsPage() {
                                 ...prev,
                                 st120_status: newStatus,
                                 tax_exempt: taxExempt,
+                                ...(newDocUrl ? { st120_document_url: newDocUrl } : {}),
                                 profile: {
                                     ...(prev.profile || {}),
                                     st120_status: newStatus,
                                     tax_exempt: taxExempt,
+                                    ...(newDocUrl ? { st120_document_url: newDocUrl } : {}),
                                 }
                             } : null);
                         }
-                        showToast(`ST-120 ${newStatus === 'APPROVED' ? 'Aprobado (0% Exento)' : 'Rechazado'}`);
+                        showToast(`ST-120 ${newStatus === 'APPROVED' ? 'Aprobado (0% Exento)' : newStatus === 'PENDING' ? 'Documento Actualizado (Pendiente)' : 'Rechazado'}`);
                     }}
                 />
             )}

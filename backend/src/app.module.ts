@@ -186,6 +186,9 @@ export class AppModule implements OnModuleInit {
       if (!userColNames.includes('check_enabled')) {
         await qr.query(`ALTER TABLE users ADD COLUMN check_enabled BOOLEAN DEFAULT 0;`);
       }
+      if (!userColNames.includes('ach_enabled')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN ach_enabled BOOLEAN DEFAULT 0;`);
+      }
       if (!userColNames.includes('is_active')) {
         await qr.query(`ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1;`);
       }

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     X, ShieldCheck, FileText, CheckCircle2, AlertCircle, Clock, ExternalLink,
-    Loader2, Sparkles, User, Building2, Eye, ThumbsUp, ThumbsDown
+    Loader2, Sparkles, User, Building2, Eye, ThumbsUp, ThumbsDown, Upload
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
@@ -12,7 +12,7 @@ interface ST120AuditModalProps {
     isOpen: boolean;
     onClose: () => void;
     user: any | null;
-    onStatusUpdated: (userId: string, newStatus: string, taxExempt: boolean) => void;
+    onStatusUpdated: (userId: string, newStatus: string, taxExempt: boolean, newDocUrl?: string) => void;
 }
 
 export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
@@ -28,8 +28,10 @@ export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
     const [rejectReason, setRejectReason] = useState('');
     const [showRejectInput, setShowRejectInput] = useState(false);
     const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [docUrl, setDocUrl] = useState<string | null>(null);
+    const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    const docUrl = user?.profile?.st120_document_url || user?.st120_document_url || null;
     const isPdf = docUrl?.toLowerCase().endsWith('.pdf');
     const fullDocUrl = docUrl
         ? (docUrl.startsWith('http') ? docUrl : `${API_URL}${docUrl}`)
@@ -41,8 +43,11 @@ export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
         setShowRejectInput(false);
         setRejectReason('');
 
+        const initialDoc = user?.profile?.st120_document_url || user?.st120_document_url || null;
+        setDocUrl(initialDoc);
+
         // Automatically trigger Vision AI if document is present and pending
-        if (isOpen && user && docUrl) {
+        if (isOpen && user && initialDoc) {
             handleRunVisionAI();
         }
     }, [isOpen, user]);
@@ -50,7 +55,7 @@ export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
     if (!isOpen || !user) return null;
 
     const handleRunVisionAI = async () => {
-        if (!user.id || !docUrl) return;
+        if (!user.id) return;
         setIsValidating(true);
         setActionMessage(null);
         try {
@@ -64,6 +69,39 @@ export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
             });
         } finally {
             setIsValidating(false);
+        }
+    };
+
+    const handleAdminUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user?.id) return;
+        setIsUploadingDoc(true);
+        setActionMessage(null);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            if (registeredTaxId && registeredTaxId !== 'Sin registrar') {
+                formData.append('tax_id', registeredTaxId);
+            }
+            const res = await api.upload(`/users/${user.id}/st120`, formData) as any;
+            const newDoc = res?.st120_document_url || res?.profile?.st120_document_url || `/uploads/st120/${file.name}`;
+            setDocUrl(newDoc);
+            onStatusUpdated(user.id, 'PENDING', false, newDoc);
+            setActionMessage({
+                type: 'success',
+                text: '✅ Certificado ST-120 cargado exitosamente por administración. Ejecutando análisis de Visión AI...'
+            });
+            setTimeout(() => {
+                handleRunVisionAI();
+            }, 300);
+        } catch (err: any) {
+            setActionMessage({
+                type: 'error',
+                text: err.message || 'Error al subir el certificado ST-120'
+            });
+        } finally {
+            setIsUploadingDoc(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -188,22 +226,42 @@ export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Left: Document Preview */}
                         <div className="space-y-3">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".pdf,image/png,image/jpeg,image/webp"
+                                className="hidden"
+                                onChange={handleAdminUpload}
+                                disabled={isUploadingDoc}
+                            />
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                                     <FileText size={16} className="text-primary" />
                                     Documento ST-120 Subido
                                 </span>
-                                {fullDocUrl && (
-                                    <a
-                                        href={fullDocUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                                <div className="flex items-center gap-3">
+                                    {fullDocUrl && (
+                                        <a
+                                            href={fullDocUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                                        >
+                                            <span>Abrir original</span>
+                                            <ExternalLink size={12} />
+                                        </a>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploadingDoc}
+                                        data-testid="admin-upload-st120-replace-btn"
+                                        className="text-xs font-bold text-slate-600 hover:text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
                                     >
-                                        <span>Abrir original</span>
-                                        <ExternalLink size={12} />
-                                    </a>
-                                )}
+                                        {isUploadingDoc ? <Loader2 size={12} className="animate-spin text-primary" /> : <Upload size={12} />}
+                                        <span>{docUrl ? 'Reemplazar' : 'Cargar'}</span>
+                                    </button>
+                                </div>
                             </div>
 
                             {docUrl ? (
@@ -212,14 +270,25 @@ export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
                                         <div className="p-8 text-center space-y-3">
                                             <FileText size={48} className="text-red-500 mx-auto" />
                                             <p className="text-xs font-bold text-slate-700">Certificado ST-120 (PDF)</p>
-                                            <a
-                                                href={fullDocUrl!}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl inline-block"
-                                            >
-                                                Visualizar PDF en Pestaña
-                                            </a>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <a
+                                                    href={fullDocUrl!}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl inline-block"
+                                                >
+                                                    Visualizar PDF en Pestaña
+                                                </a>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    disabled={isUploadingDoc}
+                                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 cursor-pointer"
+                                                >
+                                                    <Upload size={14} />
+                                                    <span>Reemplazar</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <img
@@ -230,9 +299,22 @@ export const ST120AuditModal: React.FC<ST120AuditModalProps> = ({
                                     )}
                                 </div>
                             ) : (
-                                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-2 bg-slate-50">
+                                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-3 bg-slate-50 min-h-[300px] flex flex-col items-center justify-center">
                                     <FileText size={36} className="text-slate-300 mx-auto" />
-                                    <p className="text-xs font-bold text-slate-500">Este cliente aún no ha cargado el documento ST-120.</p>
+                                    <p className="text-xs font-bold text-slate-700">Este cliente aún no ha cargado el documento ST-120.</p>
+                                    <p className="text-[11px] text-slate-500 max-w-xs">
+                                        Si el cliente entregó el certificado físicamente, por correo o WhatsApp, cárgalo aquí para iniciar la verificación legal y activar el 0% Tax.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploadingDoc}
+                                        data-testid="admin-upload-st120-btn"
+                                        className="px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black uppercase tracking-wider rounded-xl shadow inline-flex items-center gap-2 cursor-pointer transition-all"
+                                    >
+                                        {isUploadingDoc ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                                        <span>Cargar Certificado ST-120 (Admin)</span>
+                                    </button>
                                 </div>
                             )}
                         </div>

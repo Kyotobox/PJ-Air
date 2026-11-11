@@ -106,6 +106,36 @@ export const api = {
     return handleResponse(response);
   },
 
+  async download(path: string, defaultFilename: string = 'reporte.xlsx') {
+    const headers: Record<string, string> = {};
+    if (typeof window !== 'undefined') {
+      const savedSession = localStorage.getItem('local_session');
+      if (savedSession) {
+        try {
+          const { session } = JSON.parse(savedSession);
+          if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+          }
+        } catch (e) {}
+      }
+    }
+    const response = await fetch(`${API_URL}${path}`, {
+      headers,
+    });
+    if (!response.ok) {
+      throw new Error('Error al descargar el archivo');
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = defaultFilename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
   async delete(path: string) {
     const response = await fetch(`${API_URL}${path}`, {
       method: 'DELETE',

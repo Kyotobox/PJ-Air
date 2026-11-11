@@ -305,8 +305,8 @@ let OrdersService = class OrdersService {
     }
     async findInRange(startDate, endDate, userId) {
         console.log('findInRange called with:', { startDate, endDate, userId });
-        const rawStart = startDate.split(' ')[0].split('T')[0];
-        const rawEnd = endDate.split(' ')[0].split('T')[0];
+        const rawStart = (startDate || '').split(' ')[0].split('T')[0] || new Date().toISOString().split('T')[0];
+        const rawEnd = (endDate || startDate || '').split(' ')[0].split('T')[0] || rawStart;
         const startD = new Date(rawStart + 'T12:00:00');
         startD.setDate(startD.getDate() - 2);
         const endD = new Date(rawEnd + 'T12:00:00');

@@ -31,12 +31,14 @@ export declare class UsersService {
         credit_limit?: number;
         credit_override?: boolean;
         check_enabled?: boolean;
+        ach_enabled?: boolean;
     }): Promise<User>;
     getUserCreditSummary(userId: string): Promise<{
         account_type: 'cash' | 'credit';
         credit_limit: number;
         credit_override: boolean;
         check_enabled: boolean;
+        ach_enabled: boolean;
         used_credit: number;
         available_credit: number;
         is_overdraft: boolean;

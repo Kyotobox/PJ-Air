@@ -53,21 +53,29 @@ let UsersService = class UsersService {
         return this.profileRepository.save(profile);
     }
     async findByEmail(email) {
-        return this.userRepository.findOne({
-            where: { email },
-            select: ['id', 'email', 'password', 'role'],
-            relations: ['profile']
-        });
+        if (!email)
+            return null;
+        const normalized = email.trim().toLowerCase();
+        return this.userRepository
+            .createQueryBuilder('user')
+            .addSelect('user.password')
+            .leftJoinAndSelect('user.profile', 'profile')
+            .where('LOWER(user.email) = LOWER(:email)', { email: normalized })
+            .getOne();
     }
     async findByIdentifier(identifier) {
-        const userByEmail = await this.findByEmail(identifier);
+        if (!identifier)
+            return null;
+        const normalized = identifier.trim().toLowerCase();
+        const userByEmail = await this.findByEmail(normalized);
         if (userByEmail)
             return userByEmail;
-        return this.userRepository.findOne({
-            where: { profile: { username: identifier } },
-            select: ['id', 'email', 'password', 'role'],
-            relations: ['profile']
-        });
+        return this.userRepository
+            .createQueryBuilder('user')
+            .addSelect('user.password')
+            .leftJoinAndSelect('user.profile', 'profile')
+            .where('LOWER(profile.username) = LOWER(:username)', { username: normalized })
+            .getOne();
     }
     async create(userData) {
         const user = this.userRepository.create(userData);
@@ -120,11 +128,7 @@ let UsersService = class UsersService {
         return Array.isArray(result) ? result[0] : result;
     }
     async findByEmailWithRole(email) {
-        return this.userRepository.findOne({
-            where: { email },
-            select: ['id', 'email', 'password', 'role'],
-            relations: ['profile']
-        });
+        return this.findByEmail(email);
     }
     async updatePassword(userId, newPassword) {
         await this.userRepository.update(userId, { password: newPassword });
@@ -168,6 +172,8 @@ let UsersService = class UsersService {
             user.credit_override = Boolean(data.credit_override);
         if (data.check_enabled !== undefined)
             user.check_enabled = Boolean(data.check_enabled);
+        if (data.ach_enabled !== undefined)
+            user.ach_enabled = Boolean(data.ach_enabled);
         await this.userRepository.save(user);
         return this.findOne(userId);
     }
@@ -187,6 +193,7 @@ let UsersService = class UsersService {
             credit_limit,
             credit_override: Boolean(user.credit_override),
             check_enabled: Boolean(user.check_enabled),
+            ach_enabled: Boolean(user.ach_enabled),
             used_credit: Math.round(used_credit * 100) / 100,
             available_credit: Math.round(available_credit * 100) / 100,
             is_overdraft,
@@ -219,6 +226,9 @@ let UsersService = class UsersService {
         }
         if (data.check_enabled !== undefined) {
             user.check_enabled = Boolean(data.check_enabled);
+        }
+        if (data.ach_enabled !== undefined) {
+            user.ach_enabled = Boolean(data.ach_enabled);
         }
         if (data.general_discount !== undefined) {
             user.general_discount = Number(data.general_discount);
@@ -265,6 +275,7 @@ let UsersService = class UsersService {
             'card_last4',
             'stripe_payment_method_id',
             'check_enabled',
+            'ach_enabled',
         ];
         for (const field of allowedFields) {
             if (data[field] !== undefined) {

@@ -88,7 +88,7 @@ function InlineAddressForm({
     const [isGeocoding, setIsGeocoding] = useState(false);
 
     // Early Morning Delivery state (Sprint S51)
-    const [showEarlyMorning, setShowEarlyMorning] = useState(false);
+    const [showEarlyMorning, setShowEarlyMorning] = useState(true);
     const [accessCode, setAccessCode] = useState('');
     const [hasKey, setHasKey] = useState(false);
     const [keyLocation, setKeyLocation] = useState('');
@@ -943,8 +943,8 @@ export default function CheckoutPage() {
     const hasCreditOverride = Boolean(creditSummary?.credit_override);
     const exceedsCreditLimit = isCreditAccount && paymentMethod === 'credit' && (usedCredit + finalTotal > creditLimit) && !hasCreditOverride;
 
-    // S55: Restringir opción 'Transferencia ACH Direct Debit' a cuentas autorizadas o VIP
-    const isAchAvailable = Boolean(profile?.ach_enabled || user?.is_vip);
+    // TASK-73-01: Restringir opción 'Transferencia ACH Direct Debit' a cuentas con ach_enabled, autorizadas o VIP
+    const isAchAvailable = Boolean(profile?.ach_enabled || (user as any)?.ach_enabled || user?.is_vip || creditSummary?.ach_enabled);
 
     // TASK-60-05: Restringir opción 'Pago con Cheque' ÚNICAMENTE a clientes con check_enabled: true
     const isCheckAvailable = Boolean(profile?.check_enabled || user?.check_enabled || creditSummary?.check_enabled);
@@ -2578,7 +2578,7 @@ export default function CheckoutPage() {
                     clientSecret={stripePaymentData.clientSecret}
                     amount={stripePaymentData.amount}
                     orderId={stripePaymentData.orderId}
-                    isVip={user?.account_type === 'credit' || !!(user as any)?.is_vip}
+                    isVip={user?.account_type === 'credit' || !!(user as any)?.is_vip || !!(user as any)?.ach_enabled}
                     onSuccess={handleStripePaymentSuccess}
                     onCancel={async () => {
                         const cancelledOrderId = stripePaymentData.orderId;

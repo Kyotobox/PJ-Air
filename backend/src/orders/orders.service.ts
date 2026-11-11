@@ -350,8 +350,8 @@ export class OrdersService {
     console.log('findInRange called with:', { startDate, endDate, userId });
     
     // Normalize input to date string: YYYY-MM-DD
-    const rawStart = startDate.split(' ')[0].split('T')[0];
-    const rawEnd = endDate.split(' ')[0].split('T')[0];
+    const rawStart = (startDate || '').split(' ')[0].split('T')[0] || new Date().toISOString().split('T')[0];
+    const rawEnd = (endDate || startDate || '').split(' ')[0].split('T')[0] || rawStart;
 
     // Widened range query to cover any timezone / production date batch offsets
     const startD = new Date(rawStart + 'T12:00:00');

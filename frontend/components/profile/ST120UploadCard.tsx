@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FileText, Upload, CheckCircle2, AlertCircle, Clock, ExternalLink, Loader2, ShieldCheck, Eye } from 'lucide-react';
 import { API_URL } from '@/lib/config';
+import { api } from '@/lib/api';
 
 interface ST120UploadCardProps {
     userId: string;
@@ -47,22 +48,7 @@ export const ST120UploadCard: React.FC<ST120UploadCardProps> = ({
         }
 
         try {
-            const token = typeof document !== 'undefined' 
-                ? document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1]
-                : null;
-
-            const res = await fetch(`${API_URL}/users/${userId}/st120`, {
-                method: 'POST',
-                headers: token ? { Authorization: `Bearer ${decodeURIComponent(token)}` } : {},
-                body: formData,
-            });
-
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.message || (locale === 'en' ? 'Failed to upload ST-120 document' : 'Error al subir documento ST-120'));
-            }
-
-            const updatedProfile = await res.json();
+            const updatedProfile = await api.upload(`/users/${userId}/st120`, formData) as any;
             onUpdated(updatedProfile);
             setFeedback({
                 type: 'success',
@@ -86,21 +72,7 @@ export const ST120UploadCard: React.FC<ST120UploadCardProps> = ({
         setIsSavingTaxId(true);
         setFeedback(null);
         try {
-            const token = typeof document !== 'undefined'
-                ? document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1]
-                : null;
-
-            const res = await fetch(`${API_URL}/users/${userId}/profile`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${decodeURIComponent(token)}` } : {}),
-                },
-                body: JSON.stringify({ tax_id: taxId.trim() }),
-            });
-
-            if (!res.ok) throw new Error('Failed to update Tax ID');
-            const updated = await res.json();
+            const updated = await api.patch(`/users/${userId}/profile`, { tax_id: taxId.trim() }) as any;
             onUpdated(updated);
             setFeedback({
                 type: 'success',

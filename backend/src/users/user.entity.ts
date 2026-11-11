@@ -105,6 +105,9 @@ export class User {
   @Column({ type: 'boolean', default: false })
   check_enabled: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  ach_enabled: boolean;
+
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 

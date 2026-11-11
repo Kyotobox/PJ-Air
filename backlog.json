@@ -3,66 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S72",
-  "current_task": "TASK-71-01",
+  "current_sprint": "S73",
+  "current_task": "TASK-73-01",
   "sprints": [
-    {
-      "id": "S70",
-      "name": "Sprint S70: Despliegue a Producción con Acceso Administrativo Protegido y Verificación de Panel",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-70-01",
-          "title": "Sincronización de código fuente (S66-S69) y unificación de base de datos e imágenes en /var/www/pj-air",
-          "status": "DONE",
-          "type": "TECH/SYNC",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-70-02",
-          "title": "Compilación física de Backend (NestJS) y Frontend (Next.js) en producción",
-          "status": "DONE",
-          "type": "BUILD/PROD",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-70-03",
-          "title": "Orquestación de procesos de producción con PM2 en puertos 3000 y 3001",
-          "status": "DONE",
-          "type": "SERVICE/PM2",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-70-04",
-          "title": "Configuración de Nginx para validación privada (acceso a /admin y /auth/login con / en mantenimiento)",
-          "status": "DONE",
-          "type": "NET/NGINX",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-70-05",
-          "title": "Smoke test de autenticación administrativa y verificación de los 3 pedidos en /admin/orders",
-          "status": "DONE",
-          "type": "SMOKE/CERT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-70-06",
-          "title": "Apertura oficial de app.jhoanes.com, retiro de guarda de cerrado temporal y restauración de proxy en Nginx",
-          "status": "DONE",
-          "type": "PROD/LAUNCH",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-S70-07",
-          "label": "STRIPE",
-          "desc": "Integración de credenciales reales Stripe y erradicación de mocks de pasarela de pago",
-          "status": "DONE",
-          "zone": "SILVER",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S71",
       "name": "Sprint S71: Corrección de Flete y Conciliación de Pagos Stripe, Restricción de Métodos ACH y Configuración de Mínimo",
@@ -167,50 +110,119 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S73",
+      "title": "Sprint S73: Operatividad de Planta, Onboarding Forzoso, Credenciales y Parámetros Administrativos B2B",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-73-01",
+          "title": "Switch independiente Habilitar Banco (ACH) por cliente: campo ach_enabled en backend User, toggle en /admin/clients y sincronización en checkout",
+          "status": "DONE",
+          "type": "ADMIN/PAYMENTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-73-02",
+          "title": "Reparación visual de tarjetas de Tarifas Especiales en /admin/clients (Descuento Global, Costo Envío y Mínimo Pedido con inputs editables y legibles)",
+          "status": "DONE",
+          "type": "ADMIN/UI",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-73-03",
+          "title": "Ajustes en Formulario de Dirección: desplegar por defecto Early Morning Delivery Instructions y eliminar botón Skip this step",
+          "status": "DONE",
+          "type": "FRONTEND/ONBOARDING",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-73-04",
+          "title": "Normalización case-insensitive de Email: aplicar toLowerCase().trim() en login, registro y restablecimiento de contraseña",
+          "status": "DONE",
+          "type": "AUTH/SECURITY",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-73-05",
+          "title": "Estabilización de Reportes Individual y Consolidado en /admin/reports: resolución de pantalla en blanco y filtros de entrega",
+          "status": "DONE",
+          "type": "ADMIN/REPORTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-73-06",
+          "title": "Carga y Visualización del Certificado ST-120: uploader en /profile de cliente y vista/descarga en modal administrativo de /admin/clients",
+          "status": "DONE",
+          "type": "COMPLIANCE/TAX",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-73-07",
+          "title": "Suite de pruebas automatizadas (§6), compilación física de Frontend y Backend, despliegue a producción y certificación en vivo",
+          "status": "DONE",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 63,
+  "archived_sprints_count": 64,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S71",
-    "name": "Sprint S71: Corrección de Flete y Conciliación de Pagos Stripe, Restricción de Métodos ACH y Configuración de Mínimo",
+    "id": "S73",
+    "title": "Sprint S73: Operatividad de Planta, Onboarding Forzoso, Credenciales y Parámetros Administrativos B2B",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-71-01",
-        "title": "Reparación física de la Orden #50552F84 en base de datos de producción (remover flete de $40, dejar total en $86.88, vincular Stripe y marcar paid con balance 0)",
+        "id": "TASK-73-01",
+        "title": "Switch independiente Habilitar Banco (ACH) por cliente: campo ach_enabled en backend User, toggle en /admin/clients y sincronización en checkout",
         "status": "IN_PROGRESS",
-        "type": "PROD/DATA"
+        "type": "ADMIN/PAYMENTS",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-71-02",
-        "title": "Prevalencia estricta de regla de zonas con flete bonificado ($0) sobre sobreescritura de mileageFreightService en orders.service.ts con tests unitarios y sad path (§6)",
+        "id": "TASK-73-02",
+        "title": "Reparación visual de tarjetas de Tarifas Especiales en /admin/clients (Descuento Global, Costo Envío y Mínimo Pedido con inputs editables y legibles)",
         "status": "TODO",
-        "type": "CORE/LOGIC"
+        "type": "ADMIN/UI",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-71-03",
-        "title": "Endpoint autorizado y seguro para confirmación de pago Stripe del cliente propietario de la orden (resolución HTTP 403) con tests unitarios y sad path (§6)",
+        "id": "TASK-73-03",
+        "title": "Ajustes en Formulario de Dirección: desplegar por defecto Early Morning Delivery Instructions y eliminar botón Skip this step",
         "status": "TODO",
-        "type": "PAYMENTS/SECURITY"
+        "type": "FRONTEND/ONBOARDING",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-71-04",
-        "title": "Restricción en Stripe Elements: excluir us_bank_account para clientes estándar, dejando solo tarjeta y wallets digitales",
+        "id": "TASK-73-04",
+        "title": "Normalización case-insensitive de Email: aplicar toLowerCase().trim() en login, registro y restablecimiento de contraseña",
         "status": "TODO",
-        "type": "UI/STRIPE"
+        "type": "AUTH/SECURITY",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-71-05",
-        "title": "Verificación y soporte de Monto Mínimo de Pedido configurable en panel de administración (/admin) a nivel global y por cliente",
+        "id": "TASK-73-05",
+        "title": "Estabilización de Reportes Individual y Consolidado en /admin/reports: resolución de pantalla en blanco y filtros de entrega",
         "status": "TODO",
-        "type": "ADMIN/CONFIG"
+        "type": "ADMIN/REPORTS",
+        "veracity_hash": null
       },
       {
-        "id": "TASK-71-06",
-        "title": "Compilación física de Backend y Frontend, sincronización y despliegue a producción (187.124.67.53), recarga de PM2 y certificación en vivo",
+        "id": "TASK-73-06",
+        "title": "Carga y Visualización del Certificado ST-120: uploader en /profile de cliente y vista/descarga en modal administrativo de /admin/clients",
         "status": "TODO",
-        "type": "DEPLOY/PROD"
+        "type": "COMPLIANCE/TAX",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-73-07",
+        "title": "Suite de pruebas automatizadas (§6), compilación física de Frontend y Backend, despliegue a producción y certificación en vivo",
+        "status": "TODO",
+        "type": "DEPLOY/CERT",
+        "veracity_hash": null
       }
     ]
   }

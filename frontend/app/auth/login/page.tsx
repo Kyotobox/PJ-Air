@@ -24,7 +24,7 @@ function LoginContent() {
 
         try {
             const data = await api.post('/auth/login', {
-                email: identifier.trim(),
+                email: identifier.trim().toLowerCase(),
                 password: password,
             }) as any;
 
