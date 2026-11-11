@@ -37,6 +37,7 @@ describe('Admin Fulfillment Flow (e2e)', () => {
         password: 'Password123!',
         full_name: 'Fulfillment Client',
         company_name: 'Fulfillment Bakery',
+        tax_id: '12-3456789',
         phone: '+13055550100',
         phone_verified: true,
         idToken: 'mock-valid-firebase-token',

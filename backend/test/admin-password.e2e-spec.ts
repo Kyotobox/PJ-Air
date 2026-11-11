@@ -27,6 +27,7 @@ describe('Admin Password Management (e2e)', () => {
     full_name: 'Test Pwd User',
     username: 'pwdtestuser',
     company_name: 'Password Test Bakery',
+    tax_id: '12-3456789',
     phone: '+13055550100',
     phone_verified: true,
     idToken: 'mock-valid-firebase-token',

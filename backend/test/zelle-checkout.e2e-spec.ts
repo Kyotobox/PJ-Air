@@ -39,6 +39,7 @@ describe('Zelle B2B Checkout & Cutoff Flow (e2e)', () => {
         password: 'Password123!',
         full_name: 'Zelle Wholesale Buyer',
         company_name: 'Bodega El Roble B2B',
+        tax_id: '12-3456789',
         phone: '+13055550100',
         phone_verified: true,
         idToken: 'mock-valid-firebase-token',

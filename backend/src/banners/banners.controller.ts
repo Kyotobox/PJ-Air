@@ -62,7 +62,7 @@ export class BannersController {
 
         const friendlyNames: Record<string, { name: string; orientation: 'landscape' | 'portrait' | 'square'; category: string }> = {
             'seasonal_hero_flatlay_table.jpg': {
-                name: 'Mesa Completa de Bollería & Postres (Mockup Oficial)',
+                name: 'Mesa Completa de Bollería & Postres (Fotografía Oficial)',
                 orientation: 'landscape',
                 category: 'hero'
             },

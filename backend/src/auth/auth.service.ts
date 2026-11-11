@@ -345,7 +345,7 @@ export class AuthService {
       return false;
     }
 
-    if (idToken === 'mock-valid-firebase-token' || idToken.startsWith('valid-test-token')) {
+    if (process.env.NODE_ENV === 'test' && (idToken === 'mock-valid-firebase-token' || idToken.startsWith('valid-test-token'))) {
       return true;
     }
 

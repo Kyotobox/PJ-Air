@@ -91,6 +91,7 @@ describe('Admin Catalog Flow (e2e)', () => {
       full_name: 'Standard User',
       username: `standard_${Date.now()}`,
       company_name: 'Catalog Bakery',
+      tax_id: '12-3456789',
       phone: '+13055550100',
       phone_verified: true,
       idToken: 'mock-valid-firebase-token',

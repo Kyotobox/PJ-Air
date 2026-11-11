@@ -490,7 +490,7 @@ export default function Home() {
 
     const defaultSlides = useMemo(() => [
         {
-            id: 'mockup-table',
+            id: 'banner-table',
             badgeEn: 'JHOANES WHOLESALE',
             badgeEs: 'JHOANES MAYORISTA',
             tagEn: 'ARTISANAL PASTRIES FOR YOUR BUSINESS',
