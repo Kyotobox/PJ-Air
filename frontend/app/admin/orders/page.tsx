@@ -68,6 +68,7 @@ const STATUS_COLORS: Record<string, string> = {
     'En Entrega':    'bg-indigo-50 text-indigo-600 border-indigo-100',
     'Entregado':     'bg-green-50 text-green-600 border-green-100',
     'Cancelado':     'bg-red-50 text-red-600 border-red-100',
+    'cancelled':     'bg-red-50 text-red-600 border-red-100',
     'pending':       'bg-slate-50 text-slate-600 border-slate-100',
 };
 
@@ -79,6 +80,7 @@ export default function AdminOrdersPage() {
     const [statusFilter, setStatusFilter] = useState('Todos');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
     
     // Modal state
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -397,6 +399,49 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const handleQuickDisable = async (order: Order) => {
+        const orderShortId = order.id.slice(0, 8);
+        if (!window.confirm(`¿Inhabilitar y cancelar el pedido #${orderShortId}? Esta acción excluirá la orden de reportes financieros.`)) {
+            return;
+        }
+        try {
+            setSaving(true);
+            const updated = await api.patch(`/orders/${order.id}/disable`, {
+                reason: 'Inhabilitado desde panel de administración'
+            }) as Order;
+            setOrders(prev => prev.map(o => o.id === order.id ? (updated?.id ? updated : { ...o, status: 'cancelled' }) : o));
+            if (selectedOrder && selectedOrder.id === order.id) {
+                setSelectedOrder(prev => prev ? (updated?.id ? updated : { ...prev, status: 'cancelled' }) : null);
+            }
+            showToast('✅ Pedido inhabilitado correctamente');
+        } catch (err) {
+            showToast('❌ Error al inhabilitar pedido', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleBulkDisable = async () => {
+        if (!selectedOrderIds.length) return;
+        if (!window.confirm(`¿Inhabilitar y cancelar las ${selectedOrderIds.length} órdenes seleccionadas? Esta acción las excluirá de reportes financieros.`)) {
+            return;
+        }
+        try {
+            setSaving(true);
+            await api.post('/orders/bulk-disable', { orderIds: selectedOrderIds });
+            setOrders(prev => prev.map(o => selectedOrderIds.includes(o.id) ? { ...o, status: 'cancelled' } : o));
+            if (selectedOrder && selectedOrderIds.includes(selectedOrder.id)) {
+                setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
+            }
+            setSelectedOrderIds([]);
+            showToast('✅ Órdenes seleccionadas inhabilitadas correctamente');
+        } catch (err) {
+            showToast('❌ Error al inhabilitar órdenes seleccionadas', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const filteredOrders = orders.filter(o => {
         const q = search.toLowerCase();
         const matchesSearch = !q ||
@@ -409,7 +454,12 @@ export default function AdminOrdersPage() {
                 const catName = typeof catObj === 'object' && catObj ? (catObj as { name: string }).name : (catObj || '');
                 return catName.toLowerCase().includes(q);
             });
-        const matchesStatus = statusFilter === 'Todos' || o.status === statusFilter;
+        const matchesStatus = statusFilter === 'Todos' ||
+            o.status === statusFilter ||
+            (statusFilter === 'Cancelado' && o.status === 'cancelled') ||
+            (statusFilter === 'cancelled' && o.status === 'Cancelado') ||
+            (statusFilter === 'Pedido' && o.status === 'pending') ||
+            (statusFilter === 'pending' && o.status === 'Pedido');
         const orderDispatchDate = o.delivery_date ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0]) : new Date(o.created_at).toISOString().split('T')[0];
         const matchesStart = !startDate || orderDispatchDate >= startDate;
         const matchesEnd = !endDate || orderDispatchDate <= endDate;
@@ -976,10 +1026,53 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         <p className="font-bold tracking-tight">Sincronizando órdenes...</p>
                     </div>
                 ) : (
+                    <>
+                    {selectedOrderIds.length > 0 && (
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4 flex items-center justify-between flex-wrap gap-3 shadow-sm animate-in fade-in">
+                            <div className="flex items-center gap-3">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                                <span className="text-xs font-black text-red-900 uppercase tracking-wide">
+                                    {selectedOrderIds.length} {selectedOrderIds.length === 1 ? 'orden seleccionada' : 'órdenes seleccionadas'}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setSelectedOrderIds([])}
+                                    className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
+                                >
+                                    Deseleccionar
+                                </button>
+                                <button
+                                    onClick={handleBulkDisable}
+                                    disabled={saving}
+                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-black rounded-xl shadow-md shadow-red-600/20 transition-all flex items-center gap-2"
+                                >
+                                    {saving ? <Loader2 size={14} className="animate-spin" /> : <span>🚫</span>}
+                                    Inhabilitar Seleccionadas
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <div className="bg-white rounded-[2rem] border border-border overflow-hidden shadow-xl shadow-slate-200/50">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50/80 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 border-b border-border">
                                 <tr>
+                                    <th className="px-4 py-5 w-12 text-center" onClick={e => e.stopPropagation()}>
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                            checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id))}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    const ids = filteredOrders.map(o => o.id);
+                                                    setSelectedOrderIds(prev => Array.from(new Set([...prev, ...ids])));
+                                                } else {
+                                                    const currentFilteredIds = new Set(filteredOrders.map(o => o.id));
+                                                    setSelectedOrderIds(prev => prev.filter(id => !currentFilteredIds.has(id)));
+                                                }
+                                            }}
+                                        />
+                                    </th>
                                     <th className="px-8 py-5">Orden</th>
                                     <th className="px-8 py-5">Cliente</th>
                                     <th className="px-8 py-5">Estado</th>
@@ -995,6 +1088,21 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         className="hover:bg-primary/[0.02] transition-colors cursor-pointer group"
                                         onClick={() => openOrderDetail(order)}
                                     >
+                                        <td className="px-4 py-5 w-12 text-center" onClick={e => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                                checked={selectedOrderIds.includes(order.id)}
+                                                onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedOrderIds(prev =>
+                                                        prev.includes(order.id)
+                                                            ? prev.filter(id => id !== order.id)
+                                                            : [...prev, order.id]
+                                                    );
+                                                }}
+                                            />
+                                        </td>
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-mono text-xs font-bold text-slate-400">#{order.id.slice(0, 8)}</span>
@@ -1086,6 +1194,21 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </td>
                                         <td className="px-8 py-5 text-right" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleQuickDisable(order);
+                                                    }}
+                                                    disabled={saving || order.status === 'cancelled' || order.status === 'Cancelado'}
+                                                    className={`p-2 rounded-xl transition-all ${
+                                                        order.status === 'cancelled' || order.status === 'Cancelado'
+                                                            ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400'
+                                                            : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                                                    }`}
+                                                    title={order.status === 'cancelled' || order.status === 'Cancelado' ? 'Pedido inhabilitado' : 'Inhabilitar pedido'}
+                                                >
+                                                    🚫
+                                                </button>
                                                 <Link
                                                     href={`/admin/orders/${order.id}`}
                                                     className="p-2 bg-slate-100 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
@@ -1113,7 +1236,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     </tr>
                                 ))}
                                 {filteredOrders.length === 0 && (
-                                    <tr><td colSpan={5} className="px-8 py-24 text-center">
+                                    <tr><td colSpan={7} className="px-8 py-24 text-center">
                                         <div className="flex flex-col items-center gap-3 opacity-30">
                                             <ShoppingBag size={48} />
                                             <p className="text-sm font-black uppercase tracking-widest italic">No hay pedidos disponibles</p>
@@ -1123,6 +1246,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                             </tbody>
                         </table>
                     </div>
+                    </>
                 )}
                 </>
             )}
@@ -1196,16 +1320,23 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    {STATUS_OPTIONS.map(status => (
-                                        <button 
-                                            key={status}
-                                            onClick={() => handleUpdateStatus(status)}
-                                            disabled={saving}
-                                            className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all border ${selectedOrder.status === status ? 'bg-primary text-white border-primary shadow-xl scale-105 active:scale-95' : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200 hover:text-slate-600'}`}
-                                        >
-                                            {status}
-                                        </button>
-                                    ))}
+                                    {STATUS_OPTIONS.map(status => {
+                                        const isSelected = selectedOrder.status === status ||
+                                            (status === 'Cancelado' && selectedOrder.status === 'cancelled') ||
+                                            (status === 'cancelled' && selectedOrder.status === 'Cancelado') ||
+                                            (status === 'Pedido' && selectedOrder.status === 'pending') ||
+                                            (status === 'pending' && selectedOrder.status === 'Pedido');
+                                        return (
+                                            <button 
+                                                key={status}
+                                                onClick={() => handleUpdateStatus(status)}
+                                                disabled={saving}
+                                                className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all border ${isSelected ? 'bg-primary text-white border-primary shadow-xl scale-105 active:scale-95' : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200 hover:text-slate-600'}`}
+                                            >
+                                                {status}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </section>
 

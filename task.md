@@ -1,7 +1,7 @@
-# SPRINT S75 - Sprint Activo
+# SPRINT S76 - Sprint Activo
 **Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-11
 
-- [x] **TASK-75-01** [TASK] Estandarización a 100% inglés de correos de órdenes, recibos y suscripciones (sendOrderReceipt, sendRefundReceipt, sendStandingOrderConfirmation) en backend/src/mail/mail.service.ts
-- [x] **TASK-75-02** [TASK] Estandarización a 100% inglés de alertas de crédito, pagos fallidos, Zelle, contraseñas y plantilla HTML de factura vencida (invoice_overdue.html, sendCreditAlert, sendPaymentFailedAlert, sendOverdueInvoiceAlert, sendZelleRejectionAlert, sendPasswordResetEmail)
-- [x] **TASK-75-03** [TASK] Auditoría exhaustiva de recibos/facturas en Frontend y Backend, actualización de suite de tests en mail.service.spec.ts (§6), compilación física, despliegue a producción y testing, y verificación en vivo
+- [x] **TASK-76-01** [TASK] Backend: Endpoints PATCH /orders/:id/disable y POST /orders/bulk-disable con notas forenses de auditoría, y exclusión de órdenes canceladas en FinancialReportsCron
+- [x] **TASK-76-02** [TASK] Frontend: Botón de acción rápida individual 🚫 Inhabilitar Pedido, soporte de selección masiva (bulk disable), sincronización bilingüe de estados en filtros y badges, y actualización de FinancialStatusBadge
+- [/] **TASK-76-03** [TASK] Certificación: Suite de pruebas automatizadas (§6 con sad path), inhabilitación de compras de prueba existentes en base de datos, compilación física (build), y verificación integral

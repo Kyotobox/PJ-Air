@@ -12,9 +12,19 @@ export interface FinancialStatusInfo {
 }
 
 export function getFinancialStatus(
-  order: { payment_status?: string; payment_due_date?: string },
+  order: { payment_status?: string; payment_due_date?: string; status?: string },
   locale: string = 'es'
 ): FinancialStatusInfo {
+  if (order.status === 'cancelled' || order.status === 'Cancelado') {
+    return {
+      type: 'refunded',
+      label: locale === 'en' ? 'Disabled / Cancelled' : 'Inhabilitado / Cancelado',
+      badgeClass: 'bg-red-100 text-red-800 border-red-200',
+      pillClass: 'bg-red-50 text-red-700 border-red-200',
+      icon: '🚫',
+    };
+  }
+
   if (order.payment_status === 'paid') {
     return {
       type: 'paid',
@@ -97,7 +107,7 @@ export default function FinancialStatusBadge({
   locale = 'es',
   size = 'normal',
 }: {
-  order: { payment_status?: string; payment_due_date?: string };
+  order: { payment_status?: string; payment_due_date?: string; status?: string };
   locale?: string;
   size?: 'normal' | 'sm';
 }) {
