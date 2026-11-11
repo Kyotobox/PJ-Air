@@ -7,4 +7,4 @@
 - [x] **TASK-70-03** [TASK] Orquestación de procesos de producción con PM2 en puertos 3000 y 3001
 - [x] **TASK-70-04** [TASK] Configuración de Nginx para validación privada (acceso a /admin y /auth/login con / en mantenimiento)
 - [x] **TASK-70-05** [TASK] Smoke test de autenticación administrativa y verificación de los 3 pedidos en /admin/orders
-- [/] **TASK-70-06** [TASK] Apertura oficial de app.jhoanes.com, retiro de guarda de cerrado temporal y restauración de proxy en Nginx
+- [x] **TASK-70-06** [TASK] Apertura oficial de app.jhoanes.com, retiro de guarda de cerrado temporal y restauración de proxy en Nginx
