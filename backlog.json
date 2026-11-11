@@ -2,7 +2,7 @@
   "project": "pj-air",
   "version": "5.0.0",
   "kernel_version": "5.0.0",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETED",
   "current_sprint": "S78",
   "current_task": "TASK-78-04",
   "sprints": [
@@ -117,6 +117,41 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S78",
+      "title": "Sprint S78: Soberanía de Tarifa Fija por Cliente, Erradicación de Zonas de Delivery y Ajuste Financiero",
+      "status": "COMPLETED",
+      "tasks": [
+        {
+          "id": "TASK-78-01",
+          "title": "Ajuste financiero en base de datos de producción para pedidos #060d13ad ($300.00 flete y balance) y #aa910cbb ($200.00 flete y compensación store credit)",
+          "status": "DONE",
+          "type": "DATA/FINANCE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-02",
+          "title": "Backend: Prevalencia absoluta de tarifa fija de cliente y erradicación total de ZonesService en orders.service.ts (solo Pickup, Tarifa Fija o Millaje)",
+          "status": "DONE",
+          "type": "BACKEND/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-03",
+          "title": "Frontend: Erradicación total de zonas de delivery en checkout/page.tsx, cortocircuito directo para tarifa fija sin cotización innecesaria y cálculo exclusivo por millaje",
+          "status": "DONE",
+          "type": "FRONTEND/CHECKOUT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-04",
+          "title": "Certificación: Tests automatizados (happy y sad paths), compilación en limpio, despliegue y sincronización en testing y producción VPS",
+          "status": "DONE",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
   "archived_sprints_count": 67,
@@ -124,7 +159,7 @@
   "active_sprint": {
     "id": "S78",
     "title": "Sprint S78: Soberanía de Tarifa Fija por Cliente, Erradicación de Zonas de Delivery y Ajuste Financiero",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-78-01",
@@ -150,7 +185,7 @@
       {
         "id": "TASK-78-04",
         "title": "Certificación: Tests automatizados (happy y sad paths), compilación en limpio, despliegue y sincronización en testing y producción VPS",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "DEPLOY/CERT",
         "veracity_hash": null
       }
