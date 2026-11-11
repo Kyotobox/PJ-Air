@@ -1880,7 +1880,7 @@ export default function AdminClientsPage() {
                                                 <div className="p-2 bg-amber-100 text-amber-600 rounded-xl"><DollarSign size={18} /></div>
                                                 <span className="text-xs font-black uppercase text-amber-700">Costo Envío</span>
                                             </div>
-                                            <p className="text-[11px] font-bold text-amber-700/70 mb-3 italic">Costo fijo de delivery para este cliente.</p>
+                                            <p className="text-[11px] font-bold text-amber-700/70 mb-3 italic">Tarifa fija pactada (0 = calcular por millaje automáticamente).</p>
                                         </div>
                                         <div className="space-y-2.5 mt-2">
                                             <div className="relative">

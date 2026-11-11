@@ -656,11 +656,6 @@ export default function CheckoutPage() {
         access_code: '', has_key: false, key_location: '', fridge_access_required: false, delivery_photos_json: ''
     });
 
-    // Delivery zone resolution state
-    const [resolvedZone, setResolvedZone] = useState<any | null>(null);
-    const [isResolvingZone, setIsResolvingZone] = useState(false);
-    const [resolvedZip, setResolvedZip] = useState<string | null>(null);
-
     const lbl = (es: string, en: string) => locale === 'en' ? en : es;
 
     // Discounts & Credit
@@ -768,7 +763,7 @@ export default function CheckoutPage() {
             .catch(err => console.warn('Error fetching delivery-schedule, using offline fallback (§45):', err));
     }, []);
 
-    // ── Delivery Zone Resolution Engine ───────────────────────────────────────
+    // ── Delivery Address & Selection ─────────────────────────────────────────
     const currentAddress = addresses.find(a => a.id === selectedAddressId);
     const extractZip = (addrText?: string): string | null => {
         if (!addrText) return null;
@@ -781,36 +776,11 @@ export default function CheckoutPage() {
         ? extractZip(otherAddrData.address)
         : null;
 
-    useEffect(() => {
-        if (deliveryType === 'pickup' || !currentZip) {
-            setResolvedZone(null);
-            setResolvedZip(null);
-            return;
-        }
+    // ── TASK-78-03: Prevalencia Absoluta de Tarifa Fija por Cliente ───────────
+    const userCustomFee = Number((userDiscounts as any)?.delivery_fee ?? profile?.delivery_fee ?? 0);
+    const hasVipFee = userCustomFee > 0;
 
-        let isMounted = true;
-        setIsResolvingZone(true);
-        api.get(`/zones/resolve?zip=${currentZip}`)
-            .then((zone: any) => {
-                if (isMounted) {
-                    setResolvedZone((zone && zone.id) ? zone : null);
-                    setResolvedZip(currentZip);
-                }
-            })
-            .catch(() => {
-                if (isMounted) {
-                    setResolvedZone(null);
-                    setResolvedZip(currentZip);
-                }
-            })
-            .finally(() => {
-                if (isMounted) setIsResolvingZone(false);
-            });
-
-        return () => { isMounted = false; };
-    }, [currentZip, deliveryType]);
-
-    // ── TASK-49-06: Logistics Quote via MileageFreightService ────────────────
+    // ── TASK-49-06 & TASK-78-03: Logistics Quote via MileageFreightService ────
     const [logisticsQuote, setLogisticsQuote] = useState<any | null>(null);
     const [isQuotingLogistics, setIsQuotingLogistics] = useState(false);
 
@@ -833,7 +803,7 @@ export default function CheckoutPage() {
         : undefined;
 
     useEffect(() => {
-        if (deliveryType === 'pickup') {
+        if (deliveryType === 'pickup' || hasVipFee) {
             setLogisticsQuote(null);
             return;
         }
@@ -867,7 +837,7 @@ export default function CheckoutPage() {
         } else {
             setLogisticsQuote(null);
         }
-    }, [deliveryType, targetLat, targetLng, targetAddressText]);
+    }, [deliveryType, hasVipFee, targetLat, targetLng, targetAddressText]);
 
     // ── Calculation logic & Precedence Matrix ─────────────────────────────────
     const rawSubtotal = getRawSubtotal();
@@ -885,37 +855,22 @@ export default function CheckoutPage() {
         });
     }, [userOrders, rawDeliveryDate, deliveryDate, deliveryType, selectedAddressId]);
 
-    // Matriz de precedencia:
+    // Matriz de precedencia (TASK-78-03):
     // 0. Pedido Complementario: siempre $0.00 (TASK-63-04)
     // 1. Pickup: siempre $0.00
-    // 2. Tarifa Especial VIP pactada en perfil (user.delivery_fee > 0): prevalece sobre la zona
-    // 3. Zona resuelta por ZIP (si subtotal >= min_free_delivery_amount -> $0.00, sino -> zone.base_fee)
-    // 4. Cotización Oficial MileageFreightService por coordenadas (TASK-49-06)
-    // 5. Contingencia fallback ($15.00) si no hay coordenadas ni zona registrada
-    const userCustomFee = Number((userDiscounts as any)?.delivery_fee ?? profile?.delivery_fee ?? 0);
-    const hasVipFee = userCustomFee > 0;
+    // 2. Tarifa Fija Asignada pactada en perfil (user.delivery_fee > 0): PREVALECE DE FORMA ABSOLUTA
+    // 3. Cotización Oficial MileageFreightService por coordenadas (TASK-49-06)
+    // 4. Contingencia fallback ($15.00) si no hay coordenadas disponibles
     let deliveryFee = 0;
     if (deliveryType === 'pickup' || isComplementaryOrder) {
         deliveryFee = 0;
     } else if (hasVipFee) {
         deliveryFee = userCustomFee;
-    } else if (resolvedZone && resolvedZone.id) {
-        const freeDeliveryThreshold = Number(resolvedZone.min_free_delivery_amount);
-        if (freeDeliveryThreshold > 0 && discountedSubtotal >= freeDeliveryThreshold) {
-            deliveryFee = 0;
-        } else {
-            deliveryFee = Number(resolvedZone.base_fee || 0);
-        }
     } else if (logisticsQuote && typeof logisticsQuote.cost === 'number') {
         deliveryFee = Number(logisticsQuote.cost);
     } else {
         deliveryFee = 15.00; // Contingency fallback
     }
-
-    const isFreeDeliveryEligible = !hasVipFee && !isComplementaryOrder && resolvedZone && resolvedZone.id && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal >= Number(resolvedZone.min_free_delivery_amount);
-    const freeDeliveryShortage = !hasVipFee && !isComplementaryOrder && resolvedZone && resolvedZone.id && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal < Number(resolvedZone.min_free_delivery_amount)
-        ? Math.round((Number(resolvedZone.min_free_delivery_amount) - discountedSubtotal + Number.EPSILON) * 100) / 100
-        : 0;
 
     // TASK-47-02: Processing Fee calculation via pure calculateProcessingFee
     const feeMethod = paymentMethod === 'stripe' ? 'STRIPE_CARD' : paymentMethod === 'ach' ? 'ACH' : paymentMethod === 'check' ? 'CHECK' : paymentMethod.toUpperCase();
@@ -2297,56 +2252,14 @@ export default function CheckoutPage() {
                                         <div className="flex justify-between items-center text-xs mb-1">
                                             <div className="flex flex-col">
                                                 <span className="text-muted-foreground">{lbl('Cargo por Delivery', 'Delivery Fee')}</span>
-                                                <span className="text-[10px] text-primary font-bold">{lbl('⭐ Tarifa Especial VIP', '⭐ VIP Special Rate')}</span>
+                                                <span className="text-[10px] text-primary font-bold">{lbl('⭐ Tarifa Fija Asignada', '⭐ Assigned Client Rate')}</span>
                                             </div>
                                             <span className="font-bold text-amber-600 font-mono">+${deliveryFee.toFixed(2)}</span>
                                         </div>
-                                    ) : resolvedZone ? (
-                                        isFreeDeliveryEligible ? (
-                                            <div className="flex flex-col gap-1 mb-2 bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl">
-                                                <div className="flex justify-between items-center text-xs">
-                                                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                                                        {lbl(`Zona: ${resolvedZone.name}`, `Zone: ${resolvedZone.name}`)}
-                                                    </span>
-                                                    <div className="flex items-center gap-1.5 font-mono">
-                                                        <span className="text-emerald-600/70 line-through text-[11px]">
-                                                            +${Number(resolvedZone.base_fee).toFixed(2)}
-                                                        </span>
-                                                        <span className="font-black text-emerald-700 dark:text-emerald-400">$0.00</span>
-                                                    </div>
-                                                </div>
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                                                    🎉 {lbl(
-                                                        `¡Envío Gratis por compra mayor a $${Number(resolvedZone.min_free_delivery_amount).toFixed(2)}!`,
-                                                        `Free Delivery for orders over $${Number(resolvedZone.min_free_delivery_amount).toFixed(2)}!`
-                                                    )}
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col gap-1 mb-2">
-                                                <div className="flex justify-between items-center text-xs">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-muted-foreground">{lbl('Cargo por Delivery', 'Delivery Fee')}</span>
-                                                        <span className="text-[10px] text-muted-foreground font-semibold">
-                                                            {resolvedZone.name} {resolvedZip ? `(ZIP ${resolvedZip})` : ''}
-                                                        </span>
-                                                    </div>
-                                                    <span className="font-bold text-amber-600 font-mono">+${deliveryFee.toFixed(2)}</span>
-                                                </div>
-                                                {freeDeliveryShortage > 0 && (
-                                                    <div className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1.5 rounded-xl">
-                                                        {lbl(
-                                                            `Faltan $${freeDeliveryShortage.toFixed(2)} para Envío Gratis en tu zona`,
-                                                            `Add $${freeDeliveryShortage.toFixed(2)} more for Free Delivery in your zone`
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )
                                     ) : logisticsQuote ? (
                                         <div className="flex justify-between items-center text-xs mb-1">
                                             <div className="flex flex-col">
-                                                <span className="text-muted-foreground">{lbl('Delivery Fee (Por Millas)', 'Delivery Fee (By Mileage)')}</span>
+                                                <span className="text-muted-foreground">{lbl('Delivery Fee (Por Millaje)', 'Delivery Fee (By Mileage)')}</span>
                                                 <span className="text-[10px] text-muted-foreground font-semibold">
                                                     {lbl(`Distancia: ${logisticsQuote.miles} mi desde Astoria`, `Distance: ${logisticsQuote.miles} mi from Astoria`)}
                                                 </span>
@@ -2358,12 +2271,12 @@ export default function CheckoutPage() {
                                             <div className="flex flex-col">
                                                 <span className="text-muted-foreground">{lbl('Delivery Fee', 'Delivery Fee')}</span>
                                                 <span className="text-[10px] text-muted-foreground">
-                                                    {resolvedZip
-                                                        ? lbl(`Tarifa General (ZIP ${resolvedZip})`, `Standard Fee (ZIP ${resolvedZip})`)
-                                                        : lbl('Tarifa General', 'Standard Fee')}
+                                                    {isQuotingLogistics ? lbl('Calculando millaje...', 'Calculating mileage...') : lbl('Tarifa Estándar', 'Standard Fee')}
                                                 </span>
                                             </div>
-                                            <span className="font-bold text-amber-600 font-mono">+${deliveryFee.toFixed(2)}</span>
+                                            <span className="font-bold text-amber-600 font-mono">
+                                                {isQuotingLogistics ? '...' : `+$${deliveryFee.toFixed(2)}`}
+                                            </span>
                                         </div>
                                     )}
 

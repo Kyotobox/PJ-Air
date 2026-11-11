@@ -740,83 +740,71 @@ describe('OrdersService', () => {
       );
     });
 
-    describe('Delivery Fee Precedence Matrix (TASK-71-02)', () => {
-      it('should prioritize zone resolution with min_free_delivery_amount ($0 fee) over mileageFreightService even when dest_lat/dest_lng are present', async () => {
+    describe('Delivery Fee Precedence Matrix (TASK-78-02)', () => {
+      it('should prioritize client fixed delivery fee over mileageFreightService even when dest_lat/dest_lng are present', async () => {
         userRepository.findOne.mockResolvedValue({
-          id: 'user-zone-precedence',
+          id: 'user-fixed-fee-vip',
           account_type: 'cash',
+          delivery_fee: 50,
           orders: [],
           productDiscounts: [],
         });
         productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
 
-        const createdOrder = { id: 'order-zone-01', total: 100 };
+        const createdOrder = { id: 'order-fixed-01', total: 150 };
         mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
         mockManager.save.mockResolvedValue(createdOrder);
         service.findOne = jest.fn().mockResolvedValue(createdOrder);
 
-        (service as any).zonesService = {
-          resolveZip: jest.fn().mockResolvedValue({
-            id: 'zone-1',
-            name: 'Astoria',
-            base_fee: 10,
-            min_free_delivery_amount: 50,
-          }),
-        };
         (service as any).mileageFreightService = {
-          calculateDistanceMiles: jest.fn().mockReturnValue(12),
-          calculateFreight: jest.fn().mockReturnValue({ cost: 40, requiresSpecialQuote: false }),
+          calculateDistanceMiles: jest.fn().mockReturnValue(30),
+          calculateFreight: jest.fn().mockReturnValue({ cost: 120, requiresSpecialQuote: false }),
         };
 
-        await service.create('user-zone-precedence', {
+        await service.create('user-fixed-fee-vip', {
           items: [{ productId: 1, quantity: 1 }],
           delivery_type: 'delivery',
           payment_method: 'stripe',
-          zip_code: '11105',
           dest_lat: 40.768,
           dest_lng: -73.921,
         });
 
-        expect((service as any).zonesService.resolveZip).toHaveBeenCalledWith('11105');
+        // Fixed fee strictly used; mileage freight not calculated
         expect((service as any).mileageFreightService.calculateFreight).not.toHaveBeenCalled();
         expect(mockManager.create).toHaveBeenCalledWith(
           expect.anything(),
           expect.objectContaining({
-            delivery_fee_charged: 0,
+            delivery_fee_charged: 50,
           }),
         );
 
-        (service as any).zonesService = undefined;
         (service as any).mileageFreightService = undefined;
       });
 
-      it('should fallback to mileageFreightService when ZIP is unmapped and coordinates are provided', async () => {
+      it('should calculate delivery fee via mileageFreightService when user has no fixed fee (delivery_fee = 0)', async () => {
         userRepository.findOne.mockResolvedValue({
-          id: 'user-unmapped-zip',
+          id: 'user-dynamic-mileage',
           account_type: 'cash',
+          delivery_fee: 0,
           orders: [],
           productDiscounts: [],
         });
         productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
 
-        const createdOrder = { id: 'order-mileage-01', total: 100 };
+        const createdOrder = { id: 'order-mileage-01', total: 160 };
         mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
         mockManager.save.mockResolvedValue(createdOrder);
         service.findOne = jest.fn().mockResolvedValue(createdOrder);
 
-        (service as any).zonesService = {
-          resolveZip: jest.fn().mockResolvedValue(null),
-        };
         (service as any).mileageFreightService = {
           calculateDistanceMiles: jest.fn().mockReturnValue(15),
           calculateFreight: jest.fn().mockReturnValue({ cost: 60, requiresSpecialQuote: false }),
         };
 
-        await service.create('user-unmapped-zip', {
+        await service.create('user-dynamic-mileage', {
           items: [{ productId: 1, quantity: 1 }],
           delivery_type: 'delivery',
           payment_method: 'stripe',
-          zip_code: '99999',
           dest_lat: 41.0,
           dest_lng: -73.0,
         });
@@ -829,33 +817,29 @@ describe('OrdersService', () => {
           }),
         );
 
-        (service as any).zonesService = undefined;
         (service as any).mileageFreightService = undefined;
       });
 
-      it('Sad path: fallback to contingency fee ($15.00) when neither zone matches nor coordinates are provided (§6)', async () => {
+      it('Sad path: fallback to explicit delivery_fee or user delivery fee when user has no fixed fee and no coordinates are provided (§6)', async () => {
         userRepository.findOne.mockResolvedValue({
           id: 'user-contingency',
           account_type: 'cash',
+          delivery_fee: 0,
           orders: [],
           productDiscounts: [],
         });
         productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
 
-        const createdOrder = { id: 'order-contingency-01', total: 100 };
+        const createdOrder = { id: 'order-contingency-01', total: 115 };
         mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
         mockManager.save.mockResolvedValue(createdOrder);
         service.findOne = jest.fn().mockResolvedValue(createdOrder);
-
-        (service as any).zonesService = {
-          resolveZip: jest.fn().mockResolvedValue(null),
-        };
 
         await service.create('user-contingency', {
           items: [{ productId: 1, quantity: 1 }],
           delivery_type: 'delivery',
           payment_method: 'stripe',
-          zip_code: '99999',
+          delivery_fee: 15,
         });
 
         expect(mockManager.create).toHaveBeenCalledWith(
@@ -864,8 +848,6 @@ describe('OrdersService', () => {
             delivery_fee_charged: 15,
           }),
         );
-
-        (service as any).zonesService = undefined;
       });
     });
   });

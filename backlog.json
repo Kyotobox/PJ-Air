@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S77",
-  "current_task": "TASK-77-01",
+  "current_sprint": "S78",
+  "current_task": "TASK-78-04",
   "sprints": [
     {
       "id": "S74",
@@ -89,33 +89,68 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S77",
+      "title": "Sprint S77: Blindaje de Integridad Financiera y Pasarela Stripe",
+      "status": "COMPLETED",
+      "tasks": [
+        {
+          "id": "TASK-77-01",
+          "title": "Frontend: Corrección de falso positivo en api.ts (retornar null ante respuesta HTTP 200 vacía), validación estricta de resolvedZone?.id en checkout/page.tsx, y envío forzoso del order.total devuelto por el backend al invocar /payments/create-intent",
+          "status": "DONE",
+          "type": "FRONTEND/CHECKOUT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-77-02",
+          "title": "Backend: Blindaje en payments.service.ts para fijar y validar el monto del PaymentIntent directamente desde order.total / saldo en BD cuando existe orderId, y verificación en orders.controller.ts (PATCH /orders/:id/payment-status) comprobando contra Stripe si el cobro cubre el total (degradando a partially_paid con pending_balance ante montos menores)",
+          "status": "DONE",
+          "type": "BACKEND/PAYMENTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-77-03",
+          "title": "Certificación: Tests automatizados con Happy y Sad path (§6), compilación física, despliegue a testing y producción VPS, y ajuste del saldo pendiente ($625.00) en la orden 060d13ad-4c6b-414c-9692-7a7bc41431ee",
+          "status": "DONE",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
   "archived_sprints_count": 67,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S77",
-    "title": "Sprint S77: Blindaje de Integridad Financiera y Pasarela Stripe",
-    "status": "COMPLETED",
+    "id": "S78",
+    "title": "Sprint S78: Soberanía de Tarifa Fija por Cliente, Erradicación de Zonas de Delivery y Ajuste Financiero",
+    "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-77-01",
-        "title": "Frontend: Corrección de falso positivo en api.ts (retornar null ante respuesta HTTP 200 vacía), validación estricta de resolvedZone?.id en checkout/page.tsx, y envío forzoso del order.total devuelto por el backend al invocar /payments/create-intent",
+        "id": "TASK-78-01",
+        "title": "Ajuste financiero en base de datos de producción para pedidos #060d13ad ($300.00 flete y balance) y #aa910cbb ($200.00 flete y compensación store credit)",
+        "status": "DONE",
+        "type": "DATA/FINANCE",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-78-02",
+        "title": "Backend: Prevalencia absoluta de tarifa fija de cliente y erradicación total de ZonesService en orders.service.ts (solo Pickup, Tarifa Fija o Millaje)",
+        "status": "DONE",
+        "type": "BACKEND/ORDERS",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-78-03",
+        "title": "Frontend: Erradicación total de zonas de delivery en checkout/page.tsx, cortocircuito directo para tarifa fija sin cotización innecesaria y cálculo exclusivo por millaje",
         "status": "DONE",
         "type": "FRONTEND/CHECKOUT",
         "veracity_hash": null
       },
       {
-        "id": "TASK-77-02",
-        "title": "Backend: Blindaje en payments.service.ts para fijar y validar el monto del PaymentIntent directamente desde order.total / saldo en BD cuando existe orderId, y verificación en orders.controller.ts (PATCH /orders/:id/payment-status) comprobando contra Stripe si el cobro cubre el total (degradando a partially_paid con pending_balance ante montos menores)",
-        "status": "DONE",
-        "type": "BACKEND/PAYMENTS",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-77-03",
-        "title": "Certificación: Tests automatizados con Happy y Sad path (§6), compilación física, despliegue a testing y producción VPS, y ajuste del saldo pendiente ($625.00) en la orden 060d13ad-4c6b-414c-9692-7a7bc41431ee",
-        "status": "DONE",
+        "id": "TASK-78-04",
+        "title": "Certificación: Tests automatizados (happy y sad paths), compilación en limpio, despliegue y sincronización en testing y producción VPS",
+        "status": "IN_PROGRESS",
         "type": "DEPLOY/CERT",
         "veracity_hash": null
       }
