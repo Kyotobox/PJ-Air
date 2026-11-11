@@ -85,7 +85,7 @@ let BannersController = class BannersController {
         }
         const friendlyNames = {
             'seasonal_hero_flatlay_table.jpg': {
-                name: 'Mesa Completa de Bollería & Postres (Mockup Oficial)',
+                name: 'Mesa Completa de Bollería & Postres (Fotografía Oficial)',
                 orientation: 'landscape',
                 category: 'hero'
             },

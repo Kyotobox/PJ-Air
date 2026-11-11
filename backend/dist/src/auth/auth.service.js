@@ -319,7 +319,7 @@ let AuthService = AuthService_1 = class AuthService {
         if (!idToken || typeof idToken !== 'string') {
             return false;
         }
-        if (idToken === 'mock-valid-firebase-token' || idToken.startsWith('valid-test-token')) {
+        if (process.env.NODE_ENV === 'test' && (idToken === 'mock-valid-firebase-token' || idToken.startsWith('valid-test-token'))) {
             return true;
         }
         const adminSdk = (0, firebase_admin_util_1.getFirebaseAdmin)();
