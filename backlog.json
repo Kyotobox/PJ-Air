@@ -141,8 +141,9 @@
           "id": "TASK-S70-07",
           "label": "STRIPE",
           "desc": "Integración de credenciales reales Stripe y erradicación de mocks de pasarela de pago",
-          "status": "TODO",
-          "zone": "SILVER"
+          "status": "DONE",
+          "zone": "SILVER",
+          "veracity_hash": null
         }
       ]
     }

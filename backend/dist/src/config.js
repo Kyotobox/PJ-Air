@@ -37,13 +37,18 @@ exports.SMS_ENABLED = exports.TWILIO_PHONE_NUMBER = exports.TWILIO_AUTH_TOKEN = 
 exports.initialize = initialize;
 const fs = __importStar(require("fs"));
 const path_1 = require("path");
-const envPath = (0, path_1.resolve)(process.cwd(), '../.env');
-if (fs.existsSync(envPath)) {
-    const dotenv = require('dotenv');
-    const envConfig = dotenv.parse(fs.readFileSync(envPath));
-    for (const k in envConfig) {
-        if (!process.env[k]) {
-            process.env[k] = envConfig[k];
+const envCandidates = [
+    (0, path_1.resolve)(process.cwd(), '.env'),
+    (0, path_1.resolve)(process.cwd(), '../.env'),
+];
+for (const envPath of envCandidates) {
+    if (fs.existsSync(envPath)) {
+        const dotenv = require('dotenv');
+        const envConfig = dotenv.parse(fs.readFileSync(envPath));
+        for (const k in envConfig) {
+            if (!process.env[k]) {
+                process.env[k] = envConfig[k];
+            }
         }
     }
 }

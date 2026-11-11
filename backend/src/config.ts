@@ -1,14 +1,19 @@
 import * as fs from 'fs';
 import { resolve } from 'path';
 
-// Synchronously load the root .env file early
-const envPath = resolve(process.cwd(), '../.env');
-if (fs.existsSync(envPath)) {
-    const dotenv = require('dotenv');
-    const envConfig = dotenv.parse(fs.readFileSync(envPath));
-    for (const k in envConfig) {
-        if (!process.env[k]) {
-            process.env[k] = envConfig[k];
+// Synchronously load .env files early (.env in cwd and ../.env)
+const envCandidates = [
+    resolve(process.cwd(), '.env'),
+    resolve(process.cwd(), '../.env'),
+];
+for (const envPath of envCandidates) {
+    if (fs.existsSync(envPath)) {
+        const dotenv = require('dotenv');
+        const envConfig = dotenv.parse(fs.readFileSync(envPath));
+        for (const k in envConfig) {
+            if (!process.env[k]) {
+                process.env[k] = envConfig[k];
+            }
         }
     }
 }

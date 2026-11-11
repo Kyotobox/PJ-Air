@@ -8,4 +8,4 @@
 - [x] **TASK-70-04** [TASK] Configuración de Nginx para validación privada (acceso a /admin y /auth/login con / en mantenimiento)
 - [x] **TASK-70-05** [TASK] Smoke test de autenticación administrativa y verificación de los 3 pedidos en /admin/orders
 - [x] **TASK-70-06** [TASK] Apertura oficial de app.jhoanes.com, retiro de guarda de cerrado temporal y restauración de proxy en Nginx
-- [/] **TASK-S70-07** [STRIPE] Integración de credenciales reales Stripe y erradicación de mocks de pasarela de pago
+- [x] **TASK-S70-07** [STRIPE] Integración de credenciales reales Stripe y erradicación de mocks de pasarela de pago
