@@ -260,8 +260,13 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 throw new common_1.NotFoundException(`Order ${orderId} not found`);
             const totalNum = Number(order.total) || 0;
             const refundedNum = Number(order.refunded_amount) || 0;
-            const balance = Math.max(0, Math.round((totalNum - refundedNum) * 100) / 100);
-            if (balance <= 0) {
+            const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined)
+                ? Number(order.pending_balance)
+                : null;
+            const balance = (pendingBal !== null && pendingBal > 0)
+                ? Math.max(0, Math.round(pendingBal * 100) / 100)
+                : Math.max(0, Math.round((totalNum - refundedNum) * 100) / 100);
+            if (balance <= 0 || (order.payment_status === 'paid' && (!pendingBal || pendingBal <= 0))) {
                 throw new common_1.BadRequestException(`Order ${orderId} is already fully paid or refunded`);
             }
             const feeAmount = fee_calculator_service_1.FeeCalculatorService.calculateFee(balance, feeMethod);
@@ -271,7 +276,9 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 amount: amountToPay,
                 orderId: order.id,
                 customerEmail: email,
-                description: `Liquidación Factura #${order.id.slice(0, 8)} (Saldo: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Panadería Jhoanes Wholesale`,
+                description: (pendingBal !== null && pendingBal > 0)
+                    ? `Liquidación Saldo Pendiente Factura #${order.id.slice(0, 8)} (Saldo: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Panadería Jhoanes Wholesale`
+                    : `Liquidación Factura #${order.id.slice(0, 8)} (Saldo: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Panadería Jhoanes Wholesale`,
                 paymentMethodType: feeMethod === 'ACH' ? 'us_bank_account' : undefined,
             });
             if (this.stripe && intent.paymentIntentId) {
@@ -279,7 +286,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     await this.stripe.paymentIntents.update(intent.paymentIntentId, {
                         metadata: {
                             orderId: order.id,
-                            type: 'settlement',
+                            type: (pendingBal !== null && pendingBal > 0) ? 'partial_settlement' : 'settlement',
                             customerEmail: email,
                             balance: String(balance),
                             feeAmount: String(feeAmount),
@@ -368,7 +375,10 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         }
         const pendingOrders = (user.orders || []).filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado');
         const totalDebt = pendingOrders.reduce((sum, o) => {
-            const net = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
+            const pendingBal = (o.pending_balance !== null && o.pending_balance !== undefined) ? Number(o.pending_balance) : null;
+            const net = (pendingBal !== null && pendingBal > 0)
+                ? pendingBal
+                : Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
             return sum + net;
         }, 0);
         const roundedDebt = Math.round(totalDebt * 100) / 100;

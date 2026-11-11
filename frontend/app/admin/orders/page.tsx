@@ -467,8 +467,16 @@ export default function AdminOrdersPage() {
             const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? subtotal * 0.035 : 0));
             const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXEMPT');
             const grandTotal = Number(order.total) || (subtotal + deliveryFee + feeAmount);
-            const amountPaid = order.payment_status === 'paid' ? grandTotal : Math.max(0, grandTotal - (order.pending_balance ?? grandTotal));
-            const balanceDue = Math.max(0, grandTotal - amountPaid - Number(order.refunded_amount || 0));
+            const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined && Number(order.pending_balance) > 0)
+                ? Number(order.pending_balance)
+                : 0;
+            const isPartiallyPaid = order.payment_status === 'partially_paid' || (pendingBal > 0 && order.payment_status !== 'paid');
+            const amountPaid = order.payment_status === 'paid'
+                ? grandTotal
+                : (isPartiallyPaid ? Math.max(0, grandTotal - pendingBal) : 0);
+            const balanceDue = order.payment_status === 'paid'
+                ? 0
+                : (isPartiallyPaid ? pendingBal : Math.max(0, grandTotal - Number(order.refunded_amount || 0)));
 
             const itemsRows = items.map((item: any) => {
                 const price = Number(item.price_at_time || item.product?.price || 0);

@@ -92,7 +92,13 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             ? 'Store Pick Up (3304 Broadway, Astoria, NY)' 
             : (order.address ? `${order.address.address}${order.address.city ? `, ${order.address.city}` : ''}${order.address.state ? `, ${order.address.state}` : ''} ${order.address.zip_code || ''}`.trim() : (order.delivery_address_text || 'Direct Delivery'));
         const paymentMethod = (order.payment_method || 'STRIPE').toUpperCase();
-        const paymentStatus = order.payment_status === 'paid' ? 'PAID' : (order.payment_status === 'refunded' ? 'REFUNDED' : 'PENDING');
+        const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined && Number(order.pending_balance) > 0)
+            ? Number(order.pending_balance)
+            : 0;
+        const isPartiallyPaid = order.payment_status === 'partially_paid' || (pendingBal > 0 && order.payment_status !== 'paid');
+        const paymentStatus = order.payment_status === 'paid'
+            ? 'PAID'
+            : (order.payment_status === 'refunded' ? 'REFUNDED' : (isPartiallyPaid ? 'PARTIALLY PAID' : 'PENDING'));
 
         const itemsTotal = items.reduce((acc: number, item: any) => {
             const price = Number(item.price_at_time || item.product?.price || 0);
@@ -102,8 +108,12 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
         const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? itemsTotal * 0.035 : 0));
         const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXEMPT');
         const grandTotal = Number(order.total) || (itemsTotal + deliveryFee + feeAmount);
-        const amountPaid = order.payment_status === 'paid' ? grandTotal : Number(order.paid_amount || 0);
-        const balanceDue = Math.max(0, grandTotal - amountPaid - Number(order.refunded_amount || 0));
+        const amountPaid = order.payment_status === 'paid'
+            ? grandTotal
+            : (isPartiallyPaid ? Math.max(0, grandTotal - pendingBal) : Number(order.paid_amount || 0));
+        const balanceDue = order.payment_status === 'paid'
+            ? 0
+            : (isPartiallyPaid ? pendingBal : Math.max(0, grandTotal - amountPaid - Number(order.refunded_amount || 0)));
 
         const itemsRows = items.map((item: any) => {
             const price = Number(item.price_at_time || item.product?.price || 0);
@@ -271,11 +281,11 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             await api.patch(`/orders/${orderId}/payment-status`, { payment_status: 'paid' }).catch(() => {});
         } catch (_) {}
 
-        setOrder((prev: any) => prev ? { ...prev, payment_status: 'paid' } : null);
+        setOrder((prev: any) => prev ? { ...prev, payment_status: 'paid', pending_balance: 0 } : null);
         setPaymentToast({
             msg: locale === 'en'
-                ? 'Payment confirmed! Credit balance and availability updated.'
-                : '¡Pago confirmado con éxito! Cupo de crédito liberado inmediatamente.',
+                ? 'Payment confirmed! Balance settled successfully.'
+                : '¡Pago confirmado con éxito! Saldo liquidado satisfactoriamente.',
             type: 'success'
         });
         setTimeout(() => setPaymentToast(null), 5000);
@@ -466,6 +476,20 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                         <span className="text-xl font-black text-primary font-mono">${(Number(order.total) || 0).toFixed(2)}</span>
                                     </div>
 
+                                    {/* Breakdown for Partially Paid Orders */}
+                                    {(order.payment_status === 'partially_paid' || (Number(order.pending_balance) > 0 && order.payment_status !== 'paid')) && (
+                                        <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-1.5 text-xs">
+                                            <div className="flex justify-between items-center font-bold text-emerald-800">
+                                                <span>{locale === 'en' ? 'Amount Paid (Stripe):' : 'Monto Pagado (Stripe):'}</span>
+                                                <span className="font-mono font-black">${Math.max(0, Number(order.total) - Number(order.pending_balance)).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center font-bold text-amber-900 border-t border-amber-200/60 pt-1">
+                                                <span>{locale === 'en' ? 'Remaining Balance:' : 'Saldo Remanente:'}</span>
+                                                <span className="font-mono font-black">${Number(order.pending_balance).toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Zelle Receipt Link */}
                                     {order.zelle_receipt_url && (
                                         <div className="p-3 bg-purple-50 rounded-2xl border border-purple-200 flex items-center justify-between text-xs">
@@ -484,20 +508,20 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                         </div>
                                     )}
 
-                                    {/* Pending Balance Payment Section (TASK-50-03) */}
+                                    {/* Pending Balance Payment Section (TASK-50-03 & TASK-71-09) */}
                                     {Number(order.pending_balance) > 0 && (
                                         <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
                                             <div className="flex justify-between items-center text-xs font-bold text-amber-950">
-                                                <span>{locale === 'en' ? 'Pending Balance to Settle:' : 'Saldo Pendiente por Ajuste:'}</span>
+                                                <span>{locale === 'en' ? 'Pending Balance to Settle:' : 'Saldo Pendiente por Liquidar:'}</span>
                                                 <span className="font-mono text-sm font-black text-amber-900">${Number(order.pending_balance).toFixed(2)}</span>
                                             </div>
                                             <button
                                                 onClick={handlePayOnline}
                                                 disabled={isInitiatingPayment}
-                                                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2"
+                                                className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2"
                                             >
-                                                {isInitiatingPayment ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-                                                {locale === 'en' ? `Pay Balance ($${Number(order.pending_balance).toFixed(2)})` : `Pagar Diferencia ($${Number(order.pending_balance).toFixed(2)})`}
+                                                {isInitiatingPayment ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                                                {locale === 'en' ? `Pay Remaining Balance ($${Number(order.pending_balance).toFixed(2)})` : `Pagar Saldo Restante ($${Number(order.pending_balance).toFixed(2)})`}
                                             </button>
                                         </div>
                                     )}
@@ -511,6 +535,22 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                                     ? (locale === 'en' ? `Paid via Zelle (Ref: ${order.zelle_reference || 'Confirmed'})` : `Pagado con Zelle (Ref: ${order.zelle_reference || 'Confirmado'})`)
                                                     : (locale === 'en' ? 'Paid via Card (Stripe)' : 'Pagado con Tarjeta (Stripe)')}
                                             </span>
+                                        </div>
+                                    )}
+
+                                    {order.payment_status === 'partially_paid' && (
+                                        <div data-testid="order-partially-paid-badge" className="flex flex-col gap-1 p-3.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm">⚠️</span>
+                                                <span>
+                                                    {locale === 'en'
+                                                        ? `Partially Paid ($${Math.max(0, Number(order.total) - Number(order.pending_balance)).toFixed(2)} received)`
+                                                        : `Pago Parcial Recibido ($${Math.max(0, Number(order.total) - Number(order.pending_balance)).toFixed(2)} pagado)`}
+                                                </span>
+                                            </div>
+                                            <div className="text-[11px] font-mono text-amber-800">
+                                                {locale === 'en' ? `Pending Balance: $${Number(order.pending_balance).toFixed(2)}` : `Saldo Pendiente: $${Number(order.pending_balance).toFixed(2)}`}
+                                            </div>
                                         </div>
                                     )}
 
@@ -549,7 +589,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                         </div>
                                     )}
 
-                                    {order.payment_status !== 'paid' && order.payment_status !== 'refunded' && order.payment_status !== 'pending_zelle_verification' && (
+                                    {order.payment_status !== 'paid' && order.payment_status !== 'partially_paid' && order.payment_status !== 'refunded' && order.payment_status !== 'pending_zelle_verification' && (
                                         <div className="space-y-3 pt-1">
                                             {order.payment_terms === 'credit_net_15' ? (
                                                 <div data-testid="order-credit-badge" className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-sm">

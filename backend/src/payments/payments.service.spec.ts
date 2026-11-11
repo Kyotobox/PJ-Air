@@ -3,7 +3,7 @@ import { PaymentsService } from './payments.service';
 import { OrdersService } from '../orders/orders.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('PaymentsService', () => {
   let service: PaymentsService;
@@ -196,6 +196,54 @@ describe('PaymentsService', () => {
       expect(res.feeAmount).toBe(5.00);
       expect(res.feeMethod).toBe('ACH');
       expect(res.amount).toBe(1005.00);
+    });
+
+    it('TASK-71-08 Happy Path: should settle strictly pending_balance ($350) when order has remaining balance (total $2523.83)', async () => {
+      ordersService.findOne.mockResolvedValueOnce({
+        id: 'order-f8f17c1a-partial',
+        total: 2523.83,
+        refunded_amount: 0,
+        payment_status: 'partially_paid',
+        pending_balance: 350.00,
+        user: { email: 'kneadtoeatbakery@gmail.com' },
+      });
+
+      const res = await service.createSettlementLink({
+        orderId: 'order-f8f17c1a-partial',
+        paymentMethod: 'STRIPE_CARD',
+      });
+
+      // 350 * 0.035 = 12.25. Total to charge = 362.25
+      expect(res.balance).toBe(350.00);
+      expect(res.feeAmount).toBe(12.25);
+      expect(res.feeMethod).toBe('STRIPE_CARD');
+      expect(res.amount).toBe(362.25);
+      expect(res.orderId).toBe('order-f8f17c1a-partial');
+    });
+
+    it('TASK-71-08 Sad Path: should throw BadRequestException when order is already fully paid with pending_balance 0', async () => {
+      ordersService.findOne.mockResolvedValueOnce({
+        id: 'order-already-paid',
+        total: 200,
+        refunded_amount: 0,
+        payment_status: 'paid',
+        pending_balance: 0,
+        user: { email: 'buyer@example.com' },
+      });
+
+      await expect(service.createSettlementLink({
+        orderId: 'order-already-paid',
+        paymentMethod: 'STRIPE_CARD',
+      })).rejects.toThrow(BadRequestException);
+    });
+
+    it('TASK-71-08 Sad Path: should throw NotFoundException when order does not exist', async () => {
+      ordersService.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.createSettlementLink({
+        orderId: 'non-existent-order',
+        paymentMethod: 'STRIPE_CARD',
+      })).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -892,12 +892,13 @@ export default function CheckoutPage() {
     // 3. Zona resuelta por ZIP (si subtotal >= min_free_delivery_amount -> $0.00, sino -> zone.base_fee)
     // 4. Cotización Oficial MileageFreightService por coordenadas (TASK-49-06)
     // 5. Contingencia fallback ($15.00) si no hay coordenadas ni zona registrada
-    const hasVipFee = Number(profile?.delivery_fee) > 0;
+    const userCustomFee = Number((userDiscounts as any)?.delivery_fee ?? profile?.delivery_fee ?? 0);
+    const hasVipFee = userCustomFee > 0;
     let deliveryFee = 0;
     if (deliveryType === 'pickup' || isComplementaryOrder) {
         deliveryFee = 0;
     } else if (hasVipFee) {
-        deliveryFee = Number(profile?.delivery_fee);
+        deliveryFee = userCustomFee;
     } else if (resolvedZone) {
         const freeDeliveryThreshold = Number(resolvedZone.min_free_delivery_amount);
         if (freeDeliveryThreshold > 0 && discountedSubtotal >= freeDeliveryThreshold) {
