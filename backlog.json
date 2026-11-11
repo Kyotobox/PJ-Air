@@ -96,7 +96,7 @@
   "active_sprint": {
     "id": "S77",
     "title": "Sprint S77: Blindaje de Integridad Financiera y Pasarela Stripe",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-77-01",
@@ -115,7 +115,7 @@
       {
         "id": "TASK-77-03",
         "title": "Certificación: Tests automatizados con Happy y Sad path (§6), compilación física, despliegue a testing y producción VPS, y ajuste del saldo pendiente ($625.00) en la orden 060d13ad-4c6b-414c-9692-7a7bc41431ee",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "DEPLOY/CERT",
         "veracity_hash": null
       }
