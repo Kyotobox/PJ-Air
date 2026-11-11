@@ -10,13 +10,14 @@
   "turns": 0,
   "peak_bytes": 0,
   "strike_count": 0,
-  "hwc_complete": false,
+  "hwc_complete": true,
   "last_update": "2026-11-11T05:34:26.406060",
   "input_pressure": 0,
-  "degraded_ops_count": 0,
+  "degraded_ops_count": 1,
   "session_count": 3,
   "test_warning_count": 0,
   "takeover_bytes_offset": 0,
   "conversation_uuid": "4c90a2c5-d0af-4c6f-b4ea-dd0a2d112aac",
-  "peak_depth": 11.36421
+  "peak_depth": 11.36421,
+  "hwc_ts": "2026-11-11T05:52:56.164999"
 }
