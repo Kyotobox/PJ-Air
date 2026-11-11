@@ -198,4 +198,36 @@ describe('PaymentsService', () => {
       expect(res.amount).toBe(1005.00);
     });
   });
+
+  describe('Sprint S70: Live Stripe & Mock Eradication (TASK-S70-07)', () => {
+    it('should return empty list when user has no saved payment methods (zero seeded mocks)', async () => {
+      usersService.findOne.mockResolvedValueOnce({
+        id: 'user-no-cards',
+        email: 'real@jhoanes.com',
+        stripe_customer_id: null,
+      });
+
+      const methods = await service.getPaymentMethods('user-no-cards');
+      expect(methods).toEqual([]);
+      expect(methods.length).toBe(0);
+    });
+
+    it('should throw BadRequestException on createPaymentIntent if Stripe is uninitialized (sad path)', async () => {
+      (service as any).stripe = null;
+      await expect(service.createPaymentIntent({
+        amount: 50.00,
+        currency: 'usd',
+      })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException on createSetupIntent if Stripe is uninitialized (sad path)', async () => {
+      (service as any).stripe = null;
+      await expect(service.createSetupIntent('user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException on getOrCreateCustomer if Stripe is uninitialized (sad path)', async () => {
+      (service as any).stripe = null;
+      await expect(service.getOrCreateCustomer('user-1')).rejects.toThrow(BadRequestException);
+    });
+  });
 });

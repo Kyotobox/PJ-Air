@@ -24,7 +24,7 @@ export class PaymentsService {
       });
       this.logger.log('Stripe client initialized successfully.');
     } else {
-      this.logger.warn('STRIPE_SECRET_KEY not set. Payment intents will operate in mock mode.');
+      this.logger.warn('STRIPE_SECRET_KEY not set. Real payment processing requires a valid Stripe key.');
     }
   }
 
@@ -32,72 +32,64 @@ export class PaymentsService {
     const user = await this.usersService.findOne(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    if (user.stripe_customer_id) {
-      if (this.stripe) {
-        try {
-          const existing = await this.stripe.customers.retrieve(user.stripe_customer_id);
-          if (!(existing as any).deleted) {
-            return { id: existing.id, email: user.email };
-          }
-        } catch (_) {}
-      } else {
-        return { id: user.stripe_customer_id, email: user.email };
-      }
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe service is not configured');
+    }
+
+    if (user.stripe_customer_id && !user.stripe_customer_id.startsWith('cus_mock_')) {
+      try {
+        const existing = await this.stripe.customers.retrieve(user.stripe_customer_id);
+        if (!(existing as any).deleted) {
+          return { id: existing.id, email: user.email };
+        }
+      } catch (_) {}
     }
 
     // Create new Stripe Customer
-    if (this.stripe) {
-      try {
-        const customer = await this.stripe.customers.create({
-          email: user.email,
-          name: user.profile?.full_name || user.email,
-          phone: user.profile?.phone || undefined,
-          metadata: {
-            userId: user.id,
-            accountType: user.account_type || 'cash',
-          },
-        });
-        await this.usersService.updateStripeCustomerId(user.id, customer.id);
-        this.logger.log(`Created Stripe Customer ${customer.id} for user ${user.id}`);
-        return { id: customer.id, email: user.email };
-      } catch (err: any) {
-        this.logger.error(`Error creating Stripe customer: ${err.message}`);
-      }
+    try {
+      const customer = await this.stripe.customers.create({
+        email: user.email,
+        name: user.profile?.full_name || user.email,
+        phone: user.profile?.phone || undefined,
+        metadata: {
+          userId: user.id,
+          accountType: user.account_type || 'cash',
+        },
+      });
+      await this.usersService.updateStripeCustomerId(user.id, customer.id);
+      this.logger.log(`Created Stripe Customer ${customer.id} for user ${user.id}`);
+      return { id: customer.id, email: user.email };
+    } catch (err: any) {
+      this.logger.error(`Error creating Stripe customer: ${err.message}`);
+      throw new BadRequestException(`Error creating Stripe customer: ${err.message}`);
     }
-
-    const mockCusId = `cus_mock_${user.id.slice(0, 8)}`;
-    await this.usersService.updateStripeCustomerId(user.id, mockCusId);
-    return { id: mockCusId, email: user.email };
   }
 
   async createSetupIntent(userId: string): Promise<{ clientSecret: string; customerId: string }> {
-    const customer = await this.getOrCreateCustomer(userId);
-
-    if (this.stripe) {
-      try {
-        const setupParams: any = {
-          customer: customer.id,
-          payment_method_types: ['card', 'us_bank_account'],
-          usage: 'off_session',
-          metadata: {
-            userId,
-          },
-        };
-        const setupIntent = await this.stripe.setupIntents.create(setupParams);
-        return {
-          clientSecret: setupIntent.client_secret || '',
-          customerId: customer.id,
-        };
-      } catch (err: any) {
-        this.logger.error(`Error creating SetupIntent: ${err.message}`);
-        throw new BadRequestException(`Stripe SetupIntent error: ${err.message}`);
-      }
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe service is not configured');
     }
 
-    return {
-      clientSecret: `seti_mock_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`,
-      customerId: customer.id,
-    };
+    const customer = await this.getOrCreateCustomer(userId);
+
+    try {
+      const setupParams: any = {
+        customer: customer.id,
+        payment_method_types: ['card', 'us_bank_account'],
+        usage: 'off_session',
+        metadata: {
+          userId,
+        },
+      };
+      const setupIntent = await this.stripe.setupIntents.create(setupParams);
+      return {
+        clientSecret: setupIntent.client_secret || '',
+        customerId: customer.id,
+      };
+    } catch (err: any) {
+      this.logger.error(`Error creating SetupIntent: ${err.message}`);
+      throw new BadRequestException(`Stripe SetupIntent error: ${err.message}`);
+    }
   }
 
   async getPaymentMethods(userId: string): Promise<any[]> {
@@ -115,7 +107,7 @@ export class PaymentsService {
           type: 'us_bank_account',
         });
 
-        const list = [...cards.data, ...banks.data].map(pm => ({
+        return [...cards.data, ...banks.data].map(pm => ({
           id: pm.id,
           type: pm.type,
           card: pm.card ? {
@@ -131,78 +123,44 @@ export class PaymentsService {
           } : undefined,
           created: pm.created,
         }));
-
-        if (list.length > 0) return list;
       } catch (e: any) {
         this.logger.warn(`Could not list payment methods from Stripe: ${e.message}`);
       }
     }
 
-    // Default seeded fallback / mock payment methods for testing edge cases
-    return [
-      {
-        id: 'pm_saved_visa_4242',
-        type: 'card',
-        card: {
-          brand: 'visa',
-          last4: '4242',
-          exp_month: 12,
-          exp_year: 2028,
-        },
-        created: Math.floor(Date.now() / 1000),
-      },
-      {
-        id: 'pm_card_chargeDeclinedInsufficientFunds',
-        type: 'card',
-        card: {
-          brand: 'mastercard',
-          last4: '9995',
-          exp_month: 10,
-          exp_year: 2029,
-        },
-        created: Math.floor(Date.now() / 1000),
-      },
-      {
-        id: 'pm_card_threeDSecure2Required',
-        type: 'card',
-        card: {
-          brand: 'visa',
-          last4: '3155',
-          exp_month: 11,
-          exp_year: 2027,
-        },
-        created: Math.floor(Date.now() / 1000),
-      },
-    ];
+    // Return empty list if no saved payment methods in Stripe
+    return [];
   }
 
   async deletePaymentMethod(userId: string, paymentMethodId: string): Promise<{ success: boolean; id: string }> {
-    if (this.stripe && !paymentMethodId.startsWith('pm_saved_')) {
-      try {
-        await this.stripe.paymentMethods.detach(paymentMethodId);
-      } catch (e: any) {
-        this.logger.warn(`Stripe detach error: ${e.message}`);
-      }
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe service is not configured');
+    }
+    try {
+      await this.stripe.paymentMethods.detach(paymentMethodId);
+    } catch (e: any) {
+      this.logger.warn(`Stripe detach error: ${e.message}`);
+      throw new BadRequestException(`Could not remove payment method: ${e.message}`);
     }
     return { success: true, id: paymentMethodId };
   }
 
   async createCustomerPortalSession(userId: string): Promise<{ url: string }> {
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe service is not configured');
+    }
     const customer = await this.getOrCreateCustomer(userId);
 
-    if (this.stripe && !customer.id.startsWith('cus_mock_')) {
-      try {
-        const session = await this.stripe.billingPortal.sessions.create({
-          customer: customer.id,
-          return_url: 'https://testing.jhoanes.com/profile',
-        });
-        return { url: session.url };
-      } catch (e: any) {
-        this.logger.warn(`Stripe Customer Portal error: ${e.message}`);
-      }
+    try {
+      const session = await this.stripe.billingPortal.sessions.create({
+        customer: customer.id,
+        return_url: 'https://app.jhoanes.com/profile',
+      });
+      return { url: session.url };
+    } catch (e: any) {
+      this.logger.warn(`Stripe Customer Portal error: ${e.message}`);
+      throw new BadRequestException(`Stripe Customer Portal error: ${e.message}`);
     }
-
-    return { url: 'https://testing.jhoanes.com/profile?portal=mock' };
   }
 
   async createPaymentIntent(data: {
@@ -232,49 +190,15 @@ export class PaymentsService {
       throw new BadRequestException('Amount must be at least $0.50 USD');
     }
 
-    const amountInCents = Math.round(amount * 100);
-
     if (!this.stripe) {
-      return {
-        clientSecret: `pi_mock_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`,
-        paymentIntentId: `pi_mock_${Date.now()}`,
-        amount,
-        status: 'succeeded',
-      };
+      throw new BadRequestException('Stripe service is not configured');
     }
+
+    const amountInCents = Math.round(amount * 100);
 
     try {
       // 1-Click Checkout with an existing saved payment method
       if (paymentMethodId) {
-        if (paymentMethodId === 'pm_card_chargeDeclinedInsufficientFunds') {
-          throw new BadRequestException('Tu tarjeta fue rechazada: Fondos insuficientes para completar la transacción. (pm_card_chargeDeclinedInsufficientFunds)');
-        }
-
-        if (paymentMethodId === 'pm_card_threeDSecure2Required') {
-          return {
-            clientSecret: `pi_mock_3ds_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`,
-            paymentIntentId: `pi_mock_3ds_${Date.now()}`,
-            amount,
-            status: 'requires_action',
-          };
-        }
-
-        if (paymentMethodId.startsWith('pm_saved_') || !this.stripe || (customerId && customerId.startsWith('cus_mock_'))) {
-          const mockId = `pi_mock_1click_${Date.now()}`;
-          if (orderId) {
-            await this.ordersService.update(orderId, {
-              payment_status: 'paid',
-              stripe_payment_id: mockId,
-            }, 'admin');
-          }
-          return {
-            clientSecret: `${mockId}_secret`,
-            paymentIntentId: mockId,
-            amount,
-            status: 'succeeded',
-          };
-        }
-
         const intent = await this.stripe.paymentIntents.create({
           amount: amountInCents,
           currency: currency.toLowerCase(),
