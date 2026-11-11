@@ -587,6 +587,30 @@ describe('OrdersService', () => {
         service.validateCutoffTime('2026-10-22', thursday10AM, 12);
       }).toThrow(BadRequestException);
     });
+
+    it('TASK-74-01 Cutoff Time Midnight (12:08 AM ET) correctly treats hour as 0 (< 12 PM cutoff) and allows T+2', () => {
+      // Miércoles 11 Noviembre 2026 a las 12:15 AM NY (05:15 UTC)
+      const wednesdayMidnight = new Date('2026-11-11T05:15:00Z');
+      
+      // Debe calcular T+2 = Viernes 13 Noviembre 2026
+      const minDate = service.calculateMinDeliveryDate(wednesdayMidnight, 12);
+      expect(minDate).toBe('2026-11-13');
+
+      // Happy path: Viernes 13 (T+2) no debe arrojar excepción
+      expect(() => {
+        service.validateCutoffTime('2026-11-13', wednesdayMidnight, 12);
+      }).not.toThrow();
+
+      // Sad path (§6): Jueves 12 (T+1) debe arrojar BadRequestException
+      expect(() => {
+        service.validateCutoffTime('2026-11-12', wednesdayMidnight, 12);
+      }).toThrow(BadRequestException);
+
+      // Sad path (§6): Mismo día Miércoles 11 debe arrojar BadRequestException
+      expect(() => {
+        service.validateCutoffTime('2026-11-11', wednesdayMidnight, 12);
+      }).toThrow(BadRequestException);
+    });
   });
 
   describe('Sprint 43: Credit Payment Due Date & 7-Day Foundation', () => {

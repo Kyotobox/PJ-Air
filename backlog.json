@@ -3,79 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S73",
+  "current_sprint": "S74",
   "current_task": "TASK-73-01",
   "sprints": [
-    {
-      "id": "S71",
-      "name": "Sprint S71: Corrección de Flete y Conciliación de Pagos Stripe, Restricción de Métodos ACH y Configuración de Mínimo",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-71-01",
-          "title": "Reparación física de la Orden #50552F84 en base de datos de producción (remover flete de $40, dejar total en $86.88, vincular Stripe y marcar paid con balance 0)",
-          "status": "DONE",
-          "type": "PROD/DATA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-02",
-          "title": "Prevalencia estricta de regla de zonas con flete bonificado ($0) sobre sobreescritura de mileageFreightService en orders.service.ts con tests unitarios y sad path (§6)",
-          "status": "DONE",
-          "type": "CORE/LOGIC",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-03",
-          "title": "Endpoint autorizado y seguro para confirmación de pago Stripe del cliente propietario de la orden (resolución HTTP 403) con tests unitarios y sad path (§6)",
-          "status": "DONE",
-          "type": "PAYMENTS/SECURITY",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-04",
-          "title": "Restricción en Stripe Elements: excluir us_bank_account para clientes estándar, dejando solo tarjeta y wallets digitales",
-          "status": "DONE",
-          "type": "UI/STRIPE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-05",
-          "title": "Verificación y soporte de Monto Mínimo de Pedido configurable en panel de administración (/admin) a nivel global y por cliente",
-          "status": "DONE",
-          "type": "ADMIN/CONFIG",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-06",
-          "title": "Compilación física de Backend y Frontend, sincronización y despliegue a producción (187.124.67.53), recarga de PM2 y certificación en vivo",
-          "status": "DONE",
-          "type": "DEPLOY/PROD",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-07",
-          "title": "Conciliación y reparación física en producción de Orden #F8F17C1A vinculando pi_3UaS3BS91wzOMOtr1n1xFOiY ($2,173.83), asignando payment_status partially_paid y pending_balance de $350.00",
-          "status": "DONE",
-          "type": "PROD/DATA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-08",
-          "title": "Soporte en createSettlementLink para cobrar estrictamente el pending_balance cuando exista saldo remanente, con tests unitarios y sad paths (§6)",
-          "status": "DONE",
-          "type": "CORE/LOGIC",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-71-09",
-          "title": "Corrección en checkout para usar tarifa de entrega fresca del perfil y en la vista de orden / factura para mostrar saldo remanente y permitir pagarlo en línea",
-          "status": "DONE",
-          "type": "UI/PAYMENTS",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S72",
       "title": "Sprint S72: Liquidación de Saldos Parciales, Conciliación F8F17C1A y Resincronización de Flete",
@@ -114,7 +44,7 @@
     {
       "id": "S73",
       "title": "Sprint S73: Operatividad de Planta, Onboarding Forzoso, Credenciales y Parámetros Administrativos B2B",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "tasks": [
         {
           "id": "TASK-73-01",
@@ -166,9 +96,37 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S74",
+      "title": "Sprint S74: Corrección de Cálculo de Hora de Corte en Medianoche y Visibilidad de Errores en Checkout",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-74-01",
+          "title": "Corrección de normalización de hora NY en medianoche (hour === 24 -> 0) en OrdersService para cálculo y validación de corte de entrega",
+          "status": "DONE",
+          "type": "DOMAIN/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-74-02",
+          "title": "Propagación de mensaje de error específico del servidor en notificación toast de Checkout",
+          "status": "DONE",
+          "type": "UI/CHECKOUT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-74-03",
+          "title": "Suite de pruebas automatizadas (§6 con sad path de medianoche), compilación física, despliegue a producción y certificación en vivo",
+          "status": "IN_PROGRESS",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 64,
+  "archived_sprints_count": 65,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S73",

@@ -78,7 +78,9 @@ let OrdersService = class OrdersService {
         const mo = dateParts.find(p => p.type === 'month')?.value || '01';
         const da = dateParts.find(p => p.type === 'day')?.value || '01';
         const timeParts = nyTimeFormatter.formatToParts(now);
-        const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        let nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        if (nyHour === 24)
+            nyHour = 0;
         const config = scheduleConfig || this.systemConfigsService?.getCachedDeliverySchedule?.();
         const effectiveCutoff = config?.cutoffHour ?? cutoffHour;
         const pastCutoff = nyHour >= effectiveCutoff;
@@ -181,7 +183,9 @@ let OrdersService = class OrdersService {
         const da = dateParts.find(p => p.type === 'day')?.value || '01';
         const nyDateStr = `${yr}-${mo}-${da}`;
         const timeParts = nyTimeFormatter.formatToParts(now);
-        const nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        let nyHour = parseInt(timeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        if (nyHour === 24)
+            nyHour = 0;
         const effectiveCutoff = config?.cutoffHour ?? cutoffHour;
         const pastCutoff = nyHour >= effectiveCutoff;
         if (targetDate < minDeliveryDateStr) {
@@ -993,7 +997,9 @@ let OrdersService = class OrdersService {
         const daNow = nowParts.find(p => p.type === 'day')?.value || '01';
         const nyNowDateStr = `${yrNow}-${moNow}-${daNow}`;
         const nowTimeParts = nyTimeFormatter.formatToParts(now);
-        const nyNowHour = parseInt(nowTimeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        let nyNowHour = parseInt(nowTimeParts.find(p => p.type === 'hour')?.value || '0', 10);
+        if (nyNowHour === 24)
+            nyNowHour = 0;
         const orderCreatedAt = order.created_at ? new Date(order.created_at) : now;
         const orderParts = nyDateFormatter.formatToParts(orderCreatedAt);
         const yrOrd = orderParts.find(p => p.type === 'year')?.value || '1970';

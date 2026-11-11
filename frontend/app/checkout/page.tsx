@@ -1350,12 +1350,16 @@ export default function CheckoutPage() {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error placing order:', error);
-            showNotification(lbl(
-                'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.',
-                'There was an error processing your order. Please try again.'
-            ), 'error');
+            const serverMsg = error?.response?.data?.message;
+            const errorMsg = Array.isArray(serverMsg)
+                ? serverMsg.join(', ')
+                : (serverMsg || lbl(
+                    'Hubo un error al procesar tu pedido. Por favor, intenta de nuevo.',
+                    'There was an error processing your order. Please try again.'
+                ));
+            showNotification(errorMsg, 'error');
         } finally {
             setIsLoading(false);
         }
