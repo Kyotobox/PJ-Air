@@ -119,7 +119,7 @@
         {
           "id": "TASK-74-03",
           "title": "Suite de pruebas automatizadas (§6 con sad path de medianoche), compilación física, despliegue a producción y certificación en vivo",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "DEPLOY/CERT",
           "veracity_hash": null
         }
