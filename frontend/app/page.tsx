@@ -462,11 +462,6 @@ export default function Home() {
     const { user, profile, isLoading: authLoading } = useAuth();
     const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
 
-    // Cerrado temporalmente para todo público externo
-    if (!isAdmin) {
-        return <TemporarilyClosed />;
-    }
-
     const { addToCart, cart } = useCart();
     const { t, locale } = useLanguage();
 

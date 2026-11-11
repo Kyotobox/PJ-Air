@@ -129,6 +129,13 @@
           "status": "DONE",
           "type": "SMOKE/CERT",
           "veracity_hash": null
+        },
+        {
+          "id": "TASK-70-06",
+          "title": "Apertura oficial de app.jhoanes.com, retiro de guarda de cerrado temporal y restauración de proxy en Nginx",
+          "status": "IN_PROGRESS",
+          "type": "PROD/LAUNCH",
+          "veracity_hash": null
         }
       ]
     }
