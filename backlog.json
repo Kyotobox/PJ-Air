@@ -93,7 +93,7 @@
     {
       "id": "S75",
       "title": "Sprint S75: Estandarización Total en Inglés de Correos, Recibos, Facturas y Notificaciones Transaccionales B2B",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-75-01",
@@ -124,26 +124,26 @@
   "active_sprint": {
     "id": "S75",
     "title": "Sprint S75: Estandarización Total en Inglés de Correos, Recibos, Facturas y Notificaciones Transaccionales B2B",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-75-01",
         "title": "Estandarización a 100% inglés de correos de órdenes, recibos y suscripciones (sendOrderReceipt, sendRefundReceipt, sendStandingOrderConfirmation) en backend/src/mail/mail.service.ts",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "MAIL/TEMPLATES",
         "veracity_hash": null
       },
       {
         "id": "TASK-75-02",
         "title": "Estandarización a 100% inglés de alertas de crédito, pagos fallidos, Zelle, contraseñas y plantilla HTML de factura vencida (invoice_overdue.html, sendCreditAlert, sendPaymentFailedAlert, sendOverdueInvoiceAlert, sendZelleRejectionAlert, sendPasswordResetEmail)",
-        "status": "TODO",
+        "status": "DONE",
         "type": "MAIL/ALERTS",
         "veracity_hash": null
       },
       {
         "id": "TASK-75-03",
         "title": "Auditoría exhaustiva de recibos/facturas en Frontend y Backend, actualización de suite de tests en mail.service.spec.ts (§6), compilación física, despliegue a producción y testing, y verificación en vivo",
-        "status": "TODO",
+        "status": "DONE",
         "type": "DEPLOY/CERT",
         "veracity_hash": null
       }
