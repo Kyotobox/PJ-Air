@@ -65,7 +65,7 @@
     {
       "id": "S76",
       "title": "Sprint S76: Inhabilitación de Pedidos y Aislamiento de Órdenes de Producción, Cocina y Reportes Financieros",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-76-01",
@@ -96,26 +96,26 @@
   "active_sprint": {
     "id": "S76",
     "title": "Sprint S76: Inhabilitación de Pedidos y Aislamiento de Órdenes de Producción, Cocina y Reportes Financieros",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-76-01",
         "title": "Backend: Endpoints PATCH /orders/:id/disable y POST /orders/bulk-disable con notas forenses de auditoría, y exclusión de órdenes canceladas en FinancialReportsCron",
-        "status": "TODO",
+        "status": "DONE",
         "type": "BACKEND/ORDERS",
         "veracity_hash": null
       },
       {
         "id": "TASK-76-02",
         "title": "Frontend: Botón de acción rápida individual 🚫 Inhabilitar Pedido, soporte de selección masiva (bulk disable), sincronización bilingüe de estados en filtros y badges, y actualización de FinancialStatusBadge",
-        "status": "TODO",
+        "status": "DONE",
         "type": "FRONTEND/ORDERS",
         "veracity_hash": null
       },
       {
         "id": "TASK-76-03",
         "title": "Certificación: Suite de pruebas automatizadas (§6 con sad path), inhabilitación de compras de prueba existentes en base de datos, compilación física (build), y verificación integral",
-        "status": "TODO",
+        "status": "DONE",
         "type": "DEPLOY/CERT",
         "veracity_hash": null
       }
