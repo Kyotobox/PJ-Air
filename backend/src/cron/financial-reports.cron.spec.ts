@@ -17,10 +17,11 @@ describe('FinancialReportsCron', () => {
     const mockQueryBuilder = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([
-        { id: 'order-cron-1', total: 250, payment_method: 'stripe', payment_status: 'paid' },
-        { id: 'order-cron-2', total: 400, payment_method: 'zelle', payment_status: 'paid' },
+        { id: 'order-cron-1', total: 250, payment_method: 'stripe', payment_status: 'paid', status: 'approved' },
+        { id: 'order-cron-2', total: 400, payment_method: 'zelle', payment_status: 'paid', status: 'delivered' },
       ]),
     };
 
@@ -70,6 +71,21 @@ describe('FinancialReportsCron', () => {
       '2026-11-01',
       expect.any(Buffer),
     );
+    expect(mockOrderRepository.createQueryBuilder().andWhere).toHaveBeenCalledWith(
+      'order.status NOT IN (:...cancelled)',
+      { cancelled: ['cancelled', 'Cancelado'] },
+    );
+  });
+
+  it('should exclude cancelled orders from financial reports query and process only active orders (happy path)', async () => {
+    const qb = mockOrderRepository.createQueryBuilder();
+    const result = await cron.handleDailyFinancialReportDispatch('2026-11-01');
+
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'order.status NOT IN (:...cancelled)',
+      { cancelled: ['cancelled', 'Cancelado'] },
+    );
+    expect(result.ordersCount).toBe(2);
   });
 
   it('should fallback to default email if config contains empty or invalid emails (happy path fallback)', async () => {
@@ -94,11 +110,27 @@ describe('FinancialReportsCron', () => {
     const brokenQueryBuilder = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockRejectedValue(new Error('Database disk I/O error')),
     };
     mockOrderRepository.createQueryBuilder.mockReturnValue(brokenQueryBuilder);
 
     await expect(cron.handleDailyFinancialReportDispatch('2026-11-01')).rejects.toThrow('Database disk I/O error');
+  });
+
+  it('should throw error if query builder andWhere throws an exclusion syntax error (sad path §6)', async () => {
+    const brokenAndWhereQb = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockImplementation(() => {
+        throw new Error('SQL syntax error in NOT IN clause');
+      }),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
+    mockOrderRepository.createQueryBuilder.mockReturnValue(brokenAndWhereQb);
+
+    await expect(cron.handleDailyFinancialReportDispatch('2026-11-01')).rejects.toThrow('SQL syntax error in NOT IN clause');
   });
 });

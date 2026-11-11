@@ -96,53 +96,57 @@ let MailService = MailService_1 = class MailService {
         if (!this.transporter || !customerEmail)
             return false;
         try {
+            const orderIdShort = (order.id || '').toString().slice(0, 8);
             const itemsListHtml = (order.items || [])
                 .map((item) => `
           <tr>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.product_name || item.name || 'Producto'}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.product_name || item.name || 'Bakery Item'}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${Number(item.price_at_time || item.price || 0).toFixed(2)}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${(Number(item.price_at_time || item.price || 0) * item.quantity).toFixed(2)}</td>
           </tr>`)
                 .join('');
             const deliveryFeeHtml = Number(order.delivery_fee_charged || 0) > 0
-                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">Tarifa de Envío:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${Number(order.delivery_fee_charged).toFixed(2)}</td></tr>`
+                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">Delivery Fee:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${Number(order.delivery_fee_charged).toFixed(2)}</td></tr>`
                 : '';
             const taxLineHtml = order.tax_exempt
-                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold; color: #059669;">Sales Tax NY (ST-120 Exento):</td><td style="padding: 8px 12px; text-align: right; font-weight: bold; color: #059669;">$0.00 (0.00%)</td></tr>`
+                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold; color: #059669;">Sales Tax NY (ST-120 Exempt):</td><td style="padding: 8px 12px; text-align: right; font-weight: bold; color: #059669;">$0.00 (0.00%)</td></tr>`
                 : Number(order.tax_amount || 0) > 0
-                    ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">Sales Tax NY:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${Number(order.tax_amount).toFixed(2)}</td></tr>`
+                    ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">NY Sales Tax:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${Number(order.tax_amount).toFixed(2)}</td></tr>`
                     : '';
             const taxLegendHtml = order.tax_legend
                 ? `<div style="margin-top: 16px; padding: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; font-size: 11px; color: #065f46; line-height: 1.4;">
-             <strong>Certificación Oficial NYS DTF:</strong> ${order.tax_legend}
+             <strong>Official NYS DTF Resale Certification:</strong> ${order.tax_legend}
            </div>`
                 : '';
-            let paymentStatusText = '⏳ Pendiente según condiciones comerciales';
+            let paymentStatusText = '⏳ Pending (Commercial Terms)';
             if (order.payment_status === 'paid') {
-                paymentStatusText = '✅ Pagado vía Stripe';
+                paymentStatusText = '✅ Paid via Stripe';
             }
             else if (order.payment_status === 'credit') {
-                paymentStatusText = '📝 Cargado a Crédito Comercial B2B';
+                paymentStatusText = '📝 Charged to B2B Commercial Credit';
             }
             else if (order.payment_status === 'partially_refunded') {
-                paymentStatusText = '🔄 Reembolso Parcial Aplicado';
+                paymentStatusText = '🔄 Partial Refund Applied';
             }
             else if (order.payment_status === 'refunded') {
-                paymentStatusText = '↩️ Reembolsado Totalmente';
+                paymentStatusText = '↩️ Fully Refunded';
+            }
+            else if (order.payment_status === 'partially_paid') {
+                paymentStatusText = '⚡ Partially Paid (Pending Settlement)';
             }
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
-          <h2 style="color: #b8860b; margin-bottom: 4px;">Panadería Jhoanes — Recibo de Pedido</h2>
-          <p style="color: #64748b; font-size: 14px; margin-top: 0;">Orden #${(order.id || '').toString().slice(0, 8)} • Fecha de Entrega: <strong>${order.delivery_date || 'Programada'}</strong></p>
+          <h2 style="color: #b8860b; margin-bottom: 4px;">Jhoanes Bakery — Order Receipt</h2>
+          <p style="color: #64748b; font-size: 14px; margin-top: 0;">Order #${orderIdShort} • Delivery Date: <strong>${order.delivery_date || 'Scheduled'}</strong></p>
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
           <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
             <thead>
               <tr style="background: #f8fafc; text-align: left; color: #475569;">
-                <th style="padding: 8px 12px;">Producto</th>
-                <th style="padding: 8px 12px; text-align: center;">Cantidad</th>
-                <th style="padding: 8px 12px; text-align: right;">Precio</th>
-                <th style="padding: 8px 12px; text-align: right;">Subtotal</th>
+                <th style="padding: 8px 12px;">Item Description</th>
+                <th style="padding: 8px 12px; text-align: center;">Qty</th>
+                <th style="padding: 8px 12px; text-align: right;">Unit Price</th>
+                <th style="padding: 8px 12px; text-align: right;">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -150,24 +154,24 @@ let MailService = MailService_1 = class MailService {
               ${deliveryFeeHtml}
               ${taxLineHtml}
               <tr style="font-size: 16px; background: #fefce8;">
-                <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">TOTAL FINAL:</td>
+                <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">TOTAL AMOUNT:</td>
                 <td style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">$${Number(order.total || 0).toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
           ${taxLegendHtml}
           <div style="margin-top: 24px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px; color: #475569;">
-            <p style="margin: 0;"><strong>Estado del Pago:</strong> ${paymentStatusText}</p>
+            <p style="margin: 0;"><strong>Payment Status:</strong> ${paymentStatusText}</p>
           </div>
           <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; text-align: center;">
-            Gracias por confiar en Panadería Jhoanes Wholesale.
+            Thank you for choosing Jhoanes Bakery Wholesale.
           </p>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <orders@jhoanes.com>',
                 to: customerEmail,
-                subject: `Recibo de Compra #${(order.id || '').toString().slice(0, 8)} — Panadería Jhoanes`,
+                subject: `Order Receipt #${orderIdShort} — Jhoanes Bakery Wholesale`,
                 html,
             });
             this.logger.log(`Order receipt sent successfully to ${customerEmail}`);
@@ -290,7 +294,7 @@ let MailService = MailService_1 = class MailService {
             const itemsListHtml = (order.items || [])
                 .map((item) => `
           <tr>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 500;">${item.product?.name || item.product_name || item.name || 'Producto'}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 500;">${item.product?.name || item.product_name || item.name || 'Bakery Item'}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: bold; color: #1e293b;">${item.quantity}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${Number(item.price_at_time || item.price || 0).toFixed(2)}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${(Number(item.price_at_time || item.price || 0) * item.quantity).toFixed(2)}</td>
@@ -298,63 +302,63 @@ let MailService = MailService_1 = class MailService {
                 .join('');
             const deliveryFee = Number(order.delivery_fee_charged || 0);
             const deliveryFeeHtml = deliveryFee > 0
-                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">Flete / Envío:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${deliveryFee.toFixed(2)}</td></tr>`
+                ? `<tr><td colspan="3" style="padding: 8px 12px; text-align: right; font-weight: bold;">Delivery Fee:</td><td style="padding: 8px 12px; text-align: right; font-weight: bold;">$${deliveryFee.toFixed(2)}</td></tr>`
                 : '';
             const deliveryTypeText = order.delivery_type === 'pickup'
-                ? '📦 Retiro en Panadería (Pick Up)'
-                : `🚚 Entrega a Domicilio: ${order.delivery_address_text || order.address?.street || 'Dirección registrada'}`;
-            let paymentStatusBadge = '<span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-weight: bold;">⏳ PENDIENTE</span>';
+                ? '📦 Bakery Store Pickup (Pick Up)'
+                : `🚚 Direct Delivery: ${order.delivery_address_text || order.address?.street || 'Registered Address'}`;
+            let paymentStatusBadge = '<span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-weight: bold;">⏳ PENDING</span>';
             if (order.payment_status === 'paid') {
-                paymentStatusBadge = '<span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: bold;">✅ PAGADO (Stripe)</span>';
+                paymentStatusBadge = '<span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: bold;">✅ PAID (Stripe)</span>';
             }
             else if (order.payment_status === 'credit') {
-                paymentStatusBadge = '<span style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-weight: bold;">📝 CRÉDITO COMERCIAL</span>';
+                paymentStatusBadge = '<span style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-weight: bold;">📝 COMMERCIAL CREDIT</span>';
             }
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
           <div style="background: #1e293b; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;">
-            <h2 style="color: #f59e0b; margin: 0; font-size: 20px;">🔔 Alerta de Nueva Orden Mayorista</h2>
-            <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 0 0;">Notificación Operativa de Producción y Horneados</p>
+            <h2 style="color: #f59e0b; margin: 0; font-size: 20px;">🔔 New Wholesale Order Notification</h2>
+            <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 0 0;">Production & Baking Operational Alert</p>
           </div>
           
           <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
-            <p style="margin: 0 0 8px 0;"><strong>Orden:</strong> #${orderIdShort} (ID completo: ${order.id})</p>
-            <p style="margin: 0 0 8px 0;"><strong>Cliente B2B:</strong> ${clientName || 'Cliente Mayorista'}</p>
-            <p style="margin: 0 0 8px 0;"><strong>Email Contacto:</strong> ${customerEmail || order.user?.email || 'N/A'}</p>
-            <p style="margin: 0 0 8px 0;"><strong>Fecha Entrega Solicitada:</strong> <strong style="color: #b45309;">${order.delivery_date || 'Programada'}</strong></p>
-            <p style="margin: 0 0 8px 0;"><strong>Modalidad:</strong> ${deliveryTypeText}</p>
-            <p style="margin: 0;"><strong>Estado Financiero:</strong> ${paymentStatusBadge}</p>
+            <p style="margin: 0 0 8px 0;"><strong>Order:</strong> #${orderIdShort} (Full ID: ${order.id})</p>
+            <p style="margin: 0 0 8px 0;"><strong>B2B Customer:</strong> ${clientName || 'Wholesale Client'}</p>
+            <p style="margin: 0 0 8px 0;"><strong>Contact Email:</strong> ${customerEmail || order.user?.email || 'N/A'}</p>
+            <p style="margin: 0 0 8px 0;"><strong>Requested Delivery Date:</strong> <strong style="color: #b45309;">${order.delivery_date || 'Scheduled'}</strong></p>
+            <p style="margin: 0 0 8px 0;"><strong>Delivery Mode:</strong> ${deliveryTypeText}</p>
+            <p style="margin: 0;"><strong>Financial Status:</strong> ${paymentStatusBadge}</p>
           </div>
 
-          <h3 style="color: #334155; font-size: 16px; margin: 20px 0 10px 0;">Productos a Producir y Despachar</h3>
+          <h3 style="color: #334155; font-size: 16px; margin: 20px 0 10px 0;">Items Scheduled for Production</h3>
           <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
             <thead>
               <tr style="background: #f1f5f9; text-align: left; color: #475569;">
-                <th style="padding: 8px 12px;">Producto</th>
-                <th style="padding: 8px 12px; text-align: center;">Cantidad</th>
-                <th style="padding: 8px 12px; text-align: right;">Unitario</th>
-                <th style="padding: 8px 12px; text-align: right;">Subtotal</th>
+                <th style="padding: 8px 12px;">Item Description</th>
+                <th style="padding: 8px 12px; text-align: center;">Qty</th>
+                <th style="padding: 8px 12px; text-align: right;">Unit Price</th>
+                <th style="padding: 8px 12px; text-align: right;">Amount</th>
               </tr>
             </thead>
             <tbody>
               ${itemsListHtml}
               ${deliveryFeeHtml}
               <tr style="font-size: 16px; background: #fefce8;">
-                <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">TOTAL ORDEN:</td>
+                <td colspan="3" style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">ORDER TOTAL:</td>
                 <td style="padding: 12px; text-align: right; font-weight: bold; color: #854d0e;">$${Number(order.total || 0).toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
 
           <div style="border-top: 1px dashed #cbd5e1; padding-top: 12px; font-size: 12px; color: #64748b; text-align: center;">
-            <p style="margin: 0;">Generado automáticamente por el motor de despacho de Panadería Jhoanes Wholesale.</p>
+            <p style="margin: 0;">Automatically generated by the Jhoanes Bakery Wholesale dispatch engine.</p>
           </div>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <orders@jhoanes.com>',
                 to: adminEmail,
-                subject: `🔔 Nueva Orden Recibida #${orderIdShort} — ${clientName || customerEmail || 'Cliente Wholesale'}`,
+                subject: `🔔 New Wholesale Order #${orderIdShort} — ${clientName || customerEmail || 'Wholesale Client'}`,
                 html,
             });
             this.logger.log(`Admin new order alert sent to ${adminEmail} for order #${orderIdShort}`);
@@ -377,52 +381,52 @@ let MailService = MailService_1 = class MailService {
             const isFullRefund = remainingBalance <= 0.001;
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
-          <h2 style="color: #0d9488; margin-bottom: 4px;">Panadería Jhoanes — Comprobante de Reembolso</h2>
-          <p style="color: #64748b; font-size: 14px; margin-top: 0;">Orden #${orderIdShort} • Notificación de Devolución Contable</p>
+          <h2 style="color: #0d9488; margin-bottom: 4px;">Jhoanes Bakery Wholesale — Refund Receipt</h2>
+          <p style="color: #64748b; font-size: 14px; margin-top: 0;">Order #${orderIdShort} • Accounting Refund Notification</p>
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
           
           <div style="background: #f0fdfa; border: 1px solid #ccfbf1; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
             <p style="margin: 0 0 8px 0; font-size: 14px; color: #115e59;">
-              Estimado cliente, se ha procesado una devolución contable en su cuenta comercial:
+              Dear Valued Customer, an accounting refund has been processed for your commercial account:
             </p>
             <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 12px;">
               <tr>
-                <td style="padding: 6px 0; color: #475569;">Monto Reembolsado en esta Operación:</td>
+                <td style="padding: 6px 0; color: #475569;">Amount Refunded in this Transaction:</td>
                 <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #0f766e; font-size: 16px;">+$${refundedAmount.toFixed(2)}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; color: #475569;">Total Acumulado Reembolsado:</td>
+                <td style="padding: 6px 0; color: #475569;">Total Cumulative Refunded:</td>
                 <td style="padding: 6px 0; text-align: right; font-weight: bold;">$${totalRefunded.toFixed(2)}</td>
               </tr>
               <tr>
-                <td style="padding: 6px 0; color: #475569;">Importe Original de la Orden:</td>
+                <td style="padding: 6px 0; color: #475569;">Original Order Amount:</td>
                 <td style="padding: 6px 0; text-align: right;">$${originalTotal.toFixed(2)}</td>
               </tr>
               <tr style="border-top: 1px solid #99f6e4;">
-                <td style="padding: 8px 0; font-weight: bold; color: #1e293b;">Saldo Remanente de la Orden:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #1e293b;">Remaining Order Balance:</td>
                 <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #1e293b;">$${remainingBalance.toFixed(2)}</td>
               </tr>
             </table>
           </div>
 
           <div style="margin-bottom: 20px; font-size: 13px; color: #475569; background: #f8fafc; padding: 12px; border-radius: 8px;">
-            <p style="margin: 0 0 4px 0;"><strong>Tipo de Reembolso:</strong> ${isFullRefund ? '✅ Reembolso Total de la Orden' : '🔄 Reembolso Parcial / Ajuste de Factura'}</p>
-            <p style="margin: 0;"><strong>Motivo Registrado:</strong> ${refundData.reason || 'Ajuste administrativo comercial pactado'}</p>
+            <p style="margin: 0 0 4px 0;"><strong>Refund Type:</strong> ${isFullRefund ? '✅ Full Order Refund' : '🔄 Partial Refund / Invoice Adjustment'}</p>
+            <p style="margin: 0;"><strong>Recorded Reason:</strong> ${refundData.reason || 'Agreed commercial administrative adjustment'}</p>
           </div>
 
           <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
-            Si el pago fue realizado mediante tarjeta en Stripe, verá reflejado el saldo en su extracto bancario en 5-10 días hábiles. Para compras a crédito, el saldo deudor de su línea comercial ha sido descontado automáticamente.
+            If the payment was processed by card via Stripe, the refund will be reflected on your bank statement within 5–10 business days. For purchases on credit, your commercial line balance has been automatically credited.
           </p>
 
           <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; text-align: center;">
-            Panadería Jhoanes Wholesale — Departamento de Facturación y Finanzas
+            Jhoanes Bakery Wholesale — Billing & Finance Department
           </p>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <billing@jhoanes.com>',
                 to: customerEmail,
-                subject: `Comprobante de Reembolso — Orden #${orderIdShort} — Panadería Jhoanes`,
+                subject: `Refund Receipt — Order #${orderIdShort} — Jhoanes Bakery Wholesale`,
                 html,
             });
             this.logger.log(`Refund receipt sent successfully to ${customerEmail} for order #${orderIdShort}`);
@@ -438,13 +442,13 @@ let MailService = MailService_1 = class MailService {
             return false;
         try {
             const dayTranslations = {
-                mon: 'Lunes',
-                tue: 'Martes',
-                wed: 'Miércoles',
-                thu: 'Jueves',
-                fri: 'Viernes',
-                sat: 'Sábado',
-                sun: 'Domingo',
+                mon: 'Monday',
+                tue: 'Tuesday',
+                wed: 'Wednesday',
+                thu: 'Thursday',
+                fri: 'Friday',
+                sat: 'Saturday',
+                sun: 'Sunday',
             };
             let daysList = [];
             try {
@@ -476,48 +480,48 @@ let MailService = MailService_1 = class MailService {
             const itemsHtml = itemsList
                 .map((item) => `
           <tr>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${item.productName || item.name || item.product?.name || 'Producto'}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${item.productName || item.name || item.product?.name || 'Bakery Item'}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: bold;">${item.quantity || 1}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${Number(item.price || 0).toFixed(2)}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${((Number(item.price || 0)) * (Number(item.quantity || 1))).toFixed(2)}</td>
           </tr>`)
                 .join('');
             const paymentMethodText = scheduledOrder.payment_method === 'credit'
-                ? 'Crédito Comercial B2B'
-                : 'Tarjeta Domiciliada / Pago Automático';
+                ? 'B2B Commercial Credit'
+                : 'Saved Card / Auto-Pay';
             const deliveryTypeText = scheduledOrder.delivery_type === 'pickup'
-                ? 'Retiro en Panadería (Pick Up)'
-                : 'Entrega a Domicilio';
+                ? 'Bakery Pickup (Pick Up)'
+                : 'Direct Delivery';
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
-          <h2 style="color: #4f46e5; margin-bottom: 4px;">Panadería Jhoanes Wholesale</h2>
-          <h3 style="color: #1e293b; margin-top: 0;">Confirmación de Suscripción Semanal</h3>
-          <p style="color: #64748b; font-size: 14px;">Estimado(a) <strong>${clientName || 'Cliente Mayorista'}</strong>,</p>
+          <h2 style="color: #4f46e5; margin-bottom: 4px;">Jhoanes Bakery Wholesale</h2>
+          <h3 style="color: #1e293b; margin-top: 0;">Weekly Subscription Confirmation</h3>
+          <p style="color: #64748b; font-size: 14px;">Dear <strong>${clientName || 'Valued Wholesale Partner'}</strong>,</p>
           <p style="color: #334155; font-size: 14px; line-height: 1.5;">
-            Su suscripción fija <strong>"${scheduledOrder.title || 'Suscripción Semanal Mayorista'}"</strong> ha sido configurada y activada con éxito en nuestra plataforma mayorista.
+            Your standing recurring order <strong>"${scheduledOrder.title || 'Weekly Wholesale Subscription'}"</strong> has been successfully configured and activated on our wholesale platform.
           </p>
 
           <div style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 16px; margin: 20px 0; font-size: 14px; line-height: 1.6;">
-            <p style="margin: 0 0 6px 0;"><strong>📅 Días de Entrega Programados:</strong> ${formattedDays || 'Lunes, Miércoles, Viernes'}</p>
-            <p style="margin: 0 0 6px 0;"><strong>⏰ Horario de Entrega / Despacho:</strong> ${scheduledOrder.delivery_time || '08:00 AM'}</p>
-            <p style="margin: 0 0 6px 0;"><strong>🚚 Modalidad:</strong> ${deliveryTypeText}</p>
-            <p style="margin: 0;"><strong>💳 Método de Pago:</strong> ${paymentMethodText}</p>
+            <p style="margin: 0 0 6px 0;"><strong>📅 Scheduled Delivery Days:</strong> ${formattedDays || 'Monday, Wednesday, Friday'}</p>
+            <p style="margin: 0 0 6px 0;"><strong>⏰ Estimated Delivery Window:</strong> ${scheduledOrder.delivery_time || '08:00 AM'}</p>
+            <p style="margin: 0 0 6px 0;"><strong>🚚 Delivery Mode:</strong> ${deliveryTypeText}</p>
+            <p style="margin: 0;"><strong>💳 Payment Method:</strong> ${paymentMethodText}</p>
           </div>
 
-          <h4 style="color: #334155; margin: 16px 0 8px 0;">Desglose de Productos Suscritos</h4>
+          <h4 style="color: #334155; margin: 16px 0 8px 0;">Subscribed Bakery Items Breakdown</h4>
           <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 16px;">
             <thead>
               <tr style="background: #f8fafc; text-align: left; color: #475569;">
-                <th style="padding: 8px 12px;">Producto</th>
-                <th style="padding: 8px 12px; text-align: center;">Cantidad</th>
-                <th style="padding: 8px 12px; text-align: right;">Unitario</th>
-                <th style="padding: 8px 12px; text-align: right;">Subtotal</th>
+                <th style="padding: 8px 12px;">Item Description</th>
+                <th style="padding: 8px 12px; text-align: center;">Qty</th>
+                <th style="padding: 8px 12px; text-align: right;">Unit Price</th>
+                <th style="padding: 8px 12px; text-align: right;">Amount</th>
               </tr>
             </thead>
             <tbody>
               ${itemsHtml}
               <tr style="font-size: 15px; background: #eef2ff;">
-                <td colspan="3" style="padding: 10px 12px; text-align: right; font-weight: bold; color: #3730a3;">TOTAL ESTIMADO POR ENTREGA:</td>
+                <td colspan="3" style="padding: 10px 12px; text-align: right; font-weight: bold; color: #3730a3;">ESTIMATED TOTAL PER DELIVERY:</td>
                 <td style="padding: 10px 12px; text-align: right; font-weight: bold; color: #3730a3;">$${Number(scheduledOrder.total || 0).toFixed(2)}</td>
               </tr>
             </tbody>
@@ -525,19 +529,19 @@ let MailService = MailService_1 = class MailService {
 
           <div style="background: #f8fafc; border-radius: 8px; padding: 12px; font-size: 12px; color: #64748b; margin-top: 20px;">
             <p style="margin: 0;">
-              <strong>Aviso de Operaciones:</strong> Sus pedidos recurrentes se generarán automáticamente en el sistema en las mañanas de los días pactados. Puede pausar, editar cantidades o cancelar su recurrencia en cualquier momento desde su portal de cliente.
+              <strong>Operations Notice:</strong> Your recurring orders will be automatically generated in the system on the mornings of your scheduled delivery days. You can pause, adjust quantities, or cancel your recurrence at any time from your customer portal.
             </p>
           </div>
 
           <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; text-align: center;">
-            Gracias por su preferencia comercial • Panadería Jhoanes Wholesale
+            Thank you for your business • Jhoanes Bakery Wholesale
           </p>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <subscriptions@jhoanes.com>',
                 to: customerEmail,
-                subject: `Confirmación de Suscripción Semanal — Panadería Jhoanes Wholesale`,
+                subject: `Weekly Subscription Confirmation — Jhoanes Bakery Wholesale`,
                 html,
             });
             this.logger.log(`Standing order confirmation sent successfully to ${customerEmail}`);
@@ -553,23 +557,23 @@ let MailService = MailService_1 = class MailService {
             return false;
         try {
             const subject = isOverdraft
-                ? `⚠️ Alerta de Sobregiro de Crédito — Panadería Jhoanes`
-                : `Actualización de Línea de Crédito — Panadería Jhoanes`;
+                ? `⚠️ Credit Limit Overdraft Alert — Jhoanes Bakery Wholesale`
+                : `Commercial Credit Line Update — Jhoanes Bakery Wholesale`;
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: ${isOverdraft ? '#dc2626' : '#2563eb'};">${subject}</h2>
-          <p>Estimado(a) <strong>${clientName}</strong>,</p>
-          <p>Le informamos sobre el estado actual de su cuenta de crédito comercial:</p>
+          <p>Dear <strong>${clientName}</strong>,</p>
+          <p>Please find below the current status of your B2B commercial credit account:</p>
           <ul>
-            <li><strong>Límite Autorizado:</strong> $${creditLimit.toFixed(2)}</li>
-            <li><strong>Saldo Pendiente de Pago:</strong> $${usedCredit.toFixed(2)}</li>
-            <li><strong>Estado:</strong> ${isOverdraft ? '<span style="color: red; font-weight: bold;">LÍMITE EXCEDIDO</span>' : '<span style="color: green; font-weight: bold;">AL DÍA</span>'}</li>
+            <li><strong>Authorized Credit Limit:</strong> $${creditLimit.toFixed(2)}</li>
+            <li><strong>Outstanding Balance Due:</strong> $${usedCredit.toFixed(2)}</li>
+            <li><strong>Status:</strong> ${isOverdraft ? '<span style="color: red; font-weight: bold;">CREDIT LIMIT EXCEEDED</span>' : '<span style="color: green; font-weight: bold;">UP TO DATE</span>'}</li>
           </ul>
-          <p>Si requiere regularizar sus pagos o solicitar una extensión de cupo, por favor contacte a su asesor de cuenta.</p>
+          <p>If you need to settle your balance or request a credit line extension, please contact your account representative.</p>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <credit@jhoanes.com>',
                 to: userEmail,
                 subject,
                 html,
@@ -582,26 +586,26 @@ let MailService = MailService_1 = class MailService {
         }
     }
     async sendPaymentFailedAlert(userEmail, clientName, orderId, amount, reason) {
-        this.logger.warn(`[ALERTA DE COBRO FALLIDO] Orden #${orderId} ($${amount.toFixed(2)}) rechazada para ${userEmail}. Motivo: ${reason}`);
+        this.logger.warn(`[FAILED PAYMENT ALERT] Order #${orderId} ($${amount.toFixed(2)}) declined for ${userEmail}. Reason: ${reason}`);
         if (!this.transporter || !userEmail)
             return false;
         try {
-            const subject = `⚠️ Cobro Automático Fallido — Pedido Programado #${orderId.slice(0, 8)}`;
+            const subject = `⚠️ Failed Automatic Payment — Scheduled Order #${orderId.slice(0, 8)}`;
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #dc2626;">Cobro Automático No Procesado</h2>
-          <p>Estimado(a) <strong>${clientName}</strong>,</p>
-          <p>Le notificamos que el cobro automático de su pedido recurrente no pudo completarse con éxito:</p>
+          <h2 style="color: #dc2626;">Automatic Payment Unsuccessful</h2>
+          <p>Dear <strong>${clientName}</strong>,</p>
+          <p>We regret to inform you that the automatic payment for your recurring scheduled order could not be completed successfully:</p>
           <ul>
-            <li><strong>Orden:</strong> #${orderId.slice(0, 8)}</li>
-            <li><strong>Monto:</strong> $${amount.toFixed(2)}</li>
-            <li><strong>Motivo de rechazo:</strong> ${reason}</li>
+            <li><strong>Order:</strong> #${orderId.slice(0, 8)}</li>
+            <li><strong>Amount:</strong> $${amount.toFixed(2)}</li>
+            <li><strong>Decline Reason:</strong> ${reason}</li>
           </ul>
-          <p>Su pedido se encuentra en estado <strong>Pendiente de Pago</strong>. Por favor acceda a su portal de cliente para actualizar su método de pago o liquidar la factura pendiente.</p>
+          <p>Your order is currently in <strong>Payment Pending</strong> status. Please access your customer portal to update your payment method or settle the outstanding invoice.</p>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <billing@jhoanes.com>',
                 to: userEmail,
                 subject,
                 html,
@@ -621,7 +625,7 @@ let MailService = MailService_1 = class MailService {
             const orderIdShort = orderId.toString().slice(0, 8);
             const totalAmount = Number(orderData.total || 0).toFixed(2);
             const dueDate = orderData.payment_due_date || 'N/A';
-            const clientName = orderData.clientName || orderData.user?.profile?.company_name || orderData.user?.profile?.full_name || 'Estimado(a) Cliente';
+            const clientName = orderData.clientName || orderData.user?.profile?.company_name || orderData.user?.profile?.full_name || 'Valued Customer';
             const paymentLink = orderData.paymentLink || `${config_1.SITE_URL}/orders/${orderId}`;
             let daysOverdue = orderData.daysOverdue;
             if (daysOverdue === undefined && orderData.payment_due_date) {
@@ -634,7 +638,7 @@ let MailService = MailService_1 = class MailService {
             if (Array.isArray(orderData.items) && orderData.items.length > 0) {
                 const rows = orderData.items.map((item) => `
           <tr>
-            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.product_name || item.name || 'Producto'}</td>
+            <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">${item.product?.name || item.product_name || item.name || 'Bakery Item'}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.quantity}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${Number(item.price_at_time || item.price || 0).toFixed(2)}</td>
             <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: bold;">$${(Number(item.price_at_time || item.price || 0) * item.quantity).toFixed(2)}</td>
@@ -645,10 +649,10 @@ let MailService = MailService_1 = class MailService {
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <thead>
                 <tr style="background: #f1f5f9; color: #475569; text-align: left;">
-                  <th style="padding: 10px 14px;">Producto</th>
-                  <th style="padding: 10px 14px; text-align: center;">Cant.</th>
-                  <th style="padding: 10px 14px; text-align: right;">Precio</th>
-                  <th style="padding: 10px 14px; text-align: right;">Subtotal</th>
+                  <th style="padding: 10px 14px;">Item Description</th>
+                  <th style="padding: 10px 14px; text-align: center;">Qty</th>
+                  <th style="padding: 10px 14px; text-align: right;">Unit Price</th>
+                  <th style="padding: 10px 14px; text-align: right;">Amount</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -671,24 +675,24 @@ let MailService = MailService_1 = class MailService {
             else {
                 html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
-            <h2 style="color: #dc2626; margin-bottom: 8px;">Aviso de Factura Vencida — Panadería Jhoanes Wholesale</h2>
-            <p>Estimado(a) <strong>${clientName}</strong>,</p>
-            <p>Le notificamos que su orden <strong>#${orderIdShort}</strong> con vencimiento el <strong>${dueDate}</strong> presenta <strong>${daysOverdue} día(s) de atraso</strong>.</p>
+            <h2 style="color: #dc2626; margin-bottom: 8px;">Overdue Commercial Invoice Notice — Jhoanes Bakery Wholesale</h2>
+            <p>Dear <strong>${clientName}</strong>,</p>
+            <p>Please be advised that your commercial order <strong>#${orderIdShort}</strong> due on <strong>${dueDate}</strong> is currently <strong>${daysOverdue} day(s) past due</strong>.</p>
             <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 16px; margin: 16px 0;">
-              <p style="margin: 0; font-size: 16px; font-weight: bold; color: #991b1b;">Monto Pendiente: $${totalAmount}</p>
+              <p style="margin: 0; font-size: 16px; font-weight: bold; color: #991b1b;">Outstanding Balance Due: $${totalAmount}</p>
             </div>
             ${itemsTable}
             <div style="text-align: center; margin: 24px 0;">
-              <a href="${paymentLink}" style="background: #059669; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Pagar Factura en Línea</a>
+              <a href="${paymentLink}" style="background: #059669; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Pay Invoice Online</a>
             </div>
-            <p style="font-size: 12px; color: #64748b;">Para asistencia, responda a este correo o contacte a cobranzas@jhoanes.com.</p>
+            <p style="font-size: 12px; color: #64748b;">For assistance or billing inquiries, reply to this email or contact billing@jhoanesbakery.com.</p>
           </div>
         `;
             }
             const adminEmail = config_1.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || 'pedidos@jhoanes.com';
-            const subject = `⚠️ FACTURA VENCIDA: Orden #${orderIdShort} — ${clientName} (${daysOverdue} días de atraso)`;
+            const subject = `⚠️ OVERDUE INVOICE: Order #${orderIdShort} — ${clientName} (${daysOverdue} days past due)`;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes Cobranzas" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes Cobranzas" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Collections" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Collections" <billing@jhoanes.com>',
                 to: clientEmail,
                 cc: adminEmail,
                 subject,
@@ -704,29 +708,29 @@ let MailService = MailService_1 = class MailService {
     }
     async sendFeedbackAlert(feedback) {
         const adminEmail = config_1.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || 'pedidos@jhoanes.com';
-        this.logger.log(`[FEEDBACK] Notificando buzón de sugerencias #${feedback.id} a ${adminEmail}`);
+        this.logger.log(`[FEEDBACK] Notifying feedback box #${feedback.id} to ${adminEmail}`);
         if (!this.transporter)
             return false;
         try {
-            const subject = `📩 Nuevo Mensaje en Buzón de Sugerencias [${feedback.category.toUpperCase()}]`;
+            const subject = `📩 New B2B Customer Feedback [${feedback.category.toUpperCase()}]`;
             const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #2563eb; margin-top: 0;">Nuevo Feedback de Cliente B2B</h2>
+          <h2 style="color: #2563eb; margin-top: 0;">New B2B Customer Feedback</h2>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
             <tr>
-              <td style="padding: 6px 0; color: #64748b; font-weight: bold; width: 140px;">ID Feedback:</td>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold; width: 140px;">Feedback ID:</td>
               <td style="padding: 6px 0;">${feedback.id}</td>
             </tr>
             <tr>
-              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Categoría:</td>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Category:</td>
               <td style="padding: 6px 0; text-transform: uppercase; font-weight: bold; color: #1e293b;">${feedback.category}</td>
             </tr>
             <tr>
-              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Cliente:</td>
-              <td style="padding: 6px 0;">${feedback.userName || 'Usuario B2B'} (${feedback.userEmail || feedback.userId || 'Anónimo'})</td>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Customer:</td>
+              <td style="padding: 6px 0;">${feedback.userName || 'B2B Client'} (${feedback.userEmail || feedback.userId || 'Anonymous'})</td>
             </tr>
             <tr>
-              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Fecha:</td>
+              <td style="padding: 6px 0; color: #64748b; font-weight: bold;">Date:</td>
               <td style="padding: 6px 0;">${new Date(feedback.createdAt || Date.now()).toLocaleString()}</td>
             </tr>
           </table>
@@ -734,12 +738,12 @@ let MailService = MailService_1 = class MailService {
             <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap;">${feedback.message}</p>
           </div>
           <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
-            Puede gestionar y responder este ticket desde el panel administrativo: <a href="${config_1.SITE_URL}/admin/feedback">${config_1.SITE_URL}/admin/feedback</a>
+            You can review and manage this ticket from the administrative portal: <a href="${config_1.SITE_URL}/admin/feedback">${config_1.SITE_URL}/admin/feedback</a>
           </p>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <orders@jhoanes.com>',
                 to: adminEmail,
                 subject,
                 html,
@@ -768,37 +772,37 @@ let MailService = MailService_1 = class MailService {
             const html = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #fee2e2; border-radius: 12px; background: #ffffff;">
           <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #ef4444; padding-bottom: 16px;">
-            <h1 style="color: #b91c1c; font-size: 22px; margin: 0;">Aviso de Validación Zelle — Panadería Jhoanes</h1>
-            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Comprobante no conciliado para el Pedido #${orderIdShort}</p>
+            <h1 style="color: #b91c1c; font-size: 22px; margin: 0;">Zelle Verification Notice — Jhoanes Bakery Wholesale</h1>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Unreconciled Transfer for Order #${orderIdShort}</p>
           </div>
 
-          <p style="font-size: 14px; color: #334155;">Estimado cliente,</p>
+          <p style="font-size: 14px; color: #334155;">Dear Valued Customer,</p>
           <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-            Le informamos que la transferencia Zelle reportada para su pedido <strong>#${orderIdShort}</strong> por un total de <strong>$${totalFormatted}</strong> no pudo ser verificada satisfactoriamente en nuestras cuentas bancarias.
+            We are writing to notify you that the Zelle payment transfer reported for your order <strong>#${orderIdShort}</strong> totaling <strong>$${totalFormatted}</strong> could not be verified in our bank accounts.
           </p>
 
           <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px; border-radius: 6px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 13px; font-weight: bold; color: #991b1b;">Motivo del Rechazo:</p>
-            <p style="margin: 4px 0 0 0; font-size: 13px; color: #b91c1c;">${reason || 'Comprobante ilegible o referencia bancaria no coincide con los fondos recibidos.'}</p>
+            <p style="margin: 0; font-size: 13px; font-weight: bold; color: #991b1b;">Rejection Reason:</p>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: #b91c1c;">${reason || 'Receipt illegible or bank reference does not match received funds.'}</p>
           </div>
 
           <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-            Su pedido ha sido pausado preventivamente. Para reactivarlo, por favor ingrese nuevamente al portal para reintentar el pago con otra referencia Zelle o con tarjeta de crédito/débito:
+            Your order has been temporarily placed on hold. To reactivate production and dispatch, please log into your customer portal to retry payment with a valid Zelle reference or credit/debit card:
           </p>
 
           <div style="text-align: center; margin: 28px 0;">
-            <a href="${retryUrl}" style="background: #dc2626; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Reintentar Pago / Actualizar Comprobante</a>
+            <a href="${retryUrl}" style="background: #dc2626; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Retry Payment / Update Reference</a>
           </div>
 
           <p style="margin-top: 24px; font-size: 12px; color: #94a3b8; text-align: center;">
-            Panadería Jhoanes Wholesale — Departamento de Tesorería y Conciliación
+            Jhoanes Bakery Wholesale — Treasury & Reconciliation Department
           </p>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes" <pedidos@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <treasury@jhoanes.com>',
                 to: customerEmail,
-                subject: `⚠️ Pago Zelle No Conciliado — Orden #${orderIdShort} — Panadería Jhoanes`,
+                subject: `⚠️ Unreconciled Zelle Payment — Order #${orderIdShort} — Jhoanes Bakery Wholesale`,
                 html,
             });
             this.logger.log(`Zelle rejection alert sent successfully to ${customerEmail} for order #${orderIdShort}`);
@@ -822,26 +826,26 @@ let MailService = MailService_1 = class MailService {
                 this.logger.warn('SMTP transporter is not initialized');
                 return false;
             }
-            const filename = `REPORTE_FINANCIERO_${reportDate}.xlsx`;
+            const filename = `FINANCIAL_REPORT_${reportDate}.xlsx`;
             const html = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
           <div style="border-bottom: 2px solid #059669; padding-bottom: 16px; margin-bottom: 20px;">
-            <h2 style="color: #065f46; margin: 0; font-size: 20px;">Reporte Financiero Diario Consolidado</h2>
-            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Corte de Operaciones al ${reportDate} (America/New_York)</p>
+            <h2 style="color: #065f46; margin: 0; font-size: 20px;">Daily Consolidated Financial Report</h2>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Operations Close as of ${reportDate} (America/New_York)</p>
           </div>
           <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-            Adjunto encontrará el informe financiero consolidado en formato Excel con el desglose multicanal de ventas (Stripe, Zelle, Cheques y Líneas de Crédito B2B) y conciliación fiscal de la jornada.
+            Please find attached the consolidated financial report in Excel format with the multi-channel breakdown of sales (Stripe, Zelle, Checks, and B2B Credit Lines) and daily tax reconciliations.
           </p>
           <div style="background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 12px; color: #64748b; margin: 20px 0;">
-            <p style="margin: 0;"><strong>Archivo Adjunto:</strong> ${filename}</p>
-            <p style="margin: 4px 0 0 0;">Generado automáticamente por el motor de conciliación de Panadería Jhoanes Wholesale.</p>
+            <p style="margin: 0;"><strong>Attached File:</strong> ${filename}</p>
+            <p style="margin: 4px 0 0 0;">Generated automatically by the Jhoanes Bakery Wholesale reconciliation engine.</p>
           </div>
         </div>
       `;
             await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Panadería Jhoanes Contabilidad" <${config_1.SMTP_USER}>` : '"Panadería Jhoanes Contabilidad" <accounting@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Accounting" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Accounting" <accounting@jhoanes.com>',
                 to: validEmails.join(', '),
-                subject: `📊 Reporte Financiero Diario — Jhoanes Wholesale — ${reportDate}`,
+                subject: `📊 Daily Consolidated Financial Report — Jhoanes Wholesale — ${reportDate}`,
                 html,
                 attachments: [
                     {
@@ -863,7 +867,7 @@ let MailService = MailService_1 = class MailService {
         if (!this.transporter || !userEmail)
             return false;
         const resetUrl = `${config_1.SITE_URL}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
-        const recipientName = clientName || 'Estimado Cliente';
+        const recipientName = clientName || 'Valued Customer';
         const html = `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -872,48 +876,48 @@ let MailService = MailService_1 = class MailService {
         </div>
         
         <div style="border-top: 1px solid #f1f5f9; padding-top: 20px;">
-          <h2 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Restablecimiento de Contraseña / Password Reset</h2>
+          <h2 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Password Reset Request</h2>
           <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-            Hola <strong>${recipientName}</strong>,
+            Hello <strong>${recipientName}</strong>,
           </p>
           <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-            Hemos recibido una solicitud para restablecer la contraseña de tu cuenta asociada a <strong>${userEmail}</strong>.
+            We received a request to reset the password for your account associated with <strong>${userEmail}</strong>.
           </p>
           <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-            Para definir una nueva contraseña, haz clic en el siguiente botón:
+            To choose a new password, click the button below:
           </p>
           
           <div style="text-align: center; margin: 28px 0;">
             <a href="${resetUrl}" 
                style="display: inline-block; background-color: #b8860b; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(184, 134, 11, 0.2);">
-              Restablecer Contraseña / Reset Password
+              Reset Password
             </a>
           </div>
 
           <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
-            Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:<br/>
+            If the button doesn't work, copy and paste this link into your browser:<br/>
             <a href="${resetUrl}" style="color: #b8860b; word-break: break-all;">${resetUrl}</a>
           </p>
           
           <div style="background-color: #f8fafc; border-left: 4px solid #b8860b; padding: 12px 16px; border-radius: 4px; margin-top: 24px;">
             <p style="color: #475569; font-size: 12px; margin: 0; line-height: 1.4;">
-              <strong>Aviso de Seguridad:</strong> Este enlace tiene una vigencia de <strong>1 hora</strong>. Si tú no solicitaste este cambio, puedes ignorar este correo; tu contraseña actual permanece segura y sin modificaciones.
+              <strong>Security Notice:</strong> This link is valid for <strong>1 hour</strong>. If you did not request this change, you can safely ignore this email; your current password remains secure and unchanged.
             </p>
           </div>
         </div>
 
         <div style="border-top: 1px solid #f1f5f9; margin-top: 24px; padding-top: 16px; text-align: center;">
           <p style="color: #94a3b8; font-size: 11px; margin: 0;">
-            © ${new Date().getFullYear()} Jhoanes Bakery Wholesale. Todos los derechos reservados.
+            © ${new Date().getFullYear()} Jhoanes Bakery Wholesale. All rights reserved.
           </p>
         </div>
       </div>
     `;
         try {
             const info = await this.transporter.sendMail({
-                from: config_1.SMTP_USER ? `"Jhoanes Bakery" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery" <no-reply@jhoanes.com>',
+                from: config_1.SMTP_USER ? `"Jhoanes Bakery Wholesale" <${config_1.SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <no-reply@jhoanes.com>',
                 to: userEmail,
-                subject: '🔒 Restablece tu Contraseña — Jhoanes Bakery Wholesale',
+                subject: '🔒 Reset Your Password — Jhoanes Bakery Wholesale',
                 html,
             });
             this.logger.log(`Password reset email sent to ${userEmail} (ID: ${info.messageId})`);

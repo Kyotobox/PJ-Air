@@ -69,4 +69,8 @@ export declare class OrdersService {
         replaceItems?: boolean;
         referenceDate?: Date | string;
     }, userId?: string, userRole?: string, referenceDateOverride?: Date): Promise<Order>;
+    disableOrder(id: string, reason?: string): Promise<Order>;
+    bulkDisableOrders(orderIds: string[], reason?: string): Promise<{
+        affected: number;
+    }>;
 }

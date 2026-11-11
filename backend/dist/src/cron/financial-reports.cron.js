@@ -48,6 +48,7 @@ let FinancialReportsCron = FinancialReportsCron_1 = class FinancialReportsCron {
             datePattern: `${todayNY}%`,
             todayNY,
         })
+            .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] })
             .orderBy('order.created_at', 'ASC')
             .getMany();
         this.logger.log(`Órdenes encontradas para el corte financiero del ${todayNY}: ${orders.length}`);

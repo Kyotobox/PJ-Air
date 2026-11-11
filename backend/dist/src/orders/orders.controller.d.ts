@@ -21,6 +21,12 @@ export declare class OrdersController {
         available_credit: number;
         used_credit: number;
     }>;
+    bulkDisable(body: {
+        orderIds: string[];
+        reason?: string;
+    }): Promise<{
+        affected: number;
+    }>;
     getFrequentProducts(req: any): Promise<any[]>;
     getUserFrequentProducts(userId: string, req: any): Promise<any[]>;
     findAll(req: any): Promise<import("./order.entity").Order[]>;
@@ -38,5 +44,8 @@ export declare class OrdersController {
         url: string;
     }>;
     mutateItems(id: string, body: any, req: any): Promise<import("./order.entity").Order>;
+    disableOrder(id: string, body: {
+        reason?: string;
+    }): Promise<import("./order.entity").Order>;
     update(id: string, body: any, req: any): Promise<import("./order.entity").Order>;
 }

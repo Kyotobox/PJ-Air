@@ -73,6 +73,9 @@ let OrdersController = class OrdersController {
     async settleBatch(body, req) {
         return this.ordersService.settleBatch(req.user.id, req.user.role, body);
     }
+    async bulkDisable(body) {
+        return this.ordersService.bulkDisableOrders(body?.orderIds, body?.reason);
+    }
     async getFrequentProducts(req) {
         return this.ordersService.getFrequentProducts(req.user.id);
     }
@@ -174,6 +177,9 @@ let OrdersController = class OrdersController {
     async mutateItems(id, body, req) {
         return this.ordersService.mutateOrderItems(id, body, req.user?.id, req.user?.role);
     }
+    async disableOrder(id, body) {
+        return this.ordersService.disableOrder(id, body?.reason);
+    }
     async update(id, body, req) {
         const order = await this.ordersService.findOne(id);
         const role = req.user?.role;
@@ -202,6 +208,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "settleBatch", null);
+__decorate([
+    (0, common_1.Post)('bulk-disable'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "bulkDisable", null);
 __decorate([
     (0, common_1.Get)('frequent-products'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
@@ -369,6 +384,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "mutateItems", null);
+__decorate([
+    (0, common_1.Patch)(':id/disable'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "disableOrder", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),

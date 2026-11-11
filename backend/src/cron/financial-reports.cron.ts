@@ -48,6 +48,7 @@ export class FinancialReportsCron {
         datePattern: `${todayNY}%`,
         todayNY,
       })
+      .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] })
       .orderBy('order.created_at', 'ASC')
       .getMany();
 

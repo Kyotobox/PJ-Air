@@ -1172,6 +1172,24 @@ let OrdersService = class OrdersService {
         }
         return this.findOne(order.id);
     }
+    async disableOrder(id, reason) {
+        const order = await this.findOne(id);
+        const auditLog = `[ORDEN INHABILITADA POR ADMINISTRACIÓN: ${reason || 'Compra de prueba'} - ${new Date().toISOString()}]\n`;
+        order.status = 'cancelled';
+        order.notes = `${auditLog}${order.notes || ''}`;
+        return this.orderRepository.save(order);
+    }
+    async bulkDisableOrders(orderIds, reason) {
+        if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+            throw new common_1.BadRequestException('orderIds debe ser un arreglo no vacío');
+        }
+        let affected = 0;
+        for (const id of orderIds) {
+            await this.disableOrder(id, reason);
+            affected++;
+        }
+        return { affected };
+    }
 };
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([

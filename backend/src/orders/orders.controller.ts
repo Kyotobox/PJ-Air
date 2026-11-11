@@ -35,6 +35,13 @@ export class OrdersController {
     return this.ordersService.settleBatch(req.user.id, req.user.role, body);
   }
 
+  @Post('bulk-disable')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async bulkDisable(@Body() body: { orderIds: string[]; reason?: string }) {
+    return this.ordersService.bulkDisableOrders(body?.orderIds, body?.reason);
+  }
+
   @Get('frequent-products')
   @UseGuards(AuthGuard)
   async getFrequentProducts(@Req() req: any) {
@@ -226,6 +233,13 @@ export class OrdersController {
   @UseGuards(AuthGuard)
   async mutateItems(@Param('id') id: string, @Body() body: any, @Req() req: any) {
     return this.ordersService.mutateOrderItems(id, body, req.user?.id, req.user?.role);
+  }
+
+  @Patch(':id/disable')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async disableOrder(@Param('id') id: string, @Body() body: { reason?: string }) {
+    return this.ordersService.disableOrder(id, body?.reason);
   }
 
   @Patch(':id')

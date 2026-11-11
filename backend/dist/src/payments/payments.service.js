@@ -277,8 +277,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 orderId: order.id,
                 customerEmail: email,
                 description: (pendingBal !== null && pendingBal > 0)
-                    ? `Liquidación Saldo Pendiente Factura #${order.id.slice(0, 8)} (Saldo: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Panadería Jhoanes Wholesale`
-                    : `Liquidación Factura #${order.id.slice(0, 8)} (Saldo: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Panadería Jhoanes Wholesale`,
+                    ? `Invoice Settlement #${order.id.slice(0, 8)} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`
+                    : `Invoice Settlement #${order.id.slice(0, 8)} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`,
                 paymentMethodType: feeMethod === 'ACH' ? 'us_bank_account' : undefined,
             });
             if (this.stripe && intent.paymentIntentId) {
@@ -305,8 +305,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                             price_data: {
                                 currency: 'usd',
                                 product_data: {
-                                    name: `Liquidación Factura #${order.id.slice(0, 8)}`,
-                                    description: `Pago de saldo principal - Pedido #${order.id.slice(0, 8)}`,
+                                    name: `Invoice Settlement #${order.id.slice(0, 8)}`,
+                                    description: `Order balance settlement - Order #${order.id.slice(0, 8)}`,
                                 },
                                 unit_amount: Math.round(balance * 100),
                             },
@@ -318,8 +318,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                             price_data: {
                                 currency: 'usd',
                                 product_data: {
-                                    name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, máx $5.00' : '3.5% Tarjeta'})`,
-                                    description: `Comisión de procesamiento bancario/pasarela`,
+                                    name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, max $5.00' : '3.5% Card'})`,
+                                    description: `Banking / payment gateway processing fee`,
                                 },
                                 unit_amount: Math.round(feeAmount * 100),
                             },
@@ -402,8 +402,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                         price_data: {
                             currency: 'usd',
                             product_data: {
-                                name: `Liquidación Cartera B2B - ${user.profile?.full_name || user.email}`,
-                                description: `Liquidación de ${pendingOrders.length} orden(es) de crédito comercial pendientes`,
+                                name: `B2B Account Debt Settlement - ${user.profile?.full_name || user.email}`,
+                                description: `Settlement of ${pendingOrders.length} pending commercial credit order(s)`,
                             },
                             unit_amount: Math.round(roundedDebt * 100),
                         },
@@ -415,8 +415,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                         price_data: {
                             currency: 'usd',
                             product_data: {
-                                name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, máx $5.00' : '3.5% Tarjeta'})`,
-                                description: `Comisión de procesamiento bancario/pasarela`,
+                                name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, max $5.00' : '3.5% Card'})`,
+                                description: `Banking / payment gateway processing fee`,
                             },
                             unit_amount: Math.round(feeAmount * 100),
                         },

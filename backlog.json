@@ -84,7 +84,7 @@
         {
           "id": "TASK-76-03",
           "title": "Certificación: Suite de pruebas automatizadas (§6 con sad path), inhabilitación de compras de prueba existentes en base de datos, compilación física (build), y verificación integral",
-          "status": "TODO",
+          "status": "DONE",
           "type": "DEPLOY/CERT",
           "veracity_hash": null
         }

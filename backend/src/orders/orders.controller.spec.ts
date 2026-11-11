@@ -19,6 +19,8 @@ describe('OrdersController', () => {
     approveZellePayment: jest.fn(),
     rejectZellePayment: jest.fn(),
     mutateOrderItems: jest.fn(),
+    disableOrder: jest.fn(),
+    bulkDisableOrders: jest.fn(),
   };
 
   const mockExcelService = {
@@ -197,6 +199,48 @@ describe('OrdersController', () => {
 
       await expect(controller.updatePaymentStatus('ord-own', 'refunded', undefined, req as any))
         .rejects.toThrow('Clientes solo pueden confirmar pagos completados');
+    });
+  });
+
+  describe('disableOrder and bulkDisable (TASK-76-01)', () => {
+    it('should call ordersService.disableOrder with id and reason on PATCH :id/disable (happy path)', async () => {
+      (mockOrdersService.disableOrder as jest.Mock).mockResolvedValue({
+        id: 'ord-to-disable',
+        status: 'cancelled',
+        notes: '[ORDEN INHABILITADA POR ADMINISTRACIÓN: Compra de prueba - 2026-11-11T12:00:00.000Z]\n',
+      });
+
+      const result = await controller.disableOrder('ord-to-disable', { reason: 'Compra de prueba' });
+
+      expect(mockOrdersService.disableOrder).toHaveBeenCalledWith('ord-to-disable', 'Compra de prueba');
+      expect(result.status).toBe('cancelled');
+    });
+
+    it('should call ordersService.bulkDisableOrders with orderIds and reason on POST bulk-disable (happy path)', async () => {
+      (mockOrdersService.bulkDisableOrders as jest.Mock).mockResolvedValue({ affected: 3 });
+
+      const result = await controller.bulkDisable({
+        orderIds: ['ord-1', 'ord-2', 'ord-3'],
+        reason: 'Limpieza de compras de prueba',
+      });
+
+      expect(mockOrdersService.bulkDisableOrders).toHaveBeenCalledWith(
+        ['ord-1', 'ord-2', 'ord-3'],
+        'Limpieza de compras de prueba',
+      );
+      expect(result).toEqual({ affected: 3 });
+    });
+
+    it('Sad path: should propagate error when service.disableOrder fails', async () => {
+      (mockOrdersService.disableOrder as jest.Mock).mockRejectedValue(new Error('Order not found'));
+
+      await expect(controller.disableOrder('invalid-id', { reason: 'test' })).rejects.toThrow('Order not found');
+    });
+
+    it('Sad path: should propagate BadRequestException when bulkDisable receives invalid data', async () => {
+      (mockOrdersService.bulkDisableOrders as jest.Mock).mockRejectedValue(new Error('orderIds debe ser un arreglo no vacío'));
+
+      await expect(controller.bulkDisable({ orderIds: [], reason: 'test' })).rejects.toThrow('orderIds debe ser un arreglo no vacío');
     });
   });
 });

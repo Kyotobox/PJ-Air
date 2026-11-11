@@ -1637,5 +1637,103 @@ describe('OrdersService', () => {
       expect(res).toEqual([]);
     });
   });
+
+  describe('TASK-76-01: disableOrder and bulkDisableOrders', () => {
+    describe('disableOrder', () => {
+      it('Happy path: disables order with custom reason, sets status to cancelled and prepends audit log to existing notes', async () => {
+        const existingOrder: any = {
+          id: 'ord-disable-1',
+          status: 'pending',
+          notes: 'Nota previa del cliente',
+        };
+        orderRepository.findOne.mockResolvedValue(existingOrder);
+        orderRepository.save.mockImplementation((ord: any) => Promise.resolve(ord));
+
+        const result = await service.disableOrder('ord-disable-1', 'Orden de prueba del cliente');
+
+        expect(result.status).toBe('cancelled');
+        expect(result.notes).toContain('[ORDEN INHABILITADA POR ADMINISTRACIÓN: Orden de prueba del cliente - ');
+        expect(result.notes).toContain('Nota previa del cliente');
+        expect(orderRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'ord-disable-1',
+            status: 'cancelled',
+          }),
+        );
+      });
+
+      it('Happy path: disables order with default reason when reason is omitted and notes is empty/null', async () => {
+        const existingOrder: any = {
+          id: 'ord-disable-2',
+          status: 'approved',
+          notes: null,
+        };
+        orderRepository.findOne.mockResolvedValue(existingOrder);
+        orderRepository.save.mockImplementation((ord: any) => Promise.resolve(ord));
+
+        const result = await service.disableOrder('ord-disable-2');
+
+        expect(result.status).toBe('cancelled');
+        expect(result.notes).toContain('[ORDEN INHABILITADA POR ADMINISTRACIÓN: Compra de prueba - ');
+        expect(result.notes.endsWith('\n')).toBe(true);
+      });
+
+      it('Sad path §6: throws NotFoundException when order does not exist', async () => {
+        orderRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.disableOrder('non-existent-order')).rejects.toThrow(NotFoundException);
+        expect(orderRepository.save).not.toHaveBeenCalled();
+      });
+
+      it('Sad path §6: throws database error if orderRepository.save fails', async () => {
+        const existingOrder: any = {
+          id: 'ord-disable-err',
+          status: 'pending',
+          notes: '',
+        };
+        orderRepository.findOne.mockResolvedValue(existingOrder);
+        orderRepository.save.mockRejectedValue(new Error('DB transaction write lock error'));
+
+        await expect(service.disableOrder('ord-disable-err')).rejects.toThrow('DB transaction write lock error');
+      });
+    });
+
+    describe('bulkDisableOrders', () => {
+      it('Happy path: bulk disables multiple orders and returns affected count', async () => {
+        const order1: any = { id: 'ord-bulk-1', status: 'pending', notes: '' };
+        const order2: any = { id: 'ord-bulk-2', status: 'approved', notes: 'Existing' };
+
+        orderRepository.findOne
+          .mockResolvedValueOnce(order1)
+          .mockResolvedValueOnce(order2);
+        orderRepository.save.mockImplementation((ord: any) => Promise.resolve(ord));
+
+        const result = await service.bulkDisableOrders(['ord-bulk-1', 'ord-bulk-2'], 'Bulk cleanup');
+
+        expect(result).toEqual({ affected: 2 });
+        expect(order1.status).toBe('cancelled');
+        expect(order1.notes).toContain('Bulk cleanup');
+        expect(order2.status).toBe('cancelled');
+        expect(order2.notes).toContain('Bulk cleanup');
+        expect(orderRepository.save).toHaveBeenCalledTimes(2);
+      });
+
+      it('Sad path §6: throws BadRequestException when orderIds is empty array', async () => {
+        await expect(service.bulkDisableOrders([])).rejects.toThrow(BadRequestException);
+      });
+
+      it('Sad path §6: throws BadRequestException when orderIds is null, undefined or not an array', async () => {
+        await expect(service.bulkDisableOrders(null as any)).rejects.toThrow(BadRequestException);
+        await expect(service.bulkDisableOrders(undefined as any)).rejects.toThrow(BadRequestException);
+        await expect(service.bulkDisableOrders('not-an-array' as any)).rejects.toThrow(BadRequestException);
+      });
+
+      it('Sad path §6: propagates NotFoundException when an order in the bulk array does not exist', async () => {
+        orderRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.bulkDisableOrders(['invalid-order-id'])).rejects.toThrow(NotFoundException);
+      });
+    });
+  });
 });
 
