@@ -3,44 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S74",
-  "current_task": "TASK-73-01",
+  "current_sprint": "S75",
+  "current_task": "TASK-75-01",
   "sprints": [
-    {
-      "id": "S72",
-      "title": "Sprint S72: Liquidación de Saldos Parciales, Conciliación F8F17C1A y Resincronización de Flete",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-72-01",
-          "title": "Conciliación y reparación física en producción de Orden #F8F17C1A vinculando pi_3UaS3BS91wzOMOtr1n1xFOiY ($2,173.83), asignando payment_status partially_paid y pending_balance de $350.00",
-          "status": "DONE",
-          "type": "PROD/DATA",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-72-02",
-          "title": "Soporte en createSettlementLink para cobrar estrictamente el pending_balance cuando exista saldo remanente, con tests unitarios y sad paths (§6)",
-          "status": "DONE",
-          "type": "CORE/LOGIC",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-72-03",
-          "title": "Corrección en checkout para usar tarifa de entrega fresca del perfil y en la vista de orden / factura para mostrar saldo remanente y permitir pagarlo en línea",
-          "status": "DONE",
-          "type": "UI/PAYMENTS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-72-04",
-          "title": "Compilación, suite de pruebas, commit atómico (§48) y despliegue a producción en 187.124.67.53 con verificación de factura y enlace de pago",
-          "status": "DONE",
-          "type": "DEPLOY/PROD",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S73",
       "title": "Sprint S73: Operatividad de Planta, Onboarding Forzoso, Credenciales y Parámetros Administrativos B2B",
@@ -100,7 +65,7 @@
     {
       "id": "S74",
       "title": "Sprint S74: Corrección de Cálculo de Hora de Corte en Medianoche y Visibilidad de Errores en Checkout",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-74-01",
@@ -124,60 +89,60 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S75",
+      "title": "Sprint S75: Estandarización Total en Inglés de Correos, Recibos, Facturas y Notificaciones Transaccionales B2B",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-75-01",
+          "title": "Estandarización a 100% inglés de correos de órdenes, recibos y suscripciones (sendOrderReceipt, sendRefundReceipt, sendStandingOrderConfirmation) en backend/src/mail/mail.service.ts",
+          "status": "DONE",
+          "type": "MAIL/TEMPLATES",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-75-02",
+          "title": "Estandarización a 100% inglés de alertas de crédito, pagos fallidos, Zelle, contraseñas y plantilla HTML de factura vencida (invoice_overdue.html, sendCreditAlert, sendPaymentFailedAlert, sendOverdueInvoiceAlert, sendZelleRejectionAlert, sendPasswordResetEmail)",
+          "status": "DONE",
+          "type": "MAIL/ALERTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-75-03",
+          "title": "Auditoría exhaustiva de recibos/facturas en Frontend y Backend, actualización de suite de tests en mail.service.spec.ts (§6), compilación física, despliegue a producción y testing, y verificación en vivo",
+          "status": "DONE",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 65,
+  "archived_sprints_count": 66,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S73",
-    "title": "Sprint S73: Operatividad de Planta, Onboarding Forzoso, Credenciales y Parámetros Administrativos B2B",
+    "id": "S75",
+    "title": "Sprint S75: Estandarización Total en Inglés de Correos, Recibos, Facturas y Notificaciones Transaccionales B2B",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-73-01",
-        "title": "Switch independiente Habilitar Banco (ACH) por cliente: campo ach_enabled en backend User, toggle en /admin/clients y sincronización en checkout",
+        "id": "TASK-75-01",
+        "title": "Estandarización a 100% inglés de correos de órdenes, recibos y suscripciones (sendOrderReceipt, sendRefundReceipt, sendStandingOrderConfirmation) en backend/src/mail/mail.service.ts",
         "status": "IN_PROGRESS",
-        "type": "ADMIN/PAYMENTS",
+        "type": "MAIL/TEMPLATES",
         "veracity_hash": null
       },
       {
-        "id": "TASK-73-02",
-        "title": "Reparación visual de tarjetas de Tarifas Especiales en /admin/clients (Descuento Global, Costo Envío y Mínimo Pedido con inputs editables y legibles)",
+        "id": "TASK-75-02",
+        "title": "Estandarización a 100% inglés de alertas de crédito, pagos fallidos, Zelle, contraseñas y plantilla HTML de factura vencida (invoice_overdue.html, sendCreditAlert, sendPaymentFailedAlert, sendOverdueInvoiceAlert, sendZelleRejectionAlert, sendPasswordResetEmail)",
         "status": "TODO",
-        "type": "ADMIN/UI",
+        "type": "MAIL/ALERTS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-73-03",
-        "title": "Ajustes en Formulario de Dirección: desplegar por defecto Early Morning Delivery Instructions y eliminar botón Skip this step",
-        "status": "TODO",
-        "type": "FRONTEND/ONBOARDING",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-73-04",
-        "title": "Normalización case-insensitive de Email: aplicar toLowerCase().trim() en login, registro y restablecimiento de contraseña",
-        "status": "TODO",
-        "type": "AUTH/SECURITY",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-73-05",
-        "title": "Estabilización de Reportes Individual y Consolidado en /admin/reports: resolución de pantalla en blanco y filtros de entrega",
-        "status": "TODO",
-        "type": "ADMIN/REPORTS",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-73-06",
-        "title": "Carga y Visualización del Certificado ST-120: uploader en /profile de cliente y vista/descarga en modal administrativo de /admin/clients",
-        "status": "TODO",
-        "type": "COMPLIANCE/TAX",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-73-07",
-        "title": "Suite de pruebas automatizadas (§6), compilación física de Frontend y Backend, despliegue a producción y certificación en vivo",
+        "id": "TASK-75-03",
+        "title": "Auditoría exhaustiva de recibos/facturas en Frontend y Backend, actualización de suite de tests en mail.service.spec.ts (§6), compilación física, despliegue a producción y testing, y verificación en vivo",
         "status": "TODO",
         "type": "DEPLOY/CERT",
         "veracity_hash": null

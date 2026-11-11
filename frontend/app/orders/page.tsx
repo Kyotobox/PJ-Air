@@ -439,35 +439,35 @@ export default function ClientOrdersPage() {
     }, [filteredStatementOrders]);
 
     const exportStatementToExcel = () => {
-        const clientName = profile?.company_name || user?.user_metadata?.full_name || user?.email || 'Cliente';
+        const clientName = profile?.company_name || user?.user_metadata?.full_name || user?.email || 'Valued Customer';
         const periodLabel = statementRange === 'current_month' 
-            ? 'Mes Actual' 
+            ? 'Current Month' 
             : statementRange === 'last_30_days' 
-                ? 'Últimos 30 Días' 
-                : 'Histórico Completo';
+                ? 'Last 30 Days' 
+                : 'Full History';
 
         const rows: any[] = [
-            ['JHOANES BAKERY & COFFEE - ESTADO DE CUENTA B2B'],
-            ['Cliente / Razón Social:', clientName],
+            ['JHOANES BAKERY & COFFEE - B2B ACCOUNT STATEMENT'],
+            ['Customer / Business Name:', clientName],
             ['Email:', user?.email || ''],
-            ['Periodo:', periodLabel],
-            ['Fecha de Generación:', new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString()],
+            ['Statement Period:', periodLabel],
+            ['Generated On:', new Date().toLocaleDateString('en-US') + ' ' + new Date().toLocaleTimeString('en-US')],
             [''],
-            ['RESUMEN FINANCIERO CONSOLIDADO'],
-            ['Total Facturado ($):', statementSummary.totalInvoiced.toFixed(2)],
-            ['Total Pagado ($):', statementSummary.totalPaid.toFixed(2)],
-            ['Saldo Pendiente ($):', statementSummary.totalPending.toFixed(2)],
-            ['Total de Órdenes:', statementSummary.ordersCount],
+            ['CONSOLIDATED FINANCIAL SUMMARY'],
+            ['Total Invoiced ($):', statementSummary.totalInvoiced.toFixed(2)],
+            ['Total Paid ($):', statementSummary.totalPaid.toFixed(2)],
+            ['Outstanding Balance ($):', statementSummary.totalPending.toFixed(2)],
+            ['Total Orders:', statementSummary.ordersCount],
             [''],
             [
-                'Folio / ID',
-                'Fecha de Despacho / Entrega',
-                'Fecha de Pedido',
-                'Método de Pago',
-                'Estado de Pago',
-                'Total Facturado ($)',
-                'Pagos Aplicados ($)',
-                'Saldo Pendiente ($)'
+                'Order #',
+                'Delivery / Dispatch Date',
+                'Order Date',
+                'Payment Method',
+                'Payment Status',
+                'Total Invoiced ($)',
+                'Applied Payments ($)',
+                'Balance Due ($)'
             ]
         ];
 
@@ -481,8 +481,8 @@ export default function ClientOrdersPage() {
 
             const dispatchDateStr = o.delivery_date
                 ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0])
-                : (o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A');
-            const createdDateStr = o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A';
+                : (o.created_at ? new Date(o.created_at).toLocaleDateString('en-US') : 'N/A');
+            const createdDateStr = o.created_at ? new Date(o.created_at).toLocaleDateString('en-US') : 'N/A';
 
             rows.push([
                 `#${o.id.slice(0, 8).toUpperCase()}`,
@@ -498,18 +498,18 @@ export default function ClientOrdersPage() {
 
         const ws = XLSX.utils.aoa_to_sheet(rows);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Estado de Cuenta');
-        const filename = `Estado_Cuenta_${statementRange}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.utils.book_append_sheet(wb, ws, 'Account Statement');
+        const filename = `Statement_${statementRange}_${new Date().toISOString().slice(0, 10)}.xlsx`;
         XLSX.writeFile(wb, filename);
     };
 
     const exportStatementToPdf = () => {
-        const clientName = profile?.company_name || user?.user_metadata?.full_name || user?.email || 'Cliente';
+        const clientName = profile?.company_name || user?.user_metadata?.full_name || user?.email || 'Valued Customer';
         const periodLabel = statementRange === 'current_month' 
-            ? 'Mes Actual' 
+            ? 'Current Month' 
             : statementRange === 'last_30_days' 
-                ? 'Últimos 30 Días' 
-                : 'Histórico Completo';
+                ? 'Last 30 Days' 
+                : 'Full History';
 
         const rowsHtml = filteredStatementOrders.map(o => {
             const tot = Number(o.total) || 0;
@@ -521,8 +521,8 @@ export default function ClientOrdersPage() {
 
             const dispatchDateStr = o.delivery_date
                 ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0])
-                : (o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A');
-            const createdDateStr = o.created_at ? new Date(o.created_at).toLocaleDateString() : 'N/A';
+                : (o.created_at ? new Date(o.created_at).toLocaleDateString('en-US') : 'N/A');
+            const createdDateStr = o.created_at ? new Date(o.created_at).toLocaleDateString('en-US') : 'N/A';
 
             return `<tr>
                 <td style="padding:8px; border-bottom:1px solid #e2e8f0; font-family:monospace; font-weight:bold;">#${o.id.slice(0, 8).toUpperCase()}</td>
@@ -536,7 +536,7 @@ export default function ClientOrdersPage() {
             </tr>`;
         }).join('');
 
-        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Estado de Cuenta - Jhoanes Bakery</title>
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Account Statement - Jhoanes Bakery Wholesale</title>
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; color: #1e293b; }
             .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 24px; }
@@ -555,26 +555,26 @@ export default function ClientOrdersPage() {
             <div class="header">
                 <div>
                     <h1 class="title">JHOANES BAKERY & COFFEE</h1>
-                    <div class="subtitle">ESTADO DE CUENTA B2B MAYORISTA • ${periodLabel}</div>
+                    <div class="subtitle">B2B WHOLESALE ACCOUNT STATEMENT • ${periodLabel}</div>
                 </div>
                 <div style="text-align: right; font-size: 12px;">
-                    <div><b>Cliente:</b> ${clientName}</div>
+                    <div><b>Customer:</b> ${clientName}</div>
                     <div><b>Email:</b> ${user?.email || ''}</div>
-                    <div><b>Fecha de Emisión:</b> ${new Date().toLocaleDateString()}</div>
+                    <div><b>Issue Date:</b> ${new Date().toLocaleDateString('en-US')}</div>
                 </div>
             </div>
 
             <div class="cards">
                 <div class="card">
-                    <div class="card-label">Total Facturado</div>
+                    <div class="card-label">Total Invoiced</div>
                     <div class="card-val" style="color: #0f172a;">$${statementSummary.totalInvoiced.toFixed(2)}</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Pagos Aplicados</div>
+                    <div class="card-label">Payments Applied</div>
                     <div class="card-val" style="color: #15803d;">$${statementSummary.totalPaid.toFixed(2)}</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Saldo Pendiente</div>
+                    <div class="card-label">Outstanding Balance</div>
                     <div class="card-val" style="color: #b91c1c;">$${statementSummary.totalPending.toFixed(2)}</div>
                 </div>
             </div>
@@ -582,21 +582,21 @@ export default function ClientOrdersPage() {
             <table>
                 <thead>
                     <tr>
-                        <th>Folio</th>
-                        <th>Fecha de Despacho / Entrega</th>
-                        <th>Fecha de Pedido</th>
-                        <th>Método</th>
-                        <th>Estado</th>
-                        <th style="text-align:right;">Facturación</th>
-                        <th style="text-align:right;">Pagado</th>
-                        <th style="text-align:right;">Pendiente</th>
+                        <th>Order #</th>
+                        <th>Delivery Date</th>
+                        <th>Order Date</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Invoiced</th>
+                        <th style="text-align:right;">Paid</th>
+                        <th style="text-align:right;">Balance Due</th>
                     </tr>
                 </thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
 
             <div class="footer">
-                Jhoanes Bakery & Coffee LLC • (347) 761-2687 • Contact@jhoanesbakery.com • Brooklyn, NY
+                Jhoanes Bakery & Coffee LLC • (347) 761-2687 • Contact@jhoanesbakery.com • 3304 Broadway, Astoria, NY
             </div>
             <script>window.onload=function(){window.print();};<\/script>
         </body></html>`;

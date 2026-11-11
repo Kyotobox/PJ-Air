@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aviso de Factura Vencida — Panadería Jhoanes Wholesale</title>
+  <title>Overdue Commercial Invoice Notice — Jhoanes Bakery Wholesale</title>
   <style>
     body {
       margin: 0;
@@ -144,51 +144,51 @@
   <div class="wrapper">
     <div class="container">
       <div class="header">
-        <h1>Panadería Jhoanes</h1>
-        <p>Departamento de Crédito y Cobranzas Wholesale</p>
-        <span class="badge-urgent">Aviso de Vencimiento</span>
+        <h1>Jhoanes Bakery Wholesale</h1>
+        <p>Wholesale Credit & Collections Department</p>
+        <span class="badge-urgent">Payment Past Due</span>
       </div>
 
       <div class="content">
         <p class="greeting">
-          Estimado(a) <strong>{{clientName}}</strong>,<br><br>
-          Le notificamos que el plazo de crédito acordado para su orden comercial ha expirado. A continuación, detallamos el saldo pendiente de liquidación:
+          Dear <strong>{{clientName}}</strong>,<br><br>
+          Please be advised that the agreed commercial credit term for your order has expired. Below is the itemized summary of your outstanding balance:
         </p>
 
         <div class="summary-card">
           <div class="summary-row">
-            <span class="label">Número de Pedido:</span>
+            <span class="label">Order Number:</span>
             <span class="value">#{{orderId}}</span>
           </div>
           <div class="summary-row">
-            <span class="label">Fecha Límite de Pago:</span>
+            <span class="label">Payment Due Date:</span>
             <span class="value">{{paymentDueDate}}</span>
           </div>
           <div class="summary-row">
-            <span class="label">Días de Atraso:</span>
-            <span class="value" style="color: #dc2626;">{{daysOverdue}} día(s)</span>
+            <span class="label">Days Past Due:</span>
+            <span class="value" style="color: #dc2626;">{{daysOverdue}} day(s)</span>
           </div>
           <div class="summary-row">
-            <span>Monto Total Adeudado:</span>
+            <span>Total Balance Due:</span>
             <span>${{amountDue}}</span>
           </div>
         </div>
 
         <div class="btn-container">
-          <a href="{{paymentLink}}" class="btn-pay" target="_blank">Pagar Factura en Línea</a>
+          <a href="{{paymentLink}}" class="btn-pay" target="_blank">Pay Invoice Online</a>
         </div>
 
         {{itemsTable}}
 
         <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-top: 24px;">
-          Para evitar suspensiones en sus próximos despachos o afectación de su límite de crédito comercial, le solicitamos regularizar el pago a la brevedad. Si ya realizó una transferencia vía Zelle o cheque, por favor reporte la referencia correspondiente a través del portal de cliente.
+          To prevent interruptions to upcoming deliveries or holds on your commercial credit account, please settle this invoice at your earliest convenience. If you have already submitted payment via Zelle or check, please register your deposit reference on your customer portal.
         </p>
       </div>
 
       <div class="footer">
-        Panadería Jhoanes Wholesale • Astoria, Queens, NY<br>
-        ¿Consultas sobre su estado de cuenta? Contáctenos a cobranzas@jhoanes.com o al (718) 555-0199.<br>
-        <em>Este mensaje contiene una copia de auditoría administrativa automática.</em>
+        Jhoanes Bakery Wholesale • 3304 Broadway, Astoria, NY 11106<br>
+        Questions regarding your account statement? Contact us at billing@jhoanesbakery.com or (718) 555-0199.<br>
+        <em>This automated notice is issued for commercial billing and record-keeping purposes.</em>
       </div>
     </div>
   </div>

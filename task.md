@@ -1,7 +1,7 @@
-# SPRINT S74 - Sprint Activo
+# SPRINT S75 - Sprint Activo
 **Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-11
 
-- [x] **TASK-74-01** [TASK] Corrección de normalización de hora NY en medianoche (hour === 24 -> 0) en OrdersService para cálculo y validación de corte de entrega
-- [x] **TASK-74-02** [TASK] Propagación de mensaje de error específico del servidor en notificación toast de Checkout
-- [x] **TASK-74-03** [TASK] Suite de pruebas automatizadas (§6 con sad path de medianoche), compilación física, despliegue a producción y certificación en vivo
+- [x] **TASK-75-01** [TASK] Estandarización a 100% inglés de correos de órdenes, recibos y suscripciones (sendOrderReceipt, sendRefundReceipt, sendStandingOrderConfirmation) en backend/src/mail/mail.service.ts
+- [x] **TASK-75-02** [TASK] Estandarización a 100% inglés de alertas de crédito, pagos fallidos, Zelle, contraseñas y plantilla HTML de factura vencida (invoice_overdue.html, sendCreditAlert, sendPaymentFailedAlert, sendOverdueInvoiceAlert, sendZelleRejectionAlert, sendPasswordResetEmail)
+- [x] **TASK-75-03** [TASK] Auditoría exhaustiva de recibos/facturas en Frontend y Backend, actualización de suite de tests en mail.service.spec.ts (§6), compilación física, despliegue a producción y testing, y verificación en vivo
