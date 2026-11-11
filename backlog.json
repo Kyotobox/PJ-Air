@@ -3,44 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S71",
+  "current_sprint": "S72",
   "current_task": "TASK-71-01",
   "sprints": [
-    {
-      "id": "S69",
-      "name": "Sprint S69: Transición de Datos en Producción, Preservación de Órdenes Activas y Depuración de Clientes para Re-registro",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-69-01",
-          "title": "Snapshot físico inmutable y certificación de respaldo de /root/database.sqlite",
-          "status": "DONE",
-          "type": "TECH/BACKUP",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-69-02",
-          "title": "Creación de perfiles temporales de transición y reasignación de los 3 pedidos en tránsito",
-          "status": "DONE",
-          "type": "DATA/MIGRATION",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-69-03",
-          "title": "Purga relacional de clientes antiguos y pedidos cerrados con blindaje de administradores",
-          "status": "DONE",
-          "type": "DATA/PURGE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-69-04",
-          "title": "Certificación DDL (foreign_key_check), integridad referencial y smoke test",
-          "status": "DONE",
-          "type": "DDL/VERIFY",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S70",
       "name": "Sprint S70: Despliegue a Producción con Acceso Administrativo Protegido y Verificación de Panel",
@@ -101,7 +66,7 @@
     {
       "id": "S71",
       "name": "Sprint S71: Corrección de Flete y Conciliación de Pagos Stripe, Restricción de Métodos ACH y Configuración de Mínimo",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-71-01",
@@ -144,11 +109,67 @@
           "status": "DONE",
           "type": "DEPLOY/PROD",
           "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-07",
+          "title": "Conciliación y reparación física en producción de Orden #F8F17C1A vinculando pi_3UaS3BS91wzOMOtr1n1xFOiY ($2,173.83), asignando payment_status partially_paid y pending_balance de $350.00",
+          "status": "DONE",
+          "type": "PROD/DATA",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-08",
+          "title": "Soporte en createSettlementLink para cobrar estrictamente el pending_balance cuando exista saldo remanente, con tests unitarios y sad paths (§6)",
+          "status": "DONE",
+          "type": "CORE/LOGIC",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-71-09",
+          "title": "Corrección en checkout para usar tarifa de entrega fresca del perfil y en la vista de orden / factura para mostrar saldo remanente y permitir pagarlo en línea",
+          "status": "DONE",
+          "type": "UI/PAYMENTS",
+          "veracity_hash": null
+        }
+      ]
+    },
+    {
+      "id": "S72",
+      "title": "Sprint S72: Liquidación de Saldos Parciales, Conciliación F8F17C1A y Resincronización de Flete",
+      "status": "COMPLETED",
+      "tasks": [
+        {
+          "id": "TASK-72-01",
+          "title": "Conciliación y reparación física en producción de Orden #F8F17C1A vinculando pi_3UaS3BS91wzOMOtr1n1xFOiY ($2,173.83), asignando payment_status partially_paid y pending_balance de $350.00",
+          "status": "DONE",
+          "type": "PROD/DATA",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-72-02",
+          "title": "Soporte en createSettlementLink para cobrar estrictamente el pending_balance cuando exista saldo remanente, con tests unitarios y sad paths (§6)",
+          "status": "DONE",
+          "type": "CORE/LOGIC",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-72-03",
+          "title": "Corrección en checkout para usar tarifa de entrega fresca del perfil y en la vista de orden / factura para mostrar saldo remanente y permitir pagarlo en línea",
+          "status": "DONE",
+          "type": "UI/PAYMENTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-72-04",
+          "title": "Compilación, suite de pruebas, commit atómico (§48) y despliegue a producción en 187.124.67.53 con verificación de factura y enlace de pago",
+          "status": "DONE",
+          "type": "DEPLOY/PROD",
+          "veracity_hash": null
         }
       ]
     }
   ],
-  "archived_sprints_count": 62,
+  "archived_sprints_count": 63,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S71",
