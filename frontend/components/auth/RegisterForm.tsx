@@ -96,12 +96,6 @@ export const RegisterForm = ({
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formatted = formatPhoneNumber(e.target.value);
         setFormData({ ...formData, phone: formatted });
-        if (isPhoneVerified && setIsPhoneVerified) {
-            setIsPhoneVerified(false);
-        }
-        if (onPhoneChange) {
-            onPhoneChange();
-        }
     };
 
     const isAllConsentChecked = Boolean(
