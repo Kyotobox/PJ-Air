@@ -938,6 +938,10 @@ export class OrdersService {
     return this.findOne(id);
   }
 
+  getPaymentsService(): PaymentsService | undefined {
+    return this.paymentsService;
+  }
+
   async approveZellePayment(orderId: string): Promise<Order> {
     const order = await this.findOne(orderId);
     if (!order) {

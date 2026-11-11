@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S76",
-  "current_task": "TASK-76-01",
+  "current_sprint": "S77",
+  "current_task": "TASK-77-01",
   "sprints": [
     {
       "id": "S74",
@@ -94,28 +94,28 @@
   "archived_sprints_count": 67,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S76",
-    "title": "Sprint S76: Inhabilitación de Pedidos y Aislamiento de Órdenes de Producción, Cocina y Reportes Financieros",
-    "status": "COMPLETED",
+    "id": "S77",
+    "title": "Sprint S77: Blindaje de Integridad Financiera y Pasarela Stripe",
+    "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-76-01",
-        "title": "Backend: Endpoints PATCH /orders/:id/disable y POST /orders/bulk-disable con notas forenses de auditoría, y exclusión de órdenes canceladas en FinancialReportsCron",
+        "id": "TASK-77-01",
+        "title": "Frontend: Corrección de falso positivo en api.ts (retornar null ante respuesta HTTP 200 vacía), validación estricta de resolvedZone?.id en checkout/page.tsx, y envío forzoso del order.total devuelto por el backend al invocar /payments/create-intent",
         "status": "DONE",
-        "type": "BACKEND/ORDERS",
+        "type": "FRONTEND/CHECKOUT",
         "veracity_hash": null
       },
       {
-        "id": "TASK-76-02",
-        "title": "Frontend: Botón de acción rápida individual 🚫 Inhabilitar Pedido, soporte de selección masiva (bulk disable), sincronización bilingüe de estados en filtros y badges, y actualización de FinancialStatusBadge",
+        "id": "TASK-77-02",
+        "title": "Backend: Blindaje en payments.service.ts para fijar y validar el monto del PaymentIntent directamente desde order.total / saldo en BD cuando existe orderId, y verificación en orders.controller.ts (PATCH /orders/:id/payment-status) comprobando contra Stripe si el cobro cubre el total (degradando a partially_paid con pending_balance ante montos menores)",
         "status": "DONE",
-        "type": "FRONTEND/ORDERS",
+        "type": "BACKEND/PAYMENTS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-76-03",
-        "title": "Certificación: Suite de pruebas automatizadas (§6 con sad path), inhabilitación de compras de prueba existentes en base de datos, compilación física (build), y verificación integral",
-        "status": "DONE",
+        "id": "TASK-77-03",
+        "title": "Certificación: Tests automatizados con Happy y Sad path (§6), compilación física, despliegue a testing y producción VPS, y ajuste del saldo pendiente ($625.00) en la orden 060d13ad-4c6b-414c-9692-7a7bc41431ee",
+        "status": "IN_PROGRESS",
         "type": "DEPLOY/CERT",
         "veracity_hash": null
       }

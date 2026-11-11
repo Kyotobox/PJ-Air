@@ -165,9 +165,34 @@ export class OrdersController {
     }
     if (order.user_id === req.user?.id) {
       if (paymentStatus === 'paid') {
+        let targetPaymentStatus = 'paid';
+        let targetPendingBalance = 0;
+        let auditNote = '';
+
+        if (stripePaymentId && typeof this.ordersService.getPaymentsService === 'function') {
+          const paymentsService = this.ordersService.getPaymentsService();
+          if (paymentsService && typeof paymentsService.retrievePaymentIntent === 'function') {
+            try {
+              const pi = await paymentsService.retrievePaymentIntent(stripePaymentId);
+              if (pi) {
+                const amountReceived = Math.round((pi.amount_received || 0)) / 100;
+                const orderTotal = Number(order.total) || 0;
+                if (amountReceived > 0 && amountReceived < orderTotal - 0.01) {
+                  targetPaymentStatus = 'partially_paid';
+                  targetPendingBalance = Math.max(0, Math.round((orderTotal - amountReceived) * 100) / 100);
+                  auditNote = `[PAGO PARCIAL STRIPE] Cobrado $${amountReceived.toFixed(2)} vía Stripe (${stripePaymentId}). Saldo pendiente: $${targetPendingBalance.toFixed(2)}.\n`;
+                }
+              }
+            } catch (err: any) {
+              console.warn(`[OrdersController] Could not verify Stripe payment ${stripePaymentId}: ${err?.message}`);
+            }
+          }
+        }
+
         return this.ordersService.update(id, {
-          payment_status: 'paid',
-          pending_balance: 0,
+          payment_status: targetPaymentStatus,
+          pending_balance: targetPendingBalance,
+          ...(auditNote ? { notes: auditNote + (order.notes || '') } : {}),
           ...(stripePaymentId ? { stripe_payment_id: stripePaymentId } : {}),
         }, role);
       }

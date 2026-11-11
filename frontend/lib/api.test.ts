@@ -50,7 +50,7 @@ describe('api.get()', () => {
   it('handles an empty body (204-style) without crashing', async () => {
     mockFetch.mockResolvedValueOnce(makeResponse(200, ''));
     const result = await api.get('/healthz');
-    expect(result).toEqual({});
+    expect(result).toBeNull();
   });
 });
 

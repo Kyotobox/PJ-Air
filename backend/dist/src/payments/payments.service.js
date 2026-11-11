@@ -171,15 +171,45 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             throw new common_1.BadRequestException(`Stripe Customer Portal error: ${e.message}`);
         }
     }
+    async retrievePaymentIntent(paymentIntentId) {
+        if (!this.stripe || !paymentIntentId)
+            return null;
+        try {
+            return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+        }
+        catch (err) {
+            this.logger.warn(`Could not retrieve PaymentIntent ${paymentIntentId}: ${err?.message}`);
+            return null;
+        }
+    }
     async createPaymentIntent(data) {
         const { amount, currency = 'usd', orderId, customerEmail, description, customerId, paymentMethodId, saveCard, paymentMethodType, } = data;
-        if (!amount || amount < 0.5) {
+        let targetAmount = amount;
+        if (orderId && this.ordersService) {
+            try {
+                const order = await this.ordersService.findOne(orderId);
+                if (order) {
+                    const orderTotal = Number(order.total) || 0;
+                    const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined && Number(order.pending_balance) > 0)
+                        ? Number(order.pending_balance)
+                        : null;
+                    const authoritativeAmount = pendingBal !== null ? pendingBal : orderTotal;
+                    if (authoritativeAmount > 0) {
+                        targetAmount = authoritativeAmount;
+                    }
+                }
+            }
+            catch (err) {
+                this.logger.warn(`Could not verify authoritative order amount for order ${orderId}: ${err?.message}`);
+            }
+        }
+        if (!targetAmount || targetAmount < 0.5) {
             throw new common_1.BadRequestException('Amount must be at least $0.50 USD');
         }
         if (!this.stripe) {
             throw new common_1.BadRequestException('Stripe service is not configured');
         }
-        const amountInCents = Math.round(amount * 100);
+        const amountInCents = Math.round(targetAmount * 100);
         try {
             if (paymentMethodId) {
                 const intent = await this.stripe.paymentIntents.create({
@@ -206,7 +236,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 return {
                     clientSecret: intent.client_secret || '',
                     paymentIntentId: intent.id,
-                    amount,
+                    amount: targetAmount,
                     status: intent.status,
                 };
             }
@@ -237,7 +267,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             return {
                 clientSecret: intent.client_secret || '',
                 paymentIntentId: intent.id,
-                amount,
+                amount: targetAmount,
                 status: intent.status,
             };
         }

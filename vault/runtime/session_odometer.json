@@ -1,6 +1,6 @@
 {
   "session_uuid": "617e2090041717fcd02ce9f008323d23",
-  "session_start_ts": "2026-11-11T05:34:26.406051",
+  "session_start_ts": "2026-11-11T14:50:27.092139",
   "total_bytes": 0,
   "total_bytes_out": 0,
   "context_base_bytes": 0,
@@ -10,14 +10,13 @@
   "turns": 0,
   "peak_bytes": 0,
   "strike_count": 0,
-  "hwc_complete": true,
-  "last_update": "2026-11-11T05:34:26.406060",
+  "hwc_complete": false,
+  "last_update": "2026-11-11T14:50:27.092148",
   "input_pressure": 0,
-  "degraded_ops_count": 1,
-  "session_count": 3,
+  "degraded_ops_count": 0,
+  "session_count": 4,
   "test_warning_count": 0,
   "takeover_bytes_offset": 0,
-  "conversation_uuid": "4c90a2c5-d0af-4c6f-b4ea-dd0a2d112aac",
-  "peak_depth": 11.36421,
-  "hwc_ts": "2026-11-11T05:52:56.164999"
+  "conversation_uuid": "98212a60-c48a-402e-a3d9-25cfcb4e6cab",
+  "peak_depth": 50.17694
 }

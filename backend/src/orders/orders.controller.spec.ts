@@ -21,6 +21,7 @@ describe('OrdersController', () => {
     mutateOrderItems: jest.fn(),
     disableOrder: jest.fn(),
     bulkDisableOrders: jest.fn(),
+    getPaymentsService: jest.fn(),
   };
 
   const mockExcelService = {
@@ -183,6 +184,39 @@ describe('OrdersController', () => {
         stripe_payment_id: 'pi_test_abc',
       }, 'client');
       expect(res).toEqual({ id: 'ord-client-1', payment_status: 'paid', pending_balance: 0 });
+    });
+
+    it('TASK-77-02 Happy Path: should downgrade to partially_paid with pending_balance when Stripe payment is less than order total', async () => {
+      const mockPaymentsService = {
+        retrievePaymentIntent: jest.fn().mockResolvedValue({
+          id: 'pi_partial_625',
+          amount_received: 127409,
+        }),
+      };
+      (mockOrdersService.getPaymentsService as jest.Mock).mockReturnValue(mockPaymentsService);
+      mockOrdersService.findOne.mockResolvedValue({
+        id: 'ord-underpaid',
+        user_id: 'client-owner',
+        total: 1899.09,
+        notes: '',
+      });
+      mockOrdersService.update.mockResolvedValue({
+        id: 'ord-underpaid',
+        payment_status: 'partially_paid',
+        pending_balance: 625.00,
+      });
+
+      const req = { user: { id: 'client-owner', role: 'client' } };
+      const res = await controller.updatePaymentStatus('ord-underpaid', 'paid', 'pi_partial_625', req as any);
+
+      expect(service.update).toHaveBeenCalledWith('ord-underpaid', {
+        payment_status: 'partially_paid',
+        pending_balance: 625.00,
+        notes: expect.stringContaining('[PAGO PARCIAL STRIPE] Cobrado $1274.09 vía Stripe (pi_partial_625). Saldo pendiente: $625.00.'),
+        stripe_payment_id: 'pi_partial_625',
+      }, 'client');
+      expect(res.payment_status).toBe('partially_paid');
+      expect(res.pending_balance).toBe(625.00);
     });
 
     it('Sad path: client attempting to confirm payment on another client order throws ForbiddenException (§6)', async () => {

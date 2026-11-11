@@ -163,6 +163,16 @@ export class PaymentsService {
     }
   }
 
+  async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent | null> {
+    if (!this.stripe || !paymentIntentId) return null;
+    try {
+      return await this.stripe.paymentIntents.retrieve(paymentIntentId);
+    } catch (err: any) {
+      this.logger.warn(`Could not retrieve PaymentIntent ${paymentIntentId}: ${err?.message}`);
+      return null;
+    }
+  }
+
   async createPaymentIntent(data: {
     amount: number;
     currency?: string;
@@ -185,8 +195,27 @@ export class PaymentsService {
       saveCard,
       paymentMethodType,
     } = data;
+
+    let targetAmount = amount;
+    if (orderId && this.ordersService) {
+      try {
+        const order = await this.ordersService.findOne(orderId);
+        if (order) {
+          const orderTotal = Number(order.total) || 0;
+          const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined && Number(order.pending_balance) > 0)
+            ? Number(order.pending_balance)
+            : null;
+          const authoritativeAmount = pendingBal !== null ? pendingBal : orderTotal;
+          if (authoritativeAmount > 0) {
+            targetAmount = authoritativeAmount;
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`Could not verify authoritative order amount for order ${orderId}: ${err?.message}`);
+      }
+    }
     
-    if (!amount || amount < 0.5) {
+    if (!targetAmount || targetAmount < 0.5) {
       throw new BadRequestException('Amount must be at least $0.50 USD');
     }
 
@@ -194,7 +223,7 @@ export class PaymentsService {
       throw new BadRequestException('Stripe service is not configured');
     }
 
-    const amountInCents = Math.round(amount * 100);
+    const amountInCents = Math.round(targetAmount * 100);
 
     try {
       // 1-Click Checkout with an existing saved payment method
@@ -225,7 +254,7 @@ export class PaymentsService {
         return {
           clientSecret: intent.client_secret || '',
           paymentIntentId: intent.id,
-          amount,
+          amount: targetAmount,
           status: intent.status,
         };
       }
@@ -262,7 +291,7 @@ export class PaymentsService {
       return {
         clientSecret: intent.client_secret || '',
         paymentIntentId: intent.id,
-        amount,
+        amount: targetAmount,
         status: intent.status,
       };
     } catch (err: any) {

@@ -808,6 +808,9 @@ let OrdersService = class OrdersService {
         }
         return this.findOne(id);
     }
+    getPaymentsService() {
+        return this.paymentsService;
+    }
     async approveZellePayment(orderId) {
         const order = await this.findOne(orderId);
         if (!order) {

@@ -58,13 +58,53 @@ describe('PaymentsService', () => {
     const result = await service.createPaymentIntent({
       amount: 150.00,
       currency: 'usd',
-      orderId: 'order-999',
       customerEmail: 'client@example.com',
     });
 
     expect(result).toHaveProperty('clientSecret');
     expect(result).toHaveProperty('paymentIntentId');
     expect(result.amount).toBe(150.00);
+  });
+
+  it('TASK-77-02 Happy Path: should override client requested amount with authoritative order total when orderId is provided', async () => {
+    ordersService.findOne.mockResolvedValueOnce({
+      id: 'order-syracuse-1899',
+      total: 1899.09,
+      pending_balance: null,
+      user: { email: 'client@example.com' },
+    });
+
+    const result = await service.createPaymentIntent({
+      amount: 1274.09,
+      currency: 'usd',
+      orderId: 'order-syracuse-1899',
+      customerEmail: 'client@example.com',
+    });
+
+    expect(result.amount).toBe(1899.09);
+  });
+
+  it('TASK-77-02 Happy Path: should enforce pending_balance when order has partial balance remaining', async () => {
+    ordersService.findOne.mockResolvedValueOnce({
+      id: 'order-partial-625',
+      total: 1899.09,
+      pending_balance: 625.00,
+      user: { email: 'client@example.com' },
+    });
+
+    const result = await service.createPaymentIntent({
+      amount: 100.00,
+      currency: 'usd',
+      orderId: 'order-partial-625',
+      customerEmail: 'client@example.com',
+    });
+
+    expect(result.amount).toBe(625.00);
+  });
+
+  it('TASK-77-02 Sad Path: retrievePaymentIntent returns null on invalid or missing intent ID (§6)', async () => {
+    const res = await service.retrievePaymentIntent('');
+    expect(res).toBeNull();
   });
 
   it('should reconcile order via webhook event payment_intent.succeeded and dispatch sendOrderReceipt', async () => {

@@ -793,7 +793,7 @@ export default function CheckoutPage() {
         api.get(`/zones/resolve?zip=${currentZip}`)
             .then((zone: any) => {
                 if (isMounted) {
-                    setResolvedZone(zone || null);
+                    setResolvedZone((zone && zone.id) ? zone : null);
                     setResolvedZip(currentZip);
                 }
             })
@@ -899,7 +899,7 @@ export default function CheckoutPage() {
         deliveryFee = 0;
     } else if (hasVipFee) {
         deliveryFee = userCustomFee;
-    } else if (resolvedZone) {
+    } else if (resolvedZone && resolvedZone.id) {
         const freeDeliveryThreshold = Number(resolvedZone.min_free_delivery_amount);
         if (freeDeliveryThreshold > 0 && discountedSubtotal >= freeDeliveryThreshold) {
             deliveryFee = 0;
@@ -912,8 +912,8 @@ export default function CheckoutPage() {
         deliveryFee = 15.00; // Contingency fallback
     }
 
-    const isFreeDeliveryEligible = !hasVipFee && !isComplementaryOrder && resolvedZone && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal >= Number(resolvedZone.min_free_delivery_amount);
-    const freeDeliveryShortage = !hasVipFee && !isComplementaryOrder && resolvedZone && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal < Number(resolvedZone.min_free_delivery_amount)
+    const isFreeDeliveryEligible = !hasVipFee && !isComplementaryOrder && resolvedZone && resolvedZone.id && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal >= Number(resolvedZone.min_free_delivery_amount);
+    const freeDeliveryShortage = !hasVipFee && !isComplementaryOrder && resolvedZone && resolvedZone.id && Number(resolvedZone.min_free_delivery_amount) > 0 && discountedSubtotal < Number(resolvedZone.min_free_delivery_amount)
         ? Math.round((Number(resolvedZone.min_free_delivery_amount) - discountedSubtotal + Number.EPSILON) * 100) / 100
         : 0;
 
@@ -1329,8 +1329,9 @@ export default function CheckoutPage() {
             } else {
                 // Cash / Card / ACH customer: launch Stripe payment modal
                 try {
+                    const authoritativeTotal = Number(order?.total) > 0 ? Number(order.total) : finalTotal;
                     const intentRes = await api.post('/payments/create-intent', {
-                        amount: finalTotal,
+                        amount: authoritativeTotal,
                         orderId: order.id,
                         customerEmail: user.email,
                         paymentMethodType: paymentMethod === 'ach' ? 'us_bank_account' : undefined,
@@ -1339,7 +1340,7 @@ export default function CheckoutPage() {
                     if (intentRes && intentRes.clientSecret) {
                         setStripePaymentData({
                             clientSecret: intentRes.clientSecret,
-                            amount: finalTotal,
+                            amount: authoritativeTotal,
                             orderId: order.id,
                         });
                         return; // Wait for modal completion

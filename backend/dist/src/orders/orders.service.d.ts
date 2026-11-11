@@ -41,6 +41,7 @@ export declare class OrdersService {
     updateStatus(id: string, status: string, userRole?: string): Promise<Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<Order>;
     update(id: string, updateData: any, userRole?: string): Promise<Order>;
+    getPaymentsService(): PaymentsService | undefined;
     approveZellePayment(orderId: string): Promise<Order>;
     rejectZellePayment(orderId: string, reason?: string): Promise<Order>;
     settleBatch(userId: string, userRole: string, dto: {

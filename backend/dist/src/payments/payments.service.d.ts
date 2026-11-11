@@ -1,3 +1,4 @@
+import Stripe from 'stripe';
 import { OrdersService } from '../orders/orders.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
@@ -24,6 +25,7 @@ export declare class PaymentsService {
     createCustomerPortalSession(userId: string): Promise<{
         url: string;
     }>;
+    retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent | null>;
     createPaymentIntent(data: {
         amount: number;
         currency?: string;

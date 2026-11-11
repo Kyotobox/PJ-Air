@@ -3,12 +3,13 @@ import { API_URL } from '@/lib/config';
 
 async function handleResponse(response: Response) {
   const text = await response.text();
-  let data = {};
-  if (text) {
+  let data: any = null;
+  if (text && text.trim()) {
     try {
       data = JSON.parse(text);
     } catch (e) {
       console.error('Error parsing JSON response', e);
+      data = null;
     }
   }
 
@@ -26,7 +27,7 @@ async function handleResponse(response: Response) {
   }
 
   if (!response.ok) {
-    throw new Error((data as any).message || 'Error en la petición');
+    throw new Error((data as any)?.message || 'Error en la petición');
   }
   return data;
 }
