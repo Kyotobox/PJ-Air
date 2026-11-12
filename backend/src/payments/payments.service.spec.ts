@@ -157,7 +157,7 @@ describe('PaymentsService', () => {
 
     const result = await service.handleWebhook(webhookEvent);
     expect(result.received).toBe(true);
-    expect(ordersService.update).toHaveBeenCalledWith('order-settled-111', { payment_status: 'paid', stripe_payment_id: 'pi_cs_999' }, 'admin');
+    expect(ordersService.update).toHaveBeenCalledWith('order-settled-111', { payment_status: 'paid', stripe_payment_id: 'pi_cs_999', pending_balance: 0 }, 'admin');
     
     await new Promise(r => setTimeout(r, 10));
     expect(mailService.sendOrderReceipt).toHaveBeenCalled();

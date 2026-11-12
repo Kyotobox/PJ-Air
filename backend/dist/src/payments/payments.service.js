@@ -628,6 +628,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 const updatePayload = {
                     payment_status: 'paid',
                     stripe_payment_id: paymentIntentId,
+                    pending_balance: 0,
                 };
                 if (session.metadata?.feeAmount) {
                     updatePayload.fee_amount = Number(session.metadata.feeAmount);
@@ -658,6 +659,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                         await this.ordersService.update(oId, {
                             payment_status: 'paid',
                             stripe_payment_id: paymentIntentId,
+                            pending_balance: 0,
                         }, 'admin');
                         if (mailSvc) {
                             (async () => {
@@ -682,6 +684,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 const updatePayload = {
                     payment_status: 'paid',
                     stripe_payment_id: paymentIntentId,
+                    pending_balance: 0,
                 };
                 if (session.metadata?.feeAmount) {
                     updatePayload.fee_amount = Number(session.metadata.feeAmount);

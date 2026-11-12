@@ -1,67 +1,11 @@
 {
   "project": "pj-air",
   "version": "5.0.0",
-  "kernel_version": "5.0.0",
+  "kernel_version": "5.3.1",
   "status": "COMPLETED",
   "current_sprint": "S78",
   "current_task": "TASK-78-04",
   "sprints": [
-    {
-      "id": "S74",
-      "title": "Sprint S74: Corrección de Cálculo de Hora de Corte en Medianoche y Visibilidad de Errores en Checkout",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-74-01",
-          "title": "Corrección de normalización de hora NY en medianoche (hour === 24 -> 0) en OrdersService para cálculo y validación de corte de entrega",
-          "status": "DONE",
-          "type": "DOMAIN/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-74-02",
-          "title": "Propagación de mensaje de error específico del servidor en notificación toast de Checkout",
-          "status": "DONE",
-          "type": "UI/CHECKOUT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-74-03",
-          "title": "Suite de pruebas automatizadas (§6 con sad path de medianoche), compilación física, despliegue a producción y certificación en vivo",
-          "status": "DONE",
-          "type": "DEPLOY/CERT",
-          "veracity_hash": null
-        }
-      ]
-    },
-    {
-      "id": "S75",
-      "title": "Sprint S75: Estandarización Total en Inglés de Correos, Recibos, Facturas y Notificaciones Transaccionales B2B",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-75-01",
-          "title": "Estandarización a 100% inglés de correos de órdenes, recibos y suscripciones (sendOrderReceipt, sendRefundReceipt, sendStandingOrderConfirmation) en backend/src/mail/mail.service.ts",
-          "status": "DONE",
-          "type": "MAIL/TEMPLATES",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-75-02",
-          "title": "Estandarización a 100% inglés de alertas de crédito, pagos fallidos, Zelle, contraseñas y plantilla HTML de factura vencida (invoice_overdue.html, sendCreditAlert, sendPaymentFailedAlert, sendOverdueInvoiceAlert, sendZelleRejectionAlert, sendPasswordResetEmail)",
-          "status": "DONE",
-          "type": "MAIL/ALERTS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-75-03",
-          "title": "Auditoría exhaustiva de recibos/facturas en Frontend y Backend, actualización de suite de tests en mail.service.spec.ts (§6), compilación física, despliegue a producción y testing, y verificación en vivo",
-          "status": "DONE",
-          "type": "DEPLOY/CERT",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S76",
       "title": "Sprint S76: Inhabilitación de Pedidos y Aislamiento de Órdenes de Producción, Cocina y Reportes Financieros",
@@ -154,7 +98,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 67,
+  "archived_sprints_count": 69,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S78",

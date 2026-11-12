@@ -723,6 +723,7 @@ export class PaymentsService {
         const updatePayload: any = {
           payment_status: 'paid',
           stripe_payment_id: paymentIntentId,
+          pending_balance: 0,
         };
         if (session.metadata?.feeAmount) {
           updatePayload.fee_amount = Number(session.metadata.feeAmount);
@@ -752,6 +753,7 @@ export class PaymentsService {
             await this.ordersService.update(oId, {
               payment_status: 'paid',
               stripe_payment_id: paymentIntentId,
+              pending_balance: 0,
             }, 'admin');
 
             if (mailSvc) {
@@ -774,6 +776,7 @@ export class PaymentsService {
         const updatePayload: any = {
           payment_status: 'paid',
           stripe_payment_id: paymentIntentId,
+          pending_balance: 0,
         };
         if (session.metadata?.feeAmount) {
           updatePayload.fee_amount = Number(session.metadata.feeAmount);

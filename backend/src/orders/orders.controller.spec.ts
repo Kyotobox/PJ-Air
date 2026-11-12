@@ -219,6 +219,40 @@ describe('OrdersController', () => {
       expect(res.pending_balance).toBe(625.00);
     });
 
+    it('TASK-78-05 Happy Path: should fully mark paid and clear pending_balance when settlement payment matches pending balance', async () => {
+      const mockPaymentsService = {
+        retrievePaymentIntent: jest.fn().mockResolvedValue({
+          id: 'pi_settle_300',
+          amount_received: 30000,
+          metadata: { type: 'settlement' },
+        }),
+      };
+      (mockOrdersService.getPaymentsService as jest.Mock).mockReturnValue(mockPaymentsService);
+      mockOrdersService.findOne.mockResolvedValue({
+        id: 'ord-settled-balance',
+        user_id: 'client-owner',
+        total: 1574.09,
+        pending_balance: 300.00,
+        notes: '',
+      });
+      mockOrdersService.update.mockResolvedValue({
+        id: 'ord-settled-balance',
+        payment_status: 'paid',
+        pending_balance: 0,
+      });
+
+      const req = { user: { id: 'client-owner', role: 'client' } };
+      const res = await controller.updatePaymentStatus('ord-settled-balance', 'paid', 'pi_settle_300', req as any);
+
+      expect(service.update).toHaveBeenCalledWith('ord-settled-balance', {
+        payment_status: 'paid',
+        pending_balance: 0,
+        stripe_payment_id: 'pi_settle_300',
+      }, 'client');
+      expect(res.payment_status).toBe('paid');
+      expect(res.pending_balance).toBe(0);
+    });
+
     it('Sad path: client attempting to confirm payment on another client order throws ForbiddenException (§6)', async () => {
       mockOrdersService.findOne.mockResolvedValue({ id: 'ord-other-user', user_id: 'victim-client' });
       const req = { user: { id: 'attacker-client', role: 'client' } };

@@ -161,10 +161,19 @@ let OrdersController = class OrdersController {
                             if (pi) {
                                 const amountReceived = Math.round((pi.amount_received || 0)) / 100;
                                 const orderTotal = Number(order.total) || 0;
-                                if (amountReceived > 0 && amountReceived < orderTotal - 0.01) {
+                                const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined && Number(order.pending_balance) > 0)
+                                    ? Number(order.pending_balance)
+                                    : orderTotal;
+                                const isSettlement = pi.metadata?.type === 'settlement' || pi.metadata?.type === 'partial_settlement';
+                                const debtToCompare = isSettlement ? pendingBal : orderTotal;
+                                if (amountReceived > 0 && amountReceived < debtToCompare - 0.01) {
                                     targetPaymentStatus = 'partially_paid';
-                                    targetPendingBalance = Math.max(0, Math.round((orderTotal - amountReceived) * 100) / 100);
+                                    targetPendingBalance = Math.max(0, Math.round((debtToCompare - amountReceived) * 100) / 100);
                                     auditNote = `[PAGO PARCIAL STRIPE] Cobrado $${amountReceived.toFixed(2)} vía Stripe (${stripePaymentId}). Saldo pendiente: $${targetPendingBalance.toFixed(2)}.\n`;
+                                }
+                                else {
+                                    targetPaymentStatus = 'paid';
+                                    targetPendingBalance = 0;
                                 }
                             }
                         }

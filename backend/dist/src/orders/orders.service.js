@@ -507,54 +507,19 @@ let OrdersService = class OrdersService {
             deliveryFee = Number(user.delivery_fee);
         }
         else {
-            let zoneMatched = false;
-            if (this.zonesService) {
-                let zip = orderData.zip_code || orderData.zip || rest.zip_code || rest.zip || null;
-                if (!zip && appliedAddressId && this.addressRepository) {
-                    try {
-                        const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
-                        const match = addr?.address?.match(/\b\d{5}\b/);
-                        if (match)
-                            zip = match[0];
-                    }
-                    catch (_) { }
-                }
-                if (!zip && appliedDeliveryAddressText) {
-                    const match = appliedDeliveryAddressText.match(/\b\d{5}\b/);
-                    if (match)
-                        zip = match[0];
-                }
-                if (zip) {
-                    const zone = await this.zonesService.resolveZip(zip);
-                    if (zone) {
-                        zoneMatched = true;
-                        if (zone.min_free_delivery_amount !== null &&
-                            zone.min_free_delivery_amount !== undefined &&
-                            Number(zone.min_free_delivery_amount) > 0 &&
-                            itemsTotal >= Number(zone.min_free_delivery_amount)) {
-                            deliveryFee = 0;
-                        }
-                        else {
-                            deliveryFee = Number(zone.base_fee);
-                        }
-                    }
-                }
+            if (this.mileageFreightService && (orderData.miles !== undefined || orderData.dest_lat !== undefined)) {
+                const miles = orderData.miles !== undefined
+                    ? Number(orderData.miles)
+                    : this.mileageFreightService.calculateDistanceMiles(Number(orderData.dest_lat), Number(orderData.dest_lng));
+                const serviceType = orderData.freight_service_type || 'shared';
+                const quote = this.mileageFreightService.calculateFreight(miles, serviceType);
+                deliveryFee = quote.cost;
             }
-            if (!zoneMatched) {
-                if (this.mileageFreightService && (orderData.miles !== undefined || orderData.dest_lat !== undefined)) {
-                    const miles = orderData.miles !== undefined
-                        ? Number(orderData.miles)
-                        : this.mileageFreightService.calculateDistanceMiles(Number(orderData.dest_lat), Number(orderData.dest_lng));
-                    const serviceType = orderData.freight_service_type || 'shared';
-                    const quote = this.mileageFreightService.calculateFreight(miles, serviceType);
-                    deliveryFee = quote.cost;
-                }
-                else if (this.zonesService) {
-                    deliveryFee = 15.00;
-                }
-                else {
-                    deliveryFee = Number(user?.delivery_fee || 0);
-                }
+            else if (orderData.delivery_fee !== undefined) {
+                deliveryFee = Number(orderData.delivery_fee);
+            }
+            else {
+                deliveryFee = Number(user?.delivery_fee || 0);
             }
         }
         let isComplementary = false;
@@ -729,6 +694,9 @@ let OrdersService = class OrdersService {
         }
         if (payment_status !== undefined || paymentStatus !== undefined) {
             order.payment_status = payment_status || paymentStatus;
+            if (order.payment_status === 'paid' && updateData.pending_balance === undefined) {
+                order.pending_balance = 0;
+            }
         }
         if (updateData.stripe_payment_id !== undefined) {
             order.stripe_payment_id = updateData.stripe_payment_id;

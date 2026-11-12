@@ -810,6 +810,9 @@ export class OrdersService {
 
     if (payment_status !== undefined || paymentStatus !== undefined) {
       order.payment_status = payment_status || paymentStatus;
+      if (order.payment_status === 'paid' && updateData.pending_balance === undefined) {
+        order.pending_balance = 0;
+      }
     }
 
     if (updateData.stripe_payment_id !== undefined) {
