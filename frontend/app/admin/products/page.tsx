@@ -117,20 +117,20 @@ export default function AdminProductsPage() {
         setForm(f => ({ ...f, image: objectUrl }));
 
         setUploadingImage(true);
+        setFormError(null);
         try {
             const formData = new FormData();
             formData.append('file', file);
 
-            const res = await fetch(`${API_URL}/products/upload-image`, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!res.ok) throw new Error('Error al subir imagen');
-            const data = await res.json();
-            setForm(f => ({ ...f, image: data.url }));
+            const data = await api.upload('/products/upload-image', formData) as any;
+            if (data && data.url) {
+                setForm(f => ({ ...f, image: data.url }));
+            } else {
+                throw new Error('Respuesta inválida al subir imagen');
+            }
         } catch (err: any) {
             console.error('Upload error:', err);
+            setFormError(`Error al subir imagen: ${err.message || 'Error del servidor'}`);
         } finally {
             setUploadingImage(false);
         }
@@ -139,6 +139,14 @@ export default function AdminProductsPage() {
     const handleSave = async () => {
         if (!form.name.trim() || !form.price || !form.category_id) {
             setFormError('Nombre, categoría y precio son obligatorios.');
+            return;
+        }
+        if (uploadingImage) {
+            setFormError('Espera a que termine de subir la imagen antes de guardar.');
+            return;
+        }
+        if (form.image.startsWith('blob:')) {
+            setFormError('La imagen no se subió correctamente al servidor. Por favor selecciona el archivo nuevamente.');
             return;
         }
         const price = parseFloat(form.price);

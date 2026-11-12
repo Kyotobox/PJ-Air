@@ -76,6 +76,43 @@ describe('api.post()', () => {
 });
 
 // ---------------------------------------------------------------------------
+// api.upload()
+// ---------------------------------------------------------------------------
+describe('api.upload()', () => {
+  beforeEach(() => mockFetch.mockClear());
+
+  it('Happy path: uploads FormData with credentials: include and extracts auth token', async () => {
+    document.cookie = 'auth_token=jwt_cookie_token_abc';
+    mockFetch.mockResolvedValueOnce(makeResponse(200, { url: '/uploads/products/image.jpg' }));
+    
+    const formData = new FormData();
+    formData.append('file', 'mock-content');
+    
+    const result = await api.upload('/products/upload-image', formData);
+    expect(result).toEqual({ url: '/uploads/products/image.jpg' });
+    
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(init.credentials).toBe('include');
+    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer jwt_cookie_token_abc');
+    expect(init.body).toBe(formData);
+    
+    document.cookie = 'auth_token=; max-age=0';
+  });
+
+  it('Sad path: throws Error on upload rejection (401 Unauthorized)', async () => {
+    mockFetch.mockResolvedValueOnce(makeResponse(401, { message: 'Missing authorization header' }));
+    const formData = new FormData();
+    await expect(api.upload('/products/upload-image', formData)).rejects.toThrow('Sesión expirada');
+  });
+
+  it('Sad path: throws Error with server message on upload failure (500)', async () => {
+    mockFetch.mockResolvedValueOnce(makeResponse(500, { message: 'File too large' }));
+    const formData = new FormData();
+    await expect(api.upload('/products/upload-image', formData)).rejects.toThrow('File too large');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // api.delete()
 // ---------------------------------------------------------------------------
 describe('api.delete()', () => {

@@ -713,7 +713,8 @@ export default function CheckoutPage() {
             setUserDiscounts(userData);
             setCreditSummary(creditData);
             setUserOrders(Array.isArray(ordersData) ? ordersData : []);
-            if ((creditData as any)?.account_type === 'credit') {
+            const isCredit = (creditData as any)?.account_type === 'credit' || (userData as any)?.account_type === 'credit' || user?.account_type === 'credit' || Number((creditData as any)?.credit_limit || 0) > 0;
+            if (isCredit) {
                 setPaymentMethod('credit');
             }
             if ((userData as any)?.min_order_amount !== null && (userData as any)?.min_order_amount !== undefined && Number((userData as any).min_order_amount) > 0) {
@@ -891,11 +892,11 @@ export default function CheckoutPage() {
     const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + Number.EPSILON) * 100) / 100;
     const subtotal = rawSubtotal;
 
-    const isCreditAccount = creditSummary?.account_type === 'credit';
-    const creditLimit = Number(creditSummary?.credit_limit || 0);
+    const isCreditAccount = creditSummary?.account_type === 'credit' || userDiscounts?.account_type === 'credit' || user?.account_type === 'credit' || Number(creditSummary?.credit_limit ?? userDiscounts?.credit_limit ?? (user as any)?.credit_limit ?? 0) > 0;
+    const creditLimit = Number(creditSummary?.credit_limit ?? userDiscounts?.credit_limit ?? (user as any)?.credit_limit ?? 0);
     const usedCredit = Number(creditSummary?.used_credit || 0);
-    const availableCredit = Number(creditSummary?.available_credit || 0);
-    const hasCreditOverride = Boolean(creditSummary?.credit_override);
+    const availableCredit = creditSummary?.available_credit !== undefined ? Number(creditSummary.available_credit) : Math.max(0, creditLimit - usedCredit);
+    const hasCreditOverride = Boolean(creditSummary?.credit_override ?? userDiscounts?.credit_override ?? (user as any)?.credit_override);
     const exceedsCreditLimit = isCreditAccount && paymentMethod === 'credit' && (usedCredit + finalTotal > creditLimit) && !hasCreditOverride;
 
     // TASK-73-01: Restringir opción 'Transferencia ACH Direct Debit' a cuentas con ach_enabled, autorizadas o VIP
@@ -1652,6 +1653,54 @@ export default function CheckoutPage() {
                                 {lbl('Selecciona tu método de pago preferido para completar la orden.', 'Choose your preferred payment method to complete the order.')}
                             </p>
 
+                            {/* Prioridad #1: Opción de Línea de Crédito Comercial B2B si la cuenta está autorizada */}
+                            {isCreditAccount && (
+                                <div 
+                                    data-testid="payment-method-credit"
+                                    onClick={() => setPaymentMethod('credit')}
+                                    className={`p-5 rounded-2xl border-2 cursor-pointer transition-all mb-6 ${
+                                        paymentMethod === 'credit'
+                                            ? 'border-blue-600 bg-blue-50/70 shadow-md ring-2 ring-blue-500/20'
+                                            : 'border-blue-200 hover:border-blue-400 bg-blue-50/20'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                                                <Store size={20} />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="font-black text-sm text-slate-900">
+                                                        {lbl('Línea de Crédito Comercial B2B (Net 15)', 'Commercial B2B Credit Line (Net 15)')}
+                                                    </span>
+                                                    <span className="px-2 py-0.5 bg-blue-600 text-white text-[9px] font-black uppercase rounded-full tracking-wide">
+                                                        {lbl('Recomendado', 'Preferred')}
+                                                    </span>
+                                                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full">
+                                                        $0.00 Fee (0%)
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-600 mt-0.5">
+                                                    {lbl(`Crédito disponible: $${availableCredit.toFixed(2)} • Cargo automático a cuenta comercial sin pago inmediato`, `Available credit: $${availableCredit.toFixed(2)} • Direct charge to commercial account without immediate payment`)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                            paymentMethod === 'credit' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+                                        }`}>
+                                            {paymentMethod === 'credit' && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isCreditAccount && (
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">
+                                    {lbl('Otras modalidades de pago disponibles:', 'Other available payment methods:')}
+                                </p>
+                            )}
+
                             <div className={`grid grid-cols-1 ${isAchAvailable ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 mb-6`}>
                                 {/* Stripe Card option */}
                                 <div 
@@ -1802,34 +1851,6 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
                             </div>
-
-                            {/* Credit Account option if eligible */}
-                            {isCreditAccount && (
-                                <div 
-                                    onClick={() => setPaymentMethod('credit')}
-                                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all mb-6 ${
-                                        paymentMethod === 'credit'
-                                            ? 'border-blue-600 bg-blue-50/50 shadow-sm'
-                                            : 'border-border/70 hover:border-border bg-white'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                                                <Store size={16} />
-                                            </div>
-                                            <span className="font-bold text-sm text-slate-800">
-                                                {lbl('Línea de Crédito Comercial B2B (Sin recargo)', 'Commercial B2B Credit Line (No surcharge)')}
-                                            </span>
-                                        </div>
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                            paymentMethod === 'credit' ? 'border-blue-600' : 'border-slate-300'
-                                        }`}>
-                                            {paymentMethod === 'credit' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Zelle Instructions Box & Reference Input */}
                             {paymentMethod === 'zelle' && (
@@ -2455,7 +2476,9 @@ export default function CheckoutPage() {
                                     <>
                                         {isPaidWithStoreCredit
                                             ? lbl('Confirmar Pedido (Cubierto con Saldo a Favor)', 'Place Order (Covered by Store Credit)')
-                                            : lbl('Confirmar Pedido', 'Place Order')}
+                                            : paymentMethod === 'credit'
+                                                ? lbl('Confirmar Pedido (Línea de Crédito Net 15)', 'Place Order (Net 15 Credit Line)')
+                                                : lbl('Confirmar Pedido', 'Place Order')}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                     </>
                                 )}
