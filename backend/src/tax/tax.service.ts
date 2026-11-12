@@ -1,6 +1,16 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Optional,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as fs from 'fs';
+import * as path from 'path';
+import { UPLOAD_PATH } from '../config';
 import { User } from '../users/user.entity';
 import { Profile } from '../users/profile.entity';
 import { VisionValidationService, VisionValidationResult } from './vision-validation.service';
@@ -89,7 +99,7 @@ export class TaxService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    const documentUrl = user.profile?.st120_document_url || user.st120_document_url;
+    const documentUrl = user.st120_pdf_url || user.profile?.st120_document_url || user.st120_document_url;
     if (!documentUrl) {
       throw new NotFoundException(`User ${userId} does not have an uploaded ST-120 document`);
     }
@@ -170,11 +180,28 @@ export class TaxService {
 
   /**
    * Generates official digital ST-120 PDF from database legal data and marks user APPROVED
+   * TASK-82-02: Valida Razón Social, EIN y datos del firmante, llama a generateDigitalSt120Pdf, actualiza status='APPROVED', tax_exempt=true, st120_pdf_url
    */
   async generateDigitalST120(
     userId: string,
     requestingUser?: { id: string; role?: string },
-  ): Promise<{ success: boolean; documentUrl: string; user: User }> {
+    dto?: {
+      legal_business_name?: string;
+      legalBusinessName?: string;
+      ein?: string;
+      signer_name?: string;
+      signerName?: string;
+      signer_title?: string;
+      signerTitle?: string;
+      signature_text?: string;
+      signatureText?: string;
+      dba?: string;
+      business_address?: string;
+      businessAddress?: string;
+      tax_id?: string;
+      taxId?: string;
+    },
+  ): Promise<{ success: boolean; documentUrl: string; st120_pdf_url: string; auditHash?: string; user: User }> {
     if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
       throw new ForbiddenException('Cannot generate ST-120 for another user');
     }
@@ -188,45 +215,107 @@ export class TaxService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
+    // 1. Validar Razón Social
     const legalBusinessName =
+      (dto?.legal_business_name && dto.legal_business_name.trim()) ||
+      (dto?.legalBusinessName && dto.legalBusinessName.trim()) ||
       (user.legal_business_name && user.legal_business_name.trim()) ||
-      (user.profile?.company_name && user.profile.company_name.trim()) ||
-      user.email;
+      (user.profile?.company_name && user.profile.company_name.trim());
 
-    const dba = user.dba || user.profile?.company_name || null;
+    if (!legalBusinessName) {
+      throw new BadRequestException('Razón Social (Legal Business Name) es requerida para el Formulario ST-120');
+    }
+
+    // 2. Validar EIN
+    const ein =
+      (dto?.ein && dto.ein.trim()) ||
+      (user.ein && user.ein.trim()) ||
+      (dto?.tax_id && dto.tax_id.trim()) ||
+      (dto?.taxId && dto.taxId.trim()) ||
+      (user.tax_id && user.tax_id.trim()) ||
+      (user.profile?.tax_id && user.profile.tax_id.trim());
+
+    if (!ein) {
+      throw new BadRequestException('Federal EIN / Tax ID es requerido para el Formulario ST-120');
+    }
+
+    // 3. Validar datos del firmante
+    const signerName =
+      (dto?.signer_name && dto.signer_name.trim()) ||
+      (dto?.signerName && dto.signerName.trim()) ||
+      (user.signer_name && user.signer_name.trim()) ||
+      (user.profile?.full_name && user.profile.full_name.trim());
+
+    if (!signerName) {
+      throw new BadRequestException('Nombre del firmante es requerido para el Formulario ST-120');
+    }
+
+    const signerTitle =
+      (dto?.signer_title && dto.signer_title.trim()) ||
+      (dto?.signerTitle && dto.signerTitle.trim()) ||
+      user.signer_title ||
+      'Authorized Representative';
+
+    const signatureText =
+      (dto?.signature_text && dto.signature_text.trim()) ||
+      (dto?.signatureText && dto.signatureText.trim()) ||
+      user.signature_text ||
+      signerName;
+
+    const dba =
+      dto?.dba !== undefined
+        ? (dto.dba ? dto.dba.trim() : null)
+        : (user.dba || user.profile?.company_name || null);
+
     const businessAddress =
+      (dto?.business_address && dto.business_address.trim()) ||
+      (dto?.businessAddress && dto.businessAddress.trim()) ||
       user.business_address ||
       (user.addresses && user.addresses.length > 0 ? user.addresses[0].address : 'Address on file');
 
-    const taxId = user.tax_id || user.profile?.tax_id || user.ein || 'PENDING';
-    const signerName = user.signer_name || user.profile?.full_name || user.email;
-    const signerTitle = user.signer_title || 'Authorized Representative';
-    const signatureText = user.signature_text || user.signer_name || user.profile?.full_name || 'Authorized Signer';
+    const taxId =
+      (dto?.tax_id && dto.tax_id.trim()) ||
+      (dto?.taxId && dto.taxId.trim()) ||
+      user.tax_id ||
+      user.profile?.tax_id ||
+      ein;
+
     const acceptedAt = user.accepted_at || new Date();
     const ipAddress = user.ip_address || '127.0.0.1';
 
     const generator = this.getGenerator();
-    const pdfResult = await generator.generateST120Pdf({
+    const pdfData = {
       userId: user.id,
       legalBusinessName,
       dba,
       businessAddress,
       taxId,
-      ein: user.ein || null,
+      ein,
       signerName,
       signerTitle,
       signatureText,
       acceptedAt,
       ipAddress,
-    });
+    };
+
+    const pdfResult = generator.generateDigitalSt120Pdf
+      ? await generator.generateDigitalSt120Pdf(pdfData)
+      : await generator.generateST120Pdf(pdfData);
 
     await this.userRepository.update(userId, {
       st120_status: 'APPROVED',
       tax_exempt: true,
       st120_document_url: pdfResult.relativeUrl,
-      ...(user.signature_text ? {} : { signature_text: signatureText }),
-      ...(user.signer_name ? {} : { signer_name: signerName }),
-      ...(user.accepted_at ? {} : { accepted_at: acceptedAt }),
+      st120_pdf_url: pdfResult.relativeUrl,
+      legal_business_name: legalBusinessName,
+      ein,
+      tax_id: taxId,
+      signer_name: signerName,
+      signer_title: signerTitle,
+      signature_text: signatureText,
+      dba,
+      business_address: businessAddress,
+      accepted_at: acceptedAt,
     });
 
     if (user.profile) {
@@ -234,6 +323,8 @@ export class TaxService {
         st120_status: 'APPROVED',
         tax_exempt: true,
         st120_document_url: pdfResult.relativeUrl,
+        ...(taxId ? { tax_id: taxId } : {}),
+        company_name: legalBusinessName,
       });
     }
 
@@ -246,6 +337,8 @@ export class TaxService {
     return {
       success: true,
       documentUrl: pdfResult.relativeUrl,
+      st120_pdf_url: pdfResult.relativeUrl,
+      auditHash: pdfResult.auditHash,
       user: updatedUser,
     };
   }
@@ -267,7 +360,7 @@ export class TaxService {
     },
     clientIp?: string,
     requestingUser?: { id: string; role?: string },
-  ): Promise<{ success: boolean; documentUrl: string; user: User }> {
+  ): Promise<{ success: boolean; documentUrl: string; st120_pdf_url: string; user: User }> {
     if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
       throw new ForbiddenException('Cannot sign ST-120 for another user');
     }
@@ -307,7 +400,7 @@ export class TaxService {
       user.profile?.tax_id ||
       user.ein ||
       'PENDING';
-    const ein = (signData.ein && signData.ein.trim()) || user.ein || null;
+    const ein = (signData.ein && signData.ein.trim()) || user.ein || taxId;
     const signerName = signData.signer_name.trim();
     const signerTitle =
       (signData.signer_title && signData.signer_title.trim()) ||
@@ -316,7 +409,7 @@ export class TaxService {
     const signatureText = signData.signature_text.trim();
 
     const generator = this.getGenerator();
-    const pdfResult = await generator.generateST120Pdf({
+    const pdfData = {
       userId: user.id,
       legalBusinessName: legalName,
       dba,
@@ -328,7 +421,11 @@ export class TaxService {
       signatureText,
       acceptedAt: now,
       ipAddress: effectiveIp,
-    });
+    };
+
+    const pdfResult = generator.generateDigitalSt120Pdf
+      ? await generator.generateDigitalSt120Pdf(pdfData)
+      : await generator.generateST120Pdf(pdfData);
 
     await this.userRepository.update(userId, {
       legal_business_name: legalName,
@@ -344,6 +441,7 @@ export class TaxService {
       st120_status: 'APPROVED',
       tax_exempt: true,
       st120_document_url: pdfResult.relativeUrl,
+      st120_pdf_url: pdfResult.relativeUrl,
     });
 
     if (user.profile) {
@@ -365,19 +463,22 @@ export class TaxService {
     return {
       success: true,
       documentUrl: pdfResult.relativeUrl,
+      st120_pdf_url: pdfResult.relativeUrl,
       user: updatedUser,
     };
   }
 
   /**
-   * Uploads an ST-120 document and sets status to PENDING
+   * Uploads an ST-120 document and sets status to PENDING or APPROVED
+   * TASK-82-02: Permite subir foto o PDF mediante multer a /uploads/st120/ y registra el archivo con estado APPROVED o PENDING
    */
   async uploadST120(
     userId: string,
     file: Express.Multer.File,
     taxId?: string,
     requestingUser?: { id: string; role?: string },
-  ): Promise<{ success: boolean; url: string; documentUrl: string; user: User }> {
+    status?: string,
+  ): Promise<{ success: boolean; url: string; documentUrl: string; st120_pdf_url: string; user: User }> {
     if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
       throw new ForbiddenException('Cannot upload ST-120 for another user');
     }
@@ -397,17 +498,22 @@ export class TaxService {
 
     const relativeUrl = `/uploads/st120/${file.filename}`;
     const cleanTaxId = taxId && taxId.trim() ? taxId.trim() : undefined;
+    const targetStatus = status && status.toUpperCase() === 'APPROVED' ? 'APPROVED' : 'PENDING';
+    const isExempt = targetStatus === 'APPROVED';
 
     await this.userRepository.update(userId, {
       st120_document_url: relativeUrl,
-      st120_status: 'PENDING',
+      st120_pdf_url: relativeUrl,
+      st120_status: targetStatus,
+      ...(isExempt ? { tax_exempt: true } : {}),
       ...(cleanTaxId ? { tax_id: cleanTaxId } : {}),
     });
 
     if (user.profile) {
       await this.profileRepository.update(user.profile.id, {
         st120_document_url: relativeUrl,
-        st120_status: 'PENDING',
+        st120_status: targetStatus,
+        ...(isExempt ? { tax_exempt: true } : {}),
         ...(cleanTaxId ? { tax_id: cleanTaxId } : {}),
       });
     }
@@ -417,12 +523,61 @@ export class TaxService {
       relations: ['profile'],
     }))!;
 
-    this.logger.log(`ST-120 document uploaded for user ${userId}: ${relativeUrl}`);
+    this.logger.log(`ST-120 document uploaded for user ${userId}: ${relativeUrl} (${targetStatus})`);
     return {
       success: true,
       url: relativeUrl,
       documentUrl: relativeUrl,
+      st120_pdf_url: relativeUrl,
       user: updatedUser,
+    };
+  }
+
+  /**
+   * Retrieves official ST-120 PDF file data for download or browser visualization
+   * TASK-82-02: GET /api/tax/:userId/st120-pdf retorna el PDF para visualización en navegador o descarga
+   */
+  async getSt120Pdf(userId: string): Promise<{
+    filePath: string;
+    buffer: Buffer;
+    filename: string;
+    mimeType: string;
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const documentUrl =
+      user.st120_pdf_url ||
+      user.st120_document_url ||
+      user.profile?.st120_document_url;
+
+    if (!documentUrl) {
+      throw new NotFoundException(`User ${userId} does not have an ST-120 document on file`);
+    }
+
+    const cleanRelative = documentUrl.replace(/^\/uploads\/?/, '');
+    const filePath = path.join(path.resolve(UPLOAD_PATH), cleanRelative);
+
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException(`ST-120 physical file not found on disk at: ${cleanRelative}`);
+    }
+
+    const buffer = fs.readFileSync(filePath);
+    const filename = path.basename(filePath);
+    const ext = path.extname(filename).toLowerCase();
+    const mimeType = ext === '.pdf' ? 'application/pdf' : ext === '.png' ? 'image/png' : 'image/jpeg';
+
+    return {
+      filePath,
+      buffer,
+      filename,
+      mimeType,
     };
   }
 
@@ -484,6 +639,7 @@ export class TaxService {
             st120_status: 'APPROVED',
             tax_exempt: true,
             st120_document_url: pdfResult.relativeUrl,
+            st120_pdf_url: pdfResult.relativeUrl,
             ...(user.signature_text ? {} : { signature_text: signatureText }),
             ...(user.signer_name ? {} : { signer_name: signerName }),
           });

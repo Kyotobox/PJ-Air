@@ -1,4 +1,5 @@
 import { St120GeneratorService, OFFICIAL_VENDOR_NAME, OFFICIAL_VENDOR_ADDRESS } from './st120-generator.service';
+import { BadRequestException } from '@nestjs/common';
 import * as fs from 'fs';
 import { PDFDocument } from 'pdf-lib';
 
@@ -13,9 +14,9 @@ describe('St120GeneratorService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('generateST120Pdf', () => {
-    it('should generate a valid NYS DTF ST-120 PDF and write it physically to disk (Happy Path)', async () => {
-      const result = await service.generateST120Pdf({
+  describe('generateDigitalSt120Pdf', () => {
+    it('should generate a valid official NYS DTF ST-120 PDF and write physically to disk with SHA-256 hash (Happy Path)', async () => {
+      const result = await service.generateDigitalSt120Pdf({
         userId: 'user-unit-test-123',
         legalBusinessName: 'Brooklyn Artisan Cafe LLC',
         dba: 'Artisan Cafe',
@@ -30,8 +31,10 @@ describe('St120GeneratorService', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.relativeUrl).toMatch(/^\/uploads\/st120\/st120-user-unit-test-123-.+\.pdf$/);
+      expect(result.relativeUrl).toMatch(/^\/uploads\/st120\/st120-user-unit-test-123-\d+\.pdf$/);
+      expect(result.relativePath).toBe(result.relativeUrl);
       expect(result.auditHash).toHaveLength(64); // SHA-256 hex string
+      expect(result.forensicHash).toBe(result.auditHash);
       expect(Buffer.isBuffer(result.buffer)).toBe(true);
       expect(result.buffer.length).toBeGreaterThan(1000);
 
@@ -50,7 +53,53 @@ describe('St120GeneratorService', () => {
       }
     });
 
-    it('should handle optional and fallback fields gracefully', async () => {
+    it('should throw BadRequestException if legalBusinessName is missing or empty (Sad Path §6)', async () => {
+      await expect(
+        service.generateDigitalSt120Pdf({
+          userId: 'user-err-1',
+          legalBusinessName: '',
+          ein: '12-3456789',
+          businessAddress: '123 Main St, New York, NY',
+          signerName: 'Jane Doe',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        service.generateDigitalSt120Pdf({
+          userId: 'user-err-2',
+          legalBusinessName: '   ',
+          ein: '12-3456789',
+          businessAddress: '123 Main St, New York, NY',
+          signerName: 'Jane Doe',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if ein is missing or empty (Sad Path §6)', async () => {
+      await expect(
+        service.generateDigitalSt120Pdf({
+          userId: 'user-err-3',
+          legalBusinessName: 'Brooklyn Artisan Cafe LLC',
+          ein: '',
+          businessAddress: '123 Main St, New York, NY',
+          signerName: 'Jane Doe',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        service.generateDigitalSt120Pdf({
+          userId: 'user-err-4',
+          legalBusinessName: 'Brooklyn Artisan Cafe LLC',
+          ein: '   ',
+          businessAddress: '123 Main St, New York, NY',
+          signerName: 'Jane Doe',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('generateST120Pdf (Backwards-compatibility wrapper)', () => {
+    it('should handle optional and fallback fields gracefully (Happy Path)', async () => {
       const result = await service.generateST120Pdf({
         legalBusinessName: 'Queens Diner Corp',
         businessAddress: '78-14 Roosevelt Ave, Jackson Heights, NY',
@@ -58,7 +107,7 @@ describe('St120GeneratorService', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.relativeUrl).toMatch(/^\/uploads\/st120\/st120-client-.+\.pdf$/);
+      expect(result.relativeUrl).toMatch(/^\/uploads\/st120\/st120-client-\d+\.pdf$/);
       expect(result.auditHash).toHaveLength(64);
       expect(fs.existsSync(result.filePath)).toBe(true);
 

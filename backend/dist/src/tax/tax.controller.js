@@ -78,19 +78,20 @@ let TaxController = class TaxController {
         const isExempt = Boolean(user?.tax_exempt || user?.profile?.tax_exempt);
         const taxId = user?.profile?.tax_id || user?.tax_id || null;
         const st120Status = user?.profile?.st120_status || user?.st120_status || 'NONE';
-        const st120DocUrl = user?.profile?.st120_document_url || user?.st120_document_url || null;
+        const st120DocUrl = user?.st120_pdf_url || user?.profile?.st120_document_url || user?.st120_document_url || null;
         return {
             userId,
             taxId,
             st120Status,
             st120DocumentUrl: st120DocUrl,
+            st120PdfUrl: st120DocUrl,
             taxExempt: isExempt,
             taxLegend: isExempt ? this.taxService.getOfficialNysDtfLegend(taxId) : null,
         };
     }
     async generateDigitalST120(req, body) {
         const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
-        return this.taxService.generateDigitalST120(targetUserId, req.user);
+        return this.taxService.generateDigitalST120(targetUserId, req.user, body);
     }
     async signST120(req, body) {
         const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
@@ -100,12 +101,25 @@ let TaxController = class TaxController {
             '127.0.0.1';
         return this.taxService.signST120(targetUserId, body, String(clientIp), req.user);
     }
-    async uploadST120(req, file, bodyUserId, taxId) {
+    async uploadST120(req, file, bodyUserId, taxId, status) {
         if (!file) {
             throw new common_1.BadRequestException('No file uploaded or file type not allowed');
         }
         const targetUserId = req.user?.role === 'admin' && bodyUserId ? bodyUserId : req.user.id;
-        return this.taxService.uploadST120(targetUserId, file, taxId, req.user);
+        return this.taxService.uploadST120(targetUserId, file, taxId, req.user, status);
+    }
+    async getSt120Pdf(paramUserId, req, res) {
+        const targetUserId = paramUserId === 'me' ? req.user.id : paramUserId;
+        if (req.user?.role !== 'admin' && req.user?.id !== targetUserId) {
+            throw new common_1.ForbiddenException('Cannot access ST-120 PDF for another user');
+        }
+        const pdfData = await this.taxService.getSt120Pdf(targetUserId);
+        res.set({
+            'Content-Type': pdfData.mimeType,
+            'Content-Disposition': `inline; filename="${pdfData.filename}"`,
+            'Content-Length': pdfData.buffer.length,
+        });
+        res.end(pdfData.buffer);
     }
     async backfillAll() {
         return this.taxService.backfillAllPending();
@@ -203,10 +217,21 @@ __decorate([
     __param(1, (0, common_1.UploadedFile)()),
     __param(2, (0, common_1.Body)('userId')),
     __param(3, (0, common_1.Body)('tax_id')),
+    __param(4, (0, common_1.Body)('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String, String]),
+    __metadata("design:paramtypes", [Object, Object, String, String, String]),
     __metadata("design:returntype", Promise)
 ], TaxController.prototype, "uploadST120", null);
+__decorate([
+    (0, common_1.Get)(':userId/st120-pdf'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TaxController.prototype, "getSt120Pdf", null);
 __decorate([
     (0, common_1.Post)('backfill-all'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
@@ -216,7 +241,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TaxController.prototype, "backfillAll", null);
 exports.TaxController = TaxController = __decorate([
-    (0, common_1.Controller)('tax'),
+    (0, common_1.Controller)(['tax', 'api/tax']),
     __metadata("design:paramtypes", [tax_service_1.TaxService])
 ], TaxController);
 //# sourceMappingURL=tax.controller.js.map

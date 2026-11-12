@@ -16,27 +16,31 @@ export declare class TaxController {
         taxId: string | null;
         st120Status: string;
         st120DocumentUrl: string | null;
+        st120PdfUrl: string | null;
         taxExempt: boolean;
         taxLegend: string | null;
     }>;
-    generateDigitalST120(req: any, body?: {
-        userId?: string;
-    }): Promise<{
+    generateDigitalST120(req: any, body?: any): Promise<{
         success: boolean;
         documentUrl: string;
+        st120_pdf_url: string;
+        auditHash?: string;
         user: import("../users/user.entity").User;
     }>;
     signST120(req: any, body: any): Promise<{
         success: boolean;
         documentUrl: string;
+        st120_pdf_url: string;
         user: import("../users/user.entity").User;
     }>;
-    uploadST120(req: any, file: Express.Multer.File, bodyUserId?: string, taxId?: string): Promise<{
+    uploadST120(req: any, file: Express.Multer.File, bodyUserId?: string, taxId?: string, status?: string): Promise<{
         success: boolean;
         url: string;
         documentUrl: string;
+        st120_pdf_url: string;
         user: import("../users/user.entity").User;
     }>;
+    getSt120Pdf(paramUserId: string, req: any, res: any): Promise<void>;
     backfillAll(): Promise<{
         success: boolean;
         processedCount: number;

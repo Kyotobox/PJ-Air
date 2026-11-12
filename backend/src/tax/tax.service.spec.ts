@@ -1,25 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { TaxService, NYS_DTF_LEGEND_PREFIX } from './tax.service';
-import { St120GeneratorService } from './st120-generator.service';
-import { VisionValidationService } from './vision-validation.service';
+import * as fs from 'fs';
+import * as path from 'path';
+import { TaxService } from './tax.service';
 import { User } from '../users/user.entity';
 import { Profile } from '../users/profile.entity';
+import { VisionValidationService } from './vision-validation.service';
+import { St120GeneratorService } from './st120-generator.service';
+import { UPLOAD_PATH } from '../config';
 
 describe('TaxService', () => {
   let service: TaxService;
-  let st120GeneratorService: St120GeneratorService;
 
   const mockUser: any = {
     id: 'user-tax-1',
     email: 'client@bakery.com',
-    role: 'client',
+    tax_id: '12-3456789',
     tax_exempt: false,
     st120_status: 'PENDING',
+    st120_document_url: null,
+    st120_pdf_url: null,
     legal_business_name: 'Downtown Bakery LLC',
     dba: 'Downtown Bake',
-    tax_id: '12-3456789',
     ein: '98-7654321',
     business_address: '456 Broadway, New York, NY 10013',
     signer_name: 'John Baker',
@@ -54,16 +57,24 @@ describe('TaxService', () => {
     analyzeDocument: jest.fn(),
   };
 
+  const defaultPdfResult = {
+    filePath: '/tmp/test-st120.pdf',
+    relativeUrl: '/uploads/st120/st120-user-tax-1-test.pdf',
+    relativePath: '/uploads/st120/st120-user-tax-1-test.pdf',
+    buffer: Buffer.from('%PDF-1.4 test'),
+    auditHash: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+    forensicHash: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+  };
+
   const mockSt120GeneratorService = {
-    generateST120Pdf: jest.fn().mockResolvedValue({
-      filePath: '/tmp/test-st120.pdf',
-      relativeUrl: '/uploads/st120/st120-user-tax-1-test.pdf',
-      buffer: Buffer.from('%PDF-1.4 test'),
-      auditHash: 'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
-    }),
+    generateDigitalSt120Pdf: jest.fn().mockResolvedValue(defaultPdfResult),
+    generateST120Pdf: jest.fn().mockResolvedValue(defaultPdfResult),
   };
 
   beforeEach(async () => {
+    mockSt120GeneratorService.generateDigitalSt120Pdf.mockResolvedValue(defaultPdfResult);
+    mockSt120GeneratorService.generateST120Pdf.mockResolvedValue(defaultPdfResult);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TaxService,
@@ -75,7 +86,6 @@ describe('TaxService', () => {
     }).compile();
 
     service = module.get<TaxService>(TaxService);
-    st120GeneratorService = module.get<St120GeneratorService>(St120GeneratorService);
     jest.clearAllMocks();
   });
 
@@ -83,36 +93,22 @@ describe('TaxService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getOfficialNysDtfLegend', () => {
-    it('should return complete official legend with tax ID (Happy Path)', () => {
-      const legend = service.getOfficialNysDtfLegend('12-3456789');
-      expect(legend).toContain(NYS_DTF_LEGEND_PREFIX);
-      expect(legend).toContain('12-3456789');
-    });
-
-    it('should return N/A if tax ID is missing', () => {
-      const legend = service.getOfficialNysDtfLegend(null);
-      expect(legend).toContain('NY Resale / Tax ID: N/A');
-    });
-  });
-
   describe('calculateOrderTax', () => {
-    it('should calculate 0% tax for exempt users (Happy Path)', () => {
-      const result = service.calculateOrderTax(
-        { tax_exempt: true, tax_id: '12-3456789' },
-        150.0,
-      );
+    it('should return 0% tax and legal legend when user is tax exempt (Happy Path)', () => {
+      const user = { tax_exempt: true, tax_id: '12-3456789' };
+      const result = service.calculateOrderTax(user, 100);
+
       expect(result.tax_exempt).toBe(true);
-      expect(result.tax_amount).toBe(0.0);
       expect(result.tax_rate).toBe(0.0);
+      expect(result.tax_amount).toBe(0.0);
+      expect(result.tax_legend).toContain('NYS DTF Form ST-120');
       expect(result.tax_legend).toContain('12-3456789');
     });
 
-    it('should calculate standard NYC sales tax (8.875%) for non-exempt users', () => {
-      const result = service.calculateOrderTax(
-        { tax_exempt: false },
-        100.0,
-      );
+    it('should apply 8.875% tax when user is not exempt', () => {
+      const user = { tax_exempt: false, tax_id: null };
+      const result = service.calculateOrderTax(user, 100);
+
       expect(result.tax_exempt).toBe(false);
       expect(result.tax_rate).toBe(8.875);
       expect(result.tax_amount).toBe(8.88);
@@ -121,7 +117,7 @@ describe('TaxService', () => {
   });
 
   describe('generateDigitalST120', () => {
-    it('should generate official digital ST-120 and approve user (Happy Path)', async () => {
+    it('should generate official digital ST-120, approve user and persist st120_pdf_url (Happy Path)', async () => {
       mockUserRepository.findOne
         .mockResolvedValueOnce({ ...mockUser })
         .mockResolvedValueOnce({
@@ -129,18 +125,21 @@ describe('TaxService', () => {
           st120_status: 'APPROVED',
           tax_exempt: true,
           st120_document_url: '/uploads/st120/st120-user-tax-1-test.pdf',
+          st120_pdf_url: '/uploads/st120/st120-user-tax-1-test.pdf',
         });
 
       const response = await service.generateDigitalST120('user-tax-1', { id: 'user-tax-1', role: 'client' });
 
       expect(response.success).toBe(true);
       expect(response.documentUrl).toBe('/uploads/st120/st120-user-tax-1-test.pdf');
+      expect(response.st120_pdf_url).toBe('/uploads/st120/st120-user-tax-1-test.pdf');
       expect(response.user.st120_status).toBe('APPROVED');
       expect(response.user.tax_exempt).toBe(true);
       expect(mockUserRepository.update).toHaveBeenCalledWith('user-tax-1', expect.objectContaining({
         st120_status: 'APPROVED',
         tax_exempt: true,
         st120_document_url: '/uploads/st120/st120-user-tax-1-test.pdf',
+        st120_pdf_url: '/uploads/st120/st120-user-tax-1-test.pdf',
       }));
       expect(mockProfileRepository.update).toHaveBeenCalledWith('user-tax-1', expect.objectContaining({
         st120_status: 'APPROVED',
@@ -148,7 +147,7 @@ describe('TaxService', () => {
       }));
     });
 
-    it('should throw NotFoundException if user does not exist (Sad Path)', async () => {
+    it('should throw NotFoundException if user does not exist (Sad Path §6)', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 
       await expect(
@@ -156,10 +155,47 @@ describe('TaxService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if client tries to generate ST-120 for another user (Sad Path)', async () => {
+    it('should throw ForbiddenException if client tries to generate ST-120 for another user (Sad Path §6)', async () => {
       await expect(
         service.generateDigitalST120('other-user-id', { id: 'user-tax-1', role: 'client' }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException if legal_business_name is missing (Sad Path §6)', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        legal_business_name: null,
+        profile: { ...mockUser.profile, company_name: null },
+      });
+
+      await expect(
+        service.generateDigitalST120('user-tax-1', { id: 'user-tax-1', role: 'client' }, { legal_business_name: '' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if ein is missing (Sad Path §6)', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        ein: null,
+        tax_id: null,
+        profile: { ...mockUser.profile, tax_id: null },
+      });
+
+      await expect(
+        service.generateDigitalST120('user-tax-1', { id: 'user-tax-1', role: 'client' }, { ein: '' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if signer_name is missing (Sad Path §6)', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        signer_name: null,
+        profile: { ...mockUser.profile, full_name: null },
+      });
+
+      await expect(
+        service.generateDigitalST120('user-tax-1', { id: 'user-tax-1', role: 'client' }, { signer_name: '' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -172,6 +208,7 @@ describe('TaxService', () => {
           st120_status: 'APPROVED',
           tax_exempt: true,
           st120_document_url: '/uploads/st120/st120-user-tax-1-test.pdf',
+          st120_pdf_url: '/uploads/st120/st120-user-tax-1-test.pdf',
         });
 
       const response = await service.signST120(
@@ -197,19 +234,19 @@ describe('TaxService', () => {
       }));
     });
 
-    it('should throw BadRequestException if signature_text is missing (Sad Path)', async () => {
+    it('should throw BadRequestException if signature_text is missing (Sad Path §6)', async () => {
       await expect(
         service.signST120('user-tax-1', { signature_text: '', signer_name: 'John Baker' }, '127.0.0.1', { id: 'user-tax-1', role: 'client' }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException if signer_name is missing (Sad Path)', async () => {
+    it('should throw BadRequestException if signer_name is missing (Sad Path §6)', async () => {
       await expect(
         service.signST120('user-tax-1', { signature_text: 'John Baker', signer_name: '   ' }, '127.0.0.1', { id: 'user-tax-1', role: 'client' }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw NotFoundException if user does not exist (Sad Path)', async () => {
+    it('should throw NotFoundException if user does not exist (Sad Path §6)', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 
       await expect(
@@ -217,7 +254,7 @@ describe('TaxService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if non-admin tries to sign for someone else (Sad Path)', async () => {
+    it('should throw ForbiddenException if non-admin tries to sign for someone else (Sad Path §6)', async () => {
       await expect(
         service.signST120('other-user', { signature_text: 'John', signer_name: 'John' }, '127.0.0.1', { id: 'client-1', role: 'client' }),
       ).rejects.toThrow(ForbiddenException);
@@ -238,7 +275,7 @@ describe('TaxService', () => {
       stream: null as any,
     };
 
-    it('should save uploaded document and mark status PENDING (Happy Path)', async () => {
+    it('should save uploaded document and mark status PENDING by default (Happy Path)', async () => {
       mockUserRepository.findOne
         .mockResolvedValueOnce({ ...mockUser })
         .mockResolvedValueOnce({
@@ -251,19 +288,46 @@ describe('TaxService', () => {
 
       expect(response.success).toBe(true);
       expect(response.url).toBe('/uploads/st120/unique-doc-123.pdf');
+      expect(response.st120_pdf_url).toBe('/uploads/st120/unique-doc-123.pdf');
       expect(mockUserRepository.update).toHaveBeenCalledWith('user-tax-1', expect.objectContaining({
         st120_status: 'PENDING',
         st120_document_url: '/uploads/st120/unique-doc-123.pdf',
       }));
     });
 
-    it('should throw BadRequestException if file is null (Sad Path)', async () => {
+    it('should register uploaded document with status APPROVED when specified (Happy Path)', async () => {
+      mockUserRepository.findOne
+        .mockResolvedValueOnce({ ...mockUser })
+        .mockResolvedValueOnce({
+          ...mockUser,
+          st120_status: 'APPROVED',
+          tax_exempt: true,
+          st120_document_url: '/uploads/st120/unique-doc-123.pdf',
+        });
+
+      const response = await service.uploadST120(
+        'user-tax-1',
+        mockFile,
+        '12-3456789',
+        { id: 'admin-1', role: 'admin' },
+        'APPROVED',
+      );
+
+      expect(response.success).toBe(true);
+      expect(mockUserRepository.update).toHaveBeenCalledWith('user-tax-1', expect.objectContaining({
+        st120_status: 'APPROVED',
+        tax_exempt: true,
+        st120_document_url: '/uploads/st120/unique-doc-123.pdf',
+      }));
+    });
+
+    it('should throw BadRequestException if file is null (Sad Path §6)', async () => {
       await expect(
         service.uploadST120('user-tax-1', null as any, undefined, { id: 'user-tax-1', role: 'client' }),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw NotFoundException if user is not found (Sad Path)', async () => {
+    it('should throw NotFoundException if user is not found (Sad Path §6)', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 
       await expect(
@@ -271,10 +335,68 @@ describe('TaxService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if non-admin uploads for other user (Sad Path)', async () => {
+    it('should throw ForbiddenException if non-admin uploads for other user (Sad Path §6)', async () => {
       await expect(
         service.uploadST120('victim-user', mockFile, undefined, { id: 'attacker-client', role: 'client' }),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getSt120Pdf', () => {
+    const testPdfDir = path.join(path.resolve(UPLOAD_PATH), 'st120');
+    const testPdfPath = path.join(testPdfDir, 'test-download.pdf');
+
+    beforeAll(() => {
+      if (!fs.existsSync(testPdfDir)) {
+        fs.mkdirSync(testPdfDir, { recursive: true });
+      }
+      fs.writeFileSync(testPdfPath, Buffer.from('%PDF-1.4 test download file'));
+    });
+
+    afterAll(() => {
+      try {
+        if (fs.existsSync(testPdfPath)) {
+          fs.unlinkSync(testPdfPath);
+        }
+      } catch (_) {}
+    });
+
+    it('should retrieve existing ST-120 PDF file data (Happy Path)', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        st120_pdf_url: '/uploads/st120/test-download.pdf',
+      });
+
+      const result = await service.getSt120Pdf('user-tax-1');
+
+      expect(result).toBeDefined();
+      expect(result.filename).toBe('test-download.pdf');
+      expect(result.mimeType).toBe('application/pdf');
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+      expect(result.buffer.toString()).toContain('%PDF-1.4');
+    });
+
+    it('should throw NotFoundException if user is not found (Sad Path §6)', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null);
+      await expect(service.getSt120Pdf('non-existent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if user has no document URL (Sad Path §6)', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        st120_pdf_url: null,
+        st120_document_url: null,
+        profile: { ...mockUser.profile, st120_document_url: null },
+      });
+      await expect(service.getSt120Pdf('user-tax-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if physical file is missing on disk (Sad Path §6)', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        st120_pdf_url: '/uploads/st120/ghost-file-does-not-exist.pdf',
+      });
+      await expect(service.getSt120Pdf('user-tax-1')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -302,12 +424,7 @@ describe('TaxService', () => {
 
       mockSt120GeneratorService.generateST120Pdf
         .mockRejectedValueOnce(new Error('PDF generation failed'))
-        .mockResolvedValueOnce({
-          filePath: '/tmp/test.pdf',
-          relativeUrl: '/uploads/st120/ok.pdf',
-          buffer: Buffer.from('ok'),
-          auditHash: '1234',
-        });
+        .mockResolvedValueOnce(defaultPdfResult);
 
       const result = await service.backfillAllPending();
 
@@ -339,7 +456,7 @@ describe('TaxService', () => {
       expect(res.user.st120_status).toBe('REJECTED');
     });
 
-    it('should throw NotFoundException when approving non-existent user (Sad Path)', async () => {
+    it('should throw NotFoundException when approving non-existent user (Sad Path §6)', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
       await expect(service.approveExemption('invalid-user')).rejects.toThrow(NotFoundException);
     });

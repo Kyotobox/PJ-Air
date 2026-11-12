@@ -40,9 +40,26 @@ export declare class TaxService {
     generateDigitalST120(userId: string, requestingUser?: {
         id: string;
         role?: string;
+    }, dto?: {
+        legal_business_name?: string;
+        legalBusinessName?: string;
+        ein?: string;
+        signer_name?: string;
+        signerName?: string;
+        signer_title?: string;
+        signerTitle?: string;
+        signature_text?: string;
+        signatureText?: string;
+        dba?: string;
+        business_address?: string;
+        businessAddress?: string;
+        tax_id?: string;
+        taxId?: string;
     }): Promise<{
         success: boolean;
         documentUrl: string;
+        st120_pdf_url: string;
+        auditHash?: string;
         user: User;
     }>;
     signST120(userId: string, signData: {
@@ -60,16 +77,24 @@ export declare class TaxService {
     }): Promise<{
         success: boolean;
         documentUrl: string;
+        st120_pdf_url: string;
         user: User;
     }>;
     uploadST120(userId: string, file: Express.Multer.File, taxId?: string, requestingUser?: {
         id: string;
         role?: string;
-    }): Promise<{
+    }, status?: string): Promise<{
         success: boolean;
         url: string;
         documentUrl: string;
+        st120_pdf_url: string;
         user: User;
+    }>;
+    getSt120Pdf(userId: string): Promise<{
+        filePath: string;
+        buffer: Buffer;
+        filename: string;
+        mimeType: string;
     }>;
     backfillAllPending(): Promise<{
         success: boolean;

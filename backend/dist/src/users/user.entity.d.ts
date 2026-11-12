@@ -20,6 +20,7 @@ export declare class User {
     tax_id?: string | null;
     st120_status: string;
     st120_document_url?: string | null;
+    st120_pdf_url?: string | null;
     tax_exempt: boolean;
     legal_business_name?: string | null;
     dba?: string | null;

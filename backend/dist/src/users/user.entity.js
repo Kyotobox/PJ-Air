@@ -33,6 +33,7 @@ let User = class User {
     tax_id;
     st120_status;
     st120_document_url;
+    st120_pdf_url;
     tax_exempt;
     legal_business_name;
     dba;
@@ -126,6 +127,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], User.prototype, "st120_document_url", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "st120_pdf_url", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)

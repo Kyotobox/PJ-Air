@@ -51,7 +51,13 @@ exports.OFFICIAL_VENDOR_NAME = 'Jhoanes Bakery & Coffee LLC';
 exports.OFFICIAL_VENDOR_ADDRESS = '33-04 Broadway, Astoria, NY 11106';
 let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorService {
     logger = new common_1.Logger(St120GeneratorService_1.name);
-    async generateST120Pdf(data) {
+    async generateDigitalSt120Pdf(data) {
+        if (!data.legalBusinessName || !data.legalBusinessName.trim()) {
+            throw new common_1.BadRequestException('Legal Business Name is required for Form ST-120');
+        }
+        if (!data.ein || !data.ein.trim()) {
+            throw new common_1.BadRequestException('Federal EIN is required for Form ST-120');
+        }
         const doc = await pdf_lib_1.PDFDocument.create();
         const page = doc.addPage([612, 792]);
         const fontRegular = await doc.embedFont(pdf_lib_1.StandardFonts.Helvetica);
@@ -62,11 +68,20 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
         const acceptedDate = data.acceptedAt ? new Date(data.acceptedAt) : new Date();
         const isoTimestamp = acceptedDate.toISOString();
         const ip = (data.ipAddress && data.ipAddress.trim()) || '127.0.0.1';
+        const legalName = data.legalBusinessName.trim();
+        const ein = data.ein.trim();
+        const taxId = data.taxId && data.taxId.trim() ? data.taxId.trim() : ein;
+        const signer = (data.signerName && data.signerName.trim()) || 'Authorized Signer';
+        const title = (data.signerTitle && data.signerTitle.trim()) || 'Authorized Representative';
+        const sigText = (data.signatureText && data.signatureText.trim()) || signer;
+        const dba = data.dba && data.dba.trim() ? data.dba.trim() : 'N/A';
+        const bAddress = (data.businessAddress && data.businessAddress.trim()) || 'Address on file';
         const auditPayload = [
-            data.legalBusinessName || '',
-            data.taxId || data.ein || '',
-            data.signerName || '',
-            data.signatureText || '',
+            legalName,
+            ein,
+            taxId,
+            signer,
+            sigText,
             isoTimestamp,
             ip,
         ].join('|');
@@ -168,13 +183,6 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
             borderColor: borderGray,
             borderWidth: 1,
         });
-        const legalName = data.legalBusinessName || 'N/A';
-        const dba = data.dba && data.dba.trim() ? data.dba.trim() : 'N/A';
-        const bAddress = data.businessAddress || 'Address on file';
-        const taxId = data.taxId && data.taxId.trim() ? data.taxId.trim() : 'N/A';
-        const ein = data.ein && data.ein.trim() ? data.ein.trim() : 'N/A';
-        const signer = data.signerName || 'N/A';
-        const title = data.signerTitle || 'Authorized Representative';
         page.drawText(`Legal Business Name: ${legalName}`, {
             x: 48,
             y: y - 16,
@@ -229,28 +237,30 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
         y -= 18;
         page.drawRectangle({
             x: 36,
-            y: y - 88,
+            y: y - 95,
             width: 540,
-            height: 88,
+            height: 95,
             color: bgLight,
             borderColor: borderGray,
             borderWidth: 1,
         });
+        page.drawText('Exemption Reason: Resale of bakery products and food items in present form.', {
+            x: 48,
+            y: y - 14,
+            size: 9,
+            font: fontBold,
+            color: primaryColor,
+        });
         const clauseLines = [
             'I certify that all the tangible personal property purchased under this certificate will be used exclusively',
-            'for resale in the regular course of business as bakery products and food items.',
-            '',
+            'for resale in the regular course of business as bakery products and food items in present form.',
             'I certify that the purchaser named above holds a valid New York State Certificate of Authority to collect',
             'sales and compensating use tax, and that purchases made from Jhoanes Bakery & Coffee LLC qualify for',
             'full exemption from NYS and local sales taxes pursuant to Tax Law § 1115 and § 1132(c).',
             'I understand that this certificate is valid until revoked and is given under penalty of perjury.',
         ];
-        let clauseY = y - 14;
+        let clauseY = y - 27;
         for (const line of clauseLines) {
-            if (line === '') {
-                clauseY -= 4;
-                continue;
-            }
             page.drawText(line, {
                 x: 48,
                 y: clauseY,
@@ -260,7 +270,7 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
             });
             clauseY -= 11;
         }
-        y -= 102;
+        y -= 108;
         this.drawSectionHeader(page, 36, y, 540, '4. ELECTRONIC SIGNATURE & CRYPTOGRAPHIC AUDIT TRAIL', fontBold, primaryColor);
         y -= 18;
         page.drawRectangle({
@@ -272,7 +282,6 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
             borderColor: borderGray,
             borderWidth: 1,
         });
-        const sigText = data.signatureText || data.signerName || signer;
         page.drawText(`Digital Signature:`, {
             x: 48,
             y: y - 18,
@@ -301,7 +310,7 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
             font: fontRegular,
             color: charcoal,
         });
-        page.drawText(`Executed At (ISO): ${isoTimestamp}`, {
+        page.drawText(`Executed At (ISO / UTC): ${isoTimestamp}`, {
             x: 48,
             y: y - 50,
             size: 8.5,
@@ -357,7 +366,8 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
             fs.mkdirSync(st120Dir, { recursive: true });
         }
         const uniqueId = data.userId ? data.userId.replace(/[^a-zA-Z0-9-]/g, '') : 'client';
-        const filename = `st120-${uniqueId}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.pdf`;
+        const timestamp = Date.now();
+        const filename = `st120-${uniqueId}-${timestamp}.pdf`;
         const fullPath = path.join(st120Dir, filename);
         fs.writeFileSync(fullPath, buffer);
         const relativeUrl = `/uploads/st120/${filename}`;
@@ -365,9 +375,19 @@ let St120GeneratorService = St120GeneratorService_1 = class St120GeneratorServic
         return {
             filePath: fullPath,
             relativeUrl,
+            relativePath: relativeUrl,
             buffer,
             auditHash,
+            forensicHash: auditHash,
         };
+    }
+    async generateST120Pdf(data) {
+        const enrichedData = {
+            ...data,
+            legalBusinessName: data.legalBusinessName || 'N/A',
+            ein: data.ein || data.taxId || 'PENDING',
+        };
+        return this.generateDigitalSt120Pdf(enrichedData);
     }
     drawSectionHeader(page, x, y, width, title, fontBold, primaryColor) {
         page.drawRectangle({

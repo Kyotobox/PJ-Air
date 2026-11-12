@@ -57,6 +57,9 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   st120_document_url?: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  st120_pdf_url?: string | null;
+
   @Column({ type: 'boolean', default: false })
   tax_exempt: boolean;
 
