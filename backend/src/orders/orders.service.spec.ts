@@ -1804,5 +1804,199 @@ describe('OrdersService', () => {
       });
     });
   });
+
+  describe('Sprint S82B: Global Store Discount Calculation (TASK-82-04 / TASK-82-05B)', () => {
+    let mockSystemConfigsService: any;
+
+    beforeEach(() => {
+      mockSystemConfigsService = {
+        getStoreDiscount: jest.fn(),
+        getCachedDeliverySchedule: jest.fn().mockReturnValue(null),
+      };
+      (service as any).systemConfigsService = mockSystemConfigsService;
+
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-disc-1',
+        productDiscounts: [],
+        credit_balance: 0,
+        delivery_fee: 0,
+        account_type: 'cash',
+      });
+
+      productRepository.find.mockResolvedValue([
+        { id: 10, price: 100 },
+      ]);
+    });
+
+    it('Happy path: Descuento general activo y vigente se aplica correctamente deduciendo el total', async () => {
+      const validUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+        reason: 'Gran Venta Anual',
+        percentage: 15,
+        valid_until: validUntil,
+        is_active: true,
+      });
+
+      const orderData = {
+        items: [{ productId: 10, quantity: 2 }],
+        deliveryType: 'pickup',
+        payment_method: 'card',
+      };
+
+      let capturedOrderData: any = null;
+      mockManager.create.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          capturedOrderData = data;
+          return { id: 'order-disc-1', ...data };
+        }
+        return data;
+      });
+      mockManager.save.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          return Promise.resolve({ id: 'order-disc-1', ...data });
+        }
+        return Promise.resolve(data);
+      });
+      service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+      const result = await service.create('user-disc-1', orderData);
+
+      expect(result.total).toBe(170);
+      expect(capturedOrderData.global_discount_amount).toBe(30);
+      expect(capturedOrderData.global_discount_percentage).toBe(15);
+      expect(capturedOrderData.global_discount_reason).toBe('Gran Venta Anual');
+      expect(mockSystemConfigsService.getStoreDiscount).toHaveBeenCalled();
+    });
+
+    it('Sad path (§6): Descuento general con valid_until en el pasado NO se aplica (0% descuento)', async () => {
+      const expiredDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+        reason: 'Promo Caducada',
+        percentage: 25,
+        valid_until: expiredDate,
+        is_active: true,
+      });
+
+      const orderData = {
+        items: [{ productId: 10, quantity: 1 }],
+        deliveryType: 'pickup',
+        payment_method: 'card',
+      };
+
+      let capturedOrderData: any = null;
+      mockManager.create.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          capturedOrderData = data;
+          return { id: 'order-disc-2', ...data };
+        }
+        return data;
+      });
+      mockManager.save.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          return Promise.resolve({ id: 'order-disc-2', ...data });
+        }
+        return Promise.resolve(data);
+      });
+      service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+      const result = await service.create('user-disc-1', orderData);
+
+      expect(result.total).toBe(100);
+      expect(capturedOrderData.global_discount_amount).toBe(0);
+      expect(capturedOrderData.global_discount_percentage).toBe(0);
+      expect(capturedOrderData.global_discount_reason).toBeNull();
+    });
+
+    it('Sad path (§6): Descuento general con is_active === false NO se aplica', async () => {
+      const futureDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
+      mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+        reason: 'Promo Desactivada',
+        percentage: 50,
+        valid_until: futureDate,
+        is_active: false,
+      });
+
+      const orderData = {
+        items: [{ productId: 10, quantity: 1 }],
+        deliveryType: 'pickup',
+        payment_method: 'card',
+      };
+
+      let capturedOrderData: any = null;
+      mockManager.create.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          capturedOrderData = data;
+          return { id: 'order-disc-3', ...data };
+        }
+        return data;
+      });
+      mockManager.save.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          return Promise.resolve({ id: 'order-disc-3', ...data });
+        }
+        return Promise.resolve(data);
+      });
+      service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+      const result = await service.create('user-disc-1', orderData);
+
+      expect(result.total).toBe(100);
+      expect(capturedOrderData.global_discount_amount).toBe(0);
+      expect(capturedOrderData.global_discount_percentage).toBe(0);
+      expect(capturedOrderData.global_discount_reason).toBeNull();
+    });
+
+    it('Sad path (§6): Descuento general con porcentaje 0 o negativo NO se aplica', async () => {
+      const futureDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
+      mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+        reason: 'Promo Cero',
+        percentage: 0,
+        valid_until: futureDate,
+        is_active: true,
+      });
+
+      const orderData = {
+        items: [{ productId: 10, quantity: 1 }],
+        deliveryType: 'pickup',
+      };
+
+      let capturedOrderData: any = null;
+      mockManager.create.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          capturedOrderData = data;
+          return { id: 'order-disc-4', ...data };
+        }
+        return data;
+      });
+      mockManager.save.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          return Promise.resolve({ id: 'order-disc-4', ...data });
+        }
+        return Promise.resolve(data);
+      });
+      service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+      const result = await service.create('user-disc-1', orderData);
+
+      expect(result.total).toBe(100);
+      expect(capturedOrderData.global_discount_amount).toBe(0);
+    });
+
+    it('Sad path (§6): Rechaza con BadRequestException si la orden contiene items inválidos', async () => {
+      const futureDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
+      mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+        reason: 'Promo',
+        percentage: 10,
+        valid_until: futureDate,
+        is_active: true,
+      });
+
+      const invalidOrderData = {
+        items: [{ productId: 10, quantity: -1 }],
+      };
+
+      await expect(service.create('user-disc-1', invalidOrderData)).rejects.toThrow(BadRequestException);
+    });
+  });
 });
 

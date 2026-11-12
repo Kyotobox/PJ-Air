@@ -95,6 +95,15 @@ export class Order {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   store_credit_applied: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0, nullable: true })
+  global_discount_amount: number;
+
+  @Column({ nullable: true })
+  global_discount_reason: string;
+
+  @Column('decimal', { precision: 5, scale: 2, default: 0, nullable: true })
+  global_discount_percentage: number;
+
   @Column({ nullable: true })
   address_id: string;
 

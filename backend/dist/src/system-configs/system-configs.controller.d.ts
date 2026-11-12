@@ -26,6 +26,18 @@ export declare class SystemConfigsController {
         }>;
         cutoffHour: number;
     }>;
+    getStoreDiscount(): Promise<{
+        reason: string;
+        percentage: number;
+        valid_until: string;
+        is_active: boolean;
+    }>;
+    updateStoreDiscount(body: any, req: any): Promise<{
+        reason: string;
+        percentage: number;
+        valid_until: string;
+        is_active: boolean;
+    }>;
     get(key: string): Promise<{
         key: string;
         value: string;

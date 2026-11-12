@@ -126,6 +126,16 @@ Order adjustments or cancellations must be requested prior to the 12:00 PM produ
       console.log('[CONFIG] Seeded default delivery_exceptional_days = []');
     }
 
+    // Seed default store_general_discount if not exists
+    const storeDiscountConfig = await this.repo.findOne({ where: { key: 'store_general_discount' } });
+    if (!storeDiscountConfig) {
+      await this.repo.save({
+        key: 'store_general_discount',
+        value: '{"reason":"","percentage":0,"valid_until":"","is_active":false}',
+      });
+      console.log('[CONFIG] Seeded default store_general_discount');
+    }
+
     // Cache initial delivery schedule
     await this.getDeliverySchedule();
   }
@@ -277,6 +287,78 @@ Order adjustments or cancellations must be requested prior to the 12:00 PM produ
     }
 
     return this.getDeliverySchedule();
+  }
+
+  async getStoreDiscount(): Promise<{
+    reason: string;
+    percentage: number;
+    valid_until: string;
+    is_active: boolean;
+  }> {
+    const raw = await this.get('store_general_discount', '');
+    if (!raw) {
+      return { reason: '', percentage: 0, valid_until: '', is_active: false };
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      return {
+        reason: typeof parsed.reason === 'string' ? parsed.reason : '',
+        percentage: typeof parsed.percentage === 'number' && !isNaN(parsed.percentage) ? parsed.percentage : 0,
+        valid_until: typeof parsed.valid_until === 'string' ? parsed.valid_until : '',
+        is_active: Boolean(parsed.is_active),
+      };
+    } catch {
+      return { reason: '', percentage: 0, valid_until: '', is_active: false };
+    }
+  }
+
+  async updateStoreDiscount(data: {
+    reason?: string;
+    percentage: number;
+    valid_until: string;
+    is_active: boolean;
+  }): Promise<{
+    reason: string;
+    percentage: number;
+    valid_until: string;
+    is_active: boolean;
+  }> {
+    if (
+      data.percentage === undefined ||
+      typeof data.percentage !== 'number' ||
+      isNaN(data.percentage) ||
+      data.percentage < 0 ||
+      data.percentage > 100
+    ) {
+      throw new BadRequestException('percentage must be a valid number between 0 and 100');
+    }
+
+    if (data.is_active === undefined || typeof data.is_active !== 'boolean') {
+      throw new BadRequestException('is_active must be a boolean');
+    }
+
+    if (data.valid_until === undefined || typeof data.valid_until !== 'string') {
+      throw new BadRequestException('valid_until must be a valid ISO date string');
+    }
+
+    if (data.valid_until.trim() !== '') {
+      const parsedDate = Date.parse(data.valid_until);
+      if (isNaN(parsedDate)) {
+        throw new BadRequestException('valid_until must be a valid ISO date string');
+      }
+    } else if (data.is_active) {
+      throw new BadRequestException('valid_until is required when discount is active');
+    }
+
+    const discountConfig = {
+      reason: typeof data.reason === 'string' ? data.reason.trim() : '',
+      percentage: Number(data.percentage),
+      valid_until: data.valid_until,
+      is_active: data.is_active,
+    };
+
+    await this.update('store_general_discount', JSON.stringify(discountConfig));
+    return discountConfig;
   }
 
   async get(key: string, defaultValue = ''): Promise<string> {

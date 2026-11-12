@@ -26,6 +26,20 @@ describe('SystemConfigsController', () => {
           cutoffHour: 12,
         }),
       ),
+      getStoreDiscount: jest.fn().mockResolvedValue({
+        reason: 'Promo Navideña',
+        percentage: 10,
+        valid_until: '2026-12-25T23:59:59.000Z',
+        is_active: true,
+      }),
+      updateStoreDiscount: jest.fn().mockImplementation((data) =>
+        Promise.resolve({
+          reason: data.reason ?? '',
+          percentage: data.percentage ?? 0,
+          valid_until: data.valid_until ?? '',
+          is_active: data.is_active ?? false,
+        }),
+      ),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -71,6 +85,47 @@ describe('SystemConfigsController', () => {
       const body = { workingDays: [1, 2, 3, 4, 5] };
       await expect(
         controller.updateDeliverySchedule(body, req),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('TASK-82-04: getStoreDiscount and updateStoreDiscount endpoints', () => {
+    it('Happy path: public getStoreDiscount returns current discount', async () => {
+      const result = await controller.getStoreDiscount();
+      expect(result).toEqual({
+        reason: 'Promo Navideña',
+        percentage: 10,
+        valid_until: '2026-12-25T23:59:59.000Z',
+        is_active: true,
+      });
+      expect(service.getStoreDiscount).toHaveBeenCalled();
+    });
+
+    it('Happy path: admin can update store discount', async () => {
+      const req = { user: { role: 'admin' } };
+      const body = {
+        reason: 'Nueva Promo',
+        percentage: 15,
+        valid_until: '2026-12-31T23:59:59.000Z',
+        is_active: true,
+      };
+
+      const result = await controller.updateStoreDiscount(body, req);
+      expect(result).toEqual(body);
+      expect(service.updateStoreDiscount).toHaveBeenCalledWith(body);
+    });
+
+    it('Sad path (§6): non-admin user receives ForbiddenException when updating store discount', async () => {
+      const req = { user: { role: 'customer' } };
+      const body = {
+        reason: 'Hacker Promo',
+        percentage: 99,
+        valid_until: '2026-12-31T23:59:59.000Z',
+        is_active: true,
+      };
+
+      await expect(
+        controller.updateStoreDiscount(body, req),
       ).rejects.toThrow(ForbiddenException);
     });
   });

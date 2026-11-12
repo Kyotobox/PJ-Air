@@ -1,10 +1,10 @@
 {
   "project": "pj-air",
   "version": "5.0.0",
-  "kernel_version": "5.0.0",
+  "kernel_version": "5.3.1",
   "status": "IN_PROGRESS",
   "current_sprint": "S82",
-  "current_task": "TASK-82-03",
+  "current_task": "TASK-82-06",
   "sprints": [
     {
       "id": "S80",
@@ -52,9 +52,30 @@
           "status": "DONE",
           "type": "TEST/CERT",
           "veracity_hash": null
+        },
+        {
+          "id": "TASK-82-04",
+          "title": "Configuración de Descuento General en system-configs.service.ts y system-configs.controller.ts",
+          "status": "DONE",
+          "type": "BACKEND/DISCOUNT-CONFIG",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-82-05",
+          "title": "Motor de Cálculo en OrdersService y Order entity",
+          "status": "DONE",
+          "type": "BACKEND/DISCOUNT-CALC",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-82-06",
+          "title": "Pruebas Unitarias Jest (§6) Fase B en orders.service.spec.ts (TASK-82-05B)",
+          "status": "DONE",
+          "type": "TEST/CERT",
+          "veracity_hash": null
         }
       ],
-      "title": "Sprint S82: Generador de PDF oficial Form ST-120 del Estado de NY con pdf-lib, endpoints de subida, confirmación digital y regularización (Fase A)"
+      "title": "Sprint S82: Generador de PDF oficial Form ST-120 del Estado de NY y Descuento General de Tienda (Fase B)"
     }
   ],
   "archived_sprints_count": 1,
@@ -87,8 +108,29 @@
         "status": "DONE",
         "type": "TEST/CERT",
         "veracity_hash": null
+      },
+      {
+        "id": "TASK-82-04",
+        "title": "Configuración de Descuento General en system-configs.service.ts y system-configs.controller.ts",
+        "status": "DONE",
+        "type": "BACKEND/DISCOUNT-CONFIG",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-82-05",
+        "title": "Motor de Cálculo en OrdersService y Order entity",
+        "status": "DONE",
+        "type": "BACKEND/DISCOUNT-CALC",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-82-06",
+        "title": "Pruebas Unitarias Jest (§6) Fase B en orders.service.spec.ts (TASK-82-05B)",
+        "status": "DONE",
+        "type": "TEST/CERT",
+        "veracity_hash": null
       }
     ],
-    "title": "Sprint S82: Generador de PDF oficial Form ST-120 del Estado de NY con pdf-lib, endpoints de subida, confirmación digital y regularización (Fase A)"
+    "title": "Sprint S82: Generador de PDF oficial Form ST-120 del Estado de NY y Descuento General de Tienda (Fase B)"
   }
 }

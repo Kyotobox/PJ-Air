@@ -56,6 +56,9 @@ describe('SystemConfigsService', () => {
       expect(storage['delivery_working_days']).toBe('[0,1,3,4,5,6]');
       expect(storage['delivery_exceptional_days']).toBe('[]');
       expect(storage['delivery_holidays']).toContain('Thanksgiving Day');
+      expect(storage['store_general_discount']).toBe(
+        '{"reason":"","percentage":0,"valid_until":"","is_active":false}',
+      );
 
       const cached = service.getCachedDeliverySchedule();
       expect(cached).not.toBeNull();
@@ -155,6 +158,122 @@ describe('SystemConfigsService', () => {
       await expect(
         service.updateDeliverySchedule({
           exceptionalDays: [{ date: 'bad-date', name: 'Extra' }],
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('TASK-82-04: getStoreDiscount', () => {
+    it('Happy path: should return default empty discount configuration when key is not set', async () => {
+      const discount = await service.getStoreDiscount();
+      expect(discount).toEqual({
+        reason: '',
+        percentage: 0,
+        valid_until: '',
+        is_active: false,
+      });
+    });
+
+    it('Happy path: should return parsed discount configuration when key is set', async () => {
+      storage['store_general_discount'] = JSON.stringify({
+        reason: 'Promo Aniversario',
+        percentage: 15,
+        valid_until: '2026-12-31T23:59:59.000Z',
+        is_active: true,
+      });
+
+      const discount = await service.getStoreDiscount();
+      expect(discount).toEqual({
+        reason: 'Promo Aniversario',
+        percentage: 15,
+        valid_until: '2026-12-31T23:59:59.000Z',
+        is_active: true,
+      });
+    });
+
+    it('Sad path (§6): should return safe default if stored JSON is corrupt', async () => {
+      storage['store_general_discount'] = 'corrupt-json-value';
+      const discount = await service.getStoreDiscount();
+      expect(discount).toEqual({
+        reason: '',
+        percentage: 0,
+        valid_until: '',
+        is_active: false,
+      });
+    });
+  });
+
+  describe('TASK-82-04: updateStoreDiscount', () => {
+    it('Happy path: should update store general discount successfully', async () => {
+      const payload = {
+        reason: 'Descuento Black Friday',
+        percentage: 20,
+        valid_until: '2026-11-30T23:59:59.000Z',
+        is_active: true,
+      };
+
+      const result = await service.updateStoreDiscount(payload);
+
+      expect(result).toEqual({
+        reason: 'Descuento Black Friday',
+        percentage: 20,
+        valid_until: '2026-11-30T23:59:59.000Z',
+        is_active: true,
+      });
+      expect(JSON.parse(storage['store_general_discount'])).toEqual(result);
+    });
+
+    it('Sad path (§6): should throw BadRequestException if percentage < 0', async () => {
+      await expect(
+        service.updateStoreDiscount({
+          reason: 'Test',
+          percentage: -5,
+          valid_until: '2026-12-31',
+          is_active: true,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('Sad path (§6): should throw BadRequestException if percentage > 100', async () => {
+      await expect(
+        service.updateStoreDiscount({
+          reason: 'Test',
+          percentage: 105,
+          valid_until: '2026-12-31',
+          is_active: true,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('Sad path (§6): should throw BadRequestException if is_active is not boolean', async () => {
+      await expect(
+        service.updateStoreDiscount({
+          reason: 'Test',
+          percentage: 10,
+          valid_until: '2026-12-31',
+          is_active: 'true' as any,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('Sad path (§6): should throw BadRequestException if valid_until is invalid date', async () => {
+      await expect(
+        service.updateStoreDiscount({
+          reason: 'Test',
+          percentage: 10,
+          valid_until: 'not-a-valid-date',
+          is_active: true,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('Sad path (§6): should throw BadRequestException if valid_until is empty when is_active is true', async () => {
+      await expect(
+        service.updateStoreDiscount({
+          reason: 'Test',
+          percentage: 10,
+          valid_until: '',
+          is_active: true,
         }),
       ).rejects.toThrow(BadRequestException);
     });

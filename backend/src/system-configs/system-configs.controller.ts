@@ -21,6 +21,21 @@ export class SystemConfigsController {
     return this.configsService.updateDeliverySchedule(body);
   }
 
+  @Get('store-discount')
+  async getStoreDiscount() {
+    return this.configsService.getStoreDiscount();
+  }
+
+  @Patch('store-discount')
+  @UseGuards(AuthGuard)
+  async updateStoreDiscount(@Body() body: any, @Req() req: any) {
+    const userRole = req.user?.role?.toLowerCase();
+    if (userRole !== 'admin') {
+      throw new ForbiddenException('Only admin users can modify system configurations');
+    }
+    return this.configsService.updateStoreDiscount(body);
+  }
+
   @Get(':key')
   async get(@Param('key') key: string) {
     const value = await this.configsService.get(key);

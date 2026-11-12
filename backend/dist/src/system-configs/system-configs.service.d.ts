@@ -52,6 +52,23 @@ export declare class SystemConfigsService implements OnModuleInit {
         }>;
         cutoffHour: number;
     }>;
+    getStoreDiscount(): Promise<{
+        reason: string;
+        percentage: number;
+        valid_until: string;
+        is_active: boolean;
+    }>;
+    updateStoreDiscount(data: {
+        reason?: string;
+        percentage: number;
+        valid_until: string;
+        is_active: boolean;
+    }): Promise<{
+        reason: string;
+        percentage: number;
+        valid_until: string;
+        is_active: boolean;
+    }>;
     get(key: string, defaultValue?: string): Promise<string>;
     update(key: string, value: string): Promise<SystemConfig>;
 }

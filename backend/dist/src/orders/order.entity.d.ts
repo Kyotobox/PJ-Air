@@ -32,6 +32,9 @@ export declare class Order {
     tax_legend: string;
     is_complementary: boolean;
     store_credit_applied: number;
+    global_discount_amount: number;
+    global_discount_reason: string;
+    global_discount_percentage: number;
     address_id: string;
     delivery_date: string;
     payment_due_date: string;

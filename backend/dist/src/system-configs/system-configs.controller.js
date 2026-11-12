@@ -31,6 +31,16 @@ let SystemConfigsController = class SystemConfigsController {
         }
         return this.configsService.updateDeliverySchedule(body);
     }
+    async getStoreDiscount() {
+        return this.configsService.getStoreDiscount();
+    }
+    async updateStoreDiscount(body, req) {
+        const userRole = req.user?.role?.toLowerCase();
+        if (userRole !== 'admin') {
+            throw new common_1.ForbiddenException('Only admin users can modify system configurations');
+        }
+        return this.configsService.updateStoreDiscount(body);
+    }
     async get(key) {
         const value = await this.configsService.get(key);
         if (value === '') {
@@ -62,6 +72,21 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], SystemConfigsController.prototype, "updateDeliverySchedule", null);
+__decorate([
+    (0, common_1.Get)('store-discount'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SystemConfigsController.prototype, "getStoreDiscount", null);
+__decorate([
+    (0, common_1.Patch)('store-discount'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], SystemConfigsController.prototype, "updateStoreDiscount", null);
 __decorate([
     (0, common_1.Get)(':key'),
     __param(0, (0, common_1.Param)('key')),

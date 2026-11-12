@@ -45,6 +45,9 @@ let Order = class Order {
     tax_legend;
     is_complementary;
     store_credit_applied;
+    global_discount_amount;
+    global_discount_reason;
+    global_discount_percentage;
     address_id;
     delivery_date;
     payment_due_date;
@@ -179,6 +182,18 @@ __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)
 ], Order.prototype, "store_credit_applied", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0, nullable: true }),
+    __metadata("design:type", Number)
+], Order.prototype, "global_discount_amount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Order.prototype, "global_discount_reason", void 0);
+__decorate([
+    (0, typeorm_1.Column)('decimal', { precision: 5, scale: 2, default: 0, nullable: true }),
+    __metadata("design:type", Number)
+], Order.prototype, "global_discount_percentage", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

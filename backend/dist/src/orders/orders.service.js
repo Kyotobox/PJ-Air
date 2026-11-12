@@ -589,10 +589,30 @@ let OrdersService = class OrdersService {
         if (isComplementary && !appliedNotes.includes('Complementario a orden existente')) {
             appliedNotes = appliedNotes ? `${appliedNotes}\n[Complementario a orden existente]` : '[Complementario a orden existente]';
         }
+        let globalDiscountAmount = 0;
+        let globalDiscountReason = null;
+        let globalDiscountPercentage = 0;
+        if (this.systemConfigsService && typeof this.systemConfigsService.getStoreDiscount === 'function') {
+            try {
+                const storeDiscount = await this.systemConfigsService.getStoreDiscount();
+                if (storeDiscount &&
+                    storeDiscount.is_active === true &&
+                    Number(storeDiscount.percentage) > 0 &&
+                    storeDiscount.valid_until &&
+                    new Date() <= new Date(storeDiscount.valid_until)) {
+                    globalDiscountPercentage = Number(storeDiscount.percentage);
+                    globalDiscountReason = storeDiscount.reason || 'Descuento general de tienda';
+                    globalDiscountAmount = Math.round(itemsTotal * (globalDiscountPercentage / 100) * 100) / 100;
+                }
+            }
+            catch (err) {
+                console.error('[OrdersService] Error fetching store general discount:', err);
+            }
+        }
         let storeCreditApplied = 0;
         const requestedStoreCredit = Number(orderData.store_credit_applied || 0);
         const userCreditBalance = Number(user?.credit_balance || 0);
-        const grossTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
+        const grossTotal = Math.max(0, Math.round((itemsTotal - globalDiscountAmount + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100);
         if (requestedStoreCredit > 0 && userCreditBalance > 0) {
             storeCreditApplied = Math.min(requestedStoreCredit, userCreditBalance, grossTotal);
         }
@@ -678,6 +698,9 @@ let OrdersService = class OrdersService {
                 tax_legend: appliedTaxLegend,
                 is_complementary: isComplementary,
                 store_credit_applied: storeCreditApplied,
+                global_discount_amount: globalDiscountAmount,
+                global_discount_reason: globalDiscountReason,
+                global_discount_percentage: globalDiscountPercentage,
                 notes: appliedNotes,
             });
             const savedResult = await manager.save(order_entity_1.Order, orderToCreate);
@@ -1119,7 +1142,12 @@ let OrdersService = class OrdersService {
                 appliedTaxAmount = Math.round(itemsTotal * (Number(order.tax_rate) / 100) * 100) / 100;
             }
             const deliveryFee = Number(order.delivery_fee_charged) || 0;
-            const newTotal = Math.round((itemsTotal + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
+            let discountAmount = 0;
+            if (order.global_discount_percentage && Number(order.global_discount_percentage) > 0) {
+                discountAmount = Math.round(itemsTotal * (Number(order.global_discount_percentage) / 100) * 100) / 100;
+                order.global_discount_amount = discountAmount;
+            }
+            const newTotal = Math.round((itemsTotal - discountAmount + packagingFee - packagingDiscount + deliveryFee + Number.EPSILON) * 100) / 100;
             order.packaging_fee = packagingFee;
             order.packaging_discount = packagingDiscount;
             order.fee_amount = feeAmount;
