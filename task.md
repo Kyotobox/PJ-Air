@@ -11,4 +11,4 @@
 - [x] **TASK-78-07** [TASK] Certificación y Despliegue en Testing y Producción VPS
 - [x] **TASK-78-08** [TASK] Backend: Consecutivo correlativo corto de órdenes iniciando en INV-1600 y metadata en Stripe
 - [x] **TASK-78-09** [TASK] Backend & Frontend: Módulo de Exportación Contable en Excel con desglose fiscal y botón en panel
-- [/] **TASK-78-10** [TASK] Despliegue en VPS (Testing y Producción) y migración de base de datos con backfill correlativo
+- [x] **TASK-78-10** [TASK] Despliegue en VPS (Testing y Producción) y migración de base de datos con backfill correlativo
