@@ -20,6 +20,8 @@ let Product = class Product {
     description;
     image;
     is_deleted;
+    stripe_product_id;
+    stripe_price_id;
 };
 exports.Product = Product;
 __decorate([
@@ -51,6 +53,14 @@ __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], Product.prototype, "is_deleted", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Product.prototype, "stripe_product_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Product.prototype, "stripe_price_id", void 0);
 exports.Product = Product = __decorate([
     (0, typeorm_1.Entity)('products')
 ], Product);

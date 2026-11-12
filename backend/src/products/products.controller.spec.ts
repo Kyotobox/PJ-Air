@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
+import { StripeProductSyncService } from './stripe-product-sync.service';
 
 /**
  * Unit Tests — ProductsController
@@ -22,6 +23,11 @@ describe('ProductsController', () => {
     processCSV: jest.fn(),
   };
 
+  const mockStripeProductSyncService = {
+    syncAll: jest.fn().mockResolvedValue({ synced: 0, skipped: 0, errors: 0, details: [] }),
+    syncOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -29,6 +35,7 @@ describe('ProductsController', () => {
       controllers: [ProductsController],
       providers: [
         { provide: ProductsService, useValue: mockProductsService },
+        { provide: StripeProductSyncService, useValue: mockStripeProductSyncService },
       ],
     }).compile();
 

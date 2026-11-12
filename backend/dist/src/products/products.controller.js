@@ -52,14 +52,17 @@ const multer_1 = require("multer");
 const path_1 = require("path");
 const fs = __importStar(require("fs"));
 const products_service_1 = require("./products.service");
+const stripe_product_sync_service_1 = require("./stripe-product-sync.service");
 const config_1 = require("../config");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 let ProductsController = class ProductsController {
     productsService;
-    constructor(productsService) {
+    stripeProductSyncService;
+    constructor(productsService, stripeProductSyncService) {
         this.productsService = productsService;
+        this.stripeProductSyncService = stripeProductSyncService;
     }
     async findAll() {
         return this.productsService.findAll();
@@ -112,6 +115,9 @@ let ProductsController = class ProductsController {
             await this.productsService.processCSV(csvFile);
         }
         return { message: 'Upload processed successfully' };
+    }
+    async syncStripeCatalog() {
+        return this.stripeProductSyncService.syncAll();
     }
 };
 exports.ProductsController = ProductsController;
@@ -232,8 +238,17 @@ __decorate([
     __metadata("design:paramtypes", [Array, Object]),
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "uploadProducts", null);
+__decorate([
+    (0, common_1.Post)('stripe/sync-catalog'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "syncStripeCatalog", null);
 exports.ProductsController = ProductsController = __decorate([
     (0, common_1.Controller)('products'),
-    __metadata("design:paramtypes", [products_service_1.ProductsService])
+    __metadata("design:paramtypes", [products_service_1.ProductsService,
+        stripe_product_sync_service_1.StripeProductSyncService])
 ], ProductsController);
 //# sourceMappingURL=products.controller.js.map

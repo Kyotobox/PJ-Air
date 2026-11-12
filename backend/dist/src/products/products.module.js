@@ -14,15 +14,17 @@ const products_controller_1 = require("./products.controller");
 const categories_controller_1 = require("./categories.controller");
 const product_entity_1 = require("./product.entity");
 const category_entity_1 = require("./category.entity");
+const payments_module_1 = require("../payments/payments.module");
+const stripe_product_sync_service_1 = require("./stripe-product-sync.service");
 let ProductsModule = class ProductsModule {
 };
 exports.ProductsModule = ProductsModule;
 exports.ProductsModule = ProductsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([product_entity_1.Product, category_entity_1.Category])],
-        providers: [products_service_1.ProductsService],
+        imports: [typeorm_1.TypeOrmModule.forFeature([product_entity_1.Product, category_entity_1.Category]), payments_module_1.PaymentsModule],
+        providers: [products_service_1.ProductsService, stripe_product_sync_service_1.StripeProductSyncService],
         controllers: [categories_controller_1.CategoriesController, products_controller_1.ProductsController],
-        exports: [products_service_1.ProductsService],
+        exports: [products_service_1.ProductsService, stripe_product_sync_service_1.StripeProductSyncService],
     })
 ], ProductsModule);
 //# sourceMappingURL=products.module.js.map

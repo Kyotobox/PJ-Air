@@ -11,11 +11,13 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const collection_cron_1 = require("./collection.cron");
 const financial_reports_cron_1 = require("./financial-reports.cron");
+const stripe_sync_cron_1 = require("./stripe-sync.cron");
 const order_entity_1 = require("../orders/order.entity");
 const mail_module_1 = require("../mail/mail.module");
 const sms_module_1 = require("../sms/sms.module");
 const excel_service_1 = require("../orders/excel.service");
 const system_configs_module_1 = require("../system-configs/system-configs.module");
+const products_module_1 = require("../products/products.module");
 let CollectionCronModule = class CollectionCronModule {
 };
 exports.CollectionCronModule = CollectionCronModule;
@@ -26,9 +28,10 @@ exports.CollectionCronModule = CollectionCronModule = __decorate([
             mail_module_1.MailModule,
             sms_module_1.SmsModule,
             system_configs_module_1.SystemConfigsModule,
+            products_module_1.ProductsModule,
         ],
-        providers: [collection_cron_1.CollectionCron, financial_reports_cron_1.FinancialReportsCron, excel_service_1.ExcelService],
-        exports: [collection_cron_1.CollectionCron, financial_reports_cron_1.FinancialReportsCron],
+        providers: [collection_cron_1.CollectionCron, financial_reports_cron_1.FinancialReportsCron, stripe_sync_cron_1.StripeSyncCron, excel_service_1.ExcelService],
+        exports: [collection_cron_1.CollectionCron, financial_reports_cron_1.FinancialReportsCron, stripe_sync_cron_1.StripeSyncCron],
     })
 ], CollectionCronModule);
 //# sourceMappingURL=collection-cron.module.js.map

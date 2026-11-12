@@ -24,5 +24,11 @@ export class Product {
 
   @Column({ default: false })
   is_deleted: boolean;
+
+  @Column({ nullable: true })
+  stripe_product_id: string;
+
+  @Column({ nullable: true })
+  stripe_price_id: string;
 }
 

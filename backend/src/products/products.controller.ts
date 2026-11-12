@@ -4,6 +4,7 @@ import { diskStorage } from 'multer';
 import { extname, join, resolve } from 'path';
 import * as fs from 'fs';
 import { ProductsService } from './products.service';
+import { StripeProductSyncService, StripeSyncResult } from './stripe-product-sync.service';
 import { UPLOAD_PATH } from '../config';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -11,7 +12,10 @@ import { Roles } from '../auth/roles.decorator';
 
 @Controller('products')
 export class ProductsController {
-    constructor(private readonly productsService: ProductsService) { }
+    constructor(
+      private readonly productsService: ProductsService,
+      private readonly stripeProductSyncService: StripeProductSyncService,
+    ) { }
 
     @Get()
     async findAll() {
@@ -140,5 +144,12 @@ export class ProductsController {
             await this.productsService.processCSV(csvFile);
         }
         return { message: 'Upload processed successfully' };
+    }
+
+    @Post('stripe/sync-catalog')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('admin')
+    async syncStripeCatalog(): Promise<StripeSyncResult> {
+        return this.stripeProductSyncService.syncAll();
     }
 }

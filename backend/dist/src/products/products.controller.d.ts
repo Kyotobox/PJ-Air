@@ -1,7 +1,9 @@
 import { ProductsService } from './products.service';
+import { StripeProductSyncService, StripeSyncResult } from './stripe-product-sync.service';
 export declare class ProductsController {
     private readonly productsService;
-    constructor(productsService: ProductsService);
+    private readonly stripeProductSyncService;
+    constructor(productsService: ProductsService, stripeProductSyncService: StripeProductSyncService);
     findAll(): Promise<import("./product.entity").Product[]>;
     findByCategory(category: string): Promise<import("./product.entity").Product[]>;
     findOne(id: string): Promise<import("./product.entity").Product | null>;
@@ -22,4 +24,5 @@ export declare class ProductsController {
     uploadProducts(files: Express.Multer.File[], body: any): Promise<{
         message: string;
     }>;
+    syncStripeCatalog(): Promise<StripeSyncResult>;
 }

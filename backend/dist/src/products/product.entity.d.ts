@@ -7,4 +7,6 @@ export declare class Product {
     description: string;
     image: string;
     is_deleted: boolean;
+    stripe_product_id: string;
+    stripe_price_id: string;
 }
