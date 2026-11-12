@@ -1,33 +1,33 @@
 {
   "project": "pj-air",
   "version": "5.0.0",
-  "kernel_version": "5.3.1",
+  "kernel_version": "5.0.0",
   "status": "COMPLETED",
   "current_sprint": "S78",
-  "current_task": "TASK-78-04",
+  "current_task": "TASK-78-07",
   "sprints": [
     {
       "id": "S76",
-      "title": "Sprint S76: Inhabilitación de Pedidos y Aislamiento de Órdenes de Producción, Cocina y Reportes Financieros",
+      "title": "Sprint S76: Inhabilitaci\u00f3n de Pedidos y Aislamiento de \u00d3rdenes de Producci\u00f3n, Cocina y Reportes Financieros",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-76-01",
-          "title": "Backend: Endpoints PATCH /orders/:id/disable y POST /orders/bulk-disable con notas forenses de auditoría, y exclusión de órdenes canceladas en FinancialReportsCron",
+          "title": "Backend: Endpoints PATCH /orders/:id/disable y POST /orders/bulk-disable con notas forenses de auditor\u00eda, y exclusi\u00f3n de \u00f3rdenes canceladas en FinancialReportsCron",
           "status": "DONE",
           "type": "BACKEND/ORDERS",
           "veracity_hash": null
         },
         {
           "id": "TASK-76-02",
-          "title": "Frontend: Botón de acción rápida individual 🚫 Inhabilitar Pedido, soporte de selección masiva (bulk disable), sincronización bilingüe de estados en filtros y badges, y actualización de FinancialStatusBadge",
+          "title": "Frontend: Bot\u00f3n de acci\u00f3n r\u00e1pida individual \ud83d\udeab Inhabilitar Pedido, soporte de selecci\u00f3n masiva (bulk disable), sincronizaci\u00f3n biling\u00fce de estados en filtros y badges, y actualizaci\u00f3n de FinancialStatusBadge",
           "status": "DONE",
           "type": "FRONTEND/ORDERS",
           "veracity_hash": null
         },
         {
           "id": "TASK-76-03",
-          "title": "Certificación: Suite de pruebas automatizadas (§6 con sad path), inhabilitación de compras de prueba existentes en base de datos, compilación física (build), y verificación integral",
+          "title": "Certificaci\u00f3n: Suite de pruebas automatizadas (\u00a76 con sad path), inhabilitaci\u00f3n de compras de prueba existentes en base de datos, compilaci\u00f3n f\u00edsica (build), y verificaci\u00f3n integral",
           "status": "DONE",
           "type": "DEPLOY/CERT",
           "veracity_hash": null
@@ -41,21 +41,21 @@
       "tasks": [
         {
           "id": "TASK-77-01",
-          "title": "Frontend: Corrección de falso positivo en api.ts (retornar null ante respuesta HTTP 200 vacía), validación estricta de resolvedZone?.id en checkout/page.tsx, y envío forzoso del order.total devuelto por el backend al invocar /payments/create-intent",
+          "title": "Frontend: Correcci\u00f3n de falso positivo en api.ts (retornar null ante respuesta HTTP 200 vac\u00eda), validaci\u00f3n estricta de resolvedZone?.id en checkout/page.tsx, y env\u00edo forzoso del order.total devuelto por el backend al invocar /payments/create-intent",
           "status": "DONE",
           "type": "FRONTEND/CHECKOUT",
           "veracity_hash": null
         },
         {
           "id": "TASK-77-02",
-          "title": "Backend: Blindaje en payments.service.ts para fijar y validar el monto del PaymentIntent directamente desde order.total / saldo en BD cuando existe orderId, y verificación en orders.controller.ts (PATCH /orders/:id/payment-status) comprobando contra Stripe si el cobro cubre el total (degradando a partially_paid con pending_balance ante montos menores)",
+          "title": "Backend: Blindaje en payments.service.ts para fijar y validar el monto del PaymentIntent directamente desde order.total / saldo en BD cuando existe orderId, y verificaci\u00f3n en orders.controller.ts (PATCH /orders/:id/payment-status) comprobando contra Stripe si el cobro cubre el total (degradando a partially_paid con pending_balance ante montos menores)",
           "status": "DONE",
           "type": "BACKEND/PAYMENTS",
           "veracity_hash": null
         },
         {
           "id": "TASK-77-03",
-          "title": "Certificación: Tests automatizados con Happy y Sad path (§6), compilación física, despliegue a testing y producción VPS, y ajuste del saldo pendiente ($625.00) en la orden 060d13ad-4c6b-414c-9692-7a7bc41431ee",
+          "title": "Certificaci\u00f3n: Tests automatizados con Happy y Sad path (\u00a76), compilaci\u00f3n f\u00edsica, despliegue a testing y producci\u00f3n VPS, y ajuste del saldo pendiente ($625.00) en la orden 060d13ad-4c6b-414c-9692-7a7bc41431ee",
           "status": "DONE",
           "type": "DEPLOY/CERT",
           "veracity_hash": null
@@ -64,33 +64,54 @@
     },
     {
       "id": "S78",
-      "title": "Sprint S78: Soberanía de Tarifa Fija por Cliente, Erradicación de Zonas de Delivery y Ajuste Financiero",
+      "title": "Sprint S78: Soberan\u00eda de Tarifa Fija por Cliente, Erradicaci\u00f3n de Zonas de Delivery y Ajuste Financiero",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-78-01",
-          "title": "Ajuste financiero en base de datos de producción para pedidos #060d13ad ($300.00 flete y balance) y #aa910cbb ($200.00 flete y compensación store credit)",
+          "title": "Ajuste financiero en base de datos de producci\u00f3n para pedidos #060d13ad ($300.00 flete y balance) y #aa910cbb ($200.00 flete y compensaci\u00f3n store credit)",
           "status": "DONE",
           "type": "DATA/FINANCE",
           "veracity_hash": null
         },
         {
           "id": "TASK-78-02",
-          "title": "Backend: Prevalencia absoluta de tarifa fija de cliente y erradicación total de ZonesService en orders.service.ts (solo Pickup, Tarifa Fija o Millaje)",
+          "title": "Backend: Prevalencia absoluta de tarifa fija de cliente y erradicaci\u00f3n total de ZonesService en orders.service.ts (solo Pickup, Tarifa Fija o Millaje)",
           "status": "DONE",
           "type": "BACKEND/ORDERS",
           "veracity_hash": null
         },
         {
           "id": "TASK-78-03",
-          "title": "Frontend: Erradicación total de zonas de delivery en checkout/page.tsx, cortocircuito directo para tarifa fija sin cotización innecesaria y cálculo exclusivo por millaje",
+          "title": "Frontend: Erradicaci\u00f3n total de zonas de delivery en checkout/page.tsx, cortocircuito directo para tarifa fija sin cotizaci\u00f3n innecesaria y c\u00e1lculo exclusivo por millaje",
           "status": "DONE",
           "type": "FRONTEND/CHECKOUT",
           "veracity_hash": null
         },
         {
           "id": "TASK-78-04",
-          "title": "Certificación: Tests automatizados (happy y sad paths), compilación en limpio, despliegue y sincronización en testing y producción VPS",
+          "title": "Certificaci\u00f3n: Tests automatizados (happy y sad paths), compilaci\u00f3n en limpio, despliegue y sincronizaci\u00f3n en testing y producci\u00f3n VPS",
+          "status": "DONE",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-05",
+          "title": "Frontend Checkout: Prioridad #1 y autoselecci\u00f3n obligatoria de L\u00ednea de Cr\u00e9dito Comercial B2B para clientes credit, procesando orden directa sin pasarela de tarjeta",
+          "status": "DONE",
+          "type": "FRONTEND/CHECKOUT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-06",
+          "title": "Frontend Admin Cat\u00e1logo: Subida autenticada y persistente de im\u00e1genes de productos v\u00eda api.upload / cabeceras de autorizaci\u00f3n",
+          "status": "DONE",
+          "type": "FRONTEND/CATALOG",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-07",
+          "title": "Certificaci\u00f3n y Despliegue en Testing y Producci\u00f3n VPS",
           "status": "DONE",
           "type": "DEPLOY/CERT",
           "veracity_hash": null
@@ -102,33 +123,33 @@
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S78",
-    "title": "Sprint S78: Soberanía de Tarifa Fija por Cliente, Erradicación de Zonas de Delivery y Ajuste Financiero",
+    "title": "Sprint S78: Soberan\u00eda de Tarifa Fija por Cliente, Erradicaci\u00f3n de Zonas de Delivery y Ajuste Financiero",
     "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-78-01",
-        "title": "Ajuste financiero en base de datos de producción para pedidos #060d13ad ($300.00 flete y balance) y #aa910cbb ($200.00 flete y compensación store credit)",
+        "title": "Ajuste financiero en base de datos de producci\u00f3n para pedidos #060d13ad ($300.00 flete y balance) y #aa910cbb ($200.00 flete y compensaci\u00f3n store credit)",
         "status": "DONE",
         "type": "DATA/FINANCE",
         "veracity_hash": null
       },
       {
         "id": "TASK-78-02",
-        "title": "Backend: Prevalencia absoluta de tarifa fija de cliente y erradicación total de ZonesService en orders.service.ts (solo Pickup, Tarifa Fija o Millaje)",
+        "title": "Backend: Prevalencia absoluta de tarifa fija de cliente y erradicaci\u00f3n total de ZonesService en orders.service.ts (solo Pickup, Tarifa Fija o Millaje)",
         "status": "DONE",
         "type": "BACKEND/ORDERS",
         "veracity_hash": null
       },
       {
         "id": "TASK-78-03",
-        "title": "Frontend: Erradicación total de zonas de delivery en checkout/page.tsx, cortocircuito directo para tarifa fija sin cotización innecesaria y cálculo exclusivo por millaje",
+        "title": "Frontend: Erradicaci\u00f3n total de zonas de delivery en checkout/page.tsx, cortocircuito directo para tarifa fija sin cotizaci\u00f3n innecesaria y c\u00e1lculo exclusivo por millaje",
         "status": "DONE",
         "type": "FRONTEND/CHECKOUT",
         "veracity_hash": null
       },
       {
         "id": "TASK-78-04",
-        "title": "Certificación: Tests automatizados (happy y sad paths), compilación en limpio, despliegue y sincronización en testing y producción VPS",
+        "title": "Certificaci\u00f3n: Tests automatizados (happy y sad paths), compilaci\u00f3n en limpio, despliegue y sincronizaci\u00f3n en testing y producci\u00f3n VPS",
         "status": "DONE",
         "type": "DEPLOY/CERT",
         "veracity_hash": null

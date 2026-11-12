@@ -8,4 +8,4 @@
 - [x] **TASK-78-04** [TASK] Certificación: Tests automatizados (happy y sad paths), compilación en limpio, despliegue y sincronización en testing y producción VPS
 - [x] **TASK-78-05** [TASK] Frontend Checkout: Prioridad #1 y autoselección obligatoria de Línea de Crédito Comercial B2B para clientes credit, procesando orden directa sin pasarela de tarjeta
 - [x] **TASK-78-06** [TASK] Frontend Admin Catálogo: Subida autenticada y persistente de imágenes de productos vía api.upload / cabeceras de autorización
-- [/] **TASK-78-07** [TASK] Certificación y Despliegue en Testing y Producción VPS
+- [x] **TASK-78-07** [TASK] Certificación y Despliegue en Testing y Producción VPS
