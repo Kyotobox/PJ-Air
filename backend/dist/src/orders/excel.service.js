@@ -340,6 +340,400 @@ let ExcelService = class ExcelService {
         const buffer = await workbook.xlsx.writeBuffer();
         return Buffer.from(buffer);
     }
+    async exportAccounting(orders) {
+        const workbook = new ExcelJS.Workbook();
+        const fontName = 'Segoe UI';
+        const borderStyle = {
+            style: 'thin',
+            color: { argb: 'FFD3D3D3' },
+        };
+        const cellBorders = {
+            top: borderStyle,
+            left: borderStyle,
+            bottom: borderStyle,
+            right: borderStyle,
+        };
+        const formatDate = (dateVal) => {
+            if (!dateVal)
+                return '';
+            if (typeof dateVal === 'string') {
+                const clean = dateVal.includes('T') ? dateVal.split('T')[0] : dateVal.split(' ')[0];
+                if (/^\d{4}-\d{2}-\d{2}$/.test(clean))
+                    return clean;
+            }
+            const d = dateVal instanceof Date ? dateVal : new Date(dateVal);
+            if (isNaN(d.getTime()))
+                return String(dateVal || '');
+            const yr = d.getFullYear();
+            const mo = String(d.getMonth() + 1).padStart(2, '0');
+            const da = String(d.getDate()).padStart(2, '0');
+            return `${yr}-${mo}-${da}`;
+        };
+        const mapPaymentMethod = (method) => {
+            if (!method)
+                return 'No especificado';
+            const m = method.toLowerCase().trim();
+            switch (m) {
+                case 'credit':
+                    return 'Crédito Net 15';
+                case 'stripe':
+                    return 'Tarjeta Stripe';
+                case 'ach':
+                    return 'ACH';
+                case 'check':
+                    return 'Cheque';
+                case 'zelle':
+                    return 'Zelle';
+                case 'cash':
+                    return 'Efectivo';
+                default:
+                    return method.charAt(0).toUpperCase() + method.slice(1);
+            }
+        };
+        const mapPaymentStatus = (status) => {
+            if (!status)
+                return 'PENDIENTE';
+            const s = status.toLowerCase().trim();
+            switch (s) {
+                case 'paid':
+                    return 'PAGADO';
+                case 'pending':
+                    return 'PENDIENTE';
+                case 'partial':
+                    return 'PARCIAL';
+                case 'overdue':
+                    return 'VENCIDO';
+                case 'cancelled':
+                    return 'CANCELADO';
+                case 'refunded':
+                    return 'REEMBOLSADO';
+                default:
+                    return status.toUpperCase();
+            }
+        };
+        const ws1 = workbook.addWorksheet('Facturas y Cobros');
+        ws1.views = [{ state: 'frozen', ySplit: 1, showGridLines: true }];
+        const headers1 = [
+            'Factura #',
+            'Fecha Pedido',
+            'Fecha Entrega',
+            'Cliente (Razón Social)',
+            'Nombre Comercial / DBA',
+            'Tax ID / EIN',
+            'Exento de Impuestos',
+            'Subtotal Productos ($)',
+            'Descuento ($)',
+            'Flete ($)',
+            'Impuesto Sales Tax ($)',
+            'Total Facturado ($)',
+            'Método de Pago',
+            'Estado del Pago',
+            'Balance Pendiente ($)',
+            'Notas / Referencia',
+        ];
+        const headerRow1 = ws1.addRow(headers1);
+        headerRow1.height = 26;
+        headerRow1.eachCell((cell, colNum) => {
+            cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF5C3D2E' },
+            };
+            cell.border = cellBorders;
+            cell.alignment = {
+                horizontal: (colNum >= 8 && colNum <= 12) || colNum === 15 ? 'right' : (colNum <= 3 || colNum === 6 || colNum === 7 || colNum === 13 || colNum === 14 ? 'center' : 'left'),
+                vertical: 'middle',
+            };
+        });
+        const safeOrders = Array.isArray(orders) ? orders : [];
+        const totals = {
+            subtotal: 0,
+            discount: 0,
+            deliveryFee: 0,
+            taxAmount: 0,
+            total: 0,
+            pendingBalance: 0,
+        };
+        if (safeOrders.length === 0) {
+            const emptyRow = ws1.addRow(['No hay facturas ni registros contables en el rango de fechas seleccionado.']);
+            ws1.mergeCells(emptyRow.number, 1, emptyRow.number, headers1.length);
+            emptyRow.height = 24;
+            emptyRow.getCell(1).font = { name: fontName, italic: true, size: 10, color: { argb: 'FF7F7F7F' } };
+            emptyRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+        else {
+            safeOrders.forEach(order => {
+                const invoiceNum = order?.invoice_number || (order?.id ? String(order.id).slice(0, 8).toUpperCase() : '');
+                const orderDate = formatDate(order?.created_at);
+                const deliveryDate = formatDate(order?.delivery_date);
+                const legalName = order?.user?.legal_business_name || order?.user?.profile?.full_name || order?.user?.email || 'Anónimo';
+                const dba = order?.user?.dba || order?.user?.profile?.nickname || '';
+                const taxId = order?.user?.ein || order?.user?.tax_id || '';
+                const taxExempt = order?.tax_exempt ? 'EXENTO (ST-120)' : 'NO';
+                let subtotal = (order?.items || []).reduce((sum, item) => {
+                    const qty = Number(item?.quantity) || 0;
+                    const price = Number(item?.price_at_time ?? item?.product?.price ?? 0);
+                    return sum + (qty * price);
+                }, 0);
+                if (subtotal === 0 && order?.subtotal) {
+                    subtotal = Number(order.subtotal);
+                }
+                const discount = Number(order?.discount || order?.packaging_discount || order?.store_credit_applied || 0);
+                const deliveryFee = Number(order?.delivery_fee_charged || 0);
+                const taxAmount = Number(order?.tax_amount || 0);
+                const total = Number(order?.total || 0);
+                const paymentMethod = mapPaymentMethod(order?.payment_method);
+                const paymentStatus = mapPaymentStatus(order?.payment_status);
+                const pendingBalance = Number(order?.pending_balance || 0);
+                const notes = String(order?.notes || order?.zelle_reference || order?.check_number || '');
+                totals.subtotal += subtotal;
+                totals.discount += discount;
+                totals.deliveryFee += deliveryFee;
+                totals.taxAmount += taxAmount;
+                totals.total += total;
+                totals.pendingBalance += pendingBalance;
+                const row = ws1.addRow([
+                    invoiceNum,
+                    orderDate,
+                    deliveryDate,
+                    legalName,
+                    dba,
+                    taxId,
+                    taxExempt,
+                    Number(subtotal.toFixed(2)),
+                    Number(discount.toFixed(2)),
+                    Number(deliveryFee.toFixed(2)),
+                    Number(taxAmount.toFixed(2)),
+                    Number(total.toFixed(2)),
+                    paymentMethod,
+                    paymentStatus,
+                    Number(pendingBalance.toFixed(2)),
+                    notes,
+                ]);
+                row.height = 20;
+                row.eachCell((cell, colNum) => {
+                    cell.font = { name: fontName, size: 10 };
+                    cell.border = cellBorders;
+                    if (colNum === 1 || colNum === 2 || colNum === 3 || colNum === 6) {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
+                    else if (colNum === 7 || colNum === 13 || colNum === 14) {
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
+                    else if ((colNum >= 8 && colNum <= 12) || colNum === 15) {
+                        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                        cell.numFmt = '"$"#,##0.00';
+                    }
+                    else {
+                        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                    }
+                });
+            });
+            const totalsRow = ws1.addRow([
+                'TOTALES',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                Number(totals.subtotal.toFixed(2)),
+                Number(totals.discount.toFixed(2)),
+                Number(totals.deliveryFee.toFixed(2)),
+                Number(totals.taxAmount.toFixed(2)),
+                Number(totals.total.toFixed(2)),
+                '',
+                '',
+                Number(totals.pendingBalance.toFixed(2)),
+                '',
+            ]);
+            totalsRow.height = 24;
+            totalsRow.eachCell((cell, colNum) => {
+                cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFE8D0C5' },
+                };
+                cell.border = {
+                    top: borderStyle,
+                    bottom: { style: 'double', color: { argb: 'FF5C3D2E' } },
+                    left: borderStyle,
+                    right: borderStyle,
+                };
+                if ((colNum >= 8 && colNum <= 12) || colNum === 15) {
+                    cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                    cell.numFmt = '"$"#,##0.00';
+                }
+                else {
+                    cell.alignment = { horizontal: colNum === 1 ? 'center' : 'left', vertical: 'middle' };
+                }
+            });
+        }
+        const ws2 = workbook.addWorksheet('Desglose de Productos');
+        ws2.views = [{ state: 'frozen', ySplit: 1, showGridLines: true }];
+        const headers2 = [
+            'Factura #',
+            'Fecha Pedido',
+            'Cliente',
+            'Categoría',
+            'Producto',
+            'Cantidad (Unidades)',
+            'Precio Unitario ($)',
+            'Total Ítem ($)',
+        ];
+        const headerRow2 = ws2.addRow(headers2);
+        headerRow2.height = 26;
+        headerRow2.eachCell((cell, colNum) => {
+            cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FF5C3D2E' },
+            };
+            cell.border = cellBorders;
+            cell.alignment = {
+                horizontal: colNum === 6 || colNum === 7 || colNum === 8 ? 'right' : (colNum <= 2 ? 'center' : 'left'),
+                vertical: 'middle',
+            };
+        });
+        let totalUnits = 0;
+        let grandTotalItems = 0;
+        let totalItemsCount = 0;
+        if (safeOrders.length === 0) {
+            const emptyRow2 = ws2.addRow(['No hay desglose de productos para el rango de fechas seleccionado.']);
+            ws2.mergeCells(emptyRow2.number, 1, emptyRow2.number, headers2.length);
+            emptyRow2.height = 24;
+            emptyRow2.getCell(1).font = { name: fontName, italic: true, size: 10, color: { argb: 'FF7F7F7F' } };
+            emptyRow2.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+        else {
+            safeOrders.forEach(order => {
+                const invoiceNum = order?.invoice_number || (order?.id ? String(order.id).slice(0, 8).toUpperCase() : '');
+                const orderDate = formatDate(order?.created_at || order?.delivery_date);
+                const clientName = order?.user?.legal_business_name || order?.user?.dba || order?.user?.profile?.nickname || order?.user?.profile?.full_name || order?.user?.email || 'Anónimo';
+                (order?.items || []).forEach(item => {
+                    const category = item?.product?.category?.name || 'Sin categoría';
+                    const productName = item?.product?.name || `Producto #${item?.product_id || 'Desconocido'}`;
+                    const qty = Number(item?.quantity) || 0;
+                    const unitPrice = Number(item?.price_at_time ?? item?.product?.price ?? 0);
+                    const itemTotal = Number((qty * unitPrice).toFixed(2));
+                    totalUnits += qty;
+                    grandTotalItems += itemTotal;
+                    totalItemsCount++;
+                    const row = ws2.addRow([
+                        invoiceNum,
+                        orderDate,
+                        clientName,
+                        category,
+                        productName,
+                        qty,
+                        Number(unitPrice.toFixed(2)),
+                        itemTotal,
+                    ]);
+                    row.height = 19;
+                    row.eachCell((cell, colNum) => {
+                        cell.font = { name: fontName, size: 10 };
+                        cell.border = cellBorders;
+                        if (colNum === 1 || colNum === 2) {
+                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        }
+                        else if (colNum === 6) {
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '#,##0';
+                        }
+                        else if (colNum === 7 || colNum === 8) {
+                            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                            cell.numFmt = '"$"#,##0.00';
+                        }
+                        else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                        }
+                    });
+                });
+            });
+            if (totalItemsCount > 0) {
+                const totalsRow2 = ws2.addRow([
+                    'TOTAL GENERAL',
+                    '',
+                    '',
+                    '',
+                    '',
+                    totalUnits,
+                    '',
+                    Number(grandTotalItems.toFixed(2)),
+                ]);
+                totalsRow2.height = 24;
+                totalsRow2.eachCell((cell, colNum) => {
+                    cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFE8D0C5' },
+                    };
+                    cell.border = {
+                        top: borderStyle,
+                        bottom: { style: 'double', color: { argb: 'FF5C3D2E' } },
+                        left: borderStyle,
+                        right: borderStyle,
+                    };
+                    if (colNum === 6) {
+                        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                        cell.numFmt = '#,##0';
+                    }
+                    else if (colNum === 8) {
+                        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+                        cell.numFmt = '"$"#,##0.00';
+                    }
+                    else {
+                        cell.alignment = { horizontal: colNum === 1 ? 'center' : 'left', vertical: 'middle' };
+                    }
+                });
+            }
+        }
+        [ws1, ws2].forEach(ws => {
+            ws.columns.forEach(column => {
+                let maxLen = 0;
+                column.eachCell?.({ includeEmpty: true }, cell => {
+                    if (cell.value && !cell.isMerged) {
+                        const str = typeof cell.value === 'object' && 'text' in cell.value
+                            ? String(cell.value.text)
+                            : String(cell.value);
+                        if (str.length > maxLen)
+                            maxLen = str.length;
+                    }
+                });
+                column.width = Math.max(maxLen + 4, 14);
+            });
+        });
+        ws1.getColumn(1).width = 14;
+        ws1.getColumn(2).width = 14;
+        ws1.getColumn(3).width = 14;
+        ws1.getColumn(4).width = 28;
+        ws1.getColumn(5).width = 22;
+        ws1.getColumn(6).width = 16;
+        ws1.getColumn(7).width = 20;
+        ws1.getColumn(8).width = 22;
+        ws1.getColumn(9).width = 16;
+        ws1.getColumn(10).width = 15;
+        ws1.getColumn(11).width = 22;
+        ws1.getColumn(12).width = 20;
+        ws1.getColumn(13).width = 18;
+        ws1.getColumn(14).width = 16;
+        ws1.getColumn(15).width = 20;
+        ws1.getColumn(16).width = 30;
+        ws2.getColumn(1).width = 14;
+        ws2.getColumn(2).width = 14;
+        ws2.getColumn(3).width = 28;
+        ws2.getColumn(4).width = 22;
+        ws2.getColumn(5).width = 30;
+        ws2.getColumn(6).width = 20;
+        ws2.getColumn(7).width = 20;
+        ws2.getColumn(8).width = 20;
+        const buffer = await workbook.xlsx.writeBuffer();
+        return Buffer.from(buffer);
+    }
 };
 exports.ExcelService = ExcelService;
 exports.ExcelService = ExcelService = __decorate([

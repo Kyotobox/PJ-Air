@@ -3,6 +3,7 @@ import { Address } from '../addresses/address.entity';
 import { OrderItem } from './order-item.entity';
 export declare class Order {
     id: string;
+    invoice_number: string;
     user_id: string;
     total: number;
     status: string;

@@ -8,6 +8,9 @@ export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'varchar', nullable: true, unique: true })
+  invoice_number: string;
+
   @Column()
   user_id: string;
 

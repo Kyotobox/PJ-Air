@@ -171,4 +171,42 @@ describe('Orders Integration Tests', () => {
     expect(preservedProduct).toBeDefined();
     expect(preservedProduct?.name).toBe('Integrity Test Product');
   });
+
+  it('Happy path: should generate consecutive invoice numbers starting from INV-1600 in SQLite', async () => {
+    const order1 = await service.create('user-1', {
+      total: 50,
+      items: [{ productId: 1, price: 50, quantity: 1 }],
+    });
+    expect(order1.invoice_number).toBe('INV-1600');
+
+    const order2 = await service.create('user-1', {
+      total: 100,
+      items: [{ productId: 2, price: 100, quantity: 1 }],
+    });
+    expect(order2.invoice_number).toBe('INV-1601');
+  });
+
+  it('Happy path: backfillInvoiceNumbers should assign contiguous invoice numbers to existing orders without invoice_number', async () => {
+    const orderRepo = dataSource.getRepository(Order);
+    await orderRepo.save([
+      { id: 'legacy-1', user_id: 'user-1', total: 50, created_at: new Date('2026-01-01T10:00:00Z') },
+      { id: 'legacy-2', user_id: 'user-1', total: 75, created_at: new Date('2026-01-02T10:00:00Z') },
+    ]);
+
+    const affected = await service.backfillInvoiceNumbers();
+    expect(affected).toBe(2);
+
+    const updated1 = await orderRepo.findOne({ where: { id: 'legacy-1' } });
+    const updated2 = await orderRepo.findOne({ where: { id: 'legacy-2' } });
+
+    expect(updated1?.invoice_number).toBe('INV-1600');
+    expect(updated2?.invoice_number).toBe('INV-1601');
+
+    // Next created order must continue with INV-1602
+    const nextOrder = await service.create('user-1', {
+      total: 50,
+      items: [{ productId: 1, price: 50, quantity: 1 }],
+    });
+    expect(nextOrder.invoice_number).toBe('INV-1602');
+  });
 });

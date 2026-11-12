@@ -1716,6 +1716,93 @@ describe('OrdersService', () => {
         await expect(service.bulkDisableOrders(['invalid-order-id'])).rejects.toThrow(NotFoundException);
       });
     });
+
+    describe('getNextInvoiceNumber and backfillInvoiceNumbers', () => {
+      it('Happy path: should return INV-1600 when no existing orders have invoice_number', async () => {
+        orderRepository.createQueryBuilder.mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue(null),
+          getMany: jest.fn().mockResolvedValue([]),
+        });
+
+        const nextNumber = await service.getNextInvoiceNumber();
+        expect(nextNumber).toBe('INV-1600');
+      });
+
+      it('Happy path: should return next consecutive number INV-1606 when INV-1605 exists', async () => {
+        orderRepository.createQueryBuilder.mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue({ id: 'ord-1', invoice_number: 'INV-1605' }),
+          getMany: jest.fn().mockResolvedValue([{ id: 'ord-1', invoice_number: 'INV-1605' }]),
+        });
+
+        const nextNumber = await service.getNextInvoiceNumber();
+        expect(nextNumber).toBe('INV-1606');
+      });
+
+      it('Sad path (§6): should propagate exception when query fails', async () => {
+        orderRepository.createQueryBuilder.mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockRejectedValue(new Error('Database query failed')),
+          getMany: jest.fn().mockRejectedValue(new Error('Database query failed')),
+        });
+
+        await expect(service.getNextInvoiceNumber()).rejects.toThrow('Database query failed');
+      });
+
+      it('Sad path (§6): should return INV-1600 if existing invoice number has malformed format', async () => {
+        orderRepository.createQueryBuilder.mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getOne: jest.fn().mockResolvedValue({ id: 'ord-bad', invoice_number: 'INV-INVALID' }),
+          getMany: jest.fn().mockResolvedValue([{ id: 'ord-bad', invoice_number: 'INV-INVALID' }]),
+        });
+
+        const nextNumber = await service.getNextInvoiceNumber();
+        expect(nextNumber).toBe('INV-1600');
+      });
+
+      it('should assign consecutive invoice numbers to unassigned orders during backfill', async () => {
+        const mockUnassigned = [
+          { id: 'ord-old-1', created_at: new Date('2026-01-01'), invoice_number: null },
+          { id: 'ord-old-2', created_at: new Date('2026-01-02'), invoice_number: null },
+        ];
+
+        orderRepository.createQueryBuilder
+          .mockReturnValueOnce({
+            where: jest.fn().mockReturnThis(),
+            orderBy: jest.fn().mockReturnThis(),
+            getMany: jest.fn().mockResolvedValue(mockUnassigned),
+          })
+          .mockReturnValueOnce({
+            where: jest.fn().mockReturnThis(),
+            orderBy: jest.fn().mockReturnThis(),
+            getOne: jest.fn().mockResolvedValue({ id: 'last', invoice_number: 'INV-1602' }),
+            getMany: jest.fn().mockResolvedValue([{ id: 'last', invoice_number: 'INV-1602' }]),
+          });
+
+        const count = await service.backfillInvoiceNumbers();
+        expect(count).toBe(2);
+        expect(mockUnassigned[0].invoice_number).toBe('INV-1603');
+        expect(mockUnassigned[1].invoice_number).toBe('INV-1604');
+        expect(orderRepository.save).toHaveBeenCalledWith(mockUnassigned[0]);
+        expect(orderRepository.save).toHaveBeenCalledWith(mockUnassigned[1]);
+      });
+
+      it('backfillInvoiceNumbers returns 0 if no unassigned orders exist', async () => {
+        orderRepository.createQueryBuilder.mockReturnValueOnce({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([]),
+        });
+
+        const count = await service.backfillInvoiceNumbers();
+        expect(count).toBe(0);
+      });
+    });
   });
 });
 

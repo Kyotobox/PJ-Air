@@ -394,6 +394,69 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException('Order not found');
         return order;
     }
+    async getNextInvoiceNumber(manager) {
+        const repo = (manager && typeof manager.getRepository === 'function')
+            ? manager.getRepository(order_entity_1.Order)
+            : this.orderRepository;
+        const qb = repo.createQueryBuilder('order')
+            .where('order.invoice_number LIKE :prefix', { prefix: 'INV-%' });
+        if (typeof qb.orderBy === 'function') {
+            qb.orderBy('order.invoice_number', 'DESC');
+        }
+        let candidateOrders = [];
+        if (typeof qb.getMany === 'function') {
+            const many = await qb.getMany();
+            if (Array.isArray(many) && many.length > 0) {
+                candidateOrders = many;
+            }
+        }
+        if (candidateOrders.length === 0 && typeof qb.getOne === 'function') {
+            const single = await qb.getOne();
+            if (single) {
+                candidateOrders = [single];
+            }
+        }
+        if (!candidateOrders || candidateOrders.length === 0) {
+            return 'INV-1600';
+        }
+        let maxNum = null;
+        for (const ord of candidateOrders) {
+            if (ord && ord.invoice_number) {
+                const match = String(ord.invoice_number).trim().match(/^INV-(\d+)$/i);
+                if (match) {
+                    const num = parseInt(match[1], 10);
+                    if (!isNaN(num)) {
+                        if (maxNum === null || num > maxNum) {
+                            maxNum = num;
+                        }
+                    }
+                }
+            }
+        }
+        if (maxNum === null) {
+            return 'INV-1600';
+        }
+        return `INV-${maxNum + 1}`;
+    }
+    async backfillInvoiceNumbers() {
+        const unassignedOrders = await this.orderRepository
+            .createQueryBuilder('order')
+            .where('order.invoice_number IS NULL OR order.invoice_number = :empty', { empty: '' })
+            .orderBy('order.created_at', 'ASC')
+            .getMany();
+        if (!unassignedOrders || unassignedOrders.length === 0) {
+            return 0;
+        }
+        const nextInvoiceStr = await this.getNextInvoiceNumber();
+        const match = nextInvoiceStr.match(/^INV-(\d+)$/i);
+        let currentNum = match ? parseInt(match[1], 10) : 1600;
+        for (const order of unassignedOrders) {
+            order.invoice_number = `INV-${currentNum}`;
+            await this.orderRepository.save(order);
+            currentNum++;
+        }
+        return unassignedOrders.length;
+    }
     async create(userId, orderData) {
         const { items, ...rest } = orderData;
         const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, paymentStatus, ...otherData } = rest;
@@ -603,8 +666,10 @@ let OrdersService = class OrdersService {
             appliedTaxLegend = null;
         }
         const savedOrderId = await this.dataSource.transaction(async (manager) => {
+            const invoiceNumber = await this.getNextInvoiceNumber(manager);
             const orderToCreate = manager.create(order_entity_1.Order, {
                 ...otherData,
+                invoice_number: invoiceNumber,
                 delivery_date: appliedDeliveryDate,
                 payment_due_date: appliedPaymentDueDate,
                 address_id: appliedAddressId,

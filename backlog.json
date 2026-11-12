@@ -1,10 +1,10 @@
 {
   "project": "pj-air",
   "version": "5.0.0",
-  "kernel_version": "5.0.0",
+  "kernel_version": "5.3.1",
   "status": "COMPLETED",
   "current_sprint": "S78",
-  "current_task": "TASK-78-07",
+  "current_task": "TASK-78-10",
   "sprints": [
     {
       "id": "S76",
@@ -113,6 +113,27 @@
           "id": "TASK-78-07",
           "title": "Certificaci\u00f3n y Despliegue en Testing y Producci\u00f3n VPS",
           "status": "DONE",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-08",
+          "title": "Backend: Consecutivo correlativo corto de \u00f3rdenes iniciando en INV-1600 y metadata en Stripe",
+          "status": "DONE",
+          "type": "BACKEND/INVOICE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-09",
+          "title": "Backend & Frontend: M\u00f3dulo de Exportaci\u00f3n Contable en Excel con desglose fiscal y bot\u00f3n en panel",
+          "status": "DONE",
+          "type": "FEATURE/REPORTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-78-10",
+          "title": "Despliegue en VPS (Testing y Producci\u00f3n) y migraci\u00f3n de base de datos con backfill correlativo",
+          "status": "IN_PROGRESS",
           "type": "DEPLOY/CERT",
           "veracity_hash": null
         }

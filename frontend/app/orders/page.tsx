@@ -968,7 +968,7 @@ export default function ClientOrdersPage() {
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-sm">#{order.id.slice(0, 8)}</span>
+                                                    <span className="font-bold text-sm">{order.invoice_number || `#${order.id.slice(0, 8)}`}</span>
                                                     <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-amber-100 text-amber-800 rounded">
                                                         Crédito
                                                     </span>
@@ -1105,7 +1105,7 @@ export default function ClientOrdersPage() {
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                    <h3 className="text-xl font-bold">{t.orders.orderNumber} #{order.id.slice(0, 8)}</h3>
+                                                    <h3 className="text-xl font-bold">{order.invoice_number ? `Factura ${order.invoice_number}` : `${t.orders.orderNumber} #${order.id.slice(0, 8)}`}</h3>
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
                                                         (order.status || '').toLowerCase().includes('recibido') || (order.status || '').toLowerCase().includes('entregado') || (order.status || '').toLowerCase() === 'delivered'
                                                             ? 'bg-green-100 text-green-700'

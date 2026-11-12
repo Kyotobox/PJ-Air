@@ -120,6 +120,20 @@ let OrdersController = class OrdersController {
         });
         res.end(buffer);
     }
+    async exportAccounting(startDate, endDate, res) {
+        const orders = await this.ordersService.findInRange(startDate, endDate);
+        const buffer = await this.excelService.exportAccounting(orders);
+        res.set({
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="REPORTE_CONTABLE_${startDate}_${endDate}.xlsx"`,
+            'Content-Length': buffer.length,
+        });
+        res.end(buffer);
+    }
+    async backfillInvoices() {
+        const updatedCount = await this.ordersService.backfillInvoiceNumbers();
+        return { success: true, updatedCount };
+    }
     async findInRange(startDate, endDate, userId) {
         return this.ordersService.findInRange(startDate, endDate, userId);
     }
@@ -306,6 +320,25 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "exportConsolidated", null);
+__decorate([
+    (0, common_1.Get)('reports/export-accounting'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Query)('startDate')),
+    __param(1, (0, common_1.Query)('endDate')),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "exportAccounting", null);
+__decorate([
+    (0, common_1.Post)('reports/backfill-invoices'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "backfillInvoices", null);
 __decorate([
     (0, common_1.Get)('reports/range'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),

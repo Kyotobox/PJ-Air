@@ -33,6 +33,11 @@ export declare class OrdersController {
     findByUser(userId: string, req: any): Promise<import("./order.entity").Order[]>;
     exportIndividual(startDate: string, endDate: string, res: any): Promise<void>;
     exportConsolidated(startDate: string, endDate: string, res: any): Promise<void>;
+    exportAccounting(startDate: string, endDate: string, res: any): Promise<void>;
+    backfillInvoices(): Promise<{
+        success: boolean;
+        updatedCount: number;
+    }>;
     findInRange(startDate: string, endDate: string, userId?: string): Promise<import("./order.entity").Order[]>;
     findOne(id: string, req: any): Promise<import("./order.entity").Order>;
     updateStatus(id: string, status: string, req: any): Promise<import("./order.entity").Order>;

@@ -16,6 +16,7 @@ const address_entity_1 = require("../addresses/address.entity");
 const order_item_entity_1 = require("./order-item.entity");
 let Order = class Order {
     id;
+    invoice_number;
     user_id;
     total;
     status;
@@ -62,6 +63,10 @@ __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)('uuid'),
     __metadata("design:type", String)
 ], Order.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', nullable: true, unique: true }),
+    __metadata("design:type", String)
+], Order.prototype, "invoice_number", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)

@@ -37,6 +37,8 @@ export declare class OrdersService {
     findAll(): Promise<Order[]>;
     findByUser(userId: string): Promise<Order[]>;
     findOne(id: string): Promise<Order>;
+    getNextInvoiceNumber(manager?: any): Promise<string>;
+    backfillInvoiceNumbers(): Promise<number>;
     create(userId: string, orderData: any): Promise<Order>;
     updateStatus(id: string, status: string, userRole?: string): Promise<Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<Order>;

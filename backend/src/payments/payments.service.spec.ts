@@ -102,6 +102,33 @@ describe('PaymentsService', () => {
     expect(result.amount).toBe(625.00);
   });
 
+  it('Happy Path: should include invoice_number and clientName in payment intent metadata and description', async () => {
+    ordersService.findOne.mockResolvedValueOnce({
+      id: 'order-syracuse-1899',
+      invoice_number: 'INV-1605',
+      total: 1899.09,
+      pending_balance: null,
+      user: { email: 'client@example.com', profile: { full_name: 'Jhoanes Cafe' } },
+    });
+
+    const spy = jest.spyOn((service as any).stripe.paymentIntents, 'create');
+
+    await service.createPaymentIntent({
+      amount: 1899.09,
+      currency: 'usd',
+      orderId: 'order-syracuse-1899',
+      customerEmail: 'client@example.com',
+    });
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+      description: 'Invoice INV-1605 — Jhoanes Cafe',
+      metadata: expect.objectContaining({
+        orderId: 'order-syracuse-1899',
+        invoice_number: 'INV-1605',
+      }),
+    }));
+  });
+
   it('TASK-77-02 Sad Path: retrievePaymentIntent returns null on invalid or missing intent ID (§6)', async () => {
     const res = await service.retrievePaymentIntent('');
     expect(res).toBeNull();

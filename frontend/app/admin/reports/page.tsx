@@ -20,7 +20,8 @@ import {
     ChevronRight,
     MapPin,
     Package,
-    ChevronUp
+    ChevronUp,
+    FileSpreadsheet
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -658,6 +659,24 @@ function ReportsPageContent() {
                                     >
                                         {isExporting ? <Loader2 size={16} className="animate-spin" /> : null}
                                         Exportar Consolidado
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={async () => {
+                                            try {
+                                                setIsExporting(true);
+                                                await api.download(`/orders/reports/export-accounting?startDate=${startDate}&endDate=${endDate}`, `REPORTE_CONTABLE_${startDate}_${endDate}.xlsx`);
+                                            } catch (err: any) {
+                                                setError(err.message || 'Error al exportar reporte contable');
+                                            } finally {
+                                                setIsExporting(false);
+                                            }
+                                        }}
+                                        disabled={isExporting}
+                                        className="flex items-center gap-2 px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-teal-700/20 group print:hidden disabled:opacity-50"
+                                    >
+                                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} className="group-hover:scale-110 transition-transform" />}
+                                        Reporte Contable (Excel)
                                     </button>
                                 </div>
                             )}

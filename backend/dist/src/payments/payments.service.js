@@ -185,10 +185,12 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
     async createPaymentIntent(data) {
         const { amount, currency = 'usd', orderId, customerEmail, description, customerId, paymentMethodId, saveCard, paymentMethodType, } = data;
         let targetAmount = amount;
+        let fetchedOrder = null;
         if (orderId && this.ordersService) {
             try {
                 const order = await this.ordersService.findOne(orderId);
                 if (order) {
+                    fetchedOrder = order;
                     const orderTotal = Number(order.total) || 0;
                     const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined && Number(order.pending_balance) > 0)
                         ? Number(order.pending_balance)
@@ -210,8 +212,27 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             throw new common_1.BadRequestException('Stripe service is not configured');
         }
         const amountInCents = Math.round(targetAmount * 100);
+        const invoiceNumber = fetchedOrder?.invoice_number || (orderId ? orderId.slice(0, 8) : '');
+        const clientName = fetchedOrder?.user?.profile?.full_name || fetchedOrder?.user?.name || customerEmail || 'Cliente Mayorista';
+        let resolvedDescription = description;
+        if (orderId) {
+            if (!resolvedDescription || resolvedDescription.includes(orderId)) {
+                resolvedDescription = `Invoice ${invoiceNumber} — ${clientName}`;
+            }
+        }
+        else if (!resolvedDescription) {
+            resolvedDescription = 'Order Checkout - Jhoanes Wholesale';
+        }
         try {
             if (paymentMethodId) {
+                const metadata = {
+                    orderId: orderId || '',
+                    customerEmail: customerEmail || '',
+                    paymentType: '1-click-saved-method',
+                };
+                if (invoiceNumber) {
+                    metadata.invoice_number = invoiceNumber;
+                }
                 const intent = await this.stripe.paymentIntents.create({
                     amount: amountInCents,
                     currency: currency.toLowerCase(),
@@ -219,13 +240,9 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     payment_method: paymentMethodId,
                     off_session: true,
                     confirm: true,
-                    description: description || `1-Click Order ${orderId || 'Checkout'} - Jhoanes Wholesale`,
+                    description: resolvedDescription,
                     receipt_email: customerEmail,
-                    metadata: {
-                        orderId: orderId || '',
-                        customerEmail: customerEmail || '',
-                        paymentType: '1-click-saved-method',
-                    },
+                    metadata,
                 });
                 if (orderId && intent.status === 'succeeded') {
                     await this.ordersService.update(orderId, {
@@ -240,15 +257,19 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     status: intent.status,
                 };
             }
+            const metadata = {
+                orderId: orderId || '',
+                customerEmail: customerEmail || '',
+            };
+            if (invoiceNumber) {
+                metadata.invoice_number = invoiceNumber;
+            }
             const intentParams = {
                 amount: amountInCents,
                 currency: currency.toLowerCase(),
-                description: description || `Order ${orderId || 'Checkout'} - Jhoanes Wholesale`,
+                description: resolvedDescription,
                 receipt_email: customerEmail,
-                metadata: {
-                    orderId: orderId || '',
-                    customerEmail: customerEmail || '',
-                },
+                metadata,
                 automatic_payment_methods: {
                     enabled: true,
                 },
@@ -302,13 +323,14 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             const feeAmount = fee_calculator_service_1.FeeCalculatorService.calculateFee(balance, feeMethod);
             const amountToPay = Math.round((balance + feeAmount) * 100) / 100;
             const email = order.user?.email || clientEmail || 'client@jhoanes.com';
+            const invoiceLabel = order.invoice_number || order.id.slice(0, 8);
             const intent = await this.createPaymentIntent({
                 amount: amountToPay,
                 orderId: order.id,
                 customerEmail: email,
                 description: (pendingBal !== null && pendingBal > 0)
-                    ? `Invoice Settlement #${order.id.slice(0, 8)} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`
-                    : `Invoice Settlement #${order.id.slice(0, 8)} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`,
+                    ? `Invoice Settlement #${invoiceLabel} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`
+                    : `Invoice Settlement #${invoiceLabel} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`,
                 paymentMethodType: feeMethod === 'ACH' ? 'us_bank_account' : undefined,
             });
             if (this.stripe && intent.paymentIntentId) {
@@ -316,6 +338,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     await this.stripe.paymentIntents.update(intent.paymentIntentId, {
                         metadata: {
                             orderId: order.id,
+                            invoice_number: invoiceLabel,
                             type: (pendingBal !== null && pendingBal > 0) ? 'partial_settlement' : 'settlement',
                             customerEmail: email,
                             balance: String(balance),

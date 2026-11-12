@@ -114,6 +114,32 @@ export class OrdersController {
     res.end(buffer);
   }
 
+  @Get('reports/export-accounting')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async exportAccounting(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Res() res: any,
+  ) {
+    const orders = await this.ordersService.findInRange(startDate, endDate);
+    const buffer = await this.excelService.exportAccounting(orders);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="REPORTE_CONTABLE_${startDate}_${endDate}.xlsx"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Post('reports/backfill-invoices')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async backfillInvoices() {
+    const updatedCount = await this.ordersService.backfillInvoiceNumbers();
+    return { success: true, updatedCount };
+  }
+
   @Get('reports/range')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin')

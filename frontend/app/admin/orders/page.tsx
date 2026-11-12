@@ -24,6 +24,7 @@ interface OrderItem {
 
 interface Order {
     id: string;
+    invoice_number?: string;
     total: number;
     status: string;
     payment_status?: string;
@@ -400,7 +401,7 @@ export default function AdminOrdersPage() {
     };
 
     const handleQuickDisable = async (order: Order) => {
-        const orderShortId = order.id.slice(0, 8);
+        const orderShortId = order.invoice_number || order.id.slice(0, 8);
         if (!window.confirm(`¿Inhabilitar y cancelar el pedido #${orderShortId}? Esta acción excluirá la orden de reportes financieros.`)) {
             return;
         }
@@ -445,6 +446,7 @@ export default function AdminOrdersPage() {
     const filteredOrders = orders.filter(o => {
         const q = search.toLowerCase();
         const matchesSearch = !q ||
+            (o.invoice_number && o.invoice_number.toLowerCase().includes(q)) ||
             o.id.toLowerCase().includes(q) ||
             o.user?.email.toLowerCase().includes(q) ||
             o.user?.profile?.full_name?.toLowerCase().includes(q) ||
@@ -541,7 +543,7 @@ export default function AdminOrdersPage() {
             }).join('');
 
             const invoiceHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>INVOICE / RECEIPT #${order.id.slice(0, 8).toUpperCase()}</title>
+<title>INVOICE / RECEIPT ${order.invoice_number || '#' + order.id.slice(0, 8).toUpperCase()}</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
 body { padding: 30px; color: #1e293b; background: #fff; font-size: 11px; line-height: 1.5; }
@@ -577,7 +579,7 @@ table.items-table th:nth-child(3), table.items-table th:nth-child(4) { text-alig
     </div>
     <div class="invoice-meta">
         <h2>INVOICE / RECEIPT</h2>
-        <p><b>Order #:</b> ${order.id.slice(0, 8).toUpperCase()}</p>
+        <p><b>Invoice #:</b> ${order.invoice_number || '#' + order.id.slice(0, 8).toUpperCase()}</p>
         <p><b>Order Date:</b> ${orderDate}</p>
         <p><b>Payment Status:</b> <span style="font-weight: bold; color: ${paymentStatus === 'PAID' ? '#15803d' : '#b91c1c'};">${paymentStatus}</span></p>
     </div>
@@ -1105,7 +1107,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col gap-1">
-                                                <span className="font-mono text-xs font-bold text-slate-400">#{order.id.slice(0, 8)}</span>
+                                                <span className="font-mono text-xs font-bold text-primary">{order.invoice_number || `#${order.id.slice(0, 8)}`}</span>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
                                                         <Clock size={10} /> {new Date(order.created_at).toLocaleDateString()}
