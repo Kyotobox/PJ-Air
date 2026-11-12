@@ -3,34 +3,25 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S82",
+  "current_sprint": "S79",
   "current_task": "TASK-82-07",
   "sprints": [
-    {
-      "id": "S80",
-      "name": "Sprint S80: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S80-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-12T06:31:31.450176+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
-      "tasks": []
-    },
     {
       "id": "S81",
       "name": "Sprint S81: [RECONCILED] Auto-reconciled from git history",
       "dag_id": "SPRINT-S81-RECONCILED",
       "status": "COMPLETED",
       "reconciled_at": "2026-11-12T06:31:31.450206+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
       "tasks": []
     },
     {
       "id": "S82",
       "name": "Sprint S82: [RECONCILED] Auto-reconciled from git history",
       "dag_id": "SPRINT-S82-RECONCILED",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "reconciled_at": "2026-11-12T12:22:32.497650+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
       "tasks": [
         {
           "id": "TASK-82-01",
@@ -41,14 +32,14 @@
         },
         {
           "id": "TASK-82-02",
-          "title": "Configuraci\u00f3n de Descuento General y Motor en OrdersService (Fase B)",
+          "title": "Configuración de Descuento General y Motor en OrdersService (Fase B)",
           "status": "DONE",
           "type": "BACKEND/DISCOUNT-CONFIG",
           "veracity_hash": null
         },
         {
           "id": "TASK-82-03",
-          "title": "Pruebas Unitarias Jest (\u00a76) Fases A y B en tax y orders services",
+          "title": "Pruebas Unitarias Jest (§6) Fases A y B en tax y orders services",
           "status": "DONE",
           "type": "TEST/CERT",
           "veracity_hash": null
@@ -62,7 +53,7 @@
         },
         {
           "id": "TASK-82-05",
-          "title": "Regularizaci\u00f3n ST-120 y Claves Nocturnas [TASK-82-07]",
+          "title": "Regularización ST-120 y Claves Nocturnas [TASK-82-07]",
           "status": "DONE",
           "type": "FRONTEND/ADMIN-CLIENTS",
           "veracity_hash": null
@@ -83,9 +74,18 @@
         }
       ],
       "title": "Sprint S82: Generador PDF Form ST-120 NYS DTF y Descuento General de Tienda (Fase C)"
+    },
+    {
+      "id": "S79",
+      "name": "Sprint S79: [RECONCILED] Auto-reconciled from git history",
+      "dag_id": "SPRINT-S79-RECONCILED",
+      "status": "IN_PROGRESS",
+      "reconciled_at": "2026-11-12T17:41:24.490943+00:00",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
+      "tasks": []
     }
   ],
-  "archived_sprints_count": 1,
+  "archived_sprints_count": 73,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S82",
@@ -93,7 +93,7 @@
     "dag_id": "SPRINT-S82-RECONCILED",
     "status": "IN_PROGRESS",
     "reconciled_at": "2026-11-12T12:22:32.497650+00:00",
-    "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+    "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
     "tasks": [
       {
         "id": "TASK-82-01",
@@ -104,14 +104,14 @@
       },
       {
         "id": "TASK-82-02",
-        "title": "Configuraci\u00f3n de Descuento General y Motor en OrdersService (Fase B)",
+        "title": "Configuración de Descuento General y Motor en OrdersService (Fase B)",
         "status": "DONE",
         "type": "BACKEND/DISCOUNT-CONFIG",
         "veracity_hash": null
       },
       {
         "id": "TASK-82-03",
-        "title": "Pruebas Unitarias Jest (\u00a76) Fases A y B en tax y orders services",
+        "title": "Pruebas Unitarias Jest (§6) Fases A y B en tax y orders services",
         "status": "DONE",
         "type": "TEST/CERT",
         "veracity_hash": null
@@ -125,7 +125,7 @@
       },
       {
         "id": "TASK-82-05",
-        "title": "Regularizaci\u00f3n ST-120 y Claves Nocturnas [TASK-82-07]",
+        "title": "Regularización ST-120 y Claves Nocturnas [TASK-82-07]",
         "status": "DONE",
         "type": "FRONTEND/ADMIN-CLIENTS",
         "veracity_hash": null

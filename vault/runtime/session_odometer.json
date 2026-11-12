@@ -10,7 +10,7 @@
   "turns": 0,
   "peak_bytes": 0,
   "strike_count": 0,
-  "hwc_complete": false,
+  "hwc_complete": true,
   "last_update": "2026-11-12T15:12:51.391440",
   "input_pressure": 0,
   "degraded_ops_count": 0,
@@ -18,5 +18,6 @@
   "test_warning_count": 0,
   "takeover_bytes_offset": 0,
   "conversation_uuid": "54ee32f0-300b-41ac-972b-da51a1ce715a",
-  "peak_depth": 13.20597
+  "peak_depth": 13.20597,
+  "hwc_ts": "2026-11-12T17:47:13.281159"
 }
