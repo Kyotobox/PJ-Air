@@ -84,6 +84,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 delivery_fee: data?.delivery_fee || 0,
                 productDiscounts: data?.productDiscounts || [],
                 check_enabled: Boolean(data?.check_enabled),
+                tax_exempt: Boolean(data?.tax_exempt || data?.profile?.tax_exempt),
+                st120_status: data?.st120_status || data?.profile?.st120_status || 'NONE',
+                st120_document_url: data?.st120_document_url || data?.profile?.st120_document_url || null,
+                tax_id: data?.tax_id || data?.profile?.tax_id || null,
+                legal_business_name: data?.legal_business_name || data?.profile?.legal_business_name || null,
+                dba: data?.dba || data?.profile?.dba || null,
             });
             setSessionCookies(undefined, liveRole);
         } catch {

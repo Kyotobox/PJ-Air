@@ -52,6 +52,11 @@ let AddressesService = class AddressesService {
         const address = this.addressRepository.create({
             ...addressData,
             user_id: userId,
+            ...(addressData.access_code !== undefined ? { access_code: addressData.access_code } : {}),
+            ...(addressData.has_key !== undefined ? { has_key: Boolean(addressData.has_key) } : {}),
+            ...(addressData.key_location !== undefined ? { key_location: addressData.key_location } : {}),
+            ...(addressData.fridge_access_required !== undefined ? { fridge_access_required: Boolean(addressData.fridge_access_required) } : {}),
+            ...(addressData.notes !== undefined ? { notes: addressData.notes } : {}),
         });
         return this.addressRepository.save(address);
     }
@@ -67,6 +72,12 @@ let AddressesService = class AddressesService {
                 addressData.city = geo.city;
             if (geo.formatted_address)
                 addressData.address = geo.formatted_address;
+        }
+        if (addressData.has_key !== undefined) {
+            addressData.has_key = Boolean(addressData.has_key);
+        }
+        if (addressData.fridge_access_required !== undefined) {
+            addressData.fridge_access_required = Boolean(addressData.fridge_access_required);
         }
         Object.assign(address, addressData);
         return this.addressRepository.save(address);

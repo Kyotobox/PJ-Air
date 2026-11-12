@@ -8,7 +8,7 @@ import {
     CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Clock, Edit, Trash2,
     ChevronLeft, ListFilter, Percent, Tag, DollarSign, CreditCard, ShieldCheck, ShieldAlert,
     ExternalLink, FileText, Activity, TrendingUp, Sparkles, AlertTriangle, Key, Truck, Heart, Calendar,
-    Camera, Building2, Navigation
+    Camera, Building2, Navigation, Snowflake
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
@@ -196,6 +196,7 @@ export default function AdminClientsPage() {
     const [achEnabled, setAchEnabled] = useState<boolean>(false);
     const [isSavingCredit, setIsSavingCredit] = useState(false);
     const [creditSummary, setCreditSummary] = useState<any>(null);
+    const [isGeneratingDigitalST120, setIsGeneratingDigitalST120] = useState(false);
 
     // Nickname states
     const [nickname, setNickname] = useState<string>('');
@@ -609,6 +610,59 @@ export default function AdminClientsPage() {
             setEditingAddress(null);
         } catch (err: any) { showToast(`❌ ${err.message}`); }
         finally { setSavingAddr(false); }
+    };
+
+    const handleGenerateDigitalST120 = async () => {
+        if (!selectedUser) return;
+        setIsGeneratingDigitalST120(true);
+        try {
+            let res: any;
+            try {
+                res = await api.post('/tax/generate-digital-st120', { userId: selectedUser.id });
+            } catch {
+                res = await api.post(`/tax/generate-digital-st120/${selectedUser.id}`, {});
+            }
+            const docUrl = res?.st120_document_url || res?.document_url || res?.url || selectedUser.st120_document_url || selectedUser.profile?.st120_document_url;
+            const newStatus = 'APPROVED';
+            const isExempt = true;
+
+            setUsers(prev => prev.map(u => {
+                if (u.id === selectedUser.id) {
+                    return {
+                        ...u,
+                        st120_status: newStatus,
+                        tax_exempt: isExempt,
+                        ...(docUrl ? { st120_document_url: docUrl } : {}),
+                        profile: {
+                            ...(u.profile || {}),
+                            st120_status: newStatus,
+                            tax_exempt: isExempt,
+                            ...(docUrl ? { st120_document_url: docUrl } : {}),
+                        }
+                    };
+                }
+                return u;
+            }));
+
+            setSelectedUser(prev => prev ? {
+                ...prev,
+                st120_status: newStatus,
+                tax_exempt: isExempt,
+                ...(docUrl ? { st120_document_url: docUrl } : {}),
+                profile: {
+                    ...(prev.profile || {}),
+                    st120_status: newStatus,
+                    tax_exempt: isExempt,
+                    ...(docUrl ? { st120_document_url: docUrl } : {}),
+                }
+            } : null);
+
+            showToast('✅ Certificado ST-120 Digital Oficial generado y aprobado (0% Exento)');
+        } catch (err: any) {
+            showToast(`❌ Error al generar ST-120: ${err.message}`);
+        } finally {
+            setIsGeneratingDigitalST120(false);
+        }
     };
 
     const handleAddProductDiscount = async () => {
@@ -1260,19 +1314,46 @@ export default function AdminClientsPage() {
 
                             {/* Section: ST-120 Tax Exemption */}
                             <section>
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                                     <div className="flex items-center gap-3">
                                         <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
                                         <h3 className="text-xs font-black uppercase tracking-[.2em] text-slate-400">Cumplimiento Fiscal NY ST-120</h3>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setAuditModalUser(selectedUser)}
-                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                                    >
-                                        <ShieldCheck size={14} className="text-emerald-400" />
-                                        <span>Auditar ST-120</span>
-                                    </button>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {(selectedUser.profile?.st120_document_url || selectedUser.st120_document_url) && (
+                                            <a
+                                                href={resolveImageUrl(selectedUser.profile?.st120_document_url || selectedUser.st120_document_url || '')}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                                                title="Ver / Descargar Certificado ST-120"
+                                            >
+                                                <FileText size={14} className="text-blue-600" />
+                                                <span>Ver ST-120</span>
+                                                <ExternalLink size={12} />
+                                            </a>
+                                        )}
+                                        {(!selectedUser.tax_exempt && !selectedUser.profile?.tax_exempt) && (
+                                            <button
+                                                type="button"
+                                                disabled={isGeneratingDigitalST120}
+                                                onClick={handleGenerateDigitalST120}
+                                                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                                                title="Generar y firmar certificado digital oficial en 1 clic"
+                                            >
+                                                {isGeneratingDigitalST120 ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                                                <span>Generar ST-120 Digital Oficial</span>
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setAuditModalUser(selectedUser)}
+                                            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                        >
+                                            <ShieldCheck size={14} className="text-emerald-400" />
+                                            <span>Auditar ST-120</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
@@ -1281,7 +1362,7 @@ export default function AdminClientsPage() {
                                     </div>
                                     <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
                                         <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Estado Fiscal ST-120</label>
-                                        <div className="mt-0.5">
+                                        <div className="mt-0.5 flex items-center justify-between">
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
                                                 selectedUser.profile?.tax_exempt || selectedUser.tax_exempt
                                                     ? 'bg-emerald-100 text-emerald-800'
@@ -1291,6 +1372,11 @@ export default function AdminClientsPage() {
                                             }`}>
                                                 {selectedUser.profile?.tax_exempt || selectedUser.tax_exempt ? '0% Exento' : (selectedUser.profile?.st120_status || selectedUser.st120_status || 'NONE')}
                                             </span>
+                                            {(selectedUser.profile?.st120_document_url || selectedUser.st120_document_url) && (
+                                                <span className="text-[10px] text-slate-400 font-medium">
+                                                    Certificado archivado ✓
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -1533,6 +1619,32 @@ export default function AdminClientsPage() {
                                                             {addr.city}, {addr.state || 'NY'} {addr.zip_code || ''}
                                                             {addr.lat && addr.lng ? ` · GPS: ${Number(addr.lat).toFixed(4)}, ${Number(addr.lng).toFixed(4)}` : ''}
                                                         </p>
+                                                        {/* Badges de Seguridad Nocturna (TASK-79-04) */}
+                                                        <div className="flex items-center gap-2 flex-wrap mt-2">
+                                                            {addr.access_code && (
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                                                                    <ShieldCheck size={12} className="text-amber-600" />
+                                                                    <span>🛡️ Alarma: {addr.access_code}</span>
+                                                                </span>
+                                                            )}
+                                                            {(addr.has_key || addr.key_location) && (
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200">
+                                                                    <Key size={12} className="text-indigo-600" />
+                                                                    <span>🔑 Llave: {addr.key_location || 'Lockbox / Llave disponible'}</span>
+                                                                </span>
+                                                            )}
+                                                            {addr.fridge_access_required && (
+                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-900 border border-emerald-300">
+                                                                    <Snowflake size={12} className="text-emerald-600" />
+                                                                    <span>❄️ Acceso a Neveras Requerido</span>
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {addr.notes && (
+                                                            <p className="text-xs text-slate-500 font-medium italic mt-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+                                                                📝 {addr.notes}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 self-end md:self-auto">
@@ -1547,7 +1659,17 @@ export default function AdminClientsPage() {
                                                         <span>Maps</span>
                                                     </a>
                                                     <button 
-                                                        onClick={() => { setEditingAddress(addr); setAddrFormData(addr); }}
+                                                        onClick={() => { 
+                                                            setEditingAddress(addr); 
+                                                            setAddrFormData({
+                                                                ...addr,
+                                                                access_code: addr.access_code || '',
+                                                                has_key: Boolean(addr.has_key),
+                                                                key_location: addr.key_location || '',
+                                                                fridge_access_required: Boolean(addr.fridge_access_required),
+                                                                notes: addr.notes || '',
+                                                            }); 
+                                                        }}
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-all"
                                                         title="Editar dirección"
                                                     >
@@ -2110,8 +2232,8 @@ export default function AdminClientsPage() {
             {editingAddress && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setEditingAddress(null)} />
-                    <div className="relative w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95">
-                        <h3 className="text-xl font-black mb-6">Editar Dirección</h3>
+                    <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-[3rem] p-8 md:p-10 shadow-2xl animate-in zoom-in-95">
+                        <h3 className="text-xl font-black mb-6">Editar Dirección y Acceso</h3>
                         <form onSubmit={handleUpdateAddress} className="space-y-4">
                             <div>
                                 <label className="text-[10px] font-black uppercase text-slate-400 px-4 mb-2 block">Calle y Altura</label>
@@ -2119,7 +2241,7 @@ export default function AdminClientsPage() {
                                     type="text" 
                                     value={addrFormData.address || ''} 
                                     onChange={e => setAddrFormData({ ...addrFormData, address: e.target.value })}
-                                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                                    className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20 text-xs"
                                     required 
                                 />
                             </div>
@@ -2130,23 +2252,106 @@ export default function AdminClientsPage() {
                                         type="text" 
                                         value={addrFormData.city || ''} 
                                         onChange={e => setAddrFormData({ ...addrFormData, city: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                                        className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20 text-xs"
                                         required 
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 px-4 mb-2 block">Provincia</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 px-4 mb-2 block">Provincia / Estado</label>
                                     <input 
                                         type="text" 
                                         value={addrFormData.state || ''} 
                                         onChange={e => setAddrFormData({ ...addrFormData, state: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                                        className="w-full px-6 py-4 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20 text-xs"
                                     />
                                 </div>
                             </div>
-                            <div className="flex gap-4 pt-6">
-                                <button type="button" onClick={() => setEditingAddress(null)} className="flex-1 py-4 font-black uppercase text-xs tracking-widest text-slate-400 hover:text-slate-900 transition-colors">Cancelar</button>
-                                <button type="submit" disabled={savingAddr} className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-primary transition-all flex items-center justify-center">
+
+                            {/* TASK-79-04: Campos de Seguridad Nocturna (3 AM - 6 AM) */}
+                            <div className="pt-2 border-t border-slate-100 space-y-4">
+                                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                    <ShieldCheck size={14} className="text-primary" />
+                                    <span>Seguridad y Acceso Nocturno (3 AM - 6 AM)</span>
+                                </h4>
+
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 px-4 mb-2 block">
+                                        Código de Acceso / Alarma (Keypad)
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        value={addrFormData.access_code || ''} 
+                                        onChange={e => setAddrFormData({ ...addrFormData, access_code: e.target.value })}
+                                        placeholder="ej. #3421 o Keypad: 9021"
+                                        className="w-full px-6 py-3.5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20 text-xs"
+                                    />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-2xl">
+                                        <input 
+                                            id="edit_has_key"
+                                            type="checkbox" 
+                                            checked={Boolean(addrFormData.has_key)} 
+                                            onChange={e => setAddrFormData({ 
+                                                ...addrFormData, 
+                                                has_key: e.target.checked,
+                                                key_location: e.target.checked ? (addrFormData.key_location || '') : '' 
+                                            })}
+                                            className="w-4 h-4 rounded text-primary focus:ring-primary/20 accent-primary cursor-pointer shrink-0"
+                                        />
+                                        <label htmlFor="edit_has_key" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                                            ¿Cuentas con llave física o caja de seguridad (Lockbox)?
+                                        </label>
+                                    </div>
+                                    {addrFormData.has_key && (
+                                        <div className="animate-fade-in">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 px-4 mb-2 block flex items-center gap-1.5">
+                                                <Key size={12} className="text-amber-600" />
+                                                <span>Ubicación de la llave / Lockbox y clave</span>
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                value={addrFormData.key_location || ''} 
+                                                onChange={e => setAddrFormData({ ...addrFormData, key_location: e.target.value })}
+                                                placeholder="ej. Caja fuerte al lado de la puerta de servicio, código 4455"
+                                                className="w-full px-6 py-3.5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20 text-xs"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl">
+                                    <input 
+                                        id="edit_fridge_access"
+                                        type="checkbox" 
+                                        checked={Boolean(addrFormData.fridge_access_required)} 
+                                        onChange={e => setAddrFormData({ ...addrFormData, fridge_access_required: e.target.checked })}
+                                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500/20 accent-emerald-600 cursor-pointer shrink-0"
+                                    />
+                                    <label htmlFor="edit_fridge_access" className="text-xs font-bold text-emerald-950 flex items-center gap-1.5 cursor-pointer select-none">
+                                        <Snowflake size={14} className="text-emerald-600" />
+                                        <span>¿El repartidor debe ingresar los productos a la nevera / cámara fría?</span>
+                                    </label>
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 px-4 mb-2 block">
+                                        Notas o Instrucciones para Entrega de Madrugada
+                                    </label>
+                                    <textarea 
+                                        rows={2}
+                                        value={addrFormData.notes || ''} 
+                                        onChange={e => setAddrFormData({ ...addrFormData, notes: e.target.value })}
+                                        placeholder="Instrucciones especiales para el repartidor (3 AM - 6 AM)..."
+                                        className="w-full px-6 py-3.5 bg-slate-50 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-primary/20 text-xs resize-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 pt-4 border-t border-slate-100">
+                                <button type="button" onClick={() => setEditingAddress(null)} className="flex-1 py-4 font-black uppercase text-xs tracking-widest text-slate-400 hover:text-slate-900 transition-colors cursor-pointer">Cancelar</button>
+                                <button type="submit" disabled={savingAddr} className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-primary transition-all flex items-center justify-center cursor-pointer">
                                     {savingAddr ? <Loader2 className="animate-spin" size={18} /> : 'Guardar'}
                                 </button>
                             </div>

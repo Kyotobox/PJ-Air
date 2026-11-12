@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Reflector } from '@nestjs/core';
 import { AuthService } from './auth.service';
@@ -8,6 +8,7 @@ import { RolesGuard } from './roles.guard';
 import { UsersModule } from '../users/users.module';
 import { SmsModule } from '../sms/sms.module';
 import { MailModule } from '../mail/mail.module';
+import { TaxModule } from '../tax/tax.module';
 import { SystemConfig } from '../system-configs/system-config.entity';
 import { Address } from '../addresses/address.entity';
 
@@ -16,6 +17,7 @@ import { Address } from '../addresses/address.entity';
     UsersModule,
     SmsModule,
     MailModule,
+    TaxModule,
     TypeOrmModule.forFeature([SystemConfig, Address]),
   ],
   providers: [AuthService, AuthGuard, RolesGuard, Reflector],
@@ -23,3 +25,4 @@ import { Address } from '../addresses/address.entity';
   exports: [AuthService, AuthGuard, RolesGuard, Reflector],
 })
 export class AuthModule {}
+

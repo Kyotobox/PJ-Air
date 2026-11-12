@@ -4,12 +4,14 @@ import React, { useState, useCallback } from 'react';
 import { 
     Mail, Lock, User, Phone, Building2, Loader2, ArrowRight, 
     CheckCircle2, Smartphone, FileText, ChevronDown, ChevronUp, 
-    Scale, AlertTriangle, ShieldCheck, Clock, CalendarX, PhoneCall 
+    Scale, AlertTriangle, ShieldCheck, Clock, CalendarX, PhoneCall,
+    Moon, Key, Snowflake, FileUp, Sparkles, Upload
 } from 'lucide-react';
 import { Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { formatPhoneNumber } from '@/lib/firebase';
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
+import { api } from '@/lib/api';
 import { RegisterAddressMapCard } from './RegisterAddressMapCard';
 import { FacadePhotoUploader } from './FacadePhotoUploader';
 
@@ -40,6 +42,63 @@ export const RegisterForm = ({
 }: RegisterFormProps) => {
     const { t, locale } = useLanguage();
     const [isTermsAccordionOpen, setIsTermsAccordionOpen] = useState(false);
+    const [isUploadingST120, setIsUploadingST120] = useState(false);
+    const [st120UploadError, setSt120UploadError] = useState<string | null>(null);
+
+    const handleST120FileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Reset input value to allow re-upload
+        e.target.value = '';
+
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+            setSt120UploadError(locale === 'en' ? 'Only PDF or image files (camera photos) are allowed' : 'Solo se permiten archivos PDF o fotos de cámara');
+            return;
+        }
+
+        if (file.size > 15 * 1024 * 1024) {
+            setSt120UploadError(locale === 'en' ? 'File size must be under 15MB' : 'El archivo no debe superar los 15MB');
+            return;
+        }
+
+        setSt120UploadError(null);
+        setIsUploadingST120(true);
+        try {
+            const uploadData = new FormData();
+            uploadData.append('file', file);
+            let url = '';
+            try {
+                const res = await api.upload('/addresses/upload-photo', uploadData) as any;
+                url = res?.url || '';
+            } catch {
+                try {
+                    const res = await api.upload('/addresses/upload-facade', uploadData) as any;
+                    url = res?.url || '';
+                } catch {
+                    // Fallback to base64 DataURL offline-first (§45)
+                    url = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+            setFormData({
+                ...formData,
+                st120_document_url: url,
+                st120_filename: file.name,
+                st120_auto_generate: false,
+                st120_mode: 'upload',
+                st120_declared: true,
+            });
+        } catch (err: any) {
+            setSt120UploadError(err.message || (locale === 'en' ? 'Error uploading ST-120 document' : 'Error al subir documento ST-120'));
+        } finally {
+            setIsUploadingST120(false);
+        }
+    };
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
@@ -354,25 +413,298 @@ export const RegisterForm = ({
                         </div>
                     </div>
 
-                    {/* Tax ID / EIN & ST-120 Resale Certificate */}
-                    <div className="space-y-3 md:col-span-2 p-4 bg-muted/20 border border-border/80 rounded-2xl">
-                        <div className="flex items-center justify-between">
-                            <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                                <FileText size={14} className="text-primary" />
-                                <span>Tax ID / EIN (Federal Employer Identification Number or NY Resale Certificate #) *</span>
+                    {/* TASK-79-03: Acceso Nocturno de Madrugada (3 AM - 6 AM) */}
+                    <div className="md:col-span-2 p-5 bg-gradient-to-r from-blue-950/5 via-slate-900/5 to-primary/5 border border-primary/20 rounded-2xl space-y-4">
+                        <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-xl bg-blue-900/10 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                    <Moon size={16} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-black uppercase tracking-wider text-foreground flex items-center gap-2">
+                                        <span>{locale === 'en' ? 'Early Morning Delivery Access (3 AM - 6 AM)' : 'Acceso Nocturno de Madrugada (3 AM - 6 AM)'}</span>
+                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                                            {locale === 'en' ? 'Keypad & Lockbox' : 'Clave y Cerradura'}
+                                        </span>
+                                    </h3>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {locale === 'en' 
+                                            ? 'Ensure our driver can securely access and deliver before store opening hours'
+                                            : 'Permite que el repartidor ingrese el pedido de forma segura antes de la apertura comercial'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                            {/* access_code */}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-1.5">
+                                    <ShieldCheck size={12} className="text-primary" />
+                                    <span>{locale === 'en' ? 'Access / Alarm Code (Keypad)' : 'Código de Acceso / Alarma (Keypad)'}</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder={locale === 'en' ? 'e.g. #3421 or Keypad: 9021' : 'Ej: #3421 o Keypad: 9021'}
+                                    className="premium-input text-xs"
+                                    value={formData.access_code || ''}
+                                    onChange={(e) => setFormData({ ...formData, access_code: e.target.value })}
+                                />
+                            </div>
+
+                            {/* has_key checkbox */}
+                            <div className="space-y-1.5 flex flex-col justify-end">
+                                <div className="flex items-center gap-3 p-3 bg-background/80 border border-border/80 rounded-xl">
+                                    <input
+                                        id="register_has_key"
+                                        type="checkbox"
+                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 accent-primary cursor-pointer shrink-0"
+                                        checked={Boolean(formData.has_key)}
+                                        onChange={(e) => setFormData({ 
+                                            ...formData, 
+                                            has_key: e.target.checked,
+                                            key_location: e.target.checked ? (formData.key_location || '') : ''
+                                        })}
+                                    />
+                                    <label htmlFor="register_has_key" className="text-xs font-bold text-foreground/90 cursor-pointer select-none">
+                                        {locale === 'en' 
+                                            ? 'Do you have a physical key or lockbox?' 
+                                            : '¿Cuentas con llave física o caja de seguridad (Lockbox)?'}
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* key_location (conditional on has_key) */}
+                            {formData.has_key && (
+                                <div className="space-y-1.5 md:col-span-2 animate-fade-in">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center gap-1.5">
+                                        <Key size={12} className="text-amber-600" />
+                                        <span>{locale === 'en' ? 'Key / Lockbox Location & Code' : 'Ubicación de la llave / Lockbox y clave'}</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder={locale === 'en' ? 'e.g. Lockbox next to service door, code 4455' : 'Ej: Caja fuerte al lado de la puerta de servicio, código 4455'}
+                                        className="premium-input text-xs border-amber-300 dark:border-amber-700 focus:ring-amber-400"
+                                        value={formData.key_location || ''}
+                                        onChange={(e) => setFormData({ ...formData, key_location: e.target.value })}
+                                    />
+                                </div>
+                            )}
+
+                            {/* fridge_access_required */}
+                            <div className="space-y-1.5 md:col-span-2">
+                                <div className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${
+                                    formData.fridge_access_required 
+                                        ? 'bg-emerald-500/10 border-emerald-500/30' 
+                                        : 'bg-background/80 border-border/80'
+                                }`}>
+                                    <input
+                                        id="register_fridge_access"
+                                        type="checkbox"
+                                        className="mt-0.5 w-4 h-4 rounded border-border text-emerald-600 focus:ring-emerald-500/20 accent-emerald-600 cursor-pointer shrink-0"
+                                        checked={Boolean(formData.fridge_access_required)}
+                                        onChange={(e) => setFormData({ ...formData, fridge_access_required: e.target.checked })}
+                                    />
+                                    <div className="flex-1">
+                                        <label htmlFor="register_fridge_access" className="text-xs font-bold text-foreground/90 flex items-center gap-2 cursor-pointer select-none">
+                                            <Snowflake size={14} className="text-emerald-600 dark:text-emerald-400" />
+                                            <span>
+                                                {locale === 'en' 
+                                                    ? 'Delivery driver must enter items directly into walk-in fridge / cold room' 
+                                                    : '¿El repartidor debe ingresar los productos a la nevera / cámara fría?'}
+                                            </span>
+                                        </label>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                            {locale === 'en'
+                                                ? 'Required for perishable dairy, refrigerated batters, or fresh cream products.'
+                                                : 'Requerido para productos perecederos, masas refrigeradas y cremas frescas.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* delivery_notes */}
+                            <div className="space-y-1.5 md:col-span-2">
+                                <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                                    {locale === 'en' ? 'Night Delivery Notes & Special Access Instructions' : 'Notas o Instrucciones de Acceso de Madrugada'}
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    placeholder={locale === 'en' 
+                                        ? 'e.g. Ring service bell twice. Push rear alley gate code #3421. Leave bread trays on high metal rack.'
+                                        : 'Ej: Tocar timbre de servicio dos veces. Portón trasero con código #3421. Dejar canastillas en el estante metálico alto.'}
+                                    className="premium-input text-xs w-full resize-none"
+                                    value={formData.delivery_notes || ''}
+                                    onChange={(e) => setFormData({ ...formData, delivery_notes: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* TASK-79-03: Tax ID / EIN & Selector Dual Formulario ST-120 */}
+                    <div className="space-y-4 md:col-span-2 p-5 bg-muted/20 border border-border/80 rounded-2xl">
+                        <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                            <label className="text-xs font-black uppercase tracking-wider text-foreground flex items-center gap-2">
+                                <FileText size={16} className="text-primary" />
+                                <span>{locale === 'en' ? 'Tax ID / EIN & Resale Certificate (Form ST-120)' : 'Tax ID / EIN y Certificado de Reventa (Formulario ST-120)'} *</span>
                             </label>
-                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                {locale === 'en' ? '0% Sales Tax ST-120' : '0% Impuestos ST-120'}
+                            <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                <Sparkles size={11} />
+                                <span>{locale === 'en' ? '0% Sales Tax NYS DTF' : '0% Impuestos NYS DTF'}</span>
                             </span>
                         </div>
-                        <input
-                            required
-                            type="text"
-                            placeholder="e.g. 12-3456789 or NY Certificate #"
-                            className="premium-input text-xs"
-                            value={formData.tax_id || ''}
-                            onChange={(e) => setFormData({ ...formData, tax_id: e.target.value, ein: e.target.value })}
-                        />
+
+                        {/* Input for EIN / Tax ID */}
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                                {locale === 'en' ? 'Federal Tax ID (EIN) or NY Certificate of Authority # *' : 'Tax ID / EIN (Federal Employer Identification Number o Certificado NY) *'}
+                            </label>
+                            <input
+                                required
+                                type="text"
+                                placeholder="e.g. 12-3456789 or NY Certificate #"
+                                className="premium-input text-xs"
+                                value={formData.tax_id || ''}
+                                onChange={(e) => setFormData({ ...formData, tax_id: e.target.value, ein: e.target.value })}
+                            />
+                        </div>
+
+                        {/* DUAL SELECTOR BUTTONS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                            {/* Opción 1: 1-Clic Digital */}
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, st120_mode: 'digital', st120_auto_generate: true })}
+                                className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
+                                    formData.st120_mode !== 'upload'
+                                        ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm'
+                                        : 'border-border/80 bg-background/60 hover:bg-muted/40'
+                                }`}
+                            >
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                            <Sparkles size={14} />
+                                        </div>
+                                        <span className="text-xs font-black uppercase tracking-wide text-foreground">
+                                            {locale === 'en' ? 'Option 1: 1-Click Digital ST-120' : 'Opción 1: Generar ST-120 Digital'}
+                                        </span>
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
+                                        {locale === 'en' ? 'Recommended' : 'Recomendada'}
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
+                                    {locale === 'en'
+                                        ? 'Generates your official NYS DTF Form ST-120 digital resale certificate with your electronic signature automatically.'
+                                        : 'Genera y firma electrónicamente tu formulario ST-120 oficial de New York State DTF con los datos de tu empresa en 1 clic.'}
+                                </p>
+                            </button>
+
+                            {/* Opción 2: Subir archivo PDF o Foto */}
+                            <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, st120_mode: 'upload', st120_auto_generate: false })}
+                                className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
+                                    formData.st120_mode === 'upload'
+                                        ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm'
+                                        : 'border-border/80 bg-background/60 hover:bg-muted/40'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
+                                        <FileUp size={14} />
+                                    </div>
+                                    <span className="text-xs font-black uppercase tracking-wide text-foreground">
+                                        {locale === 'en' ? 'Option 2: Upload File / Photo' : 'Opción 2: Subir PDF o Foto'}
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
+                                    {locale === 'en'
+                                        ? 'Already have a signed NY Form ST-120? Upload a PDF copy or camera picture from your device.'
+                                        : '¿Ya posees un Formulario ST-120 firmado? Sube una copia en PDF o una fotografía desde tu teléfono o PC.'}
+                                </p>
+                            </button>
+                        </div>
+
+                        {/* CONTENT FOR OPTION 1: PREVIEW */}
+                        {formData.st120_mode !== 'upload' ? (
+                            <div className="p-4 bg-background/90 border border-primary/20 rounded-xl space-y-3 animate-fade-in">
+                                <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                        <ShieldCheck size={13} className="text-emerald-600" />
+                                        <span>{locale === 'en' ? 'Legal Pre-fill Certificate Summary' : 'Previsualización del Certificado ST-120 Oficial'}</span>
+                                    </span>
+                                    <span className="text-[10px] font-mono text-primary font-bold">NYS DTF ST-120</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                    <div>
+                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Legal Business Name:' : 'Razón Social:'}</span>
+                                        <span className="font-bold text-foreground">{formData.legal_business_name || 'Nombre Legal Registrado'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'DBA / Store:' : 'Nombre Comercial / DBA:'}</span>
+                                        <span className="font-bold text-foreground">{formData.dba || formData.company_name || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Tax ID / EIN:' : 'Tax ID / EIN:'}</span>
+                                        <span className="font-mono font-bold text-foreground">{formData.tax_id || 'Pendiente'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Authorized Signer:' : 'Firmante Autorizado:'}</span>
+                                        <span className="font-bold text-foreground">{formData.signer_name || 'Firmante'}</span>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Commercial Address:' : 'Dirección Comercial:'}</span>
+                                        <span className="font-medium text-foreground text-[11px]">{formData.business_address || 'Dirección registrada'}</span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground bg-primary/5 p-2 rounded-lg border border-primary/10">
+                                    {locale === 'en'
+                                        ? 'ℹ By registering, your official NYS DTF ST-120 Resale Certificate will be digitally generated and signed pursuant to NY ESRA / E-SIGN Act.'
+                                        : 'ℹ Al enviar el registro, su certificado oficial NYS DTF ST-120 será generado y sellado digitalmente de conformidad con la ley NY ESRA / E-SIGN Act.'}
+                                </p>
+                            </div>
+                        ) : (
+                            /* CONTENT FOR OPTION 2: FILE UPLOAD */
+                            <div className="p-4 bg-background/90 border border-indigo-200 dark:border-indigo-900/50 rounded-xl space-y-3 animate-fade-in">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                    <FileUp size={13} className="text-indigo-600" />
+                                    <span>{locale === 'en' ? 'Upload Form ST-120 (PDF or Mobile Photo)' : 'Subir Formulario ST-120 (PDF o Foto de Cámara)'}</span>
+                                </span>
+                                <div className="flex flex-col sm:flex-row items-center gap-3">
+                                    <input
+                                        type="file"
+                                        accept=".pdf,image/*"
+                                        id="st120_file_input"
+                                        className="hidden"
+                                        onChange={handleST120FileUpload}
+                                    />
+                                    <label
+                                        htmlFor="st120_file_input"
+                                        className="w-full sm:w-auto px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {isUploadingST120 ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                                        <span>{locale === 'en' ? 'Choose PDF or Take Photo' : 'Seleccionar PDF o Tomar Foto'}</span>
+                                    </label>
+                                    {formData.st120_document_url ? (
+                                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
+                                            <CheckCircle2 size={14} />
+                                            <span>{formData.st120_filename || (locale === 'en' ? 'Document ready' : 'Documento cargado con éxito')}</span>
+                                        </span>
+                                    ) : (
+                                        <span className="text-[11px] text-muted-foreground">
+                                            {locale === 'en' ? 'Accepts PDF, JPG, PNG (Max 15MB)' : 'Soporta PDF, JPG, PNG (Cámara de celular)'}
+                                        </span>
+                                    )}
+                                </div>
+                                {st120UploadError && (
+                                    <p className="text-[11px] text-red-600 font-bold">{st120UploadError}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Checkbox de certificación */}
                         <div className="flex items-start gap-2.5 pt-1">
                             <input
                                 id="st120_declared"

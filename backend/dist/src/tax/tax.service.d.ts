@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Profile } from '../users/profile.entity';
 import { VisionValidationService, VisionValidationResult } from './vision-validation.service';
+import { St120GeneratorService } from './st120-generator.service';
 export interface TaxCalculationResult {
     tax_amount: number;
     tax_rate: number;
@@ -13,9 +14,11 @@ export declare class TaxService {
     private userRepository;
     private profileRepository;
     private visionValidationService;
+    private st120GeneratorService?;
     private readonly logger;
     static readonly NY_STANDARD_SALES_TAX_RATE = 8.875;
-    constructor(userRepository: Repository<User>, profileRepository: Repository<Profile>, visionValidationService: VisionValidationService);
+    constructor(userRepository: Repository<User>, profileRepository: Repository<Profile>, visionValidationService: VisionValidationService, st120GeneratorService?: St120GeneratorService | undefined);
+    private getGenerator;
     getOfficialNysDtfLegend(taxId?: string | null): string;
     calculateOrderTax(user: {
         tax_exempt?: boolean | null;
@@ -33,5 +36,45 @@ export declare class TaxService {
     rejectExemption(userId: string, reason?: string): Promise<{
         success: boolean;
         user: User;
+    }>;
+    generateDigitalST120(userId: string, requestingUser?: {
+        id: string;
+        role?: string;
+    }): Promise<{
+        success: boolean;
+        documentUrl: string;
+        user: User;
+    }>;
+    signST120(userId: string, signData: {
+        signature_text: string;
+        signer_name: string;
+        signer_title?: string;
+        legal_business_name?: string;
+        dba?: string;
+        business_address?: string;
+        tax_id?: string;
+        ein?: string;
+    }, clientIp?: string, requestingUser?: {
+        id: string;
+        role?: string;
+    }): Promise<{
+        success: boolean;
+        documentUrl: string;
+        user: User;
+    }>;
+    uploadST120(userId: string, file: Express.Multer.File, taxId?: string, requestingUser?: {
+        id: string;
+        role?: string;
+    }): Promise<{
+        success: boolean;
+        url: string;
+        documentUrl: string;
+        user: User;
+    }>;
+    backfillAllPending(): Promise<{
+        success: boolean;
+        processedCount: number;
+        totalPending: number;
+        errors: any[];
     }>;
 }

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { St120GeneratorService } from '../tax/st120-generator.service';
 import { UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { hashPassword, verifyJwt } from './crypto.util';
@@ -44,6 +45,15 @@ describe('AuthService', () => {
     findOne: jest.fn(),
   };
 
+  const mockSt120GeneratorService = {
+    generateST120Pdf: jest.fn().mockResolvedValue({
+      filePath: '/tmp/auto-st120.pdf',
+      relativeUrl: '/uploads/st120/auto-st120.pdf',
+      buffer: Buffer.from('pdf'),
+      auditHash: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,6 +62,7 @@ describe('AuthService', () => {
         { provide: MailService, useValue: mockMailService },
         { provide: getRepositoryToken(SystemConfig), useValue: mockSystemConfigRepository },
         { provide: getRepositoryToken(Address), useValue: mockAddressRepository },
+        { provide: St120GeneratorService, useValue: mockSt120GeneratorService },
       ],
     }).compile();
 
@@ -237,6 +248,125 @@ describe('AuthService', () => {
         is_default: true,
         is_temporary: false,
       });
+    });
+
+    it('should persist night security access credentials (access_code, has_key, key_location, fridge_access_required, notes) in primary address during signup (TASK-79-02 Happy Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-night-1', email: 'night@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+
+      const result = await service.signup({
+        email: 'night@bakery.com',
+        password: 'password123',
+        full_name: 'Night Owl Baker',
+        company_name: 'Midnight Bagels',
+        tax_id: '12-9876543',
+        phone: '+13055550199',
+        business_address: '500 5th Ave',
+        access_code: '#9876*',
+        has_key: true,
+        key_location: 'Under blue flowerpot next to back alley',
+        fridge_access_required: true,
+        delivery_notes: 'Leave boxes in walk-in fridge on left shelf',
+      });
+
+      expect(mockAddressRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: 'user-night-1',
+          address: '500 5th Ave',
+          access_code: '#9876*',
+          has_key: true,
+          key_location: 'Under blue flowerpot next to back alley',
+          fridge_access_required: true,
+          notes: 'Leave boxes in walk-in fridge on left shelf',
+        }),
+      );
+      expect(result.address).toBeDefined();
+    });
+
+    it('should persist st120_document_url on user and profile when provided in signup (TASK-79-02)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-doc-1', email: 'doc@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+
+      await service.signup({
+        email: 'doc@bakery.com',
+        password: 'password123',
+        full_name: 'Doc Baker',
+        company_name: 'Doc Pastries',
+        tax_id: '12-9876543',
+        phone: '+13055550199',
+        st120_document_url: '/uploads/st120/manual-scan.pdf',
+      });
+
+      expect(mockUsersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          st120_document_url: '/uploads/st120/manual-scan.pdf',
+          st120_status: 'PENDING',
+        }),
+      );
+      expect(mockUsersService.createProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          st120_document_url: '/uploads/st120/manual-scan.pdf',
+          st120_status: 'PENDING',
+        }),
+      );
+    });
+
+    it('should auto-generate official digital ST-120 and set user to APPROVED and tax_exempt = true when st120_auto_generate is true (TASK-79-01 / TASK-79-02 Happy Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-auto-1', email: 'auto@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+
+      const result = await service.signup({
+        email: 'auto@bakery.com',
+        password: 'password123',
+        full_name: 'Auto Baker',
+        company_name: 'Auto Dough Corp',
+        tax_id: '12-1112223',
+        phone: '+13055550199',
+        business_address: '100 Broadway, NY',
+        legal_business_name: 'Auto Dough Corporation',
+        signature_text: 'Auto Baker',
+        st120_auto_generate: true,
+      });
+
+      expect(mockSt120GeneratorService.generateST120Pdf).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-auto-1',
+          legalBusinessName: 'Auto Dough Corporation',
+          taxId: '12-1112223',
+          signerName: 'Auto Baker',
+        }),
+      );
+      expect(mockUsersService.updateProfile).toHaveBeenCalledWith(
+        'user-auto-1',
+        expect.objectContaining({
+          st120_status: 'APPROVED',
+          tax_exempt: true,
+          st120_document_url: '/uploads/st120/auto-st120.pdf',
+        }),
+      );
+    });
+
+    it('should gracefully handle generator failure when st120_auto_generate is true without aborting signup (TASK-79-01 Sad Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue({ id: 'user-fail-1', email: 'failst@bakery.com' });
+      mockUsersService.createProfile.mockResolvedValue({});
+      mockSt120GeneratorService.generateST120Pdf.mockRejectedValueOnce(new Error('PDF generator timeout'));
+
+      const result = await service.signup({
+        email: 'failst@bakery.com',
+        password: 'password123',
+        full_name: 'Fail Safe Baker',
+        company_name: 'Resilient Bakery',
+        tax_id: '12-1112223',
+        phone: '+13055550199',
+        st120_auto_generate: true,
+      });
+
+      expect(result).toHaveProperty('session');
+      expect(result.message).toBe('User registered successfully');
     });
 
     it('should not invoke addressRepository if business_address is not provided (TASK-65-04 Omitted Address)', async () => {

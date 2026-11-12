@@ -19,4 +19,28 @@ export declare class TaxController {
         taxExempt: boolean;
         taxLegend: string | null;
     }>;
+    generateDigitalST120(req: any, body?: {
+        userId?: string;
+    }): Promise<{
+        success: boolean;
+        documentUrl: string;
+        user: import("../users/user.entity").User;
+    }>;
+    signST120(req: any, body: any): Promise<{
+        success: boolean;
+        documentUrl: string;
+        user: import("../users/user.entity").User;
+    }>;
+    uploadST120(req: any, file: Express.Multer.File, bodyUserId?: string, taxId?: string): Promise<{
+        success: boolean;
+        url: string;
+        documentUrl: string;
+        user: import("../users/user.entity").User;
+    }>;
+    backfillAll(): Promise<{
+        success: boolean;
+        processedCount: number;
+        totalPending: number;
+        errors: any[];
+    }>;
 }

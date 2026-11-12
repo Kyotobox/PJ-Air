@@ -1,4 +1,20 @@
-import { Controller, Post, Get, Param, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join, resolve } from 'path';
+import * as fs from 'fs';
+import { UPLOAD_PATH } from '../config';
 import { TaxService } from './tax.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -48,5 +64,100 @@ export class TaxController {
       taxExempt: isExempt,
       taxLegend: isExempt ? this.taxService.getOfficialNysDtfLegend(taxId) : null,
     };
+  }
+
+  /**
+   * Generates an official digital Form ST-120 Resale Certificate
+   * Admin can specify userId in body, client generates for their own user.id
+   */
+  @Post('generate-digital-st120')
+  @UseGuards(AuthGuard)
+  async generateDigitalST120(@Req() req: any, @Body() body?: { userId?: string }) {
+    const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
+    return this.taxService.generateDigitalST120(targetUserId, req.user);
+  }
+
+  /**
+   * Signs digital Form ST-120 and sets user to tax_exempt = true, status APPROVED
+   */
+  @Post('sign-st120')
+  @UseGuards(AuthGuard)
+  async signST120(@Req() req: any, @Body() body: any) {
+    const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
+    const clientIp =
+      (req.headers && req.headers['x-forwarded-for']) ||
+      req.socket?.remoteAddress ||
+      req.ip ||
+      '127.0.0.1';
+
+    return this.taxService.signST120(targetUserId, body, String(clientIp), req.user);
+  }
+
+  /**
+   * Uploads an external ST-120 file (PDF or image)
+   */
+  @Post('upload-st120')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const uploadPath = join(resolve(UPLOAD_PATH), 'st120');
+          if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+          }
+          cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname).toLowerCase()}`);
+        },
+      }),
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+      fileFilter: (req, file, cb) => {
+        const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+        const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+        const ext = extname(file.originalname).toLowerCase();
+        const mime = file.mimetype;
+
+        if (!allowedExtensions.includes(ext) || !allowedMimeTypes.includes(mime)) {
+          return cb(
+            new BadRequestException(
+              'Only PDF and image files (.pdf, .jpg, .jpeg, .png, .webp) are allowed',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadST120(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('userId') bodyUserId?: string,
+    @Body('tax_id') taxId?: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded or file type not allowed');
+    }
+    const targetUserId = req.user?.role === 'admin' && bodyUserId ? bodyUserId : req.user.id;
+    return this.taxService.uploadST120(targetUserId, file, taxId, req.user);
+  }
+
+  /**
+   * Backfill all pending ST-120 applications
+   */
+  @Post('backfill-all')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async backfillAll() {
+    return this.taxService.backfillAllPending();
   }
 }

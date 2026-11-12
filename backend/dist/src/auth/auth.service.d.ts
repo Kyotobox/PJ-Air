@@ -4,15 +4,17 @@ import { Address } from '../addresses/address.entity';
 import { SystemConfig } from '../system-configs/system-config.entity';
 import { SmsService } from '../sms/sms.service';
 import { MailService } from '../mail/mail.service';
+import { St120GeneratorService } from '../tax/st120-generator.service';
 export declare class AuthService {
     private usersService;
     private systemConfigRepository;
     private mailService?;
     private smsService?;
     private addressRepository?;
+    private st120GeneratorService?;
     private readonly logger;
     private otpStore;
-    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>, mailService?: MailService | undefined, smsService?: SmsService | undefined, addressRepository?: Repository<Address> | undefined);
+    constructor(usersService: UsersService, systemConfigRepository: Repository<SystemConfig>, mailService?: MailService | undefined, smsService?: SmsService | undefined, addressRepository?: Repository<Address> | undefined, st120GeneratorService?: St120GeneratorService | undefined);
     signup(body: any): Promise<{
         address?: Address | undefined;
         message: string;

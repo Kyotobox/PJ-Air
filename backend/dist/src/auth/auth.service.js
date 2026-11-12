@@ -55,6 +55,7 @@ const address_entity_1 = require("../addresses/address.entity");
 const system_config_entity_1 = require("../system-configs/system-config.entity");
 const sms_service_1 = require("../sms/sms.service");
 const mail_service_1 = require("../mail/mail.service");
+const st120_generator_service_1 = require("../tax/st120-generator.service");
 const crypto = __importStar(require("crypto"));
 const crypto_util_1 = require("./crypto.util");
 const firebase_admin_util_1 = require("./firebase-admin.util");
@@ -64,17 +65,19 @@ let AuthService = AuthService_1 = class AuthService {
     mailService;
     smsService;
     addressRepository;
+    st120GeneratorService;
     logger = new common_1.Logger(AuthService_1.name);
     otpStore = new Map();
-    constructor(usersService, systemConfigRepository, mailService, smsService, addressRepository) {
+    constructor(usersService, systemConfigRepository, mailService, smsService, addressRepository, st120GeneratorService) {
         this.usersService = usersService;
         this.systemConfigRepository = systemConfigRepository;
         this.mailService = mailService;
         this.smsService = smsService;
         this.addressRepository = addressRepository;
+        this.st120GeneratorService = st120GeneratorService;
     }
     async signup(body) {
-        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared, business_address, address_lat, address_lng, address_city, facade_image_url, } = body;
+        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared, business_address, address_lat, address_lng, address_city, facade_image_url, access_code, has_key, key_location, fridge_access_required, notes, delivery_notes, st120_document_url, st120_auto_generate, } = body;
         const userRole = role || 'client';
         const cleanCompany = (company_name || '').trim();
         if (userRole === 'client' && !cleanCompany) {
@@ -99,7 +102,12 @@ let AuthService = AuthService_1 = class AuthService {
         if (existingUser)
             throw new common_1.ConflictException('Email already registered');
         const cleanTaxId = tax_id && typeof tax_id === 'string' ? tax_id.trim() : undefined;
-        const initialSt120Status = st120_declared || cleanTaxId ? 'PENDING' : 'NONE';
+        const shouldAutoGenerateSt120 = Boolean(st120_auto_generate);
+        const initialSt120Status = shouldAutoGenerateSt120
+            ? 'APPROVED'
+            : (st120_declared || cleanTaxId || st120_document_url ? 'PENDING' : 'NONE');
+        const initialTaxExempt = shouldAutoGenerateSt120 ? true : false;
+        const cleanSt120DocUrl = st120_document_url && typeof st120_document_url === 'string' ? st120_document_url.trim() : undefined;
         const hashedPassword = (0, crypto_util_1.hashPassword)(password);
         const userResult = await this.usersService.create({
             email: normalizedEmail,
@@ -107,7 +115,8 @@ let AuthService = AuthService_1 = class AuthService {
             role: userRole,
             tax_id: cleanTaxId,
             st120_status: initialSt120Status,
-            tax_exempt: false,
+            tax_exempt: initialTaxExempt,
+            ...(cleanSt120DocUrl ? { st120_document_url: cleanSt120DocUrl } : {}),
             ...(body.legal_business_name ? { legal_business_name: body.legal_business_name } : {}),
             ...(body.dba ? { dba: body.dba } : {}),
             ...(body.ein ? { ein: body.ein } : {}),
@@ -135,10 +144,47 @@ let AuthService = AuthService_1 = class AuthService {
             phone_verified: Boolean(phone_verified),
             tax_id: cleanTaxId,
             st120_status: initialSt120Status,
-            tax_exempt: false,
+            tax_exempt: initialTaxExempt,
+            ...(cleanSt120DocUrl ? { st120_document_url: cleanSt120DocUrl } : {}),
         });
-        let createdAddress = null;
         const cleanBusinessAddress = business_address && typeof business_address === 'string' ? business_address.trim() : '';
+        if (shouldAutoGenerateSt120) {
+            try {
+                const generator = this.st120GeneratorService || new st120_generator_service_1.St120GeneratorService();
+                const genResult = await generator.generateST120Pdf({
+                    userId: user.id,
+                    legalBusinessName: body.legal_business_name || cleanCompany,
+                    dba: body.dba || cleanCompany,
+                    businessAddress: body.business_address || cleanBusinessAddress || 'Address on file',
+                    taxId: cleanTaxId,
+                    ein: body.ein,
+                    signerName: body.signer_name || full_name || user.email,
+                    signerTitle: body.signer_title || 'Authorized Representative',
+                    signatureText: body.signature_text || body.signer_name || full_name || 'Authorized Signer',
+                    acceptedAt: body.accepted_at ? new Date(body.accepted_at) : new Date(),
+                    ipAddress: body.ip_address || '127.0.0.1',
+                });
+                user.st120_document_url = genResult.relativeUrl;
+                user.st120_status = 'APPROVED';
+                user.tax_exempt = true;
+                if (this.usersService['userRepository']) {
+                    await this.usersService['userRepository'].update(user.id, {
+                        st120_document_url: genResult.relativeUrl,
+                        st120_status: 'APPROVED',
+                        tax_exempt: true,
+                    });
+                }
+                await this.usersService.updateProfile(user.id, {
+                    st120_document_url: genResult.relativeUrl,
+                    st120_status: 'APPROVED',
+                    tax_exempt: true,
+                });
+            }
+            catch (err) {
+                this.logger.error(`Error auto-generating ST-120 in signup: ${err.message}`);
+            }
+        }
+        let createdAddress = null;
         if (cleanBusinessAddress && this.addressRepository) {
             const cleanCity = address_city && typeof address_city === 'string' && address_city.trim() ? address_city.trim() : 'New York';
             const latNum = typeof address_lat === 'number' ? address_lat : (address_lat !== null && address_lat !== undefined && !isNaN(parseFloat(address_lat)) ? parseFloat(address_lat) : null);
@@ -147,6 +193,7 @@ let AuthService = AuthService_1 = class AuthService {
             if (facade_image_url && typeof facade_image_url === 'string' && facade_image_url.trim()) {
                 deliveryPhotosJson = JSON.stringify([facade_image_url.trim()]);
             }
+            const effectiveNotes = notes || delivery_notes;
             const addressEntity = this.addressRepository.create({
                 user_id: user.id,
                 alias: 'Principal / Facturación',
@@ -157,6 +204,11 @@ let AuthService = AuthService_1 = class AuthService {
                 is_default: true,
                 is_temporary: false,
                 ...(deliveryPhotosJson ? { delivery_photos_json: deliveryPhotosJson } : {}),
+                ...(access_code !== undefined && access_code !== null ? { access_code: String(access_code).trim() } : {}),
+                ...(has_key !== undefined ? { has_key: Boolean(has_key) } : {}),
+                ...(key_location !== undefined && key_location !== null ? { key_location: String(key_location).trim() } : {}),
+                ...(fridge_access_required !== undefined ? { fridge_access_required: Boolean(fridge_access_required) } : {}),
+                ...(effectiveNotes !== undefined && effectiveNotes !== null ? { notes: String(effectiveNotes).trim() } : {}),
             });
             createdAddress = await this.addressRepository.save(addressEntity);
         }
@@ -466,10 +518,12 @@ exports.AuthService = AuthService = AuthService_1 = __decorate([
     __param(3, (0, common_1.Optional)()),
     __param(4, (0, common_1.Optional)()),
     __param(4, (0, typeorm_1.InjectRepository)(address_entity_1.Address)),
+    __param(5, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [users_service_1.UsersService,
         typeorm_2.Repository,
         mail_service_1.MailService,
         sms_service_1.SmsService,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        st120_generator_service_1.St120GeneratorService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

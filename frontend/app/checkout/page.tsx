@@ -7,7 +7,7 @@ import {
     Loader2, Plus, Clock, Minus, Store, Truck, Home,
     ChevronDown, Check, AlertCircle, BookmarkPlus, Bookmark,
     Map as MapIcon, RotateCcw, Search, X, Building2,
-    Moon, Key, Camera, Snowflake, ShieldCheck, ChevronUp, Upload, Trash2, FileText, Sparkles
+    Moon, Key, Camera, Snowflake, ShieldCheck, ChevronUp, Upload, Trash2, FileText, Sparkles, CheckCircle2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -664,6 +664,55 @@ export default function CheckoutPage() {
     const [userOrders, setUserOrders] = useState<any[]>([]);
     const [applyStoreCredit, setApplyStoreCredit] = useState<boolean>(true);
     const [stripePaymentData, setStripePaymentData] = useState<{ clientSecret: string; amount: number; orderId: string } | null>(null);
+    
+    // TASK-79-05: ST-120 Tax Exemption State & 1-Click Modal
+    const [taxExemptOverride, setTaxExemptOverride] = useState<boolean | null>(null);
+    const [isST120ModalOpen, setIsST120ModalOpen] = useState(false);
+    const [isSigningST120, setIsSigningST120] = useState(false);
+
+    const isTaxExempt = taxExemptOverride !== null 
+        ? taxExemptOverride 
+        : Boolean(profile?.tax_exempt || (user as any)?.tax_exempt);
+    const st120Status = isTaxExempt ? 'APPROVED' : ((user as any)?.st120_status || profile?.st120_status || 'PENDING');
+
+    const handleSignST120 = async () => {
+        setIsSigningST120(true);
+        try {
+            const signerName = profile?.full_name || (user as any)?.full_name || profile?.company_name || 'Firmante Autorizado';
+            let res: any;
+            try {
+                res = await api.post('/tax/sign-st120', {
+                    userId: user?.id,
+                    signer_name: signerName,
+                    legal_business_name: profile?.legal_business_name || (user as any)?.legal_business_name || profile?.company_name,
+                    tax_id: profile?.tax_id || (user as any)?.tax_id,
+                });
+            } catch {
+                res = await api.post(`/tax/sign-st120/${user?.id}`, {
+                    signer_name: signerName,
+                });
+            }
+            setTaxExemptOverride(true);
+            if (profile) {
+                profile.tax_exempt = true;
+                profile.st120_status = 'APPROVED';
+            }
+            if (user) {
+                (user as any).tax_exempt = true;
+                (user as any).st120_status = 'APPROVED';
+            }
+            setIsST120ModalOpen(false);
+            showNotification(
+                lbl('✅ Certificado ST-120 generado y archivado. Impuestos exentos.', '✅ ST-120 certificate generated and archived. Tax exempt.'),
+                'info'
+            );
+        } catch (err: any) {
+            showNotification(err.message || 'Error al firmar certificado ST-120', 'error');
+        } finally {
+            setIsSigningST120(false);
+        }
+    };
+
     const [notification, setNotification] = useState<{
         message: string;
         type: 'error' | 'warning' | 'info';
@@ -879,7 +928,13 @@ export default function CheckoutPage() {
     const packagingFee = processingFee;
     const packagingDiscount = 0;
 
-    const subtotalWithFees = Math.round((discountedSubtotal + processingFee + deliveryFee + Number.EPSILON) * 100) / 100;
+    // TASK-79-05: NY Sales Tax (8.875% or 0.0% ST-120 Exempt)
+    const salesTaxRate = isTaxExempt ? 0 : 8.875;
+    const salesTax = isTaxExempt 
+        ? 0 
+        : Math.round(((discountedSubtotal) * (salesTaxRate / 100) + Number.EPSILON) * 100) / 100;
+
+    const subtotalWithFees = Math.round((discountedSubtotal + processingFee + deliveryFee + salesTax + Number.EPSILON) * 100) / 100;
 
     // TASK-63-03: Saldo a Favor (Store Credit)
     const storeCreditBalance = Math.max(0, Number(userDiscounts?.credit_balance ?? creditSummary?.credit_balance ?? 0));
@@ -1386,6 +1441,58 @@ export default function CheckoutPage() {
             )}
 
             <main className="max-w-7xl mx-auto px-4 py-12">
+                {/* TASK-79-05: Banner Interactivo ST-120 NYS DTF (0% Sales Tax) */}
+                {(!isTaxExempt || st120Status === 'PENDING') && (
+                    <div className="mb-8 p-6 bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-primary/10 border-2 border-emerald-500/30 rounded-3xl shadow-sm relative overflow-hidden animate-fade-in">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                    <Sparkles size={24} />
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h3 className="text-base font-black tracking-tight text-foreground flex items-center gap-1.5">
+                                            <span>📋 {lbl('Exención de Impuestos ST-120 NYS DTF (0% Sales Tax)', 'NYS DTF Form ST-120 Tax Exemption (0% Sales Tax)')}</span>
+                                        </h3>
+                                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                                            {lbl('Transición B2B 1-Click', '1-Click B2B Transition')}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
+                                        {lbl(
+                                            'Tu cuenta mayorista está sujeta a 8.875% de impuesto sobre ventas. Firma en 1-Click tu Certificado de Reventa ST-120 oficial para exonerar el 100% de impuestos inmediatamente.',
+                                            'Your wholesale account is currently assessed 8.875% sales tax. Sign your official ST-120 Resale Certificate in 1 click to eliminate 100% of sales tax immediately.'
+                                        )}
+                                    </p>
+                                    <div className="flex items-center gap-3 pt-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex-wrap">
+                                        <span className="bg-background/80 px-2.5 py-1 rounded-lg border border-border/70">
+                                            🏢 {profile?.legal_business_name || (user as any)?.legal_business_name || profile?.company_name || 'Acme Hospitality LLC'}
+                                        </span>
+                                        {(profile?.dba || (user as any)?.dba) && (
+                                            <span className="bg-background/80 px-2.5 py-1 rounded-lg border border-border/70">
+                                                🏷️ DBA: {profile?.dba || (user as any)?.dba}
+                                            </span>
+                                        )}
+                                        <span className="bg-background/80 px-2.5 py-1 rounded-lg border border-border/70 font-mono">
+                                            🆔 Tax ID: {profile?.tax_id || (user as any)?.tax_id || (user as any)?.ein || 'En archivo'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="shrink-0 self-stretch sm:self-auto flex sm:flex-col justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsST120ModalOpen(true)}
+                                    className="w-full sm:w-auto px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg hover:shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <Sparkles size={16} />
+                                    <span>{lbl('Revisar y Confirmar Firma ST-120 (1-Click)', 'Review & Sign ST-120 (1-Click)')}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="flex flex-col lg:flex-row gap-12">
 
                     {/* ── Left column ───────────────────────────────────────── */}
@@ -2318,6 +2425,27 @@ export default function CheckoutPage() {
                                         </span>
                                     </div>
 
+                                    {/* TASK-79-05: Sales Tax Line (NYS DTF ST-120) */}
+                                    <div className="flex justify-between items-center text-xs mb-1">
+                                        <div className="flex flex-col">
+                                            <span className="text-muted-foreground">{lbl('Impuesto sobre Ventas (NYS 8.875%)', 'Sales Tax (NYS 8.875%)')}</span>
+                                            <span className="text-[10px] font-semibold">
+                                                {isTaxExempt ? (
+                                                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                                        <CheckCircle2 size={10} /> {lbl('0% Exento bajo Formulario ST-120', '0% Exempt under Form ST-120')}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-amber-600 font-bold">
+                                                        {lbl('Pendiente de ST-120 (Aplica 8.875%)', 'ST-120 Pending (8.875% Applied)')}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                        <span className={`font-bold font-mono ${isTaxExempt ? 'text-emerald-600' : 'text-slate-800'}`}>
+                                            {isTaxExempt ? '$0.00' : `+$${salesTax.toFixed(2)}`}
+                                        </span>
+                                    </div>
+
                                     {/* Store Credit Line (TASK-63-03) */}
                                     {storeCreditApplied > 0 && (
                                         <div className="flex justify-between items-center text-xs mb-1 bg-blue-50/70 p-2 rounded-xl border border-blue-100 text-blue-800">
@@ -2341,7 +2469,7 @@ export default function CheckoutPage() {
                                             <span className="text-[9px] text-primary lowercase font-mono">live</span>
                                         </div>
                                         <div className="text-[11px] font-mono font-bold text-slate-800 tracking-tight leading-relaxed">
-                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Delivery Fee (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)})${storeCreditApplied > 0 ? ` - Store Credit ($${storeCreditApplied.toFixed(2)})` : ''} = Total (${finalTotal.toFixed(2)})</span>
+                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Delivery Fee (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)})${!isTaxExempt ? ` + Sales Tax ($${salesTax.toFixed(2)})` : ''}${storeCreditApplied > 0 ? ` - Store Credit ($${storeCreditApplied.toFixed(2)})` : ''} = Total (${finalTotal.toFixed(2)})</span>
                                         </div>
                                     </div>
 
@@ -2537,6 +2665,120 @@ export default function CheckoutPage() {
                     }}
                     locale={locale}
                 />
+            )}
+
+            {/* TASK-79-05: Modal 1-Click ST-120 Digital */}
+            {isST120ModalOpen && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => !isSigningST120 && setIsST120ModalOpen(false)} />
+                    <div className="relative w-full max-w-lg bg-card border border-border rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in-95 space-y-6">
+                        <div className="flex items-center justify-between pb-3 border-b border-border">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                                    <FileText size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-foreground">
+                                        {lbl('Firma Digital Formulario ST-120 NYS DTF', 'NYS DTF Form ST-120 Digital Signature')}
+                                    </h3>
+                                    <p className="text-[11px] text-muted-foreground">
+                                        {lbl('Certificado de Reventa Oficial del Estado de Nueva York', 'New York State Official Resale Certificate')}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={isSigningST120}
+                                onClick={() => setIsST120ModalOpen(false)}
+                                className="p-2 hover:bg-muted rounded-full transition-colors cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Legal Pre-filled Card */}
+                        <div className="p-4 bg-muted/30 border border-border/80 rounded-2xl space-y-3 text-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">
+                                    {lbl('Datos de la Empresa en Archivo', 'Company Record on File')}
+                                </span>
+                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono">
+                                    0% SALES TAX
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 pt-1">
+                                <div>
+                                    <span className="text-[10px] text-muted-foreground block">{lbl('Razón Social:', 'Legal Name:')}</span>
+                                    <span className="font-bold text-foreground">
+                                        {profile?.legal_business_name || (user as any)?.legal_business_name || profile?.company_name || 'Acme Hospitality LLC'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-muted-foreground block">{lbl('DBA / Tienda:', 'DBA / Store:')}</span>
+                                    <span className="font-bold text-foreground">
+                                        {profile?.dba || (user as any)?.dba || profile?.company_name || 'N/A'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-muted-foreground block">Tax ID / EIN:</span>
+                                    <span className="font-mono font-bold text-foreground">
+                                        {profile?.tax_id || (user as any)?.tax_id || (user as any)?.ein || 'En archivo'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-muted-foreground block">{lbl('Firmante:', 'Signer:')}</span>
+                                    <span className="font-bold text-foreground">
+                                        {profile?.full_name || (user as any)?.full_name || 'Firmante Autorizado'}
+                                    </span>
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="text-[10px] text-muted-foreground block">{lbl('Dirección Comercial:', 'Commercial Address:')}</span>
+                                    <span className="font-medium text-foreground text-[11px]">
+                                        {addresses.find(a => a.is_default)?.address || (user as any)?.business_address || otherAddrData.address || 'New York, NY'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Legal Statement */}
+                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-[11px] text-muted-foreground leading-relaxed">
+                            <p>
+                                {lbl(
+                                    'Al confirmar con 1-Click, certifico bajo pena de perjurio que todas las compras realizadas son exclusivamente para reventa en el curso ordinario del negocio y adopto mi firma electrónica vinculante conforme a la NY ESRA y el Federal E-SIGN Act.',
+                                    'By confirming in 1 click, I certify under penalty of perjury that all purchases are exclusively for resale in the regular course of business and adopt my binding electronic signature under NY ESRA and Federal E-SIGN Act.'
+                                )}
+                            </p>
+                        </div>
+
+                        {/* Savings impact callout */}
+                        {!isTaxExempt && salesTax > 0 && (
+                            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                                <span>{lbl('Ahorro inmediato en este pedido:', 'Immediate savings on this order:')}</span>
+                                <span className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">-${salesTax.toFixed(2)}</span>
+                            </div>
+                        )}
+
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                type="button"
+                                disabled={isSigningST120}
+                                onClick={() => setIsST120ModalOpen(false)}
+                                className="flex-1 py-3.5 font-bold uppercase text-xs tracking-wider text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            >
+                                {lbl('Cancelar', 'Cancel')}
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isSigningST120}
+                                onClick={handleSignST120}
+                                className="flex-[2] py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg hover:shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                                {isSigningST120 ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                                <span>{lbl('Confirmar Firma ST-120 (1-Click)', 'Confirm ST-120 Signature (1-Click)')}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

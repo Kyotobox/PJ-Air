@@ -1,14 +1,10 @@
-# SPRINT S78 - Sprint Activo
-**Objetivo**: Sin objetivo especificado
+# SPRINT S79 - Sprint Activo
+**Objetivo**: Optimización Formulario ST-120 Digital (NYS DTF Resale Certificate) y Captura de Acceso de Seguridad Nocturno (3 AM - 6 AM)
 **Fecha**: 2026-11-12
 
-- [x] **TASK-78-01** [TASK] Ajuste financiero en base de datos de producción para pedidos #060d13ad ($300.00 flete y balance) y #aa910cbb ($200.00 flete y compensación store credit)
-- [x] **TASK-78-02** [TASK] Backend: Prevalencia absoluta de tarifa fija de cliente y erradicación total de ZonesService en orders.service.ts (solo Pickup, Tarifa Fija o Millaje)
-- [x] **TASK-78-03** [TASK] Frontend: Erradicación total de zonas de delivery en checkout/page.tsx, cortocircuito directo para tarifa fija sin cotización innecesaria y cálculo exclusivo por millaje
-- [x] **TASK-78-04** [TASK] Certificación: Tests automatizados (happy y sad paths), compilación en limpio, despliegue y sincronización en testing y producción VPS
-- [x] **TASK-78-05** [TASK] Frontend Checkout: Prioridad #1 y autoselección obligatoria de Línea de Crédito Comercial B2B para clientes credit, procesando orden directa sin pasarela de tarjeta
-- [x] **TASK-78-06** [TASK] Frontend Admin Catálogo: Subida autenticada y persistente de imágenes de productos vía api.upload / cabeceras de autorización
-- [x] **TASK-78-07** [TASK] Certificación y Despliegue en Testing y Producción VPS
-- [x] **TASK-78-08** [TASK] Backend: Consecutivo correlativo corto de órdenes iniciando en INV-1600 y metadata en Stripe
-- [x] **TASK-78-09** [TASK] Backend & Frontend: Módulo de Exportación Contable en Excel con desglose fiscal y botón en panel
-- [x] **TASK-78-10** [TASK] Despliegue en VPS (Testing y Producción) y migración de base de datos con backfill correlativo
+- [x] **TASK-79-01** [BACKEND/TAX] Backend: Generador PDF Form ST-120 NYS DTF oficial (pdf-lib), endpoints POST /tax/generate-digital-st120 y confirmación digital con auditoría forense y almacenamiento en /uploads/st120/
+- [x] **TASK-79-02** [BACKEND/SECURITY] Backend: Persistencia y endpoints de seguridad nocturna (access_code, has_key, key_location, fridge_access_required, delivery_notes) en registro de clientes y módulo de direcciones
+- [x] **TASK-79-03** [FRONTEND/REGISTER] Frontend: Formulario de Registro B2B (/auth/register) con bloque de acceso nocturno de madrugada y selector dual ST-120 (1-Click Digital prellenado vs Subida directa de Foto/PDF)
+- [x] **TASK-79-04** [FRONTEND/ADMIN] Frontend: Panel Admin (/admin/clients) con insignias de acceso de seguridad nocturno en tarjetas de direcciones, edición en modal y visualización/descarga de certificado ST-120
+- [x] **TASK-79-05** [FRONTEND/MODAL] Frontend: Modal 1-Click de confirmación ST-120 para los 20 clientes existentes en Checkout y Perfil, permitiendo validar sus datos prellenados y firmar en 1 clic
+- [x] **TASK-79-06** [DEPLOY/CERT] Certificación y Despliegue: Suites automatizadas Jest/Vitest con happy y sad paths (§6), builds en limpio, migración en VPS Testing y Producción, y recarga PM2

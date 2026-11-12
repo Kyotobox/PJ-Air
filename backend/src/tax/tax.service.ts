@@ -1,9 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Profile } from '../users/profile.entity';
 import { VisionValidationService, VisionValidationResult } from './vision-validation.service';
+import { St120GeneratorService } from './st120-generator.service';
 
 export interface TaxCalculationResult {
   tax_amount: number;
@@ -26,7 +27,16 @@ export class TaxService {
     @InjectRepository(Profile)
     private profileRepository: Repository<Profile>,
     private visionValidationService: VisionValidationService,
+    @Optional()
+    private st120GeneratorService?: St120GeneratorService,
   ) {}
+
+  /**
+   * Helper to obtain the generator service instance
+   */
+  private getGenerator(): St120GeneratorService {
+    return this.st120GeneratorService || new St120GeneratorService();
+  }
 
   /**
    * Generates the official NYS DTF Resale Exemption legal legend
@@ -156,5 +166,350 @@ export class TaxService {
 
     this.logger.warn(`ST-120 rejected for user ${userId}. Reason: ${reason || 'Audit rejection'}`);
     return { success: true, user: updatedUser };
+  }
+
+  /**
+   * Generates official digital ST-120 PDF from database legal data and marks user APPROVED
+   */
+  async generateDigitalST120(
+    userId: string,
+    requestingUser?: { id: string; role?: string },
+  ): Promise<{ success: boolean; documentUrl: string; user: User }> {
+    if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
+      throw new ForbiddenException('Cannot generate ST-120 for another user');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile', 'addresses'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const legalBusinessName =
+      (user.legal_business_name && user.legal_business_name.trim()) ||
+      (user.profile?.company_name && user.profile.company_name.trim()) ||
+      user.email;
+
+    const dba = user.dba || user.profile?.company_name || null;
+    const businessAddress =
+      user.business_address ||
+      (user.addresses && user.addresses.length > 0 ? user.addresses[0].address : 'Address on file');
+
+    const taxId = user.tax_id || user.profile?.tax_id || user.ein || 'PENDING';
+    const signerName = user.signer_name || user.profile?.full_name || user.email;
+    const signerTitle = user.signer_title || 'Authorized Representative';
+    const signatureText = user.signature_text || user.signer_name || user.profile?.full_name || 'Authorized Signer';
+    const acceptedAt = user.accepted_at || new Date();
+    const ipAddress = user.ip_address || '127.0.0.1';
+
+    const generator = this.getGenerator();
+    const pdfResult = await generator.generateST120Pdf({
+      userId: user.id,
+      legalBusinessName,
+      dba,
+      businessAddress,
+      taxId,
+      ein: user.ein || null,
+      signerName,
+      signerTitle,
+      signatureText,
+      acceptedAt,
+      ipAddress,
+    });
+
+    await this.userRepository.update(userId, {
+      st120_status: 'APPROVED',
+      tax_exempt: true,
+      st120_document_url: pdfResult.relativeUrl,
+      ...(user.signature_text ? {} : { signature_text: signatureText }),
+      ...(user.signer_name ? {} : { signer_name: signerName }),
+      ...(user.accepted_at ? {} : { accepted_at: acceptedAt }),
+    });
+
+    if (user.profile) {
+      await this.profileRepository.update(user.profile.id, {
+        st120_status: 'APPROVED',
+        tax_exempt: true,
+        st120_document_url: pdfResult.relativeUrl,
+      });
+    }
+
+    const updatedUser = (await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile', 'addresses'],
+    }))!;
+
+    this.logger.log(`Digital ST-120 generated and approved for user ${userId}. URL: ${pdfResult.relativeUrl}`);
+    return {
+      success: true,
+      documentUrl: pdfResult.relativeUrl,
+      user: updatedUser,
+    };
+  }
+
+  /**
+   * Validates legal signing data, generates official ST-120 PDF, marks user APPROVED
+   */
+  async signST120(
+    userId: string,
+    signData: {
+      signature_text: string;
+      signer_name: string;
+      signer_title?: string;
+      legal_business_name?: string;
+      dba?: string;
+      business_address?: string;
+      tax_id?: string;
+      ein?: string;
+    },
+    clientIp?: string,
+    requestingUser?: { id: string; role?: string },
+  ): Promise<{ success: boolean; documentUrl: string; user: User }> {
+    if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
+      throw new ForbiddenException('Cannot sign ST-120 for another user');
+    }
+
+    if (!signData?.signature_text || !signData.signature_text.trim()) {
+      throw new BadRequestException('El campo signature_text es obligatorio para la firma digital del ST-120');
+    }
+
+    if (!signData?.signer_name || !signData.signer_name.trim()) {
+      throw new BadRequestException('El campo signer_name es obligatorio para la firma digital del ST-120');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile', 'addresses'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const now = new Date();
+    const effectiveIp = clientIp || user.ip_address || '127.0.0.1';
+    const legalName =
+      (signData.legal_business_name && signData.legal_business_name.trim()) ||
+      user.legal_business_name ||
+      user.profile?.company_name ||
+      user.email;
+    const dba = signData.dba !== undefined ? (signData.dba ? signData.dba.trim() : null) : (user.dba || null);
+    const bAddress =
+      (signData.business_address && signData.business_address.trim()) ||
+      user.business_address ||
+      (user.addresses && user.addresses.length > 0 ? user.addresses[0].address : 'Address on file');
+    const taxId =
+      (signData.tax_id && signData.tax_id.trim()) ||
+      user.tax_id ||
+      user.profile?.tax_id ||
+      user.ein ||
+      'PENDING';
+    const ein = (signData.ein && signData.ein.trim()) || user.ein || null;
+    const signerName = signData.signer_name.trim();
+    const signerTitle =
+      (signData.signer_title && signData.signer_title.trim()) ||
+      user.signer_title ||
+      'Authorized Representative';
+    const signatureText = signData.signature_text.trim();
+
+    const generator = this.getGenerator();
+    const pdfResult = await generator.generateST120Pdf({
+      userId: user.id,
+      legalBusinessName: legalName,
+      dba,
+      businessAddress: bAddress,
+      taxId,
+      ein,
+      signerName,
+      signerTitle,
+      signatureText,
+      acceptedAt: now,
+      ipAddress: effectiveIp,
+    });
+
+    await this.userRepository.update(userId, {
+      legal_business_name: legalName,
+      dba,
+      business_address: bAddress,
+      tax_id: taxId,
+      ein,
+      signer_name: signerName,
+      signer_title: signerTitle,
+      signature_text: signatureText,
+      accepted_at: now,
+      ip_address: effectiveIp,
+      st120_status: 'APPROVED',
+      tax_exempt: true,
+      st120_document_url: pdfResult.relativeUrl,
+    });
+
+    if (user.profile) {
+      await this.profileRepository.update(user.profile.id, {
+        st120_status: 'APPROVED',
+        tax_exempt: true,
+        st120_document_url: pdfResult.relativeUrl,
+        ...(taxId ? { tax_id: taxId } : {}),
+        company_name: legalName,
+      });
+    }
+
+    const updatedUser = (await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile', 'addresses'],
+    }))!;
+
+    this.logger.log(`ST-120 digitally signed and approved for user ${userId}. URL: ${pdfResult.relativeUrl}`);
+    return {
+      success: true,
+      documentUrl: pdfResult.relativeUrl,
+      user: updatedUser,
+    };
+  }
+
+  /**
+   * Uploads an ST-120 document and sets status to PENDING
+   */
+  async uploadST120(
+    userId: string,
+    file: Express.Multer.File,
+    taxId?: string,
+    requestingUser?: { id: string; role?: string },
+  ): Promise<{ success: boolean; url: string; documentUrl: string; user: User }> {
+    if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
+      throw new ForbiddenException('Cannot upload ST-120 for another user');
+    }
+
+    if (!file) {
+      throw new BadRequestException('No file uploaded or file type not allowed');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const relativeUrl = `/uploads/st120/${file.filename}`;
+    const cleanTaxId = taxId && taxId.trim() ? taxId.trim() : undefined;
+
+    await this.userRepository.update(userId, {
+      st120_document_url: relativeUrl,
+      st120_status: 'PENDING',
+      ...(cleanTaxId ? { tax_id: cleanTaxId } : {}),
+    });
+
+    if (user.profile) {
+      await this.profileRepository.update(user.profile.id, {
+        st120_document_url: relativeUrl,
+        st120_status: 'PENDING',
+        ...(cleanTaxId ? { tax_id: cleanTaxId } : {}),
+      });
+    }
+
+    const updatedUser = (await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    }))!;
+
+    this.logger.log(`ST-120 document uploaded for user ${userId}: ${relativeUrl}`);
+    return {
+      success: true,
+      url: relativeUrl,
+      documentUrl: relativeUrl,
+      user: updatedUser,
+    };
+  }
+
+  /**
+   * Admin-only backfill: Generates digital ST-120 for all PENDING users with legal data
+   */
+  async backfillAllPending(): Promise<{
+    success: boolean;
+    processedCount: number;
+    totalPending: number;
+    errors: any[];
+  }> {
+    const pendingUsers = await this.userRepository.find({
+      where: [{ st120_status: 'PENDING' }],
+      relations: ['profile', 'addresses'],
+    });
+
+    let processedCount = 0;
+    const errors: any[] = [];
+    const generator = this.getGenerator();
+
+    for (const user of pendingUsers) {
+      try {
+        const legalBusinessName =
+          (user.legal_business_name && user.legal_business_name.trim()) ||
+          (user.profile?.company_name && user.profile.company_name.trim()) ||
+          user.email;
+
+        const taxId = user.tax_id || user.profile?.tax_id || user.ein;
+
+        // Process users who have minimal identification info
+        if (legalBusinessName || taxId || user.signature_text) {
+          const dba = user.dba || user.profile?.company_name || null;
+          const businessAddress =
+            user.business_address ||
+            (user.addresses && user.addresses.length > 0 ? user.addresses[0].address : 'Address on file');
+          const signerName = user.signer_name || user.profile?.full_name || user.email;
+          const signerTitle = user.signer_title || 'Authorized Representative';
+          const signatureText =
+            user.signature_text || user.signer_name || user.profile?.full_name || 'Digitally Certified';
+          const acceptedAt = user.accepted_at || new Date();
+          const ipAddress = user.ip_address || '127.0.0.1';
+
+          const pdfResult = await generator.generateST120Pdf({
+            userId: user.id,
+            legalBusinessName,
+            dba,
+            businessAddress,
+            taxId: taxId || 'PENDING',
+            ein: user.ein || null,
+            signerName,
+            signerTitle,
+            signatureText,
+            acceptedAt,
+            ipAddress,
+          });
+
+          await this.userRepository.update(user.id, {
+            st120_status: 'APPROVED',
+            tax_exempt: true,
+            st120_document_url: pdfResult.relativeUrl,
+            ...(user.signature_text ? {} : { signature_text: signatureText }),
+            ...(user.signer_name ? {} : { signer_name: signerName }),
+          });
+
+          if (user.profile) {
+            await this.profileRepository.update(user.profile.id, {
+              st120_status: 'APPROVED',
+              tax_exempt: true,
+              st120_document_url: pdfResult.relativeUrl,
+            });
+          }
+
+          processedCount++;
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed backfill for user ${user.id}: ${err.message}`);
+        errors.push({ userId: user.id, error: err.message });
+      }
+    }
+
+    this.logger.log(`Backfill completed: ${processedCount}/${pendingUsers.length} users processed.`);
+    return {
+      success: true,
+      processedCount,
+      totalPending: pendingUsers.length,
+      errors,
+    };
   }
 }
