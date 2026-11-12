@@ -197,6 +197,7 @@ export default function AdminClientsPage() {
     const [isSavingCredit, setIsSavingCredit] = useState(false);
     const [creditSummary, setCreditSummary] = useState<any>(null);
     const [isGeneratingDigitalST120, setIsGeneratingDigitalST120] = useState(false);
+    const [generatingUserId, setGeneratingUserId] = useState<string | null>(null);
 
     // Nickname states
     const [nickname, setNickname] = useState<string>('');
@@ -612,22 +613,28 @@ export default function AdminClientsPage() {
         finally { setSavingAddr(false); }
     };
 
-    const handleGenerateDigitalST120 = async () => {
-        if (!selectedUser) return;
+    const handleGenerateDigitalST120 = async (targetUser?: UserRecord | null) => {
+        const uToGen = targetUser || selectedUser;
+        if (!uToGen) return;
+        setGeneratingUserId(uToGen.id);
         setIsGeneratingDigitalST120(true);
         try {
             let res: any;
             try {
-                res = await api.post('/tax/generate-digital-st120', { userId: selectedUser.id });
+                res = await api.post('/tax/generate-digital-st120', { userId: uToGen.id });
             } catch {
-                res = await api.post(`/tax/generate-digital-st120/${selectedUser.id}`, {});
+                try {
+                    res = await api.post('/api/tax/generate-digital-st120', { userId: uToGen.id });
+                } catch {
+                    res = await api.post(`/tax/generate-digital-st120/${uToGen.id}`, {});
+                }
             }
-            const docUrl = res?.st120_document_url || res?.document_url || res?.url || selectedUser.st120_document_url || selectedUser.profile?.st120_document_url;
+            const docUrl = res?.st120_document_url || res?.document_url || res?.url || uToGen.st120_document_url || uToGen.profile?.st120_document_url;
             const newStatus = 'APPROVED';
             const isExempt = true;
 
             setUsers(prev => prev.map(u => {
-                if (u.id === selectedUser.id) {
+                if (u.id === uToGen.id) {
                     return {
                         ...u,
                         st120_status: newStatus,
@@ -644,23 +651,26 @@ export default function AdminClientsPage() {
                 return u;
             }));
 
-            setSelectedUser(prev => prev ? {
-                ...prev,
-                st120_status: newStatus,
-                tax_exempt: isExempt,
-                ...(docUrl ? { st120_document_url: docUrl } : {}),
-                profile: {
-                    ...(prev.profile || {}),
+            if (selectedUser && selectedUser.id === uToGen.id) {
+                setSelectedUser(prev => prev ? {
+                    ...prev,
                     st120_status: newStatus,
                     tax_exempt: isExempt,
                     ...(docUrl ? { st120_document_url: docUrl } : {}),
-                }
-            } : null);
+                    profile: {
+                        ...(prev.profile || {}),
+                        st120_status: newStatus,
+                        tax_exempt: isExempt,
+                        ...(docUrl ? { st120_document_url: docUrl } : {}),
+                    }
+                } : null);
+            }
 
             showToast('✅ Certificado ST-120 Digital Oficial generado y aprobado (0% Exento)');
         } catch (err: any) {
             showToast(`❌ Error al generar ST-120: ${err.message}`);
         } finally {
+            setGeneratingUserId(null);
             setIsGeneratingDigitalST120(false);
         }
     };
@@ -918,27 +928,81 @@ export default function AdminClientsPage() {
                                     <td className="px-6 py-6">
                                         <div className="flex flex-col gap-1 items-start">
                                             {u.profile?.tax_exempt || u.tax_exempt ? (
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                    0% Exento ST-120
-                                                </span>
-                                            ) : u.profile?.st120_status === 'PENDING' || u.st120_status === 'PENDING' ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => { e.stopPropagation(); setAuditModalUser(u); }}
-                                                    className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors flex items-center gap-1 cursor-pointer"
-                                                    title="Auditar con Visión AI"
-                                                >
-                                                    <Clock size={11} className="text-amber-700" />
-                                                    <span>Auditar ST-120</span>
-                                                </button>
-                                            ) : u.profile?.st120_status === 'REJECTED' || u.st120_status === 'REJECTED' ? (
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">
-                                                    ST-120 Rechazado
-                                                </span>
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                        0% Exento ST-120
+                                                    </span>
+                                                    {(u.profile?.st120_document_url || u.st120_document_url) && (
+                                                        <a
+                                                            href={resolveImageUrl(u.profile?.st120_document_url || u.st120_document_url || '')}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[9px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
+                                                            title="Ver ST-120 Oficial generado"
+                                                        >
+                                                            <FileText size={11} className="text-blue-600" />
+                                                            <span>Ver ST-120</span>
+                                                            <ExternalLink size={10} />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             ) : (
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
-                                                    No Exento
-                                                </span>
+                                                <div className="flex flex-col gap-1.5 items-start">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {u.profile?.st120_status === 'PENDING' || u.st120_status === 'PENDING' ? (
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                                                                ST-120 Pendiente
+                                                            </span>
+                                                        ) : u.profile?.st120_status === 'REJECTED' || u.st120_status === 'REJECTED' ? (
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">
+                                                                ST-120 Rechazado
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+                                                                No Exento
+                                                            </span>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); setAuditModalUser(u); }}
+                                                            className="px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+                                                            title="Auditar con Visión AI"
+                                                        >
+                                                            <Clock size={10} className="text-amber-700" />
+                                                            <span>Auditar</span>
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Botón [📄 Generar ST-120 Oficial] para regularización */}
+                                                    {(u.profile?.st120_status === 'PENDING' || u.st120_status === 'PENDING' || (!u.tax_exempt && !u.profile?.tax_exempt && (u.profile?.tax_id || u.tax_id || u.company_name || u.profile?.company_name || u.legal_business_name))) && (
+                                                        <button
+                                                            type="button"
+                                                            disabled={generatingUserId === u.id}
+                                                            onClick={(e) => { e.stopPropagation(); handleGenerateDigitalST120(u); }}
+                                                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
+                                                            title="Generar y aprobar ST-120 Oficial Digital"
+                                                        >
+                                                            {generatingUserId === u.id ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+                                                            <span>📄 Generar ST-120 Oficial</span>
+                                                        </button>
+                                                    )}
+
+                                                    {(u.profile?.st120_document_url || u.st120_document_url) && (
+                                                        <a
+                                                            href={resolveImageUrl(u.profile?.st120_document_url || u.st120_document_url || '')}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[9px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
+                                                            title="Ver ST-120 Oficial generado"
+                                                        >
+                                                            <FileText size={11} className="text-blue-600" />
+                                                            <span>Ver ST-120</span>
+                                                            <ExternalLink size={10} />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             )}
                                             {(u.profile?.tax_id || u.tax_id) && (
                                                 <span className="text-[10px] font-mono text-slate-500">
@@ -1337,12 +1401,12 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 disabled={isGeneratingDigitalST120}
-                                                onClick={handleGenerateDigitalST120}
+                                                onClick={() => handleGenerateDigitalST120(selectedUser)}
                                                 className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
                                                 title="Generar y firmar certificado digital oficial en 1 clic"
                                             >
                                                 {isGeneratingDigitalST120 ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                                                <span>Generar ST-120 Digital Oficial</span>
+                                                <span>📄 Generar ST-120 Oficial</span>
                                             </button>
                                         )}
                                         <button

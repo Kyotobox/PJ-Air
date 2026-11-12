@@ -105,7 +105,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SystemConfigsController.prototype, "update", null);
 exports.SystemConfigsController = SystemConfigsController = __decorate([
-    (0, common_1.Controller)('configs'),
+    (0, common_1.Controller)(['configs', 'api/configs', 'system-configs', 'api/system-configs']),
     __metadata("design:paramtypes", [system_configs_service_1.SystemConfigsService])
 ], SystemConfigsController);
 //# sourceMappingURL=system-configs.controller.js.map

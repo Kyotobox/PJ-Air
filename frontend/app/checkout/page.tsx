@@ -17,7 +17,7 @@ import { api } from '@/lib/api';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
-import { calculateProcessingFee } from '@/lib/fee-calculator';
+import { calculateProcessingFee, calculateStoreDiscount, isStoreDiscountValid, StoreDiscountConfig } from '@/lib/fee-calculator';
 import {
     DeliveryScheduleConfig,
     DEFAULT_DELIVERY_SCHEDULE,
@@ -619,6 +619,7 @@ export default function CheckoutPage() {
     const [minOrderAmount, setMinOrderAmount] = useState<number>(30);
     const [cutoffHour, setCutoffHour] = useState<number>(12);
     const [deliverySchedule, setDeliverySchedule] = useState<DeliveryScheduleConfig>(DEFAULT_DELIVERY_SCHEDULE);
+    const [storeDiscount, setStoreDiscount] = useState<StoreDiscountConfig | null>(null);
     const [termsAccepted, setTermsAccepted] = useState(false);
 
     // Payment method state
@@ -811,6 +812,16 @@ export default function CheckoutPage() {
                 }
             })
             .catch(err => console.warn('Error fetching delivery-schedule, using offline fallback (§45):', err));
+
+        // TASK-82-08: Consultar descuento general de tienda
+        api.get('/api/system-configs/store-discount')
+            .catch(() => api.get('/configs/store-discount'))
+            .then((res: any) => {
+                if (res && typeof res === 'object') {
+                    setStoreDiscount(res);
+                }
+            })
+            .catch(err => console.warn('Error fetching store-discount, continuing without promo:', err));
     }, []);
 
     // ── Delivery Address & Selection ─────────────────────────────────────────
@@ -893,6 +904,13 @@ export default function CheckoutPage() {
     const rawSubtotal = getRawSubtotal();
     const discountedSubtotal = getDiscountedSubtotal();
 
+    // TASK-82-08: General Store Discount
+    const isStorePromoActive = isStoreDiscountValid(storeDiscount);
+    const storeDiscountAmount = isStorePromoActive
+        ? calculateStoreDiscount(discountedSubtotal, storeDiscount)
+        : 0;
+    const netItemsSubtotal = Math.max(0, Math.round((discountedSubtotal - storeDiscountAmount + Number.EPSILON) * 100) / 100);
+
     // TASK-63-04: Complementary Orders Rule ($0 fee if user already has an active order for same delivery date)
     const isComplementaryOrder = useMemo(() => {
         const targetDate = rawDeliveryDate || deliveryDate;
@@ -924,7 +942,7 @@ export default function CheckoutPage() {
 
     // TASK-47-02: Processing Fee calculation via pure calculateProcessingFee
     const feeMethod = paymentMethod === 'stripe' ? 'STRIPE_CARD' : paymentMethod === 'ach' ? 'ACH' : paymentMethod === 'check' ? 'CHECK' : paymentMethod.toUpperCase();
-    const processingFee = calculateProcessingFee(discountedSubtotal, feeMethod);
+    const processingFee = calculateProcessingFee(netItemsSubtotal, feeMethod);
     const packagingFee = processingFee;
     const packagingDiscount = 0;
 
@@ -932,9 +950,9 @@ export default function CheckoutPage() {
     const salesTaxRate = isTaxExempt ? 0 : 8.875;
     const salesTax = isTaxExempt 
         ? 0 
-        : Math.round(((discountedSubtotal) * (salesTaxRate / 100) + Number.EPSILON) * 100) / 100;
+        : Math.round(((netItemsSubtotal) * (salesTaxRate / 100) + Number.EPSILON) * 100) / 100;
 
-    const subtotalWithFees = Math.round((discountedSubtotal + processingFee + deliveryFee + salesTax + Number.EPSILON) * 100) / 100;
+    const subtotalWithFees = Math.round((netItemsSubtotal + processingFee + deliveryFee + salesTax + Number.EPSILON) * 100) / 100;
 
     // TASK-63-03: Saldo a Favor (Store Credit)
     const storeCreditBalance = Math.max(0, Number(userDiscounts?.credit_balance ?? creditSummary?.credit_balance ?? 0));
@@ -944,7 +962,7 @@ export default function CheckoutPage() {
 
     const finalTotal = Math.max(0, Math.round((subtotalWithFees - storeCreditApplied + Number.EPSILON) * 100) / 100);
     const isPaidWithStoreCredit = storeCreditApplied > 0 && finalTotal === 0;
-    const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + Number.EPSILON) * 100) / 100;
+    const totalDiscount = Math.round((rawSubtotal - discountedSubtotal + storeDiscountAmount + Number.EPSILON) * 100) / 100;
     const subtotal = rawSubtotal;
 
     const isCreditAccount = creditSummary?.account_type === 'credit' || userDiscounts?.account_type === 'credit' || user?.account_type === 'credit' || Number(creditSummary?.credit_limit ?? userDiscounts?.credit_limit ?? (user as any)?.credit_limit ?? 0) > 0;
@@ -2242,10 +2260,19 @@ export default function CheckoutPage() {
                     {/* ── Right sidebar ─────────────────────────────────────── */}
                     <div className="w-full lg:w-[400px]">
                         <div className="bg-card rounded-3xl border border-border p-8 shadow-xl sticky top-28">
-                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                                 <ShoppingBag size={20} />
                                 {lbl('Resumen', 'Order Summary')}
                             </h2>
+
+                            {/* TASK-82-08: Badge de Promoción General Activa */}
+                            {isStorePromoActive && storeDiscount && (
+                                <div className="mb-6 p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center gap-2 shadow-2xs animate-fade-in">
+                                    <span className="text-emerald-800 dark:text-emerald-200 font-bold text-xs">
+                                        🏷️ [Promoción: {storeDiscount.reason || 'General'}] ({storeDiscount.percentage}% de descuento)
+                                    </span>
+                                </div>
+                            )}
 
                             <div className="space-y-4 mb-8">
                                 {cart.map(item => {
@@ -2354,6 +2381,19 @@ export default function CheckoutPage() {
                                         <span className="text-muted-foreground">{lbl('Subtotal', 'Subtotal')}</span>
                                         <span className="font-bold">${subtotal.toFixed(2)}</span>
                                     </div>
+
+                                    {/* TASK-82-08: Desglose de Descuento General */}
+                                    {storeDiscountAmount > 0 && (
+                                        <div className="flex justify-between items-center text-xs mb-1 text-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold">{lbl('Descuento General', 'General Store Discount')}</span>
+                                                <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">
+                                                    🏷️ [Promoción: {storeDiscount?.reason || 'Tienda'}] ({storeDiscount?.percentage || 0}% de descuento)
+                                                </span>
+                                            </div>
+                                            <span className="font-black font-mono">-${storeDiscountAmount.toFixed(2)}</span>
+                                        </div>
+                                    )}
 
                                     {/* Delivery fee breakdown according to precedence */}
                                     {isComplementaryOrder ? (
@@ -2469,7 +2509,7 @@ export default function CheckoutPage() {
                                             <span className="text-[9px] text-primary lowercase font-mono">live</span>
                                         </div>
                                         <div className="text-[11px] font-mono font-bold text-slate-800 tracking-tight leading-relaxed">
-                                            <span>Subtotal (${discountedSubtotal.toFixed(2)}) + Delivery Fee (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)})${!isTaxExempt ? ` + Sales Tax ($${salesTax.toFixed(2)})` : ''}${storeCreditApplied > 0 ? ` - Store Credit ($${storeCreditApplied.toFixed(2)})` : ''} = Total (${finalTotal.toFixed(2)})</span>
+                                            <span>Subtotal (${discountedSubtotal.toFixed(2)})${storeDiscountAmount > 0 ? ` - Descuento General ($${storeDiscountAmount.toFixed(2)})` : ''} + Delivery Fee (${deliveryFee.toFixed(2)}) + Processing Fee (${processingFee.toFixed(2)})${!isTaxExempt ? ` + Sales Tax ($${salesTax.toFixed(2)})` : ''}${storeCreditApplied > 0 ? ` - Store Credit ($${storeCreditApplied.toFixed(2)})` : ''} = Total (${finalTotal.toFixed(2)})</span>
                                         </div>
                                     </div>
 

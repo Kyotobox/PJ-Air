@@ -2,7 +2,7 @@ import { Controller, Get, Param, Patch, Body, UseGuards, Req, ForbiddenException
 import { SystemConfigsService } from './system-configs.service';
 import { AuthGuard } from '../auth/auth.guard';
 
-@Controller('configs')
+@Controller(['configs', 'api/configs', 'system-configs', 'api/system-configs'])
 export class SystemConfigsController {
   constructor(private readonly configsService: SystemConfigsService) {}
 

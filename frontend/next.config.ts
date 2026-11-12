@@ -3,6 +3,7 @@ import { loadEnvConfig } from '@next/env';
 import path from 'path';
 
 // Load root .env file
+loadEnvConfig(process.cwd());
 loadEnvConfig(path.resolve(process.cwd(), '..'));
 
 try {

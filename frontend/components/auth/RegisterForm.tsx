@@ -571,7 +571,7 @@ export const RegisterForm = ({
 
                         {/* DUAL SELECTOR BUTTONS */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                            {/* Opción 1: 1-Clic Digital */}
+                            {/* Opción 1: Firma Digital en 1 Clic (0% Tax Inmediato) */}
                             <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, st120_mode: 'digital', st120_auto_generate: true })}
@@ -587,7 +587,7 @@ export const RegisterForm = ({
                                             <Sparkles size={14} />
                                         </div>
                                         <span className="text-xs font-black uppercase tracking-wide text-foreground">
-                                            {locale === 'en' ? 'Option 1: 1-Click Digital ST-120' : 'Opción 1: Generar ST-120 Digital'}
+                                            {locale === 'en' ? 'Option 1: 1-Click Digital Signature (0% Tax Immediate)' : 'Opción 1: Firma Digital en 1 Clic (0% Tax Inmediato)'}
                                         </span>
                                     </div>
                                     <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
@@ -601,7 +601,7 @@ export const RegisterForm = ({
                                 </p>
                             </button>
 
-                            {/* Opción 2: Subir archivo PDF o Foto */}
+                            {/* Opción 2: Subir Certificado Físico / Foto */}
                             <button
                                 type="button"
                                 onClick={() => setFormData({ ...formData, st120_mode: 'upload', st120_auto_generate: false })}
@@ -616,7 +616,7 @@ export const RegisterForm = ({
                                         <FileUp size={14} />
                                     </div>
                                     <span className="text-xs font-black uppercase tracking-wide text-foreground">
-                                        {locale === 'en' ? 'Option 2: Upload File / Photo' : 'Opción 2: Subir PDF o Foto'}
+                                        {locale === 'en' ? 'Option 2: Upload Physical Certificate / Photo' : 'Opción 2: Subir Certificado Físico / Foto'}
                                     </span>
                                 </div>
                                 <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
@@ -627,38 +627,74 @@ export const RegisterForm = ({
                             </button>
                         </div>
 
-                        {/* CONTENT FOR OPTION 1: PREVIEW */}
+                        {/* CONTENT FOR OPTION 1: CAMPOS FIRMANTE Y CARGO + RESUMEN */}
                         {formData.st120_mode !== 'upload' ? (
                             <div className="p-4 bg-background/90 border border-primary/20 rounded-xl space-y-3 animate-fade-in">
                                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                                     <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                                         <ShieldCheck size={13} className="text-emerald-600" />
-                                        <span>{locale === 'en' ? 'Legal Pre-fill Certificate Summary' : 'Previsualización del Certificado ST-120 Oficial'}</span>
+                                        <span>{locale === 'en' ? 'Digital Signature in 1-Click (Signer Information)' : 'Firma Digital en 1 Clic (Datos del Firmante)'}</span>
                                     </span>
                                     <span className="text-[10px] font-mono text-primary font-bold">NYS DTF ST-120</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                                    <div>
-                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Legal Business Name:' : 'Razón Social:'}</span>
-                                        <span className="font-bold text-foreground">{formData.legal_business_name || 'Nombre Legal Registrado'}</span>
+
+                                <div className="grid md:grid-cols-2 gap-3 pt-1">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                                            {locale === 'en' ? 'Authorized Signer Full Name *' : 'Nombre Completo del Firmante *'}
+                                        </label>
+                                        <input
+                                            required
+                                            type="text"
+                                            placeholder={locale === 'en' ? 'e.g. Jane Doe' : 'Ej: Jane Doe'}
+                                            className="premium-input text-xs"
+                                            value={formData.signer_name || ''}
+                                            onChange={(e) => setFormData({ ...formData, signer_name: e.target.value })}
+                                        />
                                     </div>
-                                    <div>
-                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'DBA / Store:' : 'Nombre Comercial / DBA:'}</span>
-                                        <span className="font-bold text-foreground">{formData.dba || formData.company_name || 'N/A'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Tax ID / EIN:' : 'Tax ID / EIN:'}</span>
-                                        <span className="font-mono font-bold text-foreground">{formData.tax_id || 'Pendiente'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Authorized Signer:' : 'Firmante Autorizado:'}</span>
-                                        <span className="font-bold text-foreground">{formData.signer_name || 'Firmante'}</span>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Commercial Address:' : 'Dirección Comercial:'}</span>
-                                        <span className="font-medium text-foreground text-[11px]">{formData.business_address || 'Dirección registrada'}</span>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                                            {locale === 'en' ? 'Signer Title / Role *' : 'Cargo del Firmante (Título) *'}
+                                        </label>
+                                        <input
+                                            required
+                                            type="text"
+                                            placeholder={locale === 'en' ? 'e.g. Owner, General Manager, CEO' : 'Ej: Propietario, Gerente General, Director'}
+                                            className="premium-input text-xs"
+                                            value={formData.signer_title || ''}
+                                            onChange={(e) => setFormData({ ...formData, signer_title: e.target.value })}
+                                        />
                                     </div>
                                 </div>
+
+                                <div className="p-3 bg-muted/30 rounded-xl border border-border/50 space-y-2">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">
+                                        {locale === 'en' ? 'Legal Pre-fill Certificate Summary' : 'Previsualización del Certificado ST-120 Oficial'}
+                                    </span>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                        <div>
+                                            <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Legal Business Name:' : 'Razón Social:'}</span>
+                                            <span className="font-bold text-foreground">{formData.legal_business_name || 'Nombre Legal Registrado'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'DBA / Store:' : 'Nombre Comercial / DBA:'}</span>
+                                            <span className="font-bold text-foreground">{formData.dba || formData.company_name || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Tax ID / EIN:' : 'Tax ID / EIN:'}</span>
+                                            <span className="font-mono font-bold text-foreground">{formData.tax_id || 'Pendiente'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Authorized Signer:' : 'Firmante Autorizado:'}</span>
+                                            <span className="font-bold text-foreground">{formData.signer_name || 'Firmante'} {formData.signer_title ? `(${formData.signer_title})` : ''}</span>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <span className="text-[10px] text-muted-foreground block">{locale === 'en' ? 'Commercial Address:' : 'Dirección Comercial:'}</span>
+                                            <span className="font-medium text-foreground text-[11px]">{formData.business_address || 'Dirección registrada'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <p className="text-[10px] text-muted-foreground bg-primary/5 p-2 rounded-lg border border-primary/10">
                                     {locale === 'en'
                                         ? 'ℹ By registering, your official NYS DTF ST-120 Resale Certificate will be digitally generated and signed pursuant to NY ESRA / E-SIGN Act.'
@@ -666,7 +702,7 @@ export const RegisterForm = ({
                                 </p>
                             </div>
                         ) : (
-                            /* CONTENT FOR OPTION 2: FILE UPLOAD */
+                            /* CONTENT FOR OPTION 2: FILE UPLOAD CON PREVIEW */
                             <div className="p-4 bg-background/90 border border-indigo-200 dark:border-indigo-900/50 rounded-xl space-y-3 animate-fade-in">
                                 <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                                     <FileUp size={13} className="text-indigo-600" />
@@ -687,17 +723,54 @@ export const RegisterForm = ({
                                         {isUploadingST120 ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                                         <span>{locale === 'en' ? 'Choose PDF or Take Photo' : 'Seleccionar PDF o Tomar Foto'}</span>
                                     </label>
-                                    {formData.st120_document_url ? (
-                                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
-                                            <CheckCircle2 size={14} />
-                                            <span>{formData.st120_filename || (locale === 'en' ? 'Document ready' : 'Documento cargado con éxito')}</span>
-                                        </span>
-                                    ) : (
+                                    {!formData.st120_document_url && (
                                         <span className="text-[11px] text-muted-foreground">
                                             {locale === 'en' ? 'Accepts PDF, JPG, PNG (Max 15MB)' : 'Soporta PDF, JPG, PNG (Cámara de celular)'}
                                         </span>
                                     )}
                                 </div>
+
+                                {/* PREVIEW DE CERTIFICADO FÍSICO / FOTO */}
+                                {formData.st120_document_url && (
+                                    <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/30 rounded-xl border border-indigo-200/80 dark:border-indigo-800 flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            {formData.st120_document_url.startsWith('data:image') || /\.(png|jpe?g|webp)($|\?)/i.test(formData.st120_document_url) ? (
+                                                <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-indigo-200 shrink-0 bg-white shadow-xs">
+                                                    <img
+                                                        src={formData.st120_document_url}
+                                                        alt="ST-120 Preview"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 flex items-center justify-center shrink-0">
+                                                    <FileText size={24} />
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                                    <CheckCircle2 size={13} />
+                                                    <span>{locale === 'en' ? 'Document ready' : 'Documento cargado con éxito'}</span>
+                                                </span>
+                                                <span className="text-[11px] text-muted-foreground truncate font-mono">
+                                                    {formData.st120_filename || 'ST-120-document'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({
+                                                ...formData,
+                                                st120_document_url: null,
+                                                st120_filename: '',
+                                            })}
+                                            className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                                        >
+                                            {locale === 'en' ? 'Remove' : 'Eliminar'}
+                                        </button>
+                                    </div>
+                                )}
+
                                 {st120UploadError && (
                                     <p className="text-[11px] text-red-600 font-bold">{st120UploadError}</p>
                                 )}
