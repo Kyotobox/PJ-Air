@@ -614,9 +614,9 @@ export class OrdersService {
     }
     const appliedFeeMethod = (orderData as any).fee_method || feeMethod;
 
-    // Packaging & Handling Fee (3.5%) & Direct Payment Bonus
-    let packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
-    let packagingDiscount = 0;
+    // No gateway fee or packaging fee surcharge (absorbed in product catalog prices)
+    const packagingFee = 0;
+    const packagingDiscount = 0;
 
     if (appliedPaymentMethod === 'zelle') {
       if (!appliedZelleReference) {
@@ -634,16 +634,6 @@ export class OrdersService {
       }
 
       appliedPaymentStatus = 'pending_zelle_verification';
-      packagingDiscount = packagingFee; // Direct payment discount completely offsets fee
-    } else if (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card') {
-      packagingDiscount = 0; // Gateway fee protection
-    } else if (appliedPaymentMethod === 'ach' || appliedPaymentMethod === 'ach_debit') {
-      packagingFee = feeAmount;
-      packagingDiscount = 0;
-    } else if (appliedPaymentMethod === 'credit') {
-      packagingDiscount = packagingFee; // Credit orders do not pay gateway surcharge
-    } else if (appliedPaymentMethod === 'check' || appliedPaymentMethod === 'cash') {
-      packagingDiscount = packagingFee;
     }
 
     // Precedence Matrix for Delivery Fee:
@@ -1333,16 +1323,8 @@ export class OrdersService {
       const itemsTotal = result.total;
       const oldTotal = Number(order.total) || 0;
 
-      const packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
-      let packagingDiscount = 0;
-      if (
-        order.payment_method === 'zelle' ||
-        order.payment_method === 'credit' ||
-        order.payment_method === 'check' ||
-        order.payment_method === 'cash'
-      ) {
-        packagingDiscount = packagingFee;
-      }
+      const packagingFee = 0;
+      const packagingDiscount = 0;
 
       const feeMethod = (order.payment_method === 'stripe' || order.payment_method === 'card')
         ? 'STRIPE_CARD'

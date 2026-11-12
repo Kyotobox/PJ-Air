@@ -1828,8 +1828,8 @@ export default function CheckoutPage() {
                                                 <span className="font-bold text-sm text-slate-800">
                                                     {lbl('Tarjeta de Crédito / Débito', 'Credit / Debit Card')}
                                                 </span>
-                                                <span className="ml-2 px-2 py-0.5 bg-violet-100 text-violet-800 text-[9px] font-black uppercase rounded-full">
-                                                    +3.5% Fee
+                                                <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full">
+                                                    {lbl('Sin recargo', 'No fee')}
                                                 </span>
                                             </div>
                                         </div>
@@ -1840,7 +1840,7 @@ export default function CheckoutPage() {
                                         </div>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                        {lbl('Pasarela instantánea Stripe (+3.5% Processing Fee).', 'Instant Stripe gateway (+3.5% Processing Fee).')}
+                                        {lbl('Pasarela instantánea segura con tarjeta vía Stripe ($0.00 recargo).', 'Instant secure card gateway via Stripe ($0.00 fee).')}
                                     </p>
                                 </div>
 
@@ -2414,7 +2414,7 @@ export default function CheckoutPage() {
                                             <span className="text-muted-foreground">{lbl('Processing Fee', 'Processing Fee')}</span>
                                             <span className="text-[10px] text-slate-500 font-semibold">
                                                 {paymentMethod === 'stripe'
-                                                    ? lbl('Tarjeta de Crédito/Débito (3.5%)', 'Credit/Debit Card (3.5%)')
+                                                    ? lbl('Tarjeta de Crédito/Débito ($0.00 Sin recargo)', 'Credit/Debit Card ($0.00 No fee)')
                                                     : paymentMethod === 'ach'
                                                         ? lbl('ACH Direct Debit (0.8%, máx $5.00)', 'ACH Direct Debit (0.8%, max $5.00)')
                                                         : lbl(`${paymentMethod.toUpperCase()} (0.0% Exento)`, `${paymentMethod.toUpperCase()} (0.0% Exempt)`)}

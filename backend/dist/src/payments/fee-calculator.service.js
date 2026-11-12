@@ -34,7 +34,7 @@ let FeeCalculatorService = FeeCalculatorService_1 = class FeeCalculatorService {
             normalized === 'STRIPE' ||
             normalized === 'CREDIT_CARD' ||
             normalized === 'DEBIT_CARD') {
-            return Math.round(numericAmount * 0.035 * 100) / 100;
+            return 0.00;
         }
         if (normalized === 'ACH' ||
             normalized === 'ACH_DEBIT' ||
@@ -68,7 +68,7 @@ let FeeCalculatorService = FeeCalculatorService_1 = class FeeCalculatorService {
             normalized === 'STRIPE' ||
             normalized === 'CREDIT_CARD' ||
             normalized === 'DEBIT_CARD') {
-            rate = 0.035;
+            rate = 0.0;
         }
         else if (normalized === 'ACH' ||
             normalized === 'ACH_DEBIT' ||

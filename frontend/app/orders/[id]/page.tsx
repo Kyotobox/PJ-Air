@@ -47,7 +47,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
     }, [orderId]);
 
     const handlePayOnline = () => {
-        // Open modal to select payment method (Card 3.5% vs ACH 0.8% cap $5)
+        // Open modal to select payment method (Card 0% vs ACH 0.8% cap $5)
         setSettlementMethodModalOpen(true);
     };
 
@@ -105,7 +105,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             return acc + (price * Number(item.quantity || 1));
         }, 0);
         const deliveryFee = Number(order.delivery_fee_charged || 0);
-        const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? itemsTotal * 0.035 : 0));
+        const feeAmount = Number(order.fee_amount || 0);
         const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXEMPT');
         const grandTotal = Number(order.total) || (itemsTotal + deliveryFee + feeAmount);
         const amountPaid = order.payment_status === 'paid'
@@ -713,10 +713,10 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                                     <CreditCard size={14} className="text-primary" />
                                                     {locale === 'en' ? 'Card (Stripe)' : 'Tarjeta de Crédito'}
                                                 </span>
-                                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">+3.5%</span>
+                                                <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">0.0%</span>
                                             </div>
                                             <p className="text-[11px] text-muted-foreground">
-                                                {locale === 'en' ? 'Instant processing fee: 3.5%' : 'Comisión pasarela: 3.5%'}
+                                                {locale === 'en' ? 'Card payment: $0.00 fee' : 'Pago con tarjeta: $0.00 sin recargo'}
                                             </p>
                                         </div>
 
@@ -751,14 +751,14 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                         </div>
                                         <div className="flex justify-between items-center text-xs">
                                             <span className="text-muted-foreground">{locale === 'en' ? 'Processing Fee:' : 'Processing Fee (Comisión):'}</span>
-                                            <span className="font-bold font-mono text-amber-700">+${fee.toFixed(2)}</span>
+                                            <span className={`font-bold font-mono ${fee > 0 ? 'text-amber-700' : 'text-emerald-600'}`}>{fee > 0 ? `+$${fee.toFixed(2)}` : '$0.00'}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-sm font-black pt-2 border-t border-slate-200">
                                             <span className="text-slate-900">{locale === 'en' ? 'Total to Pay:' : 'Total a Pagar:'}</span>
                                             <span className="text-base text-primary font-mono">${totalToPay.toFixed(2)}</span>
                                         </div>
                                         <div className="text-[10px] text-slate-500 font-mono text-center pt-1 border-t border-slate-200/60">
-                                            Saldo (${bal.toFixed(2)}) + Processing Fee (${fee.toFixed(2)}) = Total (${totalToPay.toFixed(2)})
+                                            Saldo (${bal.toFixed(2)})${fee > 0 ? ` + Processing Fee ($${fee.toFixed(2)})` : ''} = Total (${totalToPay.toFixed(2)})
                                         </div>
                                     </div>
 

@@ -1,6 +1,6 @@
 /**
  * Pure frontend fee calculator in strict parity with backend FeeCalculatorService (§1, §4, §6)
- * - STRIPE_CARD: 3.5% (round(amount * 0.035, 2))
+ * - STRIPE_CARD: $0.00 (0% - Absorbed in product catalog prices)
  * - ACH / ACH_DEBIT: 0.8% capped at $5.00 (min(round(amount * 0.008, 2), 5.00))
  * - ZELLE, CREDIT, CHECK, CASH: $0.00 (0%)
  */
@@ -18,7 +18,7 @@ export function calculateProcessingFee(amount: number, method: string): number {
     normalized === 'CREDIT_CARD' ||
     normalized === 'DEBIT_CARD'
   ) {
-    return Math.round(numericAmount * 0.035 * 100) / 100;
+    return 0.00;
   }
 
   if (
@@ -54,7 +54,7 @@ export function getFeeLabel(method: string, locale: string = 'es'): string {
     normalized === 'CREDIT_CARD' ||
     normalized === 'DEBIT_CARD'
   ) {
-    return locale === 'en' ? 'Processing Fee (Card 3.5%)' : 'Processing Fee (Tarjeta 3.5%)';
+    return locale === 'en' ? 'Card ($0.00 No Fee)' : 'Tarjeta ($0.00 Sin recargo)';
   }
   if (
     normalized === 'ACH' ||

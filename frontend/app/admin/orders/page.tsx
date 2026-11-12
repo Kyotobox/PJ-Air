@@ -516,7 +516,7 @@ export default function AdminOrdersPage() {
 
             const subtotal = items.reduce((acc, i: any) => acc + (Number(i.price_at_time || i.product?.price || 0) * Number(i.quantity || 1)), 0);
             const deliveryFee = Number(order.delivery_fee_charged || 0);
-            const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? subtotal * 0.035 : 0));
+            const feeAmount = Number(order.fee_amount || 0);
             const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXEMPT');
             const grandTotal = Number(order.total) || (subtotal + deliveryFee + feeAmount);
             const pendingBal = (order.pending_balance !== null && order.pending_balance !== undefined && Number(order.pending_balance) > 0)
@@ -704,7 +704,7 @@ table.items-table th:nth-child(3), table.items-table th:nth-child(4) { text-alig
 
         const subtotal = items.reduce((acc, i: any) => acc + (Number(i.price_at_time || i.product?.price || 0) * Number(i.quantity || 1)), 0);
         const deliveryFee = Number(order.delivery_fee_charged || 0);
-        const feeAmount = Number(order.fee_amount || (order.payment_method === 'stripe' ? subtotal * 0.035 : 0));
+        const feeAmount = Number(order.fee_amount || 0);
         const feeMethod = order.fee_method || (order.payment_method === 'ach' ? 'ACH' : order.payment_method === 'stripe' ? 'STRIPE_CARD' : order.payment_method?.toUpperCase() || 'EXENTO');
         const grandTotal = Number(order.total) || (subtotal + deliveryFee + feeAmount);
 

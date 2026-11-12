@@ -383,9 +383,9 @@ export class PaymentsService {
         amount: amountToPay,
         orderId: order.id,
         customerEmail: email,
-        description: (pendingBal !== null && pendingBal > 0)
+        description: (feeAmount > 0)
           ? `Invoice Settlement #${invoiceLabel} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`
-          : `Invoice Settlement #${invoiceLabel} (Balance: $${balance.toFixed(2)} + Fee: $${feeAmount.toFixed(2)}) - Jhoanes Bakery Wholesale`,
+          : `Invoice Settlement #${invoiceLabel} (Balance: $${balance.toFixed(2)}) - Jhoanes Bakery Wholesale`,
         paymentMethodType: feeMethod === 'ACH' ? 'us_bank_account' : undefined,
       });
 
@@ -430,7 +430,7 @@ export class PaymentsService {
               price_data: {
                 currency: 'usd',
                 product_data: {
-                  name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, max $5.00' : '3.5% Card'})`,
+                  name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, max $5.00' : 'Processing Fee'})`,
                   description: `Banking / payment gateway processing fee`,
                 },
                 unit_amount: Math.round(feeAmount * 100),
@@ -537,7 +537,7 @@ export class PaymentsService {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, max $5.00' : '3.5% Card'})`,
+                name: `Processing Fee (${feeMethod === 'ACH' ? '0.8% ACH, max $5.00' : 'Processing Fee'})`,
                 description: `Banking / payment gateway processing fee`,
               },
               unit_amount: Math.round(feeAmount * 100),

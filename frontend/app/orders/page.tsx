@@ -1005,7 +1005,7 @@ export default function ClientOrdersPage() {
                                         </p>
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {[
-                                                { id: 'card',  name: 'Tarjeta / Stripe', feeLabel: '+3.5%' },
+                                                { id: 'card',  name: 'Tarjeta / Stripe', feeLabel: '0.0%' },
                                                 { id: 'ach',   name: 'ACH Bancario', feeLabel: '+0.8% (tope $5)' },
                                                 { id: 'zelle', name: 'Zelle', feeLabel: '0.0%' },
                                                 { id: 'check', name: 'Cheque', feeLabel: '0.0%' },

@@ -52,8 +52,8 @@ export class FeeCalculatorService {
     let isCapped = false;
 
     if (['card', 'credit_card', 'stripe', 'stripe_card', 'tarjeta', 'debit_card'].includes(method)) {
-      feePercentage = 3.5;
-      feeAmount = Math.round((roundedBase * 0.035 + Number.EPSILON) * 100) / 100;
+      feePercentage = 0.0;
+      feeAmount = 0.0;
     } else if (['ach', 'ach_debit', 'transfer', 'bank_transfer', 'us_bank_account'].includes(method)) {
       feePercentage = 0.8;
       const rawFee = roundedBase * 0.008;

@@ -122,7 +122,7 @@ describe('OrdersService', () => {
       { id: 2, price: 100 }, // General discount 10% -> 90 * 1 = 90
     ]);
 
-    const expectedTotal = 186.30; // 90 + 90 = 180 + 3.5% packaging fee (6.30)
+    const expectedTotal = 180.00; // 90 + 90 = 180 (no packaging fee surcharge)
     const createdOrder = { id: 'order-123', total: expectedTotal };
     
     mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
@@ -171,7 +171,7 @@ describe('OrdersService', () => {
       { id: 1, price: 50 },
     ]);
 
-    const expectedTotal = 118.50; // 50 * 2 + 15 + 3.5% packaging fee (3.50)
+    const expectedTotal = 115.00; // 50 * 2 + 15 (no packaging fee surcharge)
     const createdOrder = { id: 'order-123', total: expectedTotal, delivery_fee_charged: 15 };
     mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
     mockManager.save.mockResolvedValue(createdOrder);
@@ -202,7 +202,7 @@ describe('OrdersService', () => {
       { id: 1, price: 50 },
     ]);
 
-    const expectedTotal = 103.50; // 50 * 2 + 0 + 3.5% packaging fee (3.50)
+    const expectedTotal = 100.00; // 50 * 2 + 0 (no packaging fee surcharge)
     const createdOrder = { id: 'order-123', total: expectedTotal, delivery_fee_charged: 0 };
     mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
     mockManager.save.mockResolvedValue(createdOrder);
@@ -431,8 +431,8 @@ describe('OrdersService', () => {
       expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
         payment_method: 'zelle',
         zelle_reference: 'ZEL-CONF-12345',
-        packaging_fee: 3.5,
-        packaging_discount: 3.5,
+        packaging_fee: 0,
+        packaging_discount: 0,
         payment_status: 'pending_zelle_verification',
         total: 100.00,
       }));
@@ -688,7 +688,7 @@ describe('OrdersService', () => {
       });
       productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
 
-      const createdOrder = { id: 'order-fee-stripe-01', total: 103.50 };
+      const createdOrder = { id: 'order-fee-stripe-01', total: 100.00 };
       mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
       mockManager.save.mockResolvedValue(createdOrder);
       service.findOne = jest.fn().mockResolvedValue(createdOrder);
@@ -703,7 +703,7 @@ describe('OrdersService', () => {
         expect.anything(),
         expect.objectContaining({
           payment_method: 'stripe',
-          fee_amount: 3.50,
+          fee_amount: 0,
           fee_method: 'STRIPE_CARD',
         }),
       );
@@ -853,7 +853,7 @@ describe('OrdersService', () => {
   });
 
   describe('settleBatch - Batch Settlement (TASK-48-04)', () => {
-    it('should settle batch of orders with card applying 3.5% fee and updating to paid', async () => {
+    it('should settle batch of orders with card (fee $0.00) and updating to paid', async () => {
       const order1 = { id: 'ord-1', user_id: 'usr-1', total: 100, refunded_amount: 0, status: 'confirmed', payment_status: 'pending' };
       const order2 = { id: 'ord-2', user_id: 'usr-1', total: 200, refunded_amount: 0, status: 'confirmed', payment_status: 'pending' };
       orderRepository.find.mockResolvedValue([order1, order2]);
@@ -867,8 +867,8 @@ describe('OrdersService', () => {
       expect(result.success).toBe(true);
       expect(result.settled_count).toBe(2);
       expect(result.base_total).toBe(300);
-      expect(result.fee_amount).toBe(10.50); // 300 * 0.035
-      expect(result.total_paid).toBe(310.50);
+      expect(result.fee_amount).toBe(0.00); // 0 fee for card
+      expect(result.total_paid).toBe(300.00);
       expect(order1.payment_status).toBe('paid');
       expect(order2.payment_status).toBe('paid');
     });

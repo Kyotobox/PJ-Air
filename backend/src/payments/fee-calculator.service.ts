@@ -44,7 +44,7 @@ export class FeeCalculatorService {
 
     const normalized = paymentMethod.trim().toUpperCase().replace(/[\s-]+/g, '_');
 
-    // 1. Stripe Card / Credit / Debit Card: 3.5%
+    // 1. Stripe Card / Credit / Debit Card: 0.00% (Fee eliminado - absorbido en precio de catálogo)
     if (
       normalized === 'STRIPE_CARD' ||
       normalized === 'CARD' ||
@@ -52,7 +52,7 @@ export class FeeCalculatorService {
       normalized === 'CREDIT_CARD' ||
       normalized === 'DEBIT_CARD'
     ) {
-      return Math.round(numericAmount * 0.035 * 100) / 100;
+      return 0.00;
     }
 
     // 2. ACH / ACH Direct Debit: 0.8% capped at $5.00
@@ -108,7 +108,7 @@ export class FeeCalculatorService {
       normalized === 'CREDIT_CARD' ||
       normalized === 'DEBIT_CARD'
     ) {
-      rate = 0.035;
+      rate = 0.0;
     } else if (
       normalized === 'ACH' ||
       normalized === 'ACH_DEBIT' ||

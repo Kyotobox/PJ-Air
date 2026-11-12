@@ -533,8 +533,8 @@ let OrdersService = class OrdersService {
             feeAmount = Number(orderData.fee_amount);
         }
         const appliedFeeMethod = orderData.fee_method || feeMethod;
-        let packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
-        let packagingDiscount = 0;
+        const packagingFee = 0;
+        const packagingDiscount = 0;
         if (appliedPaymentMethod === 'zelle') {
             if (!appliedZelleReference) {
                 throw new common_1.BadRequestException('El número de referencia o confirmación de Zelle es obligatorio para pagos con Zelle.');
@@ -547,20 +547,6 @@ let OrdersService = class OrdersService {
                 throw new common_1.BadRequestException(`El número de referencia Zelle "${appliedZelleReference}" ya ha sido registrado en otra orden activa.`);
             }
             appliedPaymentStatus = 'pending_zelle_verification';
-            packagingDiscount = packagingFee;
-        }
-        else if (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card') {
-            packagingDiscount = 0;
-        }
-        else if (appliedPaymentMethod === 'ach' || appliedPaymentMethod === 'ach_debit') {
-            packagingFee = feeAmount;
-            packagingDiscount = 0;
-        }
-        else if (appliedPaymentMethod === 'credit') {
-            packagingDiscount = packagingFee;
-        }
-        else if (appliedPaymentMethod === 'check' || appliedPaymentMethod === 'cash') {
-            packagingDiscount = packagingFee;
         }
         let deliveryFee = 0;
         if (appliedDeliveryType === 'pickup') {
@@ -1117,14 +1103,8 @@ let OrdersService = class OrdersService {
             order.items = await this.orderItemRepository.save(newOrderItems);
             const itemsTotal = result.total;
             const oldTotal = Number(order.total) || 0;
-            const packagingFee = Math.round(itemsTotal * 0.035 * 100) / 100;
-            let packagingDiscount = 0;
-            if (order.payment_method === 'zelle' ||
-                order.payment_method === 'credit' ||
-                order.payment_method === 'check' ||
-                order.payment_method === 'cash') {
-                packagingDiscount = packagingFee;
-            }
+            const packagingFee = 0;
+            const packagingDiscount = 0;
             const feeMethod = (order.payment_method === 'stripe' || order.payment_method === 'card')
                 ? 'STRIPE_CARD'
                 : (order.payment_method === 'ach' || order.payment_method === 'ach_debit')

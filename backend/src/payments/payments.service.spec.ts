@@ -237,11 +237,11 @@ describe('PaymentsService', () => {
         paymentMethod: 'STRIPE_CARD',
       });
 
-      // 200 * 0.035 = 7.00. Total to charge = 207.00
+      // 200 with card has $0 fee (absorbed in catalog). Total to charge = 200.00
       expect(res.balance).toBe(200);
-      expect(res.feeAmount).toBe(7.00);
+      expect(res.feeAmount).toBe(0.00);
       expect(res.feeMethod).toBe('STRIPE_CARD');
-      expect(res.amount).toBe(207.00);
+      expect(res.amount).toBe(200.00);
     });
 
     it('should apply 0.8% fee capped at $5.00 on credit settlement when paying with ACH', async () => {
@@ -280,11 +280,11 @@ describe('PaymentsService', () => {
         paymentMethod: 'STRIPE_CARD',
       });
 
-      // 350 * 0.035 = 12.25. Total to charge = 362.25
+      // 350 with card has $0 fee (absorbed in catalog). Total to charge = 350.00
       expect(res.balance).toBe(350.00);
-      expect(res.feeAmount).toBe(12.25);
+      expect(res.feeAmount).toBe(0.00);
       expect(res.feeMethod).toBe('STRIPE_CARD');
-      expect(res.amount).toBe(362.25);
+      expect(res.amount).toBe(350.00);
       expect(res.orderId).toBe('order-f8f17c1a-partial');
     });
 

@@ -9,20 +9,21 @@ describe('FeeCalculatorService', () => {
   });
 
   describe('calculateFee - Happy Paths', () => {
-    it('should calculate 3.5% fee for card/stripe payments', () => {
+    it('should calculate 0.0% fee for card/stripe payments (absorbed in catalog)', () => {
       const res = service.calculateFee(100, 'card');
       expect(res.baseAmount).toBe(100);
       expect(res.paymentMethod).toBe('card');
-      expect(res.feePercentage).toBe(3.5);
-      expect(res.feeAmount).toBe(3.50);
-      expect(res.totalWithFee).toBe(103.50);
+      expect(res.feePercentage).toBe(0.0);
+      expect(res.feeAmount).toBe(0.00);
+      expect(res.totalWithFee).toBe(100.00);
       expect(res.isCapped).toBe(false);
     });
 
-    it('should calculate 3.5% fee for stripe payment method alias', () => {
+    it('should calculate 0.0% fee for stripe payment method alias', () => {
       const res = service.calculateFee(250.50, 'stripe');
-      expect(res.feeAmount).toBe(8.77);
-      expect(res.totalWithFee).toBe(259.27);
+      expect(res.feePercentage).toBe(0.0);
+      expect(res.feeAmount).toBe(0.00);
+      expect(res.totalWithFee).toBe(250.50);
     });
 
     it('should calculate 0.8% fee for ACH when below $5 cap', () => {
@@ -62,11 +63,11 @@ describe('FeeCalculatorService', () => {
       expect(res.totalWithFee).toBe(300.0);
     });
 
-    it('should calculate batch fees for multiple orders correctly', () => {
+    it('should calculate batch fees for multiple orders correctly (0 for card)', () => {
       const res = service.calculateBatchFee([100, 200, 300], 'card');
       expect(res.baseAmount).toBe(600);
-      expect(res.feeAmount).toBe(21.00); // 600 * 0.035
-      expect(res.totalWithFee).toBe(621.00);
+      expect(res.feeAmount).toBe(0.00);
+      expect(res.totalWithFee).toBe(600.00);
     });
   });
 

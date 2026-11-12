@@ -16,26 +16,24 @@ describe('FeeCalculatorService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('Happy Path: Stripe Card Processing Fee (3.5%)', () => {
-    it('should calculate 3.5% fee accurately for STRIPE_CARD', () => {
-      // $100.00 * 0.035 = $3.50
-      expect(service.calculateFee(100, FeePaymentMethod.STRIPE_CARD)).toBe(3.50);
-      expect(FeeCalculatorService.calculateFee(100, 'STRIPE_CARD')).toBe(3.50);
+  describe('Happy Path: Stripe Card Processing Fee (0.0% - Absorbed in catalog)', () => {
+    it('should calculate 0.00 fee for STRIPE_CARD (absorbed into catalog prices)', () => {
+      // Fee 0%
+      expect(service.calculateFee(100, FeePaymentMethod.STRIPE_CARD)).toBe(0.00);
+      expect(FeeCalculatorService.calculateFee(100, 'STRIPE_CARD')).toBe(0.00);
     });
 
-    it('should calculate 3.5% fee on irregular amounts with 2 decimal rounding', () => {
-      // $50.25 * 0.035 = 1.75875 -> 1.76
-      expect(service.calculateFee(50.25, 'STRIPE_CARD')).toBe(1.76);
-      // $245.50 * 0.035 = 8.5925 -> 8.59
-      expect(service.calculateFee(245.50, 'STRIPE_CARD')).toBe(8.59);
+    it('should calculate 0.00 fee on irregular amounts', () => {
+      expect(service.calculateFee(50.25, 'STRIPE_CARD')).toBe(0.00);
+      expect(service.calculateFee(245.50, 'STRIPE_CARD')).toBe(0.00);
     });
 
-    it('should handle case insensitivity and aliases (card, stripe, credit_card)', () => {
-      expect(service.calculateFee(200, 'card')).toBe(7.00);
-      expect(service.calculateFee(200, 'stripe')).toBe(7.00);
-      expect(service.calculateFee(200, 'STRIPE')).toBe(7.00);
-      expect(service.calculateFee(200, 'credit_card')).toBe(7.00);
-      expect(service.calculateFee(200, 'debit-card')).toBe(7.00);
+    it('should handle case insensitivity and aliases returning 0.00 (card, stripe, credit_card)', () => {
+      expect(service.calculateFee(200, 'card')).toBe(0.00);
+      expect(service.calculateFee(200, 'stripe')).toBe(0.00);
+      expect(service.calculateFee(200, 'STRIPE')).toBe(0.00);
+      expect(service.calculateFee(200, 'credit_card')).toBe(0.00);
+      expect(service.calculateFee(200, 'debit-card')).toBe(0.00);
     });
   });
 
