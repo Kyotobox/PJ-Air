@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S82",
-  "current_task": "TASK-82-07",
+  "current_sprint": "S83",
+  "current_task": "TASK-83-01",
   "sprints": [
     {
       "id": "S80",
@@ -28,7 +28,7 @@
       "id": "S82",
       "name": "Sprint S82: [RECONCILED] Auto-reconciled from git history",
       "dag_id": "SPRINT-S82-RECONCILED",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "reconciled_at": "2026-11-12T12:22:32.497650+00:00",
       "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
       "tasks": [
@@ -83,68 +83,134 @@
         }
       ],
       "title": "Sprint S82: Generador PDF Form ST-120 NYS DTF y Descuento General de Tienda (Fase C)"
+    },
+    {
+      "id": "S83",
+      "title": "Sprint S83: Sincronizaci\u00f3n en Caliente a Producci\u00f3n, Delivery Fee en Expediente, 3 Grupos de Croissant y Descuento Dual",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-83-01",
+          "title": "Respaldo F\u00edsico de Base de Datos y Verificaci\u00f3n DDL en Producci\u00f3n",
+          "status": "IN_PROGRESS",
+          "type": "DATABASE/BACKUP",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-83-02",
+          "title": "Expediente del Pedido: Desglose de Delivery Fee y Ajuste Manual en Modificar Pedido",
+          "status": "TODO",
+          "type": "FRONTEND/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-83-03",
+          "title": "Segmentaci\u00f3n de Croissants en 3 Grupos (Plain, Colores, Small) en Cat\u00e1logo, Excel y Cocina",
+          "status": "TODO",
+          "type": "CATALOG/REPORTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-83-04",
+          "title": "Motor de Descuento Dual Admin (Mayor no acumulativo, 3.5% default eliminado) y Rangos Seguros",
+          "status": "TODO",
+          "type": "BACKEND/DISCOUNT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-83-05",
+          "title": "M\u00f3dulo de Auditor\u00eda Forense Administrativa (AdminAuditLog) y Vista de Logs",
+          "status": "TODO",
+          "type": "BACKEND/AUDIT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-83-06",
+          "title": "Panel de Aprobaci\u00f3n B2B Onboarding (Direcci\u00f3n, ST-120, Pago, Flete) y Hard-Gate de Login",
+          "status": "TODO",
+          "type": "AUTH/ONBOARDING",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-83-07",
+          "title": "Emisi\u00f3n de Factura en Paso Final y Validaci\u00f3n OCR Obligatoria para Cheques",
+          "status": "TODO",
+          "type": "ORDERS/INVOICE-OCR",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-83-08",
+          "title": "Despliegue a Producci\u00f3n y Testing, y Plan de Pruebas Transversales e Integrales",
+          "status": "TODO",
+          "type": "DEPLOY/CERT",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
   "archived_sprints_count": 73,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S82",
-    "name": "Sprint S82: [RECONCILED] Auto-reconciled from git history",
-    "dag_id": "SPRINT-S82-RECONCILED",
+    "id": "S83",
+    "title": "Sprint S83: Sincronizaci\u00f3n en Caliente a Producci\u00f3n, Delivery Fee en Expediente, 3 Grupos de Croissant y Descuento Dual",
     "status": "IN_PROGRESS",
-    "reconciled_at": "2026-11-12T12:22:32.497650+00:00",
-    "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
     "tasks": [
       {
-        "id": "TASK-82-01",
-        "title": "Generador PDF Oficial ST-120 NYS DTF y Endpoints de Tax (Fase A)",
-        "status": "DONE",
-        "type": "BACKEND/ST120",
+        "id": "TASK-83-01",
+        "title": "Respaldo F\u00edsico de Base de Datos y Verificaci\u00f3n DDL en Producci\u00f3n",
+        "status": "IN_PROGRESS",
+        "type": "DATABASE/BACKUP",
         "veracity_hash": null
       },
       {
-        "id": "TASK-82-02",
-        "title": "Configuraci\u00f3n de Descuento General y Motor en OrdersService (Fase B)",
-        "status": "DONE",
-        "type": "BACKEND/DISCOUNT-CONFIG",
+        "id": "TASK-83-02",
+        "title": "Expediente del Pedido: Desglose de Delivery Fee y Ajuste Manual en Modificar Pedido",
+        "status": "TODO",
+        "type": "FRONTEND/ORDERS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-82-03",
-        "title": "Pruebas Unitarias Jest (\u00a76) Fases A y B en tax y orders services",
-        "status": "DONE",
-        "type": "TEST/CERT",
+        "id": "TASK-83-03",
+        "title": "Segmentaci\u00f3n de Croissants en 3 Grupos (Plain, Colores, Small) en Cat\u00e1logo, Excel y Cocina",
+        "status": "TODO",
+        "type": "CATALOG/REPORTS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-82-04",
-        "title": "Selector en Registro y Accesos Nocturnos [TASK-82-06]",
-        "status": "DONE",
-        "type": "FRONTEND/REGISTER-ST120",
+        "id": "TASK-83-04",
+        "title": "Motor de Descuento Dual Admin (Mayor no acumulativo, 3.5% default eliminado) y Rangos Seguros",
+        "status": "TODO",
+        "type": "BACKEND/DISCOUNT",
         "veracity_hash": null
       },
       {
-        "id": "TASK-82-05",
-        "title": "Regularizaci\u00f3n ST-120 y Claves Nocturnas [TASK-82-07]",
-        "status": "DONE",
-        "type": "FRONTEND/ADMIN-CLIENTS",
+        "id": "TASK-83-05",
+        "title": "M\u00f3dulo de Auditor\u00eda Forense Administrativa (AdminAuditLog) y Vista de Logs",
+        "status": "TODO",
+        "type": "BACKEND/AUDIT",
         "veracity_hash": null
       },
       {
-        "id": "TASK-82-06",
-        "title": "Desglose de Descuento General en Checkout [TASK-82-08]",
-        "status": "DONE",
-        "type": "FRONTEND/CHECKOUT-DISCOUNT",
+        "id": "TASK-83-06",
+        "title": "Panel de Aprobaci\u00f3n B2B Onboarding (Direcci\u00f3n, ST-120, Pago, Flete) y Hard-Gate de Login",
+        "status": "TODO",
+        "type": "AUTH/ONBOARDING",
         "veracity_hash": null
       },
       {
-        "id": "TASK-82-07",
-        "title": "Pruebas Vitest [TASK-82-09]",
-        "status": "DONE",
-        "type": "TEST/CERT",
+        "id": "TASK-83-07",
+        "title": "Emisi\u00f3n de Factura en Paso Final y Validaci\u00f3n OCR Obligatoria para Cheques",
+        "status": "TODO",
+        "type": "ORDERS/INVOICE-OCR",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-83-08",
+        "title": "Despliegue a Producci\u00f3n y Testing, y Plan de Pruebas Transversales e Integrales",
+        "status": "TODO",
+        "type": "DEPLOY/CERT",
         "veracity_hash": null
       }
-    ],
-    "title": "Sprint S82: Generador PDF Form ST-120 NYS DTF y Descuento General de Tienda (Fase C)"
+    ]
   }
 }
