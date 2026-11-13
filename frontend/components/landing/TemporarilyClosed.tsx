@@ -112,6 +112,18 @@ export default function TemporarilyClosed() {
                 </p>
                 <div className="flex items-center gap-4">
                     <Link 
+                        href="/terms" 
+                        className="text-neutral-500 hover:text-neutral-300 transition-colors text-[11px] font-semibold"
+                    >
+                        {isEn ? 'Commercial Terms' : 'Términos Comerciales'}
+                    </Link>
+                    <Link 
+                        href="/privacy" 
+                        className="text-neutral-500 hover:text-neutral-300 transition-colors text-[11px] font-semibold"
+                    >
+                        {isEn ? 'Privacy Policy' : 'Política de Privacidad'}
+                    </Link>
+                    <Link 
                         href="/auth/login" 
                         className="text-neutral-600 hover:text-neutral-400 transition-colors text-[11px] uppercase tracking-wider font-semibold"
                     >

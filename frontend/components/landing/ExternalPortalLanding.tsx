@@ -160,6 +160,9 @@ export default function ExternalPortalLanding({ onOpenLogin }: ExternalPortalLan
                     <Link href="/terms" className="hover:text-amber-400 transition-colors">
                         {isEn ? 'Commercial Terms' : 'Términos Comerciales'}
                     </Link>
+                    <Link href="/privacy" className="hover:text-amber-400 transition-colors">
+                        {isEn ? 'Privacy Policy' : 'Política de Privacidad'}
+                    </Link>
                     <Link href="/auth/forgot-password" className="hover:text-amber-400 transition-colors">
                         {isEn ? 'Recover Password' : 'Recuperar Contraseña'}
                     </Link>

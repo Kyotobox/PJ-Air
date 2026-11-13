@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, ShoppingBag, Plus, LayoutDashboard, Package, Users, ClipboardList, Truck, Map, Clock } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, ShoppingBag, Plus, LayoutDashboard, Package, Users, ClipboardList, Truck, Map, Clock, FileText, ShieldCheck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -47,6 +47,12 @@ export default function Navbar() {
                                     <Clock size={13} className="text-primary" />
                                     <span>{locale === 'en' ? 'Baking Schedule' : 'Horarios de Horneado'}</span>
                                 </button>
+                                <Link href="/terms" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">
+                                    {locale === 'en' ? 'Terms' : 'Términos'}
+                                </Link>
+                                <Link href="/privacy" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">
+                                    {locale === 'en' ? 'Privacy' : 'Privacidad'}
+                                </Link>
                             </div>
                         </div>
 
@@ -166,6 +172,16 @@ export default function Navbar() {
                     </Link>
                     <Link href="/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted transition-all font-bold text-sm">
                         <User size={18} className="text-primary" /> {t.nav.myProfile}
+                    </Link>
+
+                    {/* Legal & Compliance links */}
+                    <div className="my-3 border-t border-border" />
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">{locale === 'en' ? 'Legal & Compliance' : 'Legal y Cumplimiento'}</p>
+                    <Link href="/terms" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted transition-all font-bold text-sm">
+                        <FileText size={18} className="text-primary" /> {locale === 'en' ? 'Commercial Terms' : 'Términos Comerciales'}
+                    </Link>
+                    <Link href="/privacy" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted transition-all font-bold text-sm">
+                        <ShieldCheck size={18} className="text-primary" /> {locale === 'en' ? 'Privacy Policy' : 'Política de Privacidad'}
                     </Link>
 
                     {/* Admin links */}

@@ -44,12 +44,18 @@ export default function TermsPage() {
             <Navbar />
 
             <main className="max-w-4xl mx-auto px-6 py-12">
-                <div className="mb-8">
+                <div className="flex items-center justify-between mb-8">
                     <Link 
                         href="/" 
                         className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
                     >
                         <ArrowLeft size={16} /> {locale === 'en' ? 'Back to Catalog' : 'Volver al Catálogo'}
+                    </Link>
+                    <Link
+                        href="/privacy"
+                        className="text-xs font-bold text-muted-foreground hover:text-primary underline underline-offset-4 transition-colors"
+                    >
+                        {locale === 'en' ? 'View Privacy Policy →' : 'Ver Política de Privacidad →'}
                     </Link>
                 </div>
 

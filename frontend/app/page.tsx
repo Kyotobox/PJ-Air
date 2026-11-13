@@ -1233,6 +1233,22 @@ export default function Home() {
                 )}
 
             </main>
+
+            <footer className="mt-16 border-t border-border/60 py-8 text-xs text-muted-foreground bg-white/50 backdrop-blur-sm">
+                <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p>
+                        © {new Date().getFullYear()} Jhoanes Bakery Wholesale. {locale === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
+                    </p>
+                    <div className="flex items-center gap-6 font-bold">
+                        <Link href="/terms" className="hover:text-primary transition-colors">
+                            {locale === 'en' ? 'Commercial Terms' : 'Términos Comerciales'}
+                        </Link>
+                        <Link href="/privacy" className="hover:text-primary transition-colors">
+                            {locale === 'en' ? 'Privacy Policy' : 'Política de Privacidad'}
+                        </Link>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 }
