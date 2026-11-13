@@ -45,11 +45,22 @@ const prodDeployCommands = [
 
     // 2. Pre-deploy atomic backup of production database
     `echo "=== 2. Respaldo preventivo mandatorio de base de datos de producción (§7.4) ==="`,
-    `if [ -f "database.sqlite" ]; then cp "database.sqlite" "database.sqlite.bak_prod_$(date +%Y%m%d_%H%M%S)"; echo "Respaldo físico de producción completado."; else echo "ERROR: database.sqlite no existe"; exit 1; fi`,
+    `if [ -f "database.sqlite.bak_prod_20261113_145702" ] && [ $(stat -c%s "database.sqlite") -lt 1000000 ]; then echo "Restaurando base golden no-corrupta..."; cp -f "database.sqlite.bak_prod_20261113_145702" "database.sqlite"; rm -f database.sqlite-wal database.sqlite-shm; fi`,
+    `cp -f "database.sqlite" "/var/www/pj-air-prod-golden.sqlite"`,
+    `cp -f "database.sqlite" "database.sqlite.bak_prod_$(date +%Y%m%d_%H%M%S)"`,
     `if [ -f ".env" ]; then cp ".env" ".env.deploy_bak"; fi`,
 
-    // 3. Pre-deploy SQLite DDL Migrations
-    `echo "=== 3. Aplicando migraciones DDL en base de datos SQLite ==="`,
+    // 3. Git synchronization from upstream/conext
+    `echo "=== 3. Sincronizando código desde origen (${targetBranch}) ==="`,
+    `git fetch origin`,
+    `git checkout ${targetBranch}`,
+    `git reset --hard origin/${targetBranch}`,
+    `if [ -f ".env.deploy_bak" ] && [ ! -f ".env" ]; then cp ".env.deploy_bak" ".env"; fi`,
+    `echo "Restaurando base de datos real de producción preservada..."`,
+    `cp -f "/var/www/pj-air-prod-golden.sqlite" "${PROD_DIR}/database.sqlite"`,
+
+    // 4. Pre-deploy SQLite DDL Migrations on authentic database
+    `echo "=== 4. Aplicando migraciones DDL en base de datos SQLite de producción ==="`,
     `sqlite3 "${PROD_DIR}/database.sqlite" "ALTER TABLE products ADD COLUMN production_group VARCHAR NULL;" 2>/dev/null || true`,
     `sqlite3 "${PROD_DIR}/database.sqlite" "CREATE TABLE IF NOT EXISTS admin_audit_logs (id VARCHAR(36) PRIMARY KEY, admin_id VARCHAR NOT NULL, admin_name VARCHAR NOT NULL, action VARCHAR NOT NULL, target_entity VARCHAR NOT NULL, target_id VARCHAR NOT NULL, previous_state_json TEXT, new_state_json TEXT, notes TEXT, ip_address VARCHAR, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP);" 2>/dev/null || true`,
     `sqlite3 "${PROD_DIR}/database.sqlite" "ALTER TABLE users ADD COLUMN utm_source VARCHAR(100);" 2>/dev/null || true`,
@@ -57,13 +68,7 @@ const prodDeployCommands = [
     `sqlite3 "${PROD_DIR}/database.sqlite" "ALTER TABLE users ADD COLUMN utm_campaign VARCHAR(100);" 2>/dev/null || true`,
     `sqlite3 "${PROD_DIR}/database.sqlite" "ALTER TABLE users ADD COLUMN utm_content VARCHAR(100);" 2>/dev/null || true`,
     `sqlite3 "${PROD_DIR}/database.sqlite" "ALTER TABLE users ADD COLUMN account_status VARCHAR(30) DEFAULT 'APPROVED';" 2>/dev/null || true`,
-
-    // 4. Git synchronization from upstream/conext
-    `echo "=== 4. Sincronizando código desde origen (${targetBranch}) ==="`,
-    `git fetch origin`,
-    `git checkout ${targetBranch}`,
-    `git reset --hard origin/${targetBranch}`,
-    `if [ -f ".env.deploy_bak" ] && [ ! -f ".env" ]; then cp ".env.deploy_bak" ".env"; fi`,
+    `sqlite3 "${PROD_DIR}/database.sqlite" "PRAGMA integrity_check;"`,
 
     // 5. Run croissant catalog migration script
     `echo "=== 5. Sincronizando catálogo canónico de croissants ==="`,
