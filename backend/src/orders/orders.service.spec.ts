@@ -1803,6 +1803,146 @@ describe('OrdersService', () => {
         expect(count).toBe(0);
       });
     });
+
+    describe('Late Invoicing Engine (TASK-85-02)', () => {
+      it('Happy path: strict sequential invoice generation (INV-1001, INV-1002...) when previous invoice exists', async () => {
+        // Step 1: When last issued invoice is INV-1000, next must strictly be INV-1001
+        orderRepository.createQueryBuilder.mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([{ id: 'ord-1', invoice_number: 'INV-1000' }]),
+          getOne: jest.fn().mockResolvedValue({ id: 'ord-1', invoice_number: 'INV-1000' }),
+        });
+
+        const next1 = await service.getNextInvoiceNumber();
+        expect(next1).toBe('INV-1001');
+
+        // Step 2: When next issued invoice is INV-1001, next must strictly be INV-1002
+        orderRepository.createQueryBuilder.mockReturnValue({
+          where: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([
+            { id: 'ord-1', invoice_number: 'INV-1000' },
+            { id: 'ord-2', invoice_number: 'INV-1001' },
+          ]),
+          getOne: jest.fn().mockResolvedValue({ id: 'ord-2', invoice_number: 'INV-1001' }),
+        });
+
+        const next2 = await service.getNextInvoiceNumber();
+        expect(next2).toBe('INV-1002');
+      });
+
+      it('Happy path: completeCheckout assigns consecutive invoiceNumber and updates status to confirmed', async () => {
+        const pendingOrder: Partial<Order> = {
+          id: 'ord-pending-1',
+          user_id: 'user-1',
+          status: 'pending',
+          invoice_number: null,
+          total: 100,
+        };
+
+        jest.spyOn(service, 'findOne').mockResolvedValue(pendingOrder as Order);
+        jest.spyOn(service, 'getNextInvoiceNumber').mockResolvedValue('INV-1001');
+        orderRepository.save.mockImplementation(async (ord: any) => ord);
+
+        const result = await service.completeCheckout('ord-pending-1');
+
+        expect(result.status).toBe('confirmed');
+        expect(result.invoice_number).toBe('INV-1001');
+        expect(orderRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+          id: 'ord-pending-1',
+          status: 'confirmed',
+          invoice_number: 'INV-1001',
+        }));
+      });
+
+      it('Happy path: completeCheckout is idempotent and does not regenerate invoice_number if already assigned', async () => {
+        const alreadyConfirmedOrder: Partial<Order> = {
+          id: 'ord-confirmed-1',
+          user_id: 'user-1',
+          status: 'confirmed',
+          invoice_number: 'INV-1001',
+          total: 100,
+        };
+
+        jest.spyOn(service, 'findOne').mockResolvedValue(alreadyConfirmedOrder as Order);
+        const getNextSpy = jest.spyOn(service, 'getNextInvoiceNumber');
+        orderRepository.save.mockImplementation(async (ord: any) => ord);
+
+        const result = await service.completeCheckout('ord-confirmed-1');
+
+        expect(result.invoice_number).toBe('INV-1001');
+        expect(getNextSpy).not.toHaveBeenCalled();
+      });
+
+      it('Sad path (§6): unconfirmed pending order or cart draft must have null invoice_number upon creation', async () => {
+        const mockManager = {
+          create: jest.fn().mockImplementation((entity, data) => ({ ...data, id: 'ord-created-draft' })),
+          save: jest.fn().mockImplementation(async (entity, data) => data),
+        };
+
+        (service as any).dataSource = {
+          transaction: jest.fn().mockImplementation(async (cb) => cb(mockManager)),
+        };
+
+        const mockUser = {
+          id: 'user-test',
+          email: 'test@example.com',
+          account_type: 'cash',
+          profile: { full_name: 'Test Client' },
+        };
+        userRepository.findOne.mockResolvedValue(mockUser as any);
+        jest.spyOn(service, 'findOne').mockResolvedValue({
+          id: 'ord-created-draft',
+          status: 'pending',
+          invoice_number: null,
+        } as Order);
+
+        const getNextSpy = jest.spyOn(service, 'getNextInvoiceNumber');
+
+        const created = await service.create('user-test', {
+          total: 50,
+          status: 'pending',
+          items: [],
+        });
+
+        expect(created.invoice_number).toBeNull();
+        expect(created.status).toBe('pending');
+        expect(getNextSpy).not.toHaveBeenCalled();
+      });
+
+      it('Sad path (§6): cancelled unconfirmed order must retain null invoice_number and consume no invoice sequence numbers', async () => {
+        const pendingOrder: Partial<Order> = {
+          id: 'ord-to-cancel',
+          user_id: 'user-1',
+          status: 'pending',
+          invoice_number: null,
+        };
+
+        jest.spyOn(service, 'findOne').mockResolvedValue(pendingOrder as Order);
+        orderRepository.save.mockImplementation(async (ord: any) => ord);
+
+        const updated = await service.updateStatus('ord-to-cancel', 'cancelled', 'admin');
+
+        expect(updated.status).toBe('cancelled');
+        expect(updated.invoice_number).toBeNull();
+      });
+
+      it('Sad path (§6): completeCheckout throws BadRequestException when order is cancelled', async () => {
+        const cancelledOrder: Partial<Order> = {
+          id: 'ord-cancelled-1',
+          user_id: 'user-1',
+          status: 'cancelled',
+          invoice_number: null,
+        };
+
+        jest.spyOn(service, 'findOne').mockResolvedValue(cancelledOrder as Order);
+
+        await expect(service.completeCheckout('ord-cancelled-1')).rejects.toThrow(
+          new BadRequestException('Cannot complete checkout for a cancelled order'),
+        );
+      });
+    });
   });
 
   describe('Sprint S82B: Global Store Discount Calculation (TASK-82-04 / TASK-82-05B)', () => {

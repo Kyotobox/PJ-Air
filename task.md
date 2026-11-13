@@ -1,8 +1,8 @@
-# SPRINT S84 - Sprint Activo
-**Objetivo**: Sin objetivo especificado
+# SPRINT S85 - Sprint Activo
+**Objetivo**: B2B Onboarding Approval Gate, Late Invoicing and Check OCR
 **Fecha**: 2026-11-13
 
-- [x] **TASK-84-01** [TASK] Meta Pixel integration (ID 2166007261006109) and standard event tracking (ViewContent, CompleteRegistration, Purchase)
-- [ ] **TASK-84-02** [TASK] Compliant Wholesale Privacy Policy page (/privacy)
-- [x] **TASK-84-03** [TASK] UTM attribution capture, User entity persistence and Admin Users display
-- [x] **TASK-84-04** [TASK] Automatic Spanish locale routing for ad traffic
+- [ ] **TASK-85-01** [TASK] B2B wholesale pending approval state, login guard, and admin review panel
+- [x] **TASK-85-02** [TASK] Late invoicing engine (INV generation strictly on final checkout)
+- [ ] **TASK-85-03** [TASK] Mandatory check photo upload with OCR amount/MICR validation
+

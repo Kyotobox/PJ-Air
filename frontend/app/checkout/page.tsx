@@ -740,6 +740,7 @@ export default function CheckoutPage() {
                 payment_status: 'paid',
                 stripe_payment_id: piId,
             });
+            await api.post(`/orders/${stripePaymentData.orderId}/complete-checkout`).catch(() => {});
         } catch (e) {
             console.error('Error updating payment status:', e);
         }
@@ -1319,6 +1320,9 @@ export default function CheckoutPage() {
 
         setIsLoading(true);
         try {
+            const isOnlineGateway = paymentMethod === 'stripe' || paymentMethod === 'ach';
+            const initialStatus = isOnlineGateway ? 'pending' : (paymentMethod === 'zelle' || paymentMethod === 'check' ? 'pending' : 'confirmed');
+
             const order = await api.post('/orders', {
                 userId: user.id,
                 addressId: finalAddressId,
@@ -1326,7 +1330,7 @@ export default function CheckoutPage() {
                 deliveryAddressText,
                 zip_code: currentZip,
                 total: finalTotal,
-                status: 'Pedido Enviado',
+                status: initialStatus,
                 deliveryDate: rawDeliveryDate || deliveryDate,
                 paymentDueDate: paymentDate,
                 payment_method: isPaidWithStoreCredit ? 'store_credit' : paymentMethod,

@@ -14,6 +14,17 @@ import StripePaymentModal from '@/components/checkout/StripePaymentModal';
 import { calculateProcessingFee } from '@/lib/fee-calculator';
 import { API_URL } from '@/lib/config';
 
+// TASK-85-02: Late Invoicing Engine helper
+const isOrderConfirmed = (ord: any): boolean => {
+    if (!ord) return false;
+    const st = (ord.status || '').toLowerCase().trim();
+    if (st === 'cancelled' || st === 'cancelado') return false;
+    return Boolean(
+        ord.invoice_number &&
+        (st === 'confirmed' || st === 'confirmado' || st.includes('enviado') || st === 'shipped' || st.includes('recibido') || st === 'delivered' || ord.payment_status === 'paid')
+    );
+};
+
 export default function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: orderId } = use(params);
     const { t, locale } = useLanguage();
@@ -131,7 +142,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
 <html>
 <head>
     <meta charset="utf-8">
-    <title>INVOICE / RECEIPT ${order.invoice_number || '#' + order.id.slice(0, 8).toUpperCase()}</title>
+    <title>INVOICE / RECEIPT ${isOrderConfirmed(order) ? order.invoice_number : '#' + order.id.slice(0, 8).toUpperCase()}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
         body { padding: 40px; color: #1e293b; background: #fff; font-size: 12px; line-height: 1.5; }
@@ -169,7 +180,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
         </div>
         <div class="invoice-meta">
             <h2>INVOICE / RECEIPT</h2>
-            <p><b>Invoice #:</b> ${order.invoice_number || '#' + order.id.slice(0, 8).toUpperCase()}</p>
+            <p><b>Invoice #:</b> ${isOrderConfirmed(order) ? order.invoice_number : '#' + order.id.slice(0, 8).toUpperCase()}</p>
             <p><b>Order Date:</b> ${orderDate}</p>
             <p><b>Payment Status:</b> <span style="font-weight: bold; color: ${paymentStatus === 'PAID' ? '#15803d' : '#b91c1c'};">${paymentStatus}</span></p>
         </div>
@@ -417,7 +428,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                         <div className="bg-card rounded-[32px] border border-border p-8 shadow-xl sticky top-28">
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-xl font-bold flex items-center gap-2 font-serif"><ShoppingBag size={20} className="text-primary" /> {t.orders.yourPurchase}</h3>
-                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded uppercase tracking-widest">{order.invoice_number || `#${order.id.toString().slice(0, 8)}`}</span>
+                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded uppercase tracking-widest">{isOrderConfirmed(order) ? order.invoice_number : `#${order.id.toString().slice(0, 8)}`}</span>
                             </div>
 
                             <div className="space-y-4 mb-8">

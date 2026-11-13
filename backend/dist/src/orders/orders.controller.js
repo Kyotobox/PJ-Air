@@ -227,6 +227,22 @@ let OrdersController = class OrdersController {
     async disableOrder(id, body) {
         return this.ordersService.disableOrder(id, body?.reason);
     }
+    async completeCheckoutPost(id, req) {
+        const order = await this.ordersService.findOne(id);
+        const role = req.user?.role;
+        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+            throw new common_1.ForbiddenException('Cannot modify this order');
+        }
+        return this.ordersService.completeCheckout(id, role);
+    }
+    async completeCheckoutPatch(id, req) {
+        const order = await this.ordersService.findOne(id);
+        const role = req.user?.role;
+        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+            throw new common_1.ForbiddenException('Cannot modify this order');
+        }
+        return this.ordersService.completeCheckout(id, role);
+    }
     async update(id, body, req) {
         const order = await this.ordersService.findOne(id);
         const role = req.user?.role;
@@ -460,6 +476,24 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "disableOrder", null);
+__decorate([
+    (0, common_1.Post)(':id/complete-checkout'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "completeCheckoutPost", null);
+__decorate([
+    (0, common_1.Patch)(':id/complete-checkout'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "completeCheckoutPatch", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),

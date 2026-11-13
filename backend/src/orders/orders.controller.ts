@@ -303,6 +303,28 @@ export class OrdersController {
     return this.ordersService.disableOrder(id, body?.reason);
   }
 
+  @Post(':id/complete-checkout')
+  @UseGuards(AuthGuard)
+  async completeCheckoutPost(@Param('id') id: string, @Req() req: any) {
+    const order = await this.ordersService.findOne(id);
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+      throw new ForbiddenException('Cannot modify this order');
+    }
+    return this.ordersService.completeCheckout(id, role);
+  }
+
+  @Patch(':id/complete-checkout')
+  @UseGuards(AuthGuard)
+  async completeCheckoutPatch(@Param('id') id: string, @Req() req: any) {
+    const order = await this.ordersService.findOne(id);
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+      throw new ForbiddenException('Cannot modify this order');
+    }
+    return this.ordersService.completeCheckout(id, role);
+  }
+
   @Patch(':id')
   @UseGuards(AuthGuard)
   async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {

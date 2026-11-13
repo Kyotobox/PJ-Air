@@ -856,10 +856,21 @@ export class OrdersService {
       appliedTaxLegend = null;
     }
 
+    const rawStatus = (otherData as any).status;
+    const initialStatus = rawStatus ? this.normalizeStatus(rawStatus) : 'pending';
+    const isDirectlyConfirmed = initialStatus === 'confirmed';
+
     const savedOrderId = await this.dataSource.transaction(async (manager) => {
-      const invoiceNumber = await this.getNextInvoiceNumber(manager);
+      // TASK-85-02: Late Invoicing Engine.
+      // Sequential invoice number is strictly generated only on confirmed checkout, not on preliminary/draft creation.
+      let invoiceNumber: string | null = null;
+      if (isDirectlyConfirmed && !(otherData as any).is_preliminary && !(otherData as any).draft) {
+        invoiceNumber = await this.getNextInvoiceNumber(manager);
+      }
+
       const orderToCreate = manager.create(Order, {
         ...otherData,
+        status: initialStatus,
         invoice_number: invoiceNumber,
         delivery_date: appliedDeliveryDate,
         payment_due_date: appliedPaymentDueDate,
@@ -954,7 +965,50 @@ export class OrdersService {
     const order = await this.findOne(id);
     const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
     order.status = normalizedStatus;
+
+    // TASK-85-02: Late Invoicing Engine - Assign invoice_number ONLY when order transitions to confirmed
+    if (normalizedStatus === 'confirmed' && !order.invoice_number) {
+      order.invoice_number = await this.getNextInvoiceNumber();
+    }
+
     return this.orderRepository.save(order);
+  }
+
+  /**
+   * TASK-85-02: Late Invoicing Engine.
+   * Atomically finalizes checkout and assigns sequential invoice_number strictly when confirmed.
+   */
+  async completeCheckout(id: string, userRole?: string): Promise<Order> {
+    const order = await this.findOne(id);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const currentNorm = this.normalizeStatus(order.status);
+    if (currentNorm === 'cancelled') {
+      throw new BadRequestException('Cannot complete checkout for a cancelled order');
+    }
+
+    if (currentNorm === 'pending') {
+      order.status = 'confirmed';
+    }
+
+    if (!order.invoice_number) {
+      order.invoice_number = await this.getNextInvoiceNumber();
+    }
+
+    const saved = await this.orderRepository.save(order);
+
+    if (saved.payment_status === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
+      const user = await this.userRepository.findOne({ where: { id: saved.user_id } });
+      if (user?.email) {
+        this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
+          console.error('[OrdersService] Error sending English invoice on completeCheckout:', err?.message || err);
+        });
+      }
+    }
+
+    return saved;
   }
 
   async assignDelivery(id: string, deliveryUserId: string): Promise<Order> {
@@ -973,12 +1027,27 @@ export class OrdersService {
     if (status) {
       const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
       order.status = normalizedStatus;
+
+      // TASK-85-02: Late Invoicing Engine
+      if (normalizedStatus === 'confirmed' && !order.invoice_number) {
+        order.invoice_number = await this.getNextInvoiceNumber();
+      }
     }
 
     if (payment_status !== undefined || paymentStatus !== undefined) {
       order.payment_status = payment_status || paymentStatus;
       if (order.payment_status === 'paid' && updateData.pending_balance === undefined) {
         order.pending_balance = 0;
+      }
+
+      // TASK-85-02: If payment is finalized as paid, confirm order and assign invoice_number
+      if (order.payment_status === 'paid' && this.normalizeStatus(order.status) !== 'cancelled') {
+        if (this.normalizeStatus(order.status) === 'pending') {
+          order.status = 'confirmed';
+        }
+        if (!order.invoice_number) {
+          order.invoice_number = await this.getNextInvoiceNumber();
+        }
       }
     }
 
@@ -1113,6 +1182,12 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
     order.payment_status = 'paid';
+    if (this.normalizeStatus(order.status) === 'pending') {
+      order.status = 'confirmed';
+    }
+    if (!order.invoice_number) {
+      order.invoice_number = await this.getNextInvoiceNumber();
+    }
     const saved = await this.orderRepository.save(order);
 
     const user = await this.userRepository.findOne({ where: { id: order.user_id } });

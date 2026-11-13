@@ -66,6 +66,17 @@ const STATUS_OPTIONS = [
     'Pedido', 'En Producción', 'Finalizado', 'En camino', 'En Entrega', 'Entregado', 'Cancelado'
 ];
 
+// TASK-85-02: Late Invoicing Engine helper
+const isOrderConfirmed = (ord: any): boolean => {
+    if (!ord) return false;
+    const st = (ord.status || '').toLowerCase().trim();
+    if (st === 'cancelled' || st === 'cancelado') return false;
+    return Boolean(
+        ord.invoice_number &&
+        (st === 'confirmed' || st === 'confirmado' || st.includes('enviado') || st === 'shipped' || st.includes('recibido') || st === 'delivered' || ord.payment_status === 'paid' || st === 'en producción' || st === 'finalizado')
+    );
+};
+
 const STATUS_COLORS: Record<string, string> = {
     'Pedido':        'bg-blue-50 text-blue-600 border-blue-100',
     'En Producción': 'bg-violet-50 text-violet-600 border-violet-100',
@@ -444,7 +455,7 @@ export default function AdminOrdersPage() {
     };
 
     const handleQuickDisable = async (order: Order) => {
-        const orderShortId = order.invoice_number || order.id.slice(0, 8);
+        const orderShortId = isOrderConfirmed(order) ? order.invoice_number : order.id.slice(0, 8);
         if (!window.confirm(`¿Inhabilitar y cancelar el pedido #${orderShortId}? Esta acción excluirá la orden de reportes financieros.`)) {
             return;
         }
@@ -1150,7 +1161,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col gap-1">
-                                                <span className="font-mono text-xs font-bold text-primary">{order.invoice_number || `#${order.id.slice(0, 8)}`}</span>
+                                                <span className="font-mono text-xs font-bold text-primary">{isOrderConfirmed(order) ? order.invoice_number : `#${order.id.slice(0, 8)}`}</span>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
                                                         <Clock size={10} /> {new Date(order.created_at).toLocaleDateString()}

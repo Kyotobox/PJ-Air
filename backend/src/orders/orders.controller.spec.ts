@@ -21,6 +21,7 @@ describe('OrdersController', () => {
     mutateOrderItems: jest.fn(),
     disableOrder: jest.fn(),
     bulkDisableOrders: jest.fn(),
+    completeCheckout: jest.fn(),
     getPaymentsService: jest.fn(),
   };
 
@@ -309,6 +310,41 @@ describe('OrdersController', () => {
       (mockOrdersService.bulkDisableOrders as jest.Mock).mockRejectedValue(new Error('orderIds debe ser un arreglo no vacío'));
 
       await expect(controller.bulkDisable({ orderIds: [], reason: 'test' })).rejects.toThrow('orderIds debe ser un arreglo no vacío');
+    });
+  });
+
+  describe('completeCheckout (TASK-85-02)', () => {
+    it('Happy path: should allow client owner to complete checkout and return confirmed order with invoice', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'ord-123', user_id: 'client-owner' });
+      mockOrdersService.completeCheckout.mockResolvedValue({
+        id: 'ord-123',
+        status: 'confirmed',
+        invoice_number: 'INV-1001',
+      });
+
+      const req = { user: { id: 'client-owner', role: 'client' } };
+      const resPost = await controller.completeCheckoutPost('ord-123', req as any);
+      expect(service.completeCheckout).toHaveBeenCalledWith('ord-123', 'client');
+      expect(resPost).toEqual({
+        id: 'ord-123',
+        status: 'confirmed',
+        invoice_number: 'INV-1001',
+      });
+
+      const resPatch = await controller.completeCheckoutPatch('ord-123', req as any);
+      expect(resPatch).toEqual({
+        id: 'ord-123',
+        status: 'confirmed',
+        invoice_number: 'INV-1001',
+      });
+    });
+
+    it('Sad path: client attempting to complete checkout on another user order throws ForbiddenException (§6)', async () => {
+      mockOrdersService.findOne.mockResolvedValue({ id: 'ord-other', user_id: 'other-user' });
+      const req = { user: { id: 'attacker-client', role: 'client' } };
+
+      await expect(controller.completeCheckoutPost('ord-other', req as any))
+        .rejects.toThrow('Cannot modify this order');
     });
   });
 });

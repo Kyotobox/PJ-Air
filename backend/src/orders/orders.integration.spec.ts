@@ -175,12 +175,14 @@ describe('Orders Integration Tests', () => {
   it('Happy path: should generate consecutive invoice numbers starting from INV-1600 in SQLite', async () => {
     const order1 = await service.create('user-1', {
       total: 50,
+      status: 'confirmed',
       items: [{ productId: 1, price: 50, quantity: 1 }],
     });
     expect(order1.invoice_number).toBe('INV-1600');
 
     const order2 = await service.create('user-1', {
       total: 100,
+      status: 'confirmed',
       items: [{ productId: 2, price: 100, quantity: 1 }],
     });
     expect(order2.invoice_number).toBe('INV-1601');
@@ -205,8 +207,45 @@ describe('Orders Integration Tests', () => {
     // Next created order must continue with INV-1602
     const nextOrder = await service.create('user-1', {
       total: 50,
+      status: 'confirmed',
       items: [{ productId: 1, price: 50, quantity: 1 }],
     });
     expect(nextOrder.invoice_number).toBe('INV-1602');
+  });
+
+  it('TASK-85-02 Late Invoicing Engine: pending order has null invoice, and cancelling it does not skip numbers', async () => {
+    // 0. Initial confirmed order gets INV-1600
+    const initialOrder = await service.create('user-1', {
+      total: 30,
+      status: 'confirmed',
+      items: [{ productId: 1, price: 30, quantity: 1 }],
+    });
+    expect(initialOrder.invoice_number).toBe('INV-1600');
+
+    // 1. Order created as pending has no invoice_number
+    const pendingOrder = await service.create('user-1', {
+      total: 40,
+      status: 'pending',
+      items: [{ productId: 1, price: 40, quantity: 1 }],
+    });
+    expect(pendingOrder.invoice_number).toBeNull();
+
+    // 2. Cancelled pending order does NOT consume an invoice number
+    await service.updateStatus(pendingOrder.id, 'cancelled');
+    const cancelled = await service.findOne(pendingOrder.id);
+    expect(cancelled.status).toBe('cancelled');
+    expect(cancelled.invoice_number).toBeNull();
+
+    // 3. New pending order completed via completeCheckout gets the consecutive invoice_number (no gaps)
+    const newOrder = await service.create('user-1', {
+      total: 60,
+      status: 'pending',
+      items: [{ productId: 1, price: 60, quantity: 1 }],
+    });
+    expect(newOrder.invoice_number).toBeNull();
+
+    const finalized = await service.completeCheckout(newOrder.id);
+    expect(finalized.status).toBe('confirmed');
+    expect(finalized.invoice_number).toBe('INV-1601');
   });
 });

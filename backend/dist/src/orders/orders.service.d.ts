@@ -41,6 +41,7 @@ export declare class OrdersService {
     backfillInvoiceNumbers(): Promise<number>;
     create(userId: string, orderData: any): Promise<Order>;
     updateStatus(id: string, status: string, userRole?: string): Promise<Order>;
+    completeCheckout(id: string, userRole?: string): Promise<Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<Order>;
     update(id: string, updateData: any, userRole?: string): Promise<Order>;
     getPaymentsService(): PaymentsService | undefined;

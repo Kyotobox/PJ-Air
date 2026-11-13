@@ -52,5 +52,7 @@ export declare class OrdersController {
     disableOrder(id: string, body: {
         reason?: string;
     }): Promise<import("./order.entity").Order>;
+    completeCheckoutPost(id: string, req: any): Promise<import("./order.entity").Order>;
+    completeCheckoutPatch(id: string, req: any): Promise<import("./order.entity").Order>;
     update(id: string, body: any, req: any): Promise<import("./order.entity").Order>;
 }

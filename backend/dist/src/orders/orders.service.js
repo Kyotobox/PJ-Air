@@ -725,10 +725,17 @@ let OrdersService = class OrdersService {
             appliedTaxExempt = false;
             appliedTaxLegend = null;
         }
+        const rawStatus = otherData.status;
+        const initialStatus = rawStatus ? this.normalizeStatus(rawStatus) : 'pending';
+        const isDirectlyConfirmed = initialStatus === 'confirmed';
         const savedOrderId = await this.dataSource.transaction(async (manager) => {
-            const invoiceNumber = await this.getNextInvoiceNumber(manager);
+            let invoiceNumber = null;
+            if (isDirectlyConfirmed && !otherData.is_preliminary && !otherData.draft) {
+                invoiceNumber = await this.getNextInvoiceNumber(manager);
+            }
             const orderToCreate = manager.create(order_entity_1.Order, {
                 ...otherData,
+                status: initialStatus,
                 invoice_number: invoiceNumber,
                 delivery_date: appliedDeliveryDate,
                 payment_due_date: appliedPaymentDueDate,
@@ -803,7 +810,36 @@ let OrdersService = class OrdersService {
         const order = await this.findOne(id);
         const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
         order.status = normalizedStatus;
+        if (normalizedStatus === 'confirmed' && !order.invoice_number) {
+            order.invoice_number = await this.getNextInvoiceNumber();
+        }
         return this.orderRepository.save(order);
+    }
+    async completeCheckout(id, userRole) {
+        const order = await this.findOne(id);
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        const currentNorm = this.normalizeStatus(order.status);
+        if (currentNorm === 'cancelled') {
+            throw new common_1.BadRequestException('Cannot complete checkout for a cancelled order');
+        }
+        if (currentNorm === 'pending') {
+            order.status = 'confirmed';
+        }
+        if (!order.invoice_number) {
+            order.invoice_number = await this.getNextInvoiceNumber();
+        }
+        const saved = await this.orderRepository.save(order);
+        if (saved.payment_status === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
+            const user = await this.userRepository.findOne({ where: { id: saved.user_id } });
+            if (user?.email) {
+                this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending English invoice on completeCheckout:', err?.message || err);
+                });
+            }
+        }
+        return saved;
     }
     async assignDelivery(id, deliveryUserId) {
         const order = await this.findOne(id);
@@ -819,11 +855,22 @@ let OrdersService = class OrdersService {
         if (status) {
             const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
             order.status = normalizedStatus;
+            if (normalizedStatus === 'confirmed' && !order.invoice_number) {
+                order.invoice_number = await this.getNextInvoiceNumber();
+            }
         }
         if (payment_status !== undefined || paymentStatus !== undefined) {
             order.payment_status = payment_status || paymentStatus;
             if (order.payment_status === 'paid' && updateData.pending_balance === undefined) {
                 order.pending_balance = 0;
+            }
+            if (order.payment_status === 'paid' && this.normalizeStatus(order.status) !== 'cancelled') {
+                if (this.normalizeStatus(order.status) === 'pending') {
+                    order.status = 'confirmed';
+                }
+                if (!order.invoice_number) {
+                    order.invoice_number = await this.getNextInvoiceNumber();
+                }
             }
         }
         if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
@@ -943,6 +990,12 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException('Order not found');
         }
         order.payment_status = 'paid';
+        if (this.normalizeStatus(order.status) === 'pending') {
+            order.status = 'confirmed';
+        }
+        if (!order.invoice_number) {
+            order.invoice_number = await this.getNextInvoiceNumber();
+        }
         const saved = await this.orderRepository.save(order);
         const user = await this.userRepository.findOne({ where: { id: order.user_id } });
         if (user?.email) {
