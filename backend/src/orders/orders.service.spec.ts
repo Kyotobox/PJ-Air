@@ -2441,5 +2441,102 @@ describe('OrdersService', () => {
       });
     });
   });
+
+  describe('Sprint S85C: Check Photo Validation (TASK-85-03)', () => {
+    it('TASK-85-03 Sad Path: should throw BadRequestException when order payment method is CHECK but check photo is missing', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-check-1',
+        email: 'b2b-check@bakery.com',
+        account_type: 'cash',
+      });
+
+      const orderData = {
+        items: [{ productId: 10, quantity: 2 }],
+        deliveryType: 'pickup',
+        paymentMethod: 'CHECK',
+        // checkImageUrl explicitly missing
+      };
+
+      await expect(service.create('user-check-1', orderData)).rejects.toThrow(
+        new BadRequestException('Foto del cheque es obligatoria para pagos con cheque')
+      );
+    });
+
+    it('TASK-85-03 Sad Path: should throw BadRequestException when payment_method is lowercase check without checkImageUrl', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-check-2',
+        email: 'b2b-check2@bakery.com',
+        account_type: 'cash',
+      });
+
+      const orderData = {
+        items: [{ productId: 10, quantity: 1 }],
+        deliveryType: 'pickup',
+        payment_method: 'check',
+        checkImageUrl: '   ', // whitespace only
+      };
+
+      await expect(service.create('user-check-2', orderData)).rejects.toThrow(
+        new BadRequestException('Foto del cheque es obligatoria para pagos con cheque')
+      );
+    });
+
+    it('TASK-85-03 Happy Path: should create order with pending_check_verification when checkImageUrl is provided', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-check-3',
+        email: 'b2b-valid@bakery.com',
+        account_type: 'cash',
+      });
+      productRepository.find.mockResolvedValue([
+        { id: 10, name: 'Croissant', price: 50 },
+      ]);
+
+      let capturedOrderData: any = null;
+      mockManager.create.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          capturedOrderData = data;
+          return { id: 'order-check-valid', ...data };
+        }
+        return data;
+      });
+      mockManager.save.mockImplementation((entity: any, data: any) => {
+        if (entity === Order) {
+          return Promise.resolve({ id: 'order-check-valid', ...data });
+        }
+        return Promise.resolve(data);
+      });
+      service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+      const orderData = {
+        items: [{ productId: 10, quantity: 2 }],
+        deliveryType: 'pickup',
+        paymentMethod: 'CHECK',
+        checkImageUrl: 'https://storage.jhoanes.com/checks/check_1048_front.jpg',
+        checkNumber: '1048',
+        checkBank: 'JPMorgan Chase',
+      };
+
+      const result = await service.create('user-check-3', orderData);
+
+      expect(result).toBeDefined();
+      expect(capturedOrderData.payment_status).toBe('pending_check_verification');
+      expect(capturedOrderData.check_image_url).toBe('https://storage.jhoanes.com/checks/check_1048_front.jpg');
+      expect(capturedOrderData.check_number).toBe('1048');
+      expect(capturedOrderData.check_bank).toBe('JPMorgan Chase');
+    });
+
+    it('TASK-85-03 Sad Path: settleBatch rejects check payment without check photo', async () => {
+      orderRepository.find.mockResolvedValueOnce([
+        { id: 'order-batch-1', user_id: 'user-batch', status: 'delivered', payment_status: 'pending', total: 100, refunded_amount: 0 },
+      ]);
+
+      await expect(service.settleBatch('user-batch', 'client', {
+        order_ids: ['order-batch-1'],
+        payment_method: 'check',
+      })).rejects.toThrow(
+        new BadRequestException('Foto del cheque es obligatoria para pagos con cheque')
+      );
+    });
+  });
 });
 

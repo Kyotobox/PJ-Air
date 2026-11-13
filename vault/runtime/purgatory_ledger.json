@@ -572,5 +572,12 @@
     "exile_name": "1794453018622_deploy-testing.sh",
     "hash": "F5F52B77C6A2919CEA7229E1863B877040F3EA3090B7C5D906D96B90FDB78AFE",
     "original_path": "/home/opc/code/pj-air/deploy-testing.sh"
+  },
+  {
+    "timestamp": "2026-11-13T17:51:15.100348+00:00",
+    "original_name": "ticket_TCK-PJ-AIR-S85A-1794582572458",
+    "exile_name": "broker_rejected_1794592275100_TCK-PJ-AIR-S85A-1794582572458.json",
+    "verdict": "REJECTED",
+    "reason": "Violación de directiva §12.b: El lote excede el límite estricto de 5 archivos (8 detectados)."
   }
 ]

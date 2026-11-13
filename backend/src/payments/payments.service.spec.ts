@@ -44,6 +44,21 @@ describe('PaymentsService', () => {
     }).compile();
 
     service = module.get<PaymentsService>(PaymentsService);
+    (service as any).stripe = {
+      paymentIntents: {
+        create: jest.fn().mockImplementation((params: any) => Promise.resolve({
+          id: 'pi_test_123',
+          client_secret: 'pi_test_123_secret',
+          status: 'succeeded',
+          amount: params.amount,
+        })),
+        retrieve: jest.fn(),
+      },
+      customers: {
+        retrieve: jest.fn(),
+        create: jest.fn(),
+      },
+    };
   });
 
   it('should be defined', () => {

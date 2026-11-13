@@ -477,6 +477,15 @@ let OrdersService = class OrdersService {
                 throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
             }
         }
+        const earlyMethod = orderData.paymentMethod || orderData.payment_method;
+        const isEarlyCheck = String(earlyMethod || '').trim().toUpperCase() === 'CHECK';
+        const earlyCheckPhoto = orderData.checkImageUrl ||
+            orderData.check_image_url ||
+            orderData.checkPhoto ||
+            orderData.check_photo;
+        if (isEarlyCheck && (!earlyCheckPhoto || !String(earlyCheckPhoto).trim())) {
+            throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
+        }
         const { items, ...rest } = orderData;
         const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, paymentStatus, ...otherData } = rest;
         let itemsTotal = 0;
@@ -519,11 +528,28 @@ let OrdersService = class OrdersService {
             catch (_) { }
         }
         let appliedPaymentStatus = paymentStatus || rest.payment_status || 'pending';
-        let appliedPaymentMethod = rest.payment_method || orderData.payment_method || (user?.account_type === 'credit' ? 'credit' : 'stripe');
+        let appliedPaymentMethod = rest.payment_method || orderData.payment_method || rest.paymentMethod || orderData.paymentMethod || (user?.account_type === 'credit' ? 'credit' : 'stripe');
         const rawZelleRef = rest.zelle_reference || orderData.zelle_reference;
         const appliedZelleReference = rawZelleRef ? String(rawZelleRef).trim() : null;
         const rawZelleReceipt = rest.zelle_receipt_url || orderData.zelle_receipt_url;
         const appliedZelleReceiptUrl = rawZelleReceipt ? String(rawZelleReceipt).trim() : null;
+        const isCheckPayment = String(appliedPaymentMethod || '').trim().toUpperCase() === 'CHECK' ||
+            String(orderData.paymentMethod || orderData.payment_method || rest.paymentMethod || rest.payment_method || '').trim().toUpperCase() === 'CHECK';
+        const rawCheckImage = orderData.checkImageUrl ||
+            orderData.check_image_url ||
+            orderData.checkPhoto ||
+            orderData.check_photo ||
+            rest.checkImageUrl ||
+            rest.check_image_url ||
+            rest.checkPhoto ||
+            rest.check_photo;
+        const appliedCheckImageUrl = rawCheckImage ? String(rawCheckImage).trim() : null;
+        if (isCheckPayment) {
+            if (!appliedCheckImageUrl) {
+                throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
+            }
+            appliedPaymentStatus = 'pending_check_verification';
+        }
         let appliedPaymentDueDate = null;
         if (appliedPaymentMethod === 'credit') {
             if (this.creditService) {
@@ -747,6 +773,11 @@ let OrdersService = class OrdersService {
                 payment_method: appliedPaymentMethod,
                 zelle_reference: appliedZelleReference,
                 zelle_receipt_url: appliedZelleReceiptUrl,
+                check_number: orderData.check_number || orderData.checkNumber || rest.check_number || rest.checkNumber || null,
+                check_bank: orderData.check_bank || orderData.checkBank || rest.check_bank || rest.checkBank || null,
+                check_amount: orderData.check_amount !== undefined ? Number(orderData.check_amount) : orderData.checkAmount !== undefined ? Number(orderData.checkAmount) : null,
+                check_image_url: appliedCheckImageUrl,
+                check_verified: Boolean(orderData.check_verified || orderData.checkVerified || rest.check_verified || rest.checkVerified),
                 packaging_fee: packagingFee,
                 packaging_discount: packagingDiscount,
                 fee_amount: feeAmount,
@@ -918,6 +949,33 @@ let OrdersService = class OrdersService {
         if (updateData.zelle_reference !== undefined) {
             order.zelle_reference = updateData.zelle_reference;
         }
+        const incomingMethod = updateData.payment_method || updateData.paymentMethod;
+        if (incomingMethod !== undefined) {
+            order.payment_method = incomingMethod;
+        }
+        const isCheckPaymentUpdate = String(order.payment_method || '').trim().toUpperCase() === 'CHECK';
+        if (isCheckPaymentUpdate && (incomingMethod !== undefined || updateData.payment_status === 'paid' || updateData.paymentStatus === 'paid')) {
+            const checkPhoto = updateData.checkImageUrl || updateData.check_image_url || updateData.checkPhoto || updateData.check_photo || order.check_image_url;
+            if (!checkPhoto || typeof checkPhoto !== 'string' || !checkPhoto.trim()) {
+                throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
+            }
+            order.check_image_url = checkPhoto.trim();
+        }
+        if (updateData.check_image_url !== undefined || updateData.checkImageUrl !== undefined) {
+            order.check_image_url = updateData.check_image_url || updateData.checkImageUrl;
+        }
+        if (updateData.check_number !== undefined || updateData.checkNumber !== undefined) {
+            order.check_number = updateData.check_number || updateData.checkNumber;
+        }
+        if (updateData.check_bank !== undefined || updateData.checkBank !== undefined) {
+            order.check_bank = updateData.check_bank || updateData.checkBank;
+        }
+        if (updateData.check_amount !== undefined || updateData.checkAmount !== undefined) {
+            order.check_amount = Number(updateData.check_amount ?? updateData.checkAmount);
+        }
+        if (updateData.check_verified !== undefined || updateData.checkVerified !== undefined) {
+            order.check_verified = Boolean(updateData.check_verified ?? updateData.checkVerified);
+        }
         if (updateData.pending_balance !== undefined) {
             order.pending_balance = Number(updateData.pending_balance);
         }
@@ -1042,6 +1100,12 @@ let OrdersService = class OrdersService {
             throw new common_1.BadRequestException('El método de pago es obligatorio para la liquidación');
         }
         const cleanMethod = dto.payment_method.trim().toLowerCase();
+        if (cleanMethod === 'check') {
+            const checkPhoto = dto.checkImageUrl || dto.check_image_url || dto.checkPhoto || dto.check_photo;
+            if (!checkPhoto || typeof checkPhoto !== 'string' || !checkPhoto.trim()) {
+                throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
+            }
+        }
         const orders = await this.orderRepository.find({
             where: { id: (0, typeorm_2.In)(dto.order_ids) },
             relations: ['items'],

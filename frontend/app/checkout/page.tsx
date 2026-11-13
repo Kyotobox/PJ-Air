@@ -2114,7 +2114,7 @@ export default function CheckoutPage() {
                                     {/* Dropzone / Upload check photo */}
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-purple-950 flex items-center justify-between">
-                                            <span>{lbl('Foto Frontal del Cheque (Obligatoria) *', 'Front Photo of the Check (Required) *')}</span>
+                                            <span>{lbl('Foto del Cheque Físico (Obligatoria) *', 'Physical Check Photo (Required) *')}</span>
                                             {isUploadingCheck && (
                                                 <span className="text-[10px] text-purple-600 flex items-center gap-1 font-normal">
                                                     <Loader2 size={12} className="animate-spin" /> {lbl('Subiendo y procesando OCR...', 'Uploading & reading OCR...')}
@@ -2127,6 +2127,7 @@ export default function CheckoutPage() {
                                                 accept="image/png,image/jpeg,image/webp"
                                                 onChange={handleCheckFileChange}
                                                 id="check-photo-upload"
+                                                data-testid="check-photo-upload-input"
                                                 className="hidden"
                                             />
                                             <label htmlFor="check-photo-upload" className="cursor-pointer block">
@@ -2152,7 +2153,7 @@ export default function CheckoutPage() {
                                                             <FileText size={20} />
                                                         </div>
                                                         <p className="text-xs font-bold text-purple-950">
-                                                            {lbl('Arrastra o haz clic para subir foto del cheque', 'Drag or click to upload check photo')}
+                                                            {lbl('Arrastra o haz clic para subir foto del cheque físico', 'Drag or click to upload physical check photo')}
                                                         </p>
                                                         <p className="text-[10px] text-slate-400">PNG, JPG o WEBP (máx. 5MB)</p>
                                                     </div>
