@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3, MapPin, MessageSquare, Sparkles, Calendar } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3, MapPin, MessageSquare, Sparkles, Calendar, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -38,6 +38,7 @@ export default function AdminSidebar() {
         { name: locale === 'en' ? 'Seasonal Banners' : 'Banners Temporada', icon: Sparkles, href: '/admin/banners' },
         { name: locale === 'en' ? 'Delivery Zones' : 'Zonas Delivery', icon: MapPin, href: '/admin/zones' },
         { name: locale === 'en' ? 'Dispatch Schedule' : 'Días de Despacho', icon: Calendar, href: '/admin/dispatch' },
+        { name: locale === 'en' ? 'Audit Trail' : 'Bitácora Forense', icon: ShieldCheck, href: '/admin/audit-logs' },
         { name: t.adminSidebar.settings,    icon: Settings,         href: '/admin/settings' },
     ];
 

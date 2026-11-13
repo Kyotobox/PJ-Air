@@ -51,14 +51,17 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("../users/user.entity");
 const system_config_entity_1 = require("../system-configs/system-config.entity");
+const admin_audit_log_entity_1 = require("./admin-audit-log.entity");
 const crypto_util_1 = require("../auth/crypto.util");
 const bcrypt = __importStar(require("bcryptjs"));
 let AdminActionsService = class AdminActionsService {
     userRepository;
     systemConfigRepository;
-    constructor(userRepository, systemConfigRepository) {
+    adminAuditLogRepository;
+    constructor(userRepository, systemConfigRepository, adminAuditLogRepository) {
         this.userRepository = userRepository;
         this.systemConfigRepository = systemConfigRepository;
+        this.adminAuditLogRepository = adminAuditLogRepository;
     }
     async resetPassword(targetUserId, newPassword) {
         const user = await this.userRepository.findOne({ where: { id: targetUserId } });
@@ -119,13 +122,69 @@ let AdminActionsService = class AdminActionsService {
             message: 'Contraseña actualizada correctamente.',
         };
     }
+    async logAction(adminId, adminName, action, targetEntity, targetId, prevState, newState, notes, ip) {
+        const prevJson = prevState !== undefined && prevState !== null
+            ? (typeof prevState === 'string' ? prevState : JSON.stringify(prevState))
+            : null;
+        const newJson = newState !== undefined && newState !== null
+            ? (typeof newState === 'string' ? newState : JSON.stringify(newState))
+            : null;
+        const log = this.adminAuditLogRepository.create({
+            admin_id: String(adminId || ''),
+            admin_name: String(adminName || 'Admin'),
+            action: String(action || ''),
+            target_entity: String(targetEntity || ''),
+            target_id: String(targetId || ''),
+            previous_state_json: prevJson,
+            new_state_json: newJson,
+            notes: notes || null,
+            ip_address: ip || null,
+        });
+        return this.adminAuditLogRepository.save(log);
+    }
+    async getAuditLogs(options) {
+        const page = Math.max(1, Number(options?.page) || 1);
+        const limit = Math.max(1, Math.min(100, Number(options?.limit) || 20));
+        const skip = (page - 1) * limit;
+        const qb = this.adminAuditLogRepository.createQueryBuilder('log');
+        if (options?.action) {
+            qb.andWhere('log.action = :action', { action: options.action });
+        }
+        if (options?.targetEntity) {
+            qb.andWhere('log.target_entity = :targetEntity', { targetEntity: options.targetEntity });
+        }
+        if (options?.targetId) {
+            qb.andWhere('log.target_id = :targetId', { targetId: options.targetId });
+        }
+        if (options?.adminId) {
+            qb.andWhere('log.admin_id = :adminId', { adminId: options.adminId });
+        }
+        if (options?.startDate) {
+            qb.andWhere('log.created_at >= :startDate', { startDate: options.startDate });
+        }
+        if (options?.endDate) {
+            qb.andWhere('log.created_at <= :endDate', { endDate: options.endDate });
+        }
+        qb.orderBy('log.created_at', 'DESC');
+        qb.skip(skip).take(limit);
+        const [logs, total] = await qb.getManyAndCount();
+        return {
+            logs,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit) || 1,
+        };
+    }
 };
 exports.AdminActionsService = AdminActionsService;
 exports.AdminActionsService = AdminActionsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __param(1, (0, typeorm_1.InjectRepository)(system_config_entity_1.SystemConfig)),
+    __param(2, (0, typeorm_1.InjectRepository)(admin_audit_log_entity_1.AdminAuditLog)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
 ], AdminActionsService);
 //# sourceMappingURL=admin-actions.service.js.map

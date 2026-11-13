@@ -1,7 +1,9 @@
 import { SystemConfigsService } from './system-configs.service';
+import { AdminActionsService } from '../admin-actions/admin-actions.service';
 export declare class SystemConfigsController {
     private readonly configsService;
-    constructor(configsService: SystemConfigsService);
+    private readonly adminActionsService?;
+    constructor(configsService: SystemConfigsService, adminActionsService?: AdminActionsService | undefined);
     getDeliverySchedule(): Promise<{
         workingDays: number[];
         holidays: Array<{

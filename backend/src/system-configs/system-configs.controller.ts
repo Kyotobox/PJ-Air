@@ -1,10 +1,14 @@
-import { Controller, Get, Param, Patch, Body, UseGuards, Req, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Body, UseGuards, Req, ForbiddenException, NotFoundException, Optional } from '@nestjs/common';
 import { SystemConfigsService } from './system-configs.service';
+import { AdminActionsService } from '../admin-actions/admin-actions.service';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller(['configs', 'api/configs', 'system-configs', 'api/system-configs'])
 export class SystemConfigsController {
-  constructor(private readonly configsService: SystemConfigsService) {}
+  constructor(
+    private readonly configsService: SystemConfigsService,
+    @Optional() private readonly adminActionsService?: AdminActionsService,
+  ) {}
 
   @Get('delivery-schedule')
   async getDeliverySchedule() {
@@ -33,7 +37,24 @@ export class SystemConfigsController {
     if (userRole !== 'admin') {
       throw new ForbiddenException('Only admin users can modify system configurations');
     }
-    return this.configsService.updateStoreDiscount(body);
+    const previous = await this.configsService.getStoreDiscount();
+    const updated = await this.configsService.updateStoreDiscount(body);
+    if (this.adminActionsService) {
+      try {
+        await this.adminActionsService.logAction(
+          req.user?.id || 'admin',
+          req.user?.name || req.user?.email || 'Admin',
+          'DISCOUNT_CHANGE',
+          'SystemConfig',
+          'store_general_discount',
+          previous,
+          updated,
+          body?.reason || 'Actualización de descuento general de tienda',
+          req.ip,
+        );
+      } catch (_) {}
+    }
+    return updated;
   }
 
   @Get(':key')

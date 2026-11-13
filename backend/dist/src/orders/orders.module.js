@@ -25,6 +25,7 @@ const logistics_module_1 = require("../logistics/logistics.module");
 const payments_module_1 = require("../payments/payments.module");
 const addresses_module_1 = require("../addresses/addresses.module");
 const system_configs_module_1 = require("../system-configs/system-configs.module");
+const admin_actions_module_1 = require("../admin-actions/admin-actions.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
@@ -37,6 +38,7 @@ exports.OrdersModule = OrdersModule = __decorate([
             credit_module_1.CreditModule,
             logistics_module_1.LogisticsModule,
             system_configs_module_1.SystemConfigsModule,
+            admin_actions_module_1.AdminActionsModule,
             (0, common_1.forwardRef)(() => payments_module_1.PaymentsModule),
             (0, common_1.forwardRef)(() => addresses_module_1.AddressesModule),
         ],

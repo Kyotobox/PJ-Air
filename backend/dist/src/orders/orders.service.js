@@ -277,8 +277,9 @@ let OrdersService = class OrdersService {
             if (!product) {
                 throw new common_1.NotFoundException(`Product with ID ${productId} not found`);
             }
-            const quantity = Number(item.quantity) || 0;
-            if (quantity < 1) {
+            const rawQuantity = item.quantity;
+            const quantity = Number(rawQuantity);
+            if (isNaN(quantity) || !Number.isInteger(quantity) || quantity < 1) {
                 throw new common_1.BadRequestException('Validation Error: Item quantity must be at least 1');
             }
             let finalPrice = Number(product.price);
@@ -291,7 +292,7 @@ let OrdersService = class OrdersService {
                     finalPrice = Number(product.price) * (1 - Number(productDiscount.discount_percentage) / 100);
                 }
             }
-            else if (user.general_discount !== null && user.general_discount !== undefined && Number(user.general_discount) > 0) {
+            else if (user.general_discount !== null && user.general_discount !== undefined && Number(user.general_discount) > 0 && user.productDiscounts && user.productDiscounts.length > 0) {
                 finalPrice = Number(product.price) * (1 - Number(user.general_discount) / 100);
             }
             finalPrice = Math.round((finalPrice + Number.EPSILON) * 100) / 100;
@@ -458,6 +459,24 @@ let OrdersService = class OrdersService {
         return unassignedOrders.length;
     }
     async create(userId, orderData) {
+        const rawDeliveryFee = orderData.delivery_fee_charged !== undefined
+            ? orderData.delivery_fee_charged
+            : orderData.delivery_fee;
+        if (rawDeliveryFee !== undefined && rawDeliveryFee !== null) {
+            const parsedFee = Number(rawDeliveryFee);
+            if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 150) {
+                throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+            }
+        }
+        const rawDiscount = orderData.discount_percentage !== undefined
+            ? orderData.discount_percentage
+            : orderData.global_discount_percentage;
+        if (rawDiscount !== undefined && rawDiscount !== null) {
+            const parsedDiscount = Number(rawDiscount);
+            if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 50) {
+                throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
+            }
+        }
         const { items, ...rest } = orderData;
         const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, paymentStatus, ...otherData } = rest;
         let itemsTotal = 0;
@@ -571,6 +590,9 @@ let OrdersService = class OrdersService {
                 deliveryFee = Number(user?.delivery_fee || 0);
             }
         }
+        if (isNaN(deliveryFee) || deliveryFee < 0 || deliveryFee > 150) {
+            throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+        }
         let isComplementary = false;
         if (appliedDeliveryDate && appliedDeliveryType !== 'pickup') {
             const activeSameDateOrders = await this.orderRepository.find({
@@ -589,24 +611,56 @@ let OrdersService = class OrdersService {
         if (isComplementary && !appliedNotes.includes('Complementario a orden existente')) {
             appliedNotes = appliedNotes ? `${appliedNotes}\n[Complementario a orden existente]` : '[Complementario a orden existente]';
         }
-        let globalDiscountAmount = 0;
-        let globalDiscountReason = null;
-        let globalDiscountPercentage = 0;
+        let activeStoreDiscount = 0;
+        let storeDiscountReason = null;
         if (this.systemConfigsService && typeof this.systemConfigsService.getStoreDiscount === 'function') {
             try {
                 const storeDiscount = await this.systemConfigsService.getStoreDiscount();
                 if (storeDiscount &&
                     storeDiscount.is_active === true &&
                     Number(storeDiscount.percentage) > 0 &&
-                    storeDiscount.valid_until &&
-                    new Date() <= new Date(storeDiscount.valid_until)) {
-                    globalDiscountPercentage = Number(storeDiscount.percentage);
-                    globalDiscountReason = storeDiscount.reason || 'Descuento general de tienda';
-                    globalDiscountAmount = Math.round(itemsTotal * (globalDiscountPercentage / 100) * 100) / 100;
+                    (!storeDiscount.valid_until || new Date() <= new Date(storeDiscount.valid_until))) {
+                    activeStoreDiscount = Number(storeDiscount.percentage);
+                    storeDiscountReason = storeDiscount.reason || 'Descuento general de tienda';
                 }
             }
             catch (err) {
                 console.error('[OrdersService] Error fetching store general discount:', err);
+            }
+        }
+        const userGeneralDiscount = (user?.general_discount !== null && user?.general_discount !== undefined && Number(user.general_discount) > 0)
+            ? Number(user.general_discount)
+            : 0;
+        if (activeStoreDiscount > 50 || userGeneralDiscount > 50) {
+            throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
+        }
+        const appliedDiscountPercentage = Math.max(activeStoreDiscount, userGeneralDiscount);
+        if (appliedDiscountPercentage > 50) {
+            throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
+        }
+        let globalDiscountAmount = 0;
+        let globalDiscountReason = null;
+        let globalDiscountPercentage = 0;
+        if (appliedDiscountPercentage > 0) {
+            globalDiscountPercentage = appliedDiscountPercentage;
+            if (activeStoreDiscount >= userGeneralDiscount && activeStoreDiscount > 0) {
+                globalDiscountReason = storeDiscountReason || 'Descuento general de tienda';
+            }
+            else {
+                globalDiscountReason = `Descuento particular del cliente (${userGeneralDiscount}%)`;
+            }
+            const alreadyDiscountedAtItemLevel = Boolean(user?.productDiscounts && user.productDiscounts.length > 0 && userGeneralDiscount > 0);
+            if (alreadyDiscountedAtItemLevel) {
+                if (activeStoreDiscount > userGeneralDiscount) {
+                    const deltaPercentage = activeStoreDiscount - userGeneralDiscount;
+                    globalDiscountAmount = Math.round(itemsTotal * (deltaPercentage / 100) * 100) / 100;
+                }
+                else {
+                    globalDiscountAmount = 0;
+                }
+            }
+            else {
+                globalDiscountAmount = Math.round(itemsTotal * (globalDiscountPercentage / 100) * 100) / 100;
             }
         }
         let storeCreditApplied = 0;
@@ -771,6 +825,22 @@ let OrdersService = class OrdersService {
             if (order.payment_status === 'paid' && updateData.pending_balance === undefined) {
                 order.pending_balance = 0;
             }
+        }
+        if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
+            const rawFee = updateData.delivery_fee_charged !== undefined ? updateData.delivery_fee_charged : updateData.delivery_fee;
+            const parsedFee = Number(rawFee);
+            if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 150) {
+                throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+            }
+            order.delivery_fee_charged = parsedFee;
+        }
+        if (updateData.discount_percentage !== undefined || updateData.global_discount_percentage !== undefined) {
+            const rawDiscount = updateData.discount_percentage !== undefined ? updateData.discount_percentage : updateData.global_discount_percentage;
+            const parsedDiscount = Number(rawDiscount);
+            if (isNaN(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 50) {
+                throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
+            }
+            order.global_discount_percentage = parsedDiscount;
         }
         if (updateData.stripe_payment_id !== undefined) {
             order.stripe_payment_id = updateData.stripe_payment_id;

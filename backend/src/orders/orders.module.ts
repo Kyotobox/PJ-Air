@@ -16,6 +16,7 @@ import { LogisticsModule } from '../logistics/logistics.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { AddressesModule } from '../addresses/addresses.module';
 import { SystemConfigsModule } from '../system-configs/system-configs.module';
+import { AdminActionsModule } from '../admin-actions/admin-actions.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SystemConfigsModule } from '../system-configs/system-configs.module';
     CreditModule,
     LogisticsModule,
     SystemConfigsModule,
+    AdminActionsModule,
     forwardRef(() => PaymentsModule),
     forwardRef(() => AddressesModule),
   ],

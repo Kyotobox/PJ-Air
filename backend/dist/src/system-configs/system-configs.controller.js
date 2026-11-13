@@ -15,11 +15,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SystemConfigsController = void 0;
 const common_1 = require("@nestjs/common");
 const system_configs_service_1 = require("./system-configs.service");
+const admin_actions_service_1 = require("../admin-actions/admin-actions.service");
 const auth_guard_1 = require("../auth/auth.guard");
 let SystemConfigsController = class SystemConfigsController {
     configsService;
-    constructor(configsService) {
+    adminActionsService;
+    constructor(configsService, adminActionsService) {
         this.configsService = configsService;
+        this.adminActionsService = adminActionsService;
     }
     async getDeliverySchedule() {
         return this.configsService.getDeliverySchedule();
@@ -39,7 +42,15 @@ let SystemConfigsController = class SystemConfigsController {
         if (userRole !== 'admin') {
             throw new common_1.ForbiddenException('Only admin users can modify system configurations');
         }
-        return this.configsService.updateStoreDiscount(body);
+        const previous = await this.configsService.getStoreDiscount();
+        const updated = await this.configsService.updateStoreDiscount(body);
+        if (this.adminActionsService) {
+            try {
+                await this.adminActionsService.logAction(req.user?.id || 'admin', req.user?.name || req.user?.email || 'Admin', 'DISCOUNT_CHANGE', 'SystemConfig', 'store_general_discount', previous, updated, body?.reason || 'Actualización de descuento general de tienda', req.ip);
+            }
+            catch (_) { }
+        }
+        return updated;
     }
     async get(key) {
         const value = await this.configsService.get(key);
@@ -106,6 +117,8 @@ __decorate([
 ], SystemConfigsController.prototype, "update", null);
 exports.SystemConfigsController = SystemConfigsController = __decorate([
     (0, common_1.Controller)(['configs', 'api/configs', 'system-configs', 'api/system-configs']),
-    __metadata("design:paramtypes", [system_configs_service_1.SystemConfigsService])
+    __param(1, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [system_configs_service_1.SystemConfigsService,
+        admin_actions_service_1.AdminActionsService])
 ], SystemConfigsController);
 //# sourceMappingURL=system-configs.controller.js.map

@@ -151,10 +151,18 @@ let UsersService = class UsersService {
         });
     }
     async updateGeneralDiscount(userId, discount) {
-        await this.userRepository.update(userId, { general_discount: discount });
+        const parsed = Number(discount);
+        if (isNaN(parsed) || parsed < 0 || parsed > 50) {
+            throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
+        }
+        await this.userRepository.update(userId, { general_discount: parsed });
     }
     async updateDeliveryFee(userId, fee) {
-        await this.userRepository.update(userId, { delivery_fee: fee });
+        const parsed = Number(fee);
+        if (isNaN(parsed) || parsed < 0 || parsed > 150) {
+            throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+        }
+        await this.userRepository.update(userId, { delivery_fee: parsed });
     }
     async updateMinOrderAmount(userId, minAmount) {
         await this.userRepository.update(userId, { min_order_amount: minAmount !== null && minAmount !== undefined ? Number(minAmount) : null });

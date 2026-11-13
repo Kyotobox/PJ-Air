@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -155,11 +155,19 @@ export class UsersService {
   }
 
   async updateGeneralDiscount(userId: string, discount: number): Promise<void> {
-    await this.userRepository.update(userId, { general_discount: discount });
+    const parsed = Number(discount);
+    if (isNaN(parsed) || parsed < 0 || parsed > 50) {
+      throw new BadRequestException('El porcentaje de descuento no puede exceder el 50%');
+    }
+    await this.userRepository.update(userId, { general_discount: parsed });
   }
 
   async updateDeliveryFee(userId: string, fee: number): Promise<void> {
-    await this.userRepository.update(userId, { delivery_fee: fee });
+    const parsed = Number(fee);
+    if (isNaN(parsed) || parsed < 0 || parsed > 150) {
+      throw new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+    }
+    await this.userRepository.update(userId, { delivery_fee: parsed });
   }
 
   async updateMinOrderAmount(userId: string, minAmount: number | null): Promise<void> {

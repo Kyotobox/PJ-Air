@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const user_entity_1 = require("../users/user.entity");
 const system_config_entity_1 = require("../system-configs/system-config.entity");
+const admin_audit_log_entity_1 = require("./admin-audit-log.entity");
 const admin_actions_controller_1 = require("./admin-actions.controller");
 const admin_actions_service_1 = require("./admin-actions.service");
 let AdminActionsModule = class AdminActionsModule {
@@ -18,7 +19,7 @@ let AdminActionsModule = class AdminActionsModule {
 exports.AdminActionsModule = AdminActionsModule;
 exports.AdminActionsModule = AdminActionsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, system_config_entity_1.SystemConfig])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, system_config_entity_1.SystemConfig, admin_audit_log_entity_1.AdminAuditLog])],
         controllers: [admin_actions_controller_1.AdminActionsController],
         providers: [admin_actions_service_1.AdminActionsService],
         exports: [admin_actions_service_1.AdminActionsService],

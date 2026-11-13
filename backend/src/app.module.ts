@@ -39,13 +39,14 @@ import { CheckPayment } from './payments/check-payment.entity';
 import { Feedback } from './feedback/feedback.entity';
 import { Banner } from './banners/banner.entity';
 import { AddressGeocache } from './addresses/address-geocache.entity';
+import { AdminAuditLog } from './admin-actions/admin-audit-log.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: DATABASE_PATH,
-      entities: [Product, Category, User, Profile, Address, AddressGeocache, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone, CheckPayment, Feedback, Banner],
+      entities: [Product, Category, User, Profile, Address, AddressGeocache, Order, OrderItem, ProductDiscount, SystemConfig, DeliveryZone, CheckPayment, Feedback, Banner, AdminAuditLog],
       synchronize: NODE_ENV !== 'production',
       logging: false,
     }),
@@ -317,6 +318,23 @@ export class AppModule implements OnModuleInit {
           is_active BOOLEAN DEFAULT 1,
           created_at DATETIME DEFAULT (datetime('now')),
           updated_at DATETIME DEFAULT (datetime('now'))
+        );
+      `);
+
+      // TASK-83-05: Crear tabla admin_audit_logs si no existe
+      await qr.query(`
+        CREATE TABLE IF NOT EXISTS admin_audit_logs (
+          id VARCHAR PRIMARY KEY,
+          admin_id VARCHAR NOT NULL,
+          admin_name VARCHAR NOT NULL,
+          action VARCHAR NOT NULL,
+          target_entity VARCHAR NOT NULL,
+          target_id VARCHAR NOT NULL,
+          previous_state_json TEXT,
+          new_state_json TEXT,
+          notes TEXT,
+          ip_address VARCHAR,
+          created_at DATETIME DEFAULT (datetime('now'))
         );
       `);
       await qr.release();

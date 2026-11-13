@@ -12,12 +12,13 @@ const typeorm_1 = require("@nestjs/typeorm");
 const system_config_entity_1 = require("./system-config.entity");
 const system_configs_service_1 = require("./system-configs.service");
 const system_configs_controller_1 = require("./system-configs.controller");
+const admin_actions_module_1 = require("../admin-actions/admin-actions.module");
 let SystemConfigsModule = class SystemConfigsModule {
 };
 exports.SystemConfigsModule = SystemConfigsModule;
 exports.SystemConfigsModule = SystemConfigsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([system_config_entity_1.SystemConfig])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([system_config_entity_1.SystemConfig]), admin_actions_module_1.AdminActionsModule],
         providers: [system_configs_service_1.SystemConfigsService],
         controllers: [system_configs_controller_1.SystemConfigsController],
         exports: [system_configs_service_1.SystemConfigsService],

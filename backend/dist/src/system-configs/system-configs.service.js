@@ -118,7 +118,20 @@ Order adjustments or cancellations must be requested prior to the 12:00 PM produ
                 key: 'store_general_discount',
                 value: '{"reason":"","percentage":0,"valid_until":"","is_active":false}',
             });
-            console.log('[CONFIG] Seeded default store_general_discount');
+            console.log('[CONFIG] Seeded default store_general_discount (0%, inactive)');
+        }
+        else {
+            try {
+                const parsed = JSON.parse(storeDiscountConfig.value);
+                if (parsed && parsed.percentage === 3.5 && !parsed.is_active) {
+                    parsed.percentage = 0;
+                    await this.repo.save({
+                        key: 'store_general_discount',
+                        value: JSON.stringify(parsed),
+                    });
+                }
+            }
+            catch (_) { }
         }
         await this.getDeliverySchedule();
     }
@@ -252,8 +265,8 @@ Order adjustments or cancellations must be requested prior to the 12:00 PM produ
             typeof data.percentage !== 'number' ||
             isNaN(data.percentage) ||
             data.percentage < 0 ||
-            data.percentage > 100) {
-            throw new common_1.BadRequestException('percentage must be a valid number between 0 and 100');
+            data.percentage > 50) {
+            throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
         }
         if (data.is_active === undefined || typeof data.is_active !== 'boolean') {
             throw new common_1.BadRequestException('is_active must be a boolean');

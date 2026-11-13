@@ -1998,5 +1998,308 @@ describe('OrdersService', () => {
       await expect(service.create('user-disc-1', invalidOrderData)).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('Sprint S83C: Motor de Descuento Dual Admin y Validación de Rangos Seguros (TASK-83-04 / TASK-83-05B)', () => {
+    let mockSystemConfigsService: any;
+
+    beforeEach(() => {
+      mockSystemConfigsService = {
+        getStoreDiscount: jest.fn(),
+        getCachedDeliverySchedule: jest.fn().mockReturnValue(null),
+      };
+      (service as any).systemConfigsService = mockSystemConfigsService;
+
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-s83c',
+        general_discount: 0,
+        productDiscounts: [],
+        credit_balance: 0,
+        delivery_fee: 0,
+        account_type: 'cash',
+      });
+
+      productRepository.find.mockResolvedValue([
+        { id: 10, price: 100 },
+      ]);
+    });
+
+    describe('Capa de Validación de Rangos Seguros (§6)', () => {
+      it('Sad Path: Flete negativo rechazado con BadRequestException', async () => {
+        const orderData = {
+          items: [{ productId: 10, quantity: 1 }],
+          deliveryType: 'other',
+          delivery_fee_charged: -15.00,
+        };
+
+        await expect(service.create('user-s83c', orderData))
+          .rejects
+          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00'));
+      });
+
+      it('Sad Path: Flete mayor a $150.00 rechazado con BadRequestException', async () => {
+        const orderData = {
+          items: [{ productId: 10, quantity: 1 }],
+          deliveryType: 'other',
+          delivery_fee_charged: 150.01,
+        };
+
+        await expect(service.create('user-s83c', orderData))
+          .rejects
+          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00'));
+      });
+
+      it('Sad Path: Flete NaN rechazado con BadRequestException', async () => {
+        const orderData = {
+          items: [{ productId: 10, quantity: 1 }],
+          deliveryType: 'other',
+          delivery_fee_charged: 'no-es-numero',
+        };
+
+        await expect(service.create('user-s83c', orderData))
+          .rejects
+          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00'));
+      });
+
+      it('Sad Path: Descuento > 50% rechazado con BadRequestException', async () => {
+        const orderData = {
+          items: [{ productId: 10, quantity: 1 }],
+          deliveryType: 'pickup',
+          discount_percentage: 55.0,
+        };
+
+        await expect(service.create('user-s83c', orderData))
+          .rejects
+          .toThrow(new BadRequestException('El porcentaje de descuento no puede exceder el 50%'));
+      });
+
+      it('Sad Path: Descuento particular del cliente > 50% rechazado con BadRequestException', async () => {
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-s83c-high-disc',
+          general_discount: 60,
+          productDiscounts: [],
+          credit_balance: 0,
+          delivery_fee: 0,
+          account_type: 'cash',
+        });
+
+        const orderData = {
+          items: [{ productId: 10, quantity: 1 }],
+          deliveryType: 'pickup',
+        };
+
+        await expect(service.create('user-s83c-high-disc', orderData))
+          .rejects
+          .toThrow(new BadRequestException('El porcentaje de descuento no puede exceder el 50%'));
+      });
+
+      it('Sad Path: Cantidad de item no entera o <= 0 rechazada con BadRequestException', async () => {
+        const orderData = {
+          items: [{ productId: 10, quantity: 2.5 }],
+          deliveryType: 'pickup',
+        };
+
+        await expect(service.create('user-s83c', orderData))
+          .rejects
+          .toThrow(BadRequestException);
+      });
+    });
+
+    describe('Motor de Descuento Dual Admin (Precedencia Canónica Max, no acumulativa)', () => {
+      it('Happy Path: Verificación de regla max entre descuento general y particular (Tienda > Cliente: 15% vs 10% -> 15%)', async () => {
+        const validUntil = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+        mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+          reason: 'Gran Venta Anual Tienda',
+          percentage: 15,
+          valid_until: validUntil,
+          is_active: true,
+        });
+
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-dual-1',
+          general_discount: 10, // 10% client discount
+          productDiscounts: [],
+          credit_balance: 0,
+          delivery_fee: 0,
+          account_type: 'cash',
+        });
+
+        const orderData = {
+          items: [{ productId: 10, quantity: 2 }], // 100 * 2 = 200
+          deliveryType: 'pickup',
+          payment_method: 'card',
+        };
+
+        let capturedOrderData: any = null;
+        mockManager.create.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            capturedOrderData = data;
+            return { id: 'order-dual-1', ...data };
+          }
+          return data;
+        });
+        mockManager.save.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            return Promise.resolve({ id: 'order-dual-1', ...data });
+          }
+          return Promise.resolve(data);
+        });
+        service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+        const result = await service.create('user-dual-1', orderData);
+
+        // Precedencia max(15, 10) = 15%. Descuentos NO se acumulan (no es 25%).
+        // Total = 200 - 30 = 170.
+        expect(capturedOrderData.global_discount_percentage).toBe(15);
+        expect(capturedOrderData.global_discount_amount).toBe(30);
+        expect(capturedOrderData.global_discount_reason).toBe('Gran Venta Anual Tienda');
+        expect(result.total).toBe(170);
+      });
+
+      it('Happy Path: Verificación de regla max entre descuento general y particular (Cliente > Tienda: 20% vs 15% -> 20%)', async () => {
+        const validUntil = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+        mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+          reason: 'Venta Flash Tienda',
+          percentage: 15,
+          valid_until: validUntil,
+          is_active: true,
+        });
+
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-dual-2',
+          general_discount: 20, // 20% client discount
+          productDiscounts: [],
+          credit_balance: 0,
+          delivery_fee: 0,
+          account_type: 'cash',
+        });
+
+        const orderData = {
+          items: [{ productId: 10, quantity: 2 }], // 100 * 2 = 200
+          deliveryType: 'pickup',
+          payment_method: 'card',
+        };
+
+        let capturedOrderData: any = null;
+        mockManager.create.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            capturedOrderData = data;
+            return { id: 'order-dual-2', ...data };
+          }
+          return data;
+        });
+        mockManager.save.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            return Promise.resolve({ id: 'order-dual-2', ...data });
+          }
+          return Promise.resolve(data);
+        });
+        service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+        const result = await service.create('user-dual-2', orderData);
+
+        // Precedencia max(15, 20) = 20%. Descuentos NO se acumulan (no es 35%).
+        // Total = 200 - 40 = 160.
+        expect(capturedOrderData.global_discount_percentage).toBe(20);
+        expect(capturedOrderData.global_discount_amount).toBe(40);
+        expect(capturedOrderData.global_discount_reason).toContain('20%');
+        expect(result.total).toBe(160);
+      });
+
+      it('Happy Path: Verificación con tienda inactiva y cliente con descuento (0% vs 10% -> 10%)', async () => {
+        mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+          reason: 'Tienda Inactiva',
+          percentage: 15,
+          valid_until: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          is_active: false,
+        });
+
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-dual-3',
+          general_discount: 10, // 10% client discount
+          productDiscounts: [],
+          credit_balance: 0,
+          delivery_fee: 0,
+          account_type: 'cash',
+        });
+
+        const orderData = {
+          items: [{ productId: 10, quantity: 2 }], // 100 * 2 = 200
+          deliveryType: 'pickup',
+          payment_method: 'card',
+        };
+
+        let capturedOrderData: any = null;
+        mockManager.create.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            capturedOrderData = data;
+            return { id: 'order-dual-3', ...data };
+          }
+          return data;
+        });
+        mockManager.save.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            return Promise.resolve({ id: 'order-dual-3', ...data });
+          }
+          return Promise.resolve(data);
+        });
+        service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+        const result = await service.create('user-dual-3', orderData);
+
+        // Precedencia max(0, 10) = 10%.
+        // Total = 200 - 20 = 180.
+        expect(capturedOrderData.global_discount_percentage).toBe(10);
+        expect(capturedOrderData.global_discount_amount).toBe(20);
+        expect(result.total).toBe(180);
+      });
+
+      it('Happy Path: Ambos descuentos en 0% -> No se aplica descuento (0% total)', async () => {
+        mockSystemConfigsService.getStoreDiscount.mockResolvedValue({
+          reason: '',
+          percentage: 0,
+          valid_until: '',
+          is_active: false,
+        });
+
+        userRepository.findOne.mockResolvedValue({
+          id: 'user-dual-4',
+          general_discount: 0,
+          productDiscounts: [],
+          credit_balance: 0,
+          delivery_fee: 0,
+          account_type: 'cash',
+        });
+
+        const orderData = {
+          items: [{ productId: 10, quantity: 2 }],
+          deliveryType: 'pickup',
+          payment_method: 'card',
+        };
+
+        let capturedOrderData: any = null;
+        mockManager.create.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            capturedOrderData = data;
+            return { id: 'order-dual-4', ...data };
+          }
+          return data;
+        });
+        mockManager.save.mockImplementation((entity: any, data: any) => {
+          if (entity === Order) {
+            return Promise.resolve({ id: 'order-dual-4', ...data });
+          }
+          return Promise.resolve(data);
+        });
+        service.findOne = jest.fn().mockImplementation((id: string) => Promise.resolve({ id, ...capturedOrderData }));
+
+        const result = await service.create('user-dual-4', orderData);
+
+        expect(capturedOrderData.global_discount_percentage).toBe(0);
+        expect(capturedOrderData.global_discount_amount).toBe(0);
+        expect(capturedOrderData.global_discount_reason).toBeNull();
+        expect(result.total).toBe(200);
+      });
+    });
+  });
 });
 
