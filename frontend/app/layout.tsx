@@ -37,6 +37,7 @@ import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { AppLayoutWrapper } from '@/components/layout/AppLayoutWrapper';
+import MetaPixel from '@/components/analytics/MetaPixel';
 
 export default function RootLayout({
   children,
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <MetaPixel />
         <LanguageProvider>
           <AuthProvider>
             <AppLayoutWrapper>

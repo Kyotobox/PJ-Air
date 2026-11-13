@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { API_URL } from '@/lib/config';
 import ScheduleOrdersModal from '@/components/modals/ScheduleOrdersModal';
 import TemporarilyClosed from '@/components/landing/TemporarilyClosed';
+import { trackMetaEvent } from '@/components/analytics/MetaPixel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Login Modal — shown when user requests authentication
@@ -468,6 +469,10 @@ export default function Home() {
     // Login modal controlled by user action
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+    useEffect(() => {
+        trackMetaEvent('ViewContent', { content_name: 'Wholesale Catalog', content_category: 'Bakery' });
+    }, []);
 
     // ── B2B Hero Carousel State (TASK-51-03 & TASK-52-05) ───────────────────
     const [currentSlide, setCurrentSlide] = useState(0);

@@ -7,24 +7,6 @@
   "current_task": "TASK-83-03",
   "sprints": [
     {
-      "id": "S80",
-      "name": "Sprint S80: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S80-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-12T06:31:31.450176+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
-      "tasks": []
-    },
-    {
-      "id": "S81",
-      "name": "Sprint S81: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S81-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-12T06:31:31.450206+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
-      "tasks": []
-    },
-    {
       "id": "S82",
       "name": "Sprint S82: [RECONCILED] Auto-reconciled from git history",
       "dag_id": "SPRINT-S82-RECONCILED",
@@ -148,7 +130,7 @@
         {
           "id": "TASK-84-01",
           "title": "Meta Pixel integration (ID 2166007261006109) and standard event tracking (ViewContent, CompleteRegistration, Purchase)",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/PIXEL",
           "veracity_hash": null
         },
@@ -169,7 +151,7 @@
         {
           "id": "TASK-84-04",
           "title": "Automatic Spanish locale routing for ad traffic",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/I18N",
           "veracity_hash": null
         }
@@ -204,7 +186,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 73,
+  "archived_sprints_count": 2,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S83",

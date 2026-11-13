@@ -17,6 +17,7 @@ import { api } from '@/lib/api';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 import { GOOGLE_MAPS_KEY } from '@/lib/config';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
+import { trackMetaEvent } from '@/components/analytics/MetaPixel';
 import { calculateProcessingFee, calculateStoreDiscount, isStoreDiscountValid, StoreDiscountConfig } from '@/lib/fee-calculator';
 import {
     DeliveryScheduleConfig,
@@ -1348,6 +1349,10 @@ export default function CheckoutPage() {
                     price: getItemPrice(item),
                 })),
             }) as any;
+
+            const createdOrder = order;
+            const orderTotal = Number(createdOrder?.total) > 0 ? Number(createdOrder.total) : finalTotal;
+            trackMetaEvent('Purchase', { value: orderTotal, currency: 'USD', content_type: 'product', order_id: createdOrder.id });
 
             if (isPaidWithStoreCredit || paymentMethod === 'zelle' || paymentMethod === 'check') {
                 clearCart();

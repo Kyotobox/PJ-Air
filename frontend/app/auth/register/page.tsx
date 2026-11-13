@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useLanguage } from '@/context/LanguageContext';
+import { trackMetaEvent } from '@/components/analytics/MetaPixel';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -156,6 +157,8 @@ export default function RegisterPage() {
                 accepted_at: new Date().toISOString(),
                 check_enabled: false,
             }) as any;
+
+            trackMetaEvent('CompleteRegistration', { status: 'success', content_name: 'Wholesale Registration' });
 
             if (data.session) {
                 updateLocalSession(data);
