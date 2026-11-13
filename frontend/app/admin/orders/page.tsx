@@ -7,11 +7,12 @@ import {
     CheckCircle2, X, User, ChevronRight, Loader2, Save,
     AlertCircle, MapPin, Phone, MessageSquare, History,
     Plus, Minus, Trash2, CalendarDays, Printer, RefreshCcw, ExternalLink,
-    Building2, Hash, DollarSign, Receipt
+    Building2, Hash, DollarSign, Receipt, StickyNote
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
+import { calculateOrderFinancials } from '@/lib/order-finance';
 import PrintKitchenModal from '@/components/modals/PrintKitchenModal';
 
 interface OrderItem {
@@ -48,6 +49,10 @@ interface Order {
     fee_amount?: number;
     fee_method?: string;
     delivery_fee_charged?: number;
+    delivery_fee?: number;
+    global_discount_percentage?: number;
+    global_discount_amount?: number;
+    global_discount_reason?: string;
     items?: OrderItem[];
 }
 
@@ -87,6 +92,9 @@ export default function AdminOrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [editedItems, setEditedItems] = useState<OrderItem[]>([]);
+    const [editedDeliveryFee, setEditedDeliveryFee] = useState<number>(0);
+    const [orderNotes, setOrderNotes] = useState<string>('');
+    const [savingNotes, setSavingNotes] = useState(false);
     const [motivo, setMotivo] = useState('');
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -285,12 +293,16 @@ export default function AdminOrdersPage() {
         setSelectedOrder(order);
         setEditMode(false);
         setEditedItems(order.items || []);
+        setEditedDeliveryFee(Number(order.delivery_fee_charged ?? order.delivery_fee ?? 0));
+        setOrderNotes(order.notes || '');
         setMotivo('');
+        fetchDeliveryUsers();
     };
 
     const toggleEditMode = () => {
         if (!editMode) {
             setEditedItems([...(selectedOrder?.items || [])]);
+            setEditedDeliveryFee(Number(selectedOrder?.delivery_fee_charged ?? selectedOrder?.delivery_fee ?? 0));
         }
         setEditMode(!editMode);
     };
@@ -314,16 +326,27 @@ export default function AdminOrdersPage() {
     };
 
     const calculateNewTotal = () => {
-        return editedItems.reduce((acc, item) => acc + (item.quantity * item.price_at_time), 0);
+        if (!selectedOrder) return 0;
+        const summary = calculateOrderFinancials(editedItems, {
+            globalDiscountPercentage: selectedOrder.global_discount_percentage,
+            globalDiscountAmount: selectedOrder.global_discount_amount,
+            packagingFee: selectedOrder.packaging_fee,
+            packagingDiscount: selectedOrder.packaging_discount,
+            deliveryFee: editedDeliveryFee,
+        });
+        return summary.grandTotal;
     };
 
     const handleSaveOrderChanges = async () => {
         if (!selectedOrder) return;
         
-        // Validar si hubo cambios en los items
+        // Validar si hubo cambios en los items o en la tarifa de entrega
         const originalItemsJSON = JSON.stringify((selectedOrder.items || []).map(i => ({ id: i.id, q: i.quantity })));
         const currentItemsJSON = JSON.stringify(editedItems.map(i => ({ id: i.id, q: i.quantity })));
-        const hasChanges = originalItemsJSON !== currentItemsJSON;
+        const hasItemChanges = originalItemsJSON !== currentItemsJSON;
+        const originalFee = Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0);
+        const hasFeeChanges = Math.abs(originalFee - editedDeliveryFee) > 0.001;
+        const hasChanges = hasItemChanges || hasFeeChanges;
 
         if (hasChanges && !motivo.trim()) {
             showToast('⚠️ Debes ingresar un motivo para la modificación', 'error');
@@ -338,7 +361,10 @@ export default function AdminOrdersPage() {
                     quantity: i.quantity,
                     price: i.price_at_time
                 })),
-                total: calculateNewTotal()
+                total: calculateNewTotal(),
+                delivery_fee: editedDeliveryFee,
+                delivery_fee_charged: editedDeliveryFee,
+                notes: orderNotes
             };
 
             if (hasChanges) {
@@ -351,6 +377,8 @@ export default function AdminOrdersPage() {
             // Actualizar lista local
             setOrders(prev => prev.map(o => o.id === selectedOrder.id ? updated : o));
             setSelectedOrder(updated);
+            setEditedDeliveryFee(Number(updated.delivery_fee_charged ?? updated.delivery_fee ?? 0));
+            setOrderNotes(updated.notes || '');
             setEditMode(false);
             setMotivo('');
             showToast('✅ Pedido modificado correctamente');
@@ -358,6 +386,21 @@ export default function AdminOrdersPage() {
             showToast('❌ Error al guardar cambios', 'error');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSaveNotes = async () => {
+        if (!selectedOrder) return;
+        try {
+            setSavingNotes(true);
+            await api.patch(`/orders/${selectedOrder.id}`, { notes: orderNotes });
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { ...o, notes: orderNotes } : o));
+            setSelectedOrder(prev => prev ? { ...prev, notes: orderNotes } : null);
+            showToast('✅ Notas operativas actualizadas para Hoja de Cocina');
+        } catch (err) {
+            showToast('❌ Error al actualizar notas', 'error');
+        } finally {
+            setSavingNotes(false);
         }
     };
 
@@ -1459,37 +1502,66 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
 
                                 {/* Delivery Logistics */}
                                 <section className="space-y-6">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 px-1">
-                                        <Truck size={16} className="text-primary" /> Logística de Entrega
-                                    </h3>
+                                    <div className="flex justify-between items-center px-1">
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                            <Truck size={16} className="text-primary" /> Logística de Entrega (Choferes)
+                                        </h3>
+                                        <button 
+                                            type="button"
+                                            onClick={fetchDeliveryUsers}
+                                            title="Actualizar lista de choferes"
+                                            className="text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-primary flex items-center gap-1 transition-colors"
+                                        >
+                                            <RefreshCcw size={12} /> Refrescar
+                                        </button>
+                                    </div>
                                     <div className="space-y-3 max-h-[280px] overflow-y-auto pr-3 custom-scrollbar">
                                         <button 
                                             onClick={() => handleAssignDelivery('')}
-                                            className={`w-full text-left p-5 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.15em] border transition-all ${!selectedOrder.delivery_user_id ? 'bg-slate-800 text-white border-slate-800 shadow-xl' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100'}`}
+                                            className={`w-full text-left p-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.15em] border transition-all ${!selectedOrder.delivery_user_id ? 'bg-slate-800 text-white border-slate-800 shadow-xl' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100'}`}
                                         >
-                                            Anular Asignación
+                                            Anular Asignación de Chofer
                                         </button>
-                                        {deliveryUsers.map(delivery => (
-                                            <button 
-                                                key={delivery.id}
-                                                disabled={saving}
-                                                onClick={() => handleAssignDelivery(delivery.id)}
-                                                className={`w-full text-left p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group h-20 ${selectedOrder.delivery_user_id === delivery.id ? 'bg-primary border-primary shadow-xl shadow-primary/20' : 'bg-white border-slate-100 hover:border-primary/40'}`}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-[1rem] flex items-center justify-center font-black text-xs ${selectedOrder.delivery_user_id === delivery.id ? 'bg-white text-primary ring-4 ring-white/20' : 'bg-slate-100 text-slate-400'}`}>
-                                                        {delivery.profile?.full_name?.charAt(0) || 'D'}
-                                                    </div>
-                                                    <div>
-                                                        <p className={`text-sm font-black leading-tight ${selectedOrder.delivery_user_id === delivery.id ? 'text-white' : 'text-slate-700'}`}>{delivery.profile?.full_name}</p>
-                                                        <p className={`text-[10px] font-bold mt-0.5 ${selectedOrder.delivery_user_id === delivery.id ? 'text-white/90' : 'text-primary'}`}>
-                                                            {selectedOrder.delivery_user_id === delivery.id ? '● ASIGNADO' : 'Disponible'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <ChevronRight size={18} className={selectedOrder.delivery_user_id === delivery.id ? 'text-white' : 'text-slate-300 group-hover:translate-x-1 group-hover:text-primary transition-all'} />
-                                            </button>
-                                        ))}
+                                        {deliveryUsers.length === 0 ? (
+                                            <div className="p-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                                <p className="text-xs font-bold text-slate-500">No hay choferes disponibles con rol delivery.</p>
+                                                <button 
+                                                    type="button" 
+                                                    onClick={fetchDeliveryUsers}
+                                                    className="mt-2 text-[10px] font-black uppercase tracking-wider text-primary hover:underline"
+                                                >
+                                                    ↻ Reintentar Carga de Choferes
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            deliveryUsers.map(delivery => {
+                                                const driverName = delivery.profile?.full_name || delivery.email || `Chofer #${delivery.id.slice(0, 4)}`;
+                                                const driverInitial = (delivery.profile?.full_name || delivery.email || 'D').charAt(0).toUpperCase();
+                                                const isAssigned = selectedOrder.delivery_user_id === delivery.id;
+
+                                                return (
+                                                    <button 
+                                                        key={delivery.id}
+                                                        disabled={saving}
+                                                        onClick={() => handleAssignDelivery(delivery.id)}
+                                                        className={`w-full text-left p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group h-20 ${isAssigned ? 'bg-primary border-primary shadow-xl shadow-primary/20' : 'bg-white border-slate-100 hover:border-primary/40'}`}
+                                                    >
+                                                        <div className="flex items-center gap-4">
+                                                            <div className={`w-10 h-10 rounded-[1rem] flex items-center justify-center font-black text-xs ${isAssigned ? 'bg-white text-primary ring-4 ring-white/20' : 'bg-slate-100 text-slate-400'}`}>
+                                                                {driverInitial}
+                                                            </div>
+                                                            <div>
+                                                                <p className={`text-sm font-black leading-tight ${isAssigned ? 'text-white' : 'text-slate-700'}`}>{driverName}</p>
+                                                                <p className={`text-[10px] font-bold mt-0.5 ${isAssigned ? 'text-white/90' : 'text-primary'}`}>
+                                                                    {isAssigned ? '● ASIGNADO' : 'Disponible para asignación'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <ChevronRight size={18} className={isAssigned ? 'text-white' : 'text-slate-300 group-hover:translate-x-1 group-hover:text-primary transition-all'} />
+                                                    </button>
+                                                );
+                                            })
+                                        )}
                                     </div>
                                 </section>
                             </div>
@@ -1544,6 +1616,140 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     ))}
                                 </div>
 
+                                {/* Financial Breakdown Card (S83B / TASK-83-02) */}
+                                {(() => {
+                                    const activeItems = editMode ? editedItems : (selectedOrder.items || []);
+                                    const activeFee = editMode ? editedDeliveryFee : Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0);
+                                    const summary = calculateOrderFinancials(activeItems, {
+                                        globalDiscountPercentage: selectedOrder.global_discount_percentage,
+                                        globalDiscountAmount: selectedOrder.global_discount_amount,
+                                        packagingFee: selectedOrder.packaging_fee,
+                                        packagingDiscount: selectedOrder.packaging_discount,
+                                        deliveryFee: activeFee,
+                                    });
+
+                                    return (
+                                        <div className="bg-gradient-to-br from-slate-50 via-white to-amber-50/20 rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-200/90 shadow-lg space-y-5">
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                        <Receipt size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                                            Desglose Financiero del Pedido
+                                                        </h4>
+                                                        <p className="text-[10px] text-slate-400 font-bold">
+                                                            Auditoría de flete, descuentos e impacto fiscal
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {editMode && (
+                                                    <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider border border-amber-200 animate-pulse">
+                                                        Ajuste Manual Habilitado
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-3.5 text-sm">
+                                                {/* Subtotal de Productos */}
+                                                <div className="flex justify-between items-center text-slate-600 font-bold px-1">
+                                                    <span className="text-xs uppercase tracking-wider text-slate-500">
+                                                        Subtotal de Productos
+                                                    </span>
+                                                    <span className="font-mono text-base font-black text-slate-800">
+                                                        ${summary.itemsTotal.toFixed(2)}
+                                                    </span>
+                                                </div>
+
+                                                {/* Descuento de Tienda / General (si existe) */}
+                                                {summary.discountAmount > 0 && (
+                                                    <div className="flex justify-between items-center text-emerald-700 font-bold bg-emerald-50/70 p-3 rounded-2xl border border-emerald-200/60">
+                                                        <span className="text-xs uppercase tracking-wider flex items-center gap-2">
+                                                            <span>Descuento de Tienda / General</span>
+                                                            {summary.discountPercentage ? (
+                                                                <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-lg font-black">
+                                                                    {summary.discountPercentage}% OFF
+                                                                </span>
+                                                            ) : null}
+                                                        </span>
+                                                        <span className="font-mono text-base font-black">
+                                                            -${summary.discountAmount.toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Tarifa de Empaque (si existe) */}
+                                                {summary.netPackagingFee > 0 && (
+                                                    <div className="flex justify-between items-center text-slate-600 font-bold px-1">
+                                                        <span className="text-xs uppercase tracking-wider text-slate-500">
+                                                            Tarifa de Empaque B2B
+                                                        </span>
+                                                        <span className="font-mono text-base font-black text-slate-800">
+                                                            +${summary.netPackagingFee.toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Tarifa de Entrega (Delivery Fee) */}
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50 p-4 rounded-2xl border-2 border-amber-200/80 shadow-sm">
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-2">
+                                                            <Truck size={16} className="text-amber-700 shrink-0" />
+                                                            <span className="px-2.5 py-1 rounded-lg bg-amber-200 text-amber-900 text-[10px] font-black tracking-widest uppercase shadow-sm">
+                                                                DELIVERY FEE / TARIFA DE ENTREGA
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] text-amber-800/80 font-bold mt-1">
+                                                            {editMode 
+                                                                ? 'Sobrescribe manualmente el flete para esta orden puntual' 
+                                                                : (selectedOrder.delivery_type === 'pickup' 
+                                                                    ? 'Retiro en Tienda (Store Pick Up)' 
+                                                                    : 'Flete de despacho asignado a la orden')}
+                                                        </span>
+                                                    </div>
+                                                    {editMode ? (
+                                                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                                                            <span className="text-base font-black text-amber-900">$</span>
+                                                            <input 
+                                                                type="number" 
+                                                                min="0" 
+                                                                step="0.5" 
+                                                                value={editedDeliveryFee} 
+                                                                onChange={(e) => {
+                                                                    const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                                    setEditedDeliveryFee(Math.round(val * 100) / 100);
+                                                                }}
+                                                                className="w-28 px-3 py-2 bg-white border-2 border-amber-400 focus:border-primary rounded-xl text-right font-black font-mono text-slate-900 outline-none shadow-inner text-base"
+                                                                placeholder="0.00"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <span className="font-mono font-black text-amber-900 text-lg self-end sm:self-auto">
+                                                            +${summary.deliveryFee.toFixed(2)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Línea divisoria y Total Facturado (Impacto Fiscal) */}
+                                            <div className="pt-4 border-t-2 border-slate-200/80 flex justify-between items-center px-1">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+                                                        Total Facturado
+                                                    </span>
+                                                    <span className="text-xs text-slate-700 font-black">
+                                                        Impacto Fiscal Consolidado
+                                                    </span>
+                                                </div>
+                                                <span className="text-3xl font-black text-slate-900 tracking-tight font-mono">
+                                                    ${summary.grandTotal.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
                                 {editMode && (
                                     <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-800">
                                         <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
@@ -1553,7 +1759,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                             value={motivo}
                                             onChange={(e) => setMotivo(e.target.value)}
                                             rows={4}
-                                            placeholder="Indique la razón de este cambio estructural en el pedido... (Ej: Rectificación de cantidad, cambio por producto similar, etc.)"
+                                            placeholder="Indique la razón de este cambio estructural en el pedido... (Ej: Rectificación de cantidad, cambio de flete por zona difícil, cambio por producto similar, etc.)"
                                             className="w-full bg-slate-800 border-2 border-slate-700 rounded-3xl p-6 text-white placeholder:text-slate-500 outline-none focus:border-primary/50 transition-all font-medium text-sm resize-none mb-8"
                                         />
                                         <div className="flex flex-col sm:flex-row gap-4">
@@ -1582,6 +1788,36 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     {!editMode && (
                                         <button onClick={() => setSelectedOrder(null)} className="w-full sm:w-64 py-5 bg-slate-800 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:bg-black transition-all active:scale-95">Archivar Cierre</button>
                                     )}
+                                </div>
+                            </section>
+
+                            {/* Notas Operativas del Pedido (Hoja de Cocina y Despacho) */}
+                            <section className="space-y-4">
+                                <div className="flex justify-between items-center px-1">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                                        <StickyNote size={16} className="text-primary" /> Notas Operativas del Pedido (Hoja de Cocina)
+                                    </h3>
+                                    <button 
+                                        type="button"
+                                        onClick={handleSaveNotes}
+                                        disabled={savingNotes}
+                                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-primary transition-all disabled:opacity-50 shadow-sm"
+                                    >
+                                        {savingNotes ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                                        Guardar Notas
+                                    </button>
+                                </div>
+                                <div className="bg-slate-50 rounded-[2rem] p-5 border border-slate-200">
+                                    <textarea
+                                        value={orderNotes}
+                                        onChange={(e) => setOrderNotes(e.target.value)}
+                                        rows={3}
+                                        placeholder="Escribe notas operativas especiales (ej. 'Hornear bien dorado', 'Llamar antes de llegar', 'Separar en cajas de 12'). Estas notas se transfieren a la Hoja de Cocina y al comprobante..."
+                                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-slate-800 placeholder:text-slate-400 outline-none focus:border-primary transition-all font-medium text-xs resize-none"
+                                    />
+                                    <p className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1.5">
+                                        <span>ℹ️ Visibles para el personal operativo y transferibles directamente a la Hoja de Cocina.</span>
+                                    </p>
                                 </div>
                             </section>
 

@@ -946,6 +946,15 @@ export class OrdersService {
     if (updateData.pending_balance !== undefined) {
       order.pending_balance = Number(updateData.pending_balance);
     }
+    if (updateData.delivery_fee !== undefined || updateData.delivery_fee_charged !== undefined) {
+      order.delivery_fee_charged = Number(updateData.delivery_fee ?? updateData.delivery_fee_charged ?? 0);
+    }
+    if (updateData.notes !== undefined && !motivo) {
+      order.notes = updateData.notes;
+    }
+    if (updateData.delivery_user_id !== undefined) {
+      order.delivery_user_id = updateData.delivery_user_id;
+    }
 
     if (motivo) {
       const originalLines = (order.items || []).map(item => 
@@ -974,7 +983,11 @@ export class OrdersService {
       }));
       
       order.items = await this.orderItemRepository.save(newItems);
-      order.total = result.total;
+      if (total !== undefined) {
+        order.total = total;
+      } else {
+        order.total = result.total;
+      }
     } else if (total !== undefined) {
       order.total = total;
     }
