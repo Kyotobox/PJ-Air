@@ -96,6 +96,15 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S81",
+      "name": "Sprint S81: [RECONCILED] Auto-reconciled from git history",
+      "dag_id": "SPRINT-S81-RECONCILED",
+      "status": "COMPLETED",
+      "reconciled_at": "2026-11-13T22:34:25.602755+00:00",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+      "tasks": []
     }
   ],
   "archived_sprints_count": 84,
