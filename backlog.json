@@ -3,125 +3,9 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S85",
-  "current_task": "TASK-85-03",
+  "current_sprint": "S86",
+  "current_task": "TASK-86-03",
   "sprints": [
-    {
-      "id": "S82",
-      "name": "Sprint S82: [RECONCILED] Auto-reconciled from git history",
-      "dag_id": "SPRINT-S82-RECONCILED",
-      "status": "COMPLETED",
-      "reconciled_at": "2026-11-12T12:22:32.497650+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
-      "tasks": [
-        {
-          "id": "TASK-82-01",
-          "title": "Generador PDF Oficial ST-120 NYS DTF y Endpoints de Tax (Fase A)",
-          "status": "DONE",
-          "type": "BACKEND/ST120",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-82-02",
-          "title": "Configuración de Descuento General y Motor en OrdersService (Fase B)",
-          "status": "DONE",
-          "type": "BACKEND/DISCOUNT-CONFIG",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-82-03",
-          "title": "Pruebas Unitarias Jest (§6) Fases A y B en tax y orders services",
-          "status": "DONE",
-          "type": "TEST/CERT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-82-04",
-          "title": "Selector en Registro y Accesos Nocturnos [TASK-82-06]",
-          "status": "DONE",
-          "type": "FRONTEND/REGISTER-ST120",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-82-05",
-          "title": "Regularización ST-120 y Claves Nocturnas [TASK-82-07]",
-          "status": "DONE",
-          "type": "FRONTEND/ADMIN-CLIENTS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-82-06",
-          "title": "Desglose de Descuento General en Checkout [TASK-82-08]",
-          "status": "DONE",
-          "type": "FRONTEND/CHECKOUT-DISCOUNT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-82-07",
-          "title": "Pruebas Vitest [TASK-82-09]",
-          "status": "DONE",
-          "type": "TEST/CERT",
-          "veracity_hash": null
-        }
-      ],
-      "title": "Sprint S82: Generador PDF Form ST-120 NYS DTF y Descuento General de Tienda (Fase C)"
-    },
-    {
-      "id": "S83",
-      "title": "Sprint S83: Sincronización en Caliente a Producción, Delivery Fee en Expediente, 3 Grupos de Croissant y Descuento Dual",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-83-01",
-          "title": "Respaldo Físico de Base de Datos y Verificación DDL en Producción",
-          "status": "COMPLETED",
-          "type": "DATABASE/BACKUP",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-83-02",
-          "title": "Expediente del Pedido: Desglose de Delivery Fee y Ajuste Manual en Modificar Pedido",
-          "status": "COMPLETED",
-          "type": "FRONTEND/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-83-03",
-          "title": "Segmentación de Croissants en 3 Grupos (Plain, Colores, Small) en Catálogo, Excel y Cocina",
-          "status": "COMPLETED",
-          "type": "CATALOG/REPORTS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-83-04",
-          "title": "Motor de Descuento Dual Admin (Mayor no acumulativo, 3.5% default eliminado) y Rangos Seguros",
-          "status": "COMPLETED",
-          "type": "BACKEND/DISCOUNT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-83-05",
-          "title": "Módulo de Auditoría Forense Administrativa (AdminAuditLog) y Vista de Logs",
-          "status": "COMPLETED",
-          "type": "BACKEND/AUDIT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-83-06",
-          "title": "Panel de Aprobación B2B Onboarding (Dirección, ST-120, Pago, Flete) y Hard-Gate de Login",
-          "status": "COMPLETED",
-          "type": "AUTH/ONBOARDING",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-83-07",
-          "title": "Emisión de Factura en Paso Final y Validación OCR Obligatoria para Cheques",
-          "status": "COMPLETED",
-          "type": "ORDERS/INVOICE-OCR",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S84",
       "title": "Sprint S84: Meta Tracking, Privacy Policy, UTMs and Spanish Language",
@@ -184,34 +68,62 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S86",
+      "title": "Sprint S86: Resilient Checkout Auth, Stale Session Recovery, Defensive Delivery Fee and Testing/Prod Deployment",
+      "status": "ACTIVE",
+      "tasks": [
+        {
+          "id": "TASK-86-01",
+          "title": "Resilient checkout authentication, stale session recovery, and NY timezone cutoff sync",
+          "status": "DONE",
+          "type": "FRONTEND/AUTH",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-86-02",
+          "title": "Defensive delivery fee calculation and payment method boundaries in checkout engine",
+          "status": "DONE",
+          "type": "BACKEND/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-86-03",
+          "title": "UI & E2E validation in testing environment, hot-deploy to testing and production VPS",
+          "status": "IN_PROGRESS",
+          "type": "DEVOPS/TESTING",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 2,
+  "archived_sprints_count": 82,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S85",
-    "title": "Sprint S85: B2B Onboarding Approval Gate, Late Invoicing and Check OCR",
-    "status": "COMPLETED",
+    "id": "S86",
+    "title": "Sprint S86: Resilient Checkout Auth, Stale Session Recovery, Defensive Delivery Fee and Testing/Prod Deployment",
+    "status": "ACTIVE",
     "tasks": [
       {
-        "id": "TASK-85-01",
-        "title": "B2B wholesale pending approval state, login guard, and admin review panel",
+        "id": "TASK-86-01",
+        "title": "Resilient checkout authentication, stale session recovery, and NY timezone cutoff sync",
         "status": "DONE",
-        "type": "BACKEND/ONBOARDING",
+        "type": "FRONTEND/AUTH",
         "veracity_hash": null
       },
       {
-        "id": "TASK-85-02",
-        "title": "Late invoicing engine (INV generation strictly on final checkout)",
+        "id": "TASK-86-02",
+        "title": "Defensive delivery fee calculation and payment method boundaries in checkout engine",
         "status": "DONE",
         "type": "BACKEND/ORDERS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-85-03",
-        "title": "Mandatory check photo upload with OCR amount/MICR validation",
-        "status": "DONE",
-        "type": "BACKEND/PAYMENTS",
+        "id": "TASK-86-03",
+        "title": "UI & E2E validation in testing environment, hot-deploy to testing and production VPS",
+        "status": "IN_PROGRESS",
+        "type": "DEVOPS/TESTING",
         "veracity_hash": null
       }
     ]

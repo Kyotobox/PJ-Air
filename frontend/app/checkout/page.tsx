@@ -24,6 +24,7 @@ import {
     DEFAULT_DELIVERY_SCHEDULE,
     isDateAvailableForDelivery,
     calculateDynamicMinDeliveryDate,
+    getNewYorkDateTimeParts,
     parseDateString,
     DAY_NAMES_ES,
     DAY_NAMES_EN,
@@ -605,9 +606,15 @@ function InlineAddressForm({
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
     const { cart, clearCart, updateQuantity, getRawSubtotal, getDiscountedSubtotal, getFinalTotal, getItemPrice } = useCart();
-    const { user, profile } = useAuth();
+    const { user, profile, isLoading: isAuthLoading } = useAuth();
     const { locale } = useLanguage();
     const router = useRouter();
+
+    useEffect(() => {
+        if (!isAuthLoading && !user) {
+            router.replace('/auth/login?redirect=/checkout');
+        }
+    }, [isAuthLoading, user, router]);
 
     const [deliveryDate, setDeliveryDate] = useState('');
     const [paymentDate, setPaymentDate] = useState('');
@@ -991,8 +998,8 @@ export default function CheckoutPage() {
 
     // ── Delivery date (NY timezone & 12:00 PM cutoff guard - TASK-49-04 & TASK-68-04) ──────
     useEffect(() => {
-        const nowNY = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const currentHour = nowNY.getHours();
+        const nyParts = getNewYorkDateTimeParts(new Date());
+        const currentHour = nyParts.hour;
         const pastCutoff = currentHour >= cutoffHour;
         setIsPastCutoff(pastCutoff);
         setIsBeforeCutoff(!pastCutoff);
@@ -1003,7 +1010,7 @@ export default function CheckoutPage() {
             cutoffHour,
         };
 
-        const minStr = calculateDynamicMinDeliveryDate(nowNY, effectiveConfig);
+        const minStr = calculateDynamicMinDeliveryDate(new Date(), effectiveConfig);
         setMinSelectableDate(minStr);
 
         const { year, month, day } = parseDateString(minStr);
@@ -1320,8 +1327,14 @@ export default function CheckoutPage() {
 
         setIsLoading(true);
         try {
-            const isOnlineGateway = paymentMethod === 'stripe' || paymentMethod === 'ach';
-            const initialStatus = isOnlineGateway ? 'pending' : (paymentMethod === 'zelle' || paymentMethod === 'check' ? 'pending' : 'confirmed');
+            const effectivePaymentMethod = isPaidWithStoreCredit
+                ? 'store_credit'
+                : (!isCreditAccount && paymentMethod === 'credit')
+                    ? 'stripe'
+                    : paymentMethod;
+
+            const isOnlineGateway = effectivePaymentMethod === 'stripe' || effectivePaymentMethod === 'ach';
+            const initialStatus = isOnlineGateway ? 'pending' : (effectivePaymentMethod === 'zelle' || effectivePaymentMethod === 'check' ? 'pending' : 'confirmed');
 
             const order = await api.post('/orders', {
                 userId: user.id,
@@ -1330,23 +1343,26 @@ export default function CheckoutPage() {
                 deliveryAddressText,
                 zip_code: currentZip,
                 total: finalTotal,
+                delivery_fee: Number(deliveryFee),
+                dest_lat: targetLat !== null && targetLat !== undefined ? Number(targetLat) : undefined,
+                dest_lng: targetLng !== null && targetLng !== undefined ? Number(targetLng) : undefined,
                 status: initialStatus,
                 deliveryDate: rawDeliveryDate || deliveryDate,
                 paymentDueDate: paymentDate,
-                payment_method: isPaidWithStoreCredit ? 'store_credit' : paymentMethod,
+                payment_method: effectivePaymentMethod,
                 payment_status: isPaidWithStoreCredit ? 'paid' : undefined,
                 fee_amount: processingFee,
                 fee_method: feeMethod,
                 store_credit_applied: storeCreditApplied,
                 is_complementary: isComplementaryOrder,
                 notes: isComplementaryOrder ? 'Complementario a orden existente' : undefined,
-                zelle_reference: paymentMethod === 'zelle' ? zelleReference.trim() : null,
-                zelle_receipt_url: paymentMethod === 'zelle' ? zelleReceiptUrl : null,
-                check_number: paymentMethod === 'check' ? checkNumber.trim() : null,
-                check_bank: paymentMethod === 'check' ? checkBank.trim() : null,
-                check_amount: paymentMethod === 'check' ? (Number(checkAmount) || finalTotal) : null,
-                check_image_url: paymentMethod === 'check' ? checkImageUrl : null,
-                check_verified: paymentMethod === 'check' ? Boolean(checkVerified) : false,
+                zelle_reference: effectivePaymentMethod === 'zelle' ? zelleReference.trim() : null,
+                zelle_receipt_url: effectivePaymentMethod === 'zelle' ? zelleReceiptUrl : null,
+                check_number: effectivePaymentMethod === 'check' ? checkNumber.trim() : null,
+                check_bank: effectivePaymentMethod === 'check' ? checkBank.trim() : null,
+                check_amount: effectivePaymentMethod === 'check' ? (Number(checkAmount) || finalTotal) : null,
+                check_image_url: effectivePaymentMethod === 'check' ? checkImageUrl : null,
+                check_verified: effectivePaymentMethod === 'check' ? Boolean(checkVerified) : false,
                 items: cart.map(item => ({
                     productId: item.id,
                     quantity: item.quantity,
@@ -1421,6 +1437,20 @@ export default function CheckoutPage() {
     ];
 
     // ─────────────────────────────────────────────────────────────────────────
+    if (isAuthLoading || !user) {
+        return (
+            <div className="min-h-screen bg-[#fafafa] flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex flex-col items-center justify-center p-8">
+                    <Loader2 className="animate-spin text-primary mb-4" size={40} />
+                    <p className="text-sm font-semibold text-muted-foreground">
+                        {lbl('Cargando sesión...', 'Loading session...')}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#fafafa]">
             <Navbar />

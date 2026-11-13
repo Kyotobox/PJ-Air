@@ -457,10 +457,10 @@ describe('AuthService', () => {
   });
 
   describe('recoverPassword', () => {
-    it('should throw UnauthorizedException if user not found (Sad Path)', async () => {
+    it('should throw BadRequestException if user not found (Sad Path)', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
       mockUsersService.findByIdentifier.mockResolvedValue(null);
-      await expect(service.recoverPassword('test@example.com')).rejects.toThrow(UnauthorizedException);
+      await expect(service.recoverPassword('test@example.com')).rejects.toThrow(BadRequestException);
     });
 
     it('Happy Path: should generate 64-char hex reset token, persist it with expiration, and send email via MailService without mutating password', async () => {

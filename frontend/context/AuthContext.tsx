@@ -92,7 +92,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 dba: data?.dba || data?.profile?.dba || null,
             });
             setSessionCookies(undefined, liveRole);
-        } catch {
+        } catch (err: any) {
+            const isOrphanUser = err?.message?.includes('not found') ||
+                                 err?.message?.includes('404') ||
+                                 err?.status === 404;
+            if (isOrphanUser) {
+                console.warn('[AuthContext] User ID not found in database (orphan session). Purging stale credentials.');
+                localStorage.removeItem('local_session');
+                clearSessionCookies();
+                setUser(null);
+                setSession(null);
+                setProfile(null);
+                return;
+            }
             if (fallbackMeta) {
                 setProfile(fallbackMeta);
                 if (fallbackMeta.role) {

@@ -345,7 +345,7 @@ export class AuthService {
                  await this.usersService.findByIdentifier(cleanId);
                  
     if (!user) {
-      throw new UnauthorizedException(
+      throw new BadRequestException(
         `No hemos conseguido un usuario o email que coincida con: ${identifier}`
       );
     }

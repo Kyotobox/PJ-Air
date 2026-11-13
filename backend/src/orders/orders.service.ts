@@ -716,8 +716,10 @@ export class OrdersService {
       }
     }
 
-    if (isNaN(deliveryFee) || deliveryFee < 0 || deliveryFee > 150) {
-      throw new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+    if (isNaN(deliveryFee) || deliveryFee < 0) {
+      deliveryFee = 0;
+    } else if (deliveryFee > 150) {
+      deliveryFee = 150;
     }
 
     // TASK-63-04: Complementary Orders Rule ($0 delivery fee if active order exists for same date)

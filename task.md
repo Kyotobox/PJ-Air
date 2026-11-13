@@ -1,7 +1,7 @@
-# SPRINT S85 - Sprint Activo
+# SPRINT S86 - Sprint Activo
 **Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-13
 
-- [x] **TASK-85-01** [TASK] B2B wholesale pending approval state, login guard, and admin review panel
-- [x] **TASK-85-02** [TASK] Late invoicing engine (INV generation strictly on final checkout)
-- [x] **TASK-85-03** [TASK] Mandatory check photo upload with OCR amount/MICR validation
+- [x] **TASK-86-01** [TASK] Resilient checkout authentication, stale session recovery, and NY timezone cutoff sync
+- [x] **TASK-86-02** [TASK] Defensive delivery fee calculation and payment method boundaries in checkout engine
+- [/] **TASK-86-03** [TASK] UI & E2E validation in testing environment, hot-deploy to testing and production VPS

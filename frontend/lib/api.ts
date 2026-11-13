@@ -13,13 +13,21 @@ async function handleResponse(response: Response) {
     }
   }
 
-  if (response.status === 401 && !(response.url && response.url.includes('/auth/login'))) {
+  const isAuthEndpoint = response.url && (
+    response.url.includes('/auth/login') ||
+    response.url.includes('/auth/register') ||
+    response.url.includes('/auth/signup') ||
+    response.url.includes('/auth/recover-password') ||
+    response.url.includes('/auth/reset-password')
+  );
+
+  if (response.status === 401 && !isAuthEndpoint) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('local_session');
       document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
       document.cookie = 'session_role=; path=/; max-age=0; SameSite=Lax';
       const currentPath = window.location.pathname;
-      if (currentPath !== '/auth/login' && currentPath !== '/auth/register') {
+      if (!currentPath.startsWith('/auth/')) {
         window.location.href = '/auth/login';
       }
     }
