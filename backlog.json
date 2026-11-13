@@ -72,7 +72,7 @@
     {
       "id": "S86",
       "title": "Sprint S86: Resilient Checkout Auth, Stale Session Recovery, Defensive Delivery Fee and Testing/Prod Deployment",
-      "status": "ACTIVE",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-86-01",
@@ -91,14 +91,14 @@
         {
           "id": "TASK-86-03",
           "title": "UI & E2E validation in testing environment, hot-deploy to testing and production VPS",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "DEVOPS/TESTING",
           "veracity_hash": null
         }
       ]
     }
   ],
-  "archived_sprints_count": 82,
+  "archived_sprints_count": 84,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S86",
@@ -122,7 +122,7 @@
       {
         "id": "TASK-86-03",
         "title": "UI & E2E validation in testing environment, hot-deploy to testing and production VPS",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "DEVOPS/TESTING",
         "veracity_hash": null
       }
