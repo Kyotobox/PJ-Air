@@ -60,6 +60,10 @@ export class AuthService {
       delivery_notes,
       st120_document_url,
       st120_auto_generate,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      utm_content,
     } = body;
 
     const userRole = role || 'client';
@@ -123,6 +127,10 @@ export class AuthService {
       ...(body.stripe_payment_method_id ? { stripe_payment_method_id: body.stripe_payment_method_id } : {}),
       ...(body.check_enabled !== undefined ? { check_enabled: Boolean(body.check_enabled) } : {}),
       ...(body.ach_enabled !== undefined ? { ach_enabled: Boolean(body.ach_enabled) } : {}),
+      ...(utm_source ? { utm_source: String(utm_source).trim().slice(0, 100) } : (body.utm_source ? { utm_source: String(body.utm_source).trim().slice(0, 100) } : {})),
+      ...(utm_medium ? { utm_medium: String(utm_medium).trim().slice(0, 100) } : (body.utm_medium ? { utm_medium: String(body.utm_medium).trim().slice(0, 100) } : {})),
+      ...(utm_campaign ? { utm_campaign: String(utm_campaign).trim().slice(0, 100) } : (body.utm_campaign ? { utm_campaign: String(body.utm_campaign).trim().slice(0, 100) } : {})),
+      ...(utm_content ? { utm_content: String(utm_content).trim().slice(0, 100) } : (body.utm_content ? { utm_content: String(body.utm_content).trim().slice(0, 100) } : {})),
     });
     const user = Array.isArray(userResult) ? userResult[0] : userResult;
 

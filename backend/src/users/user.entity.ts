@@ -126,6 +126,18 @@ export class User {
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   min_order_amount?: number | null;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  utm_source?: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  utm_medium?: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  utm_campaign?: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  utm_content?: string | null;
+
   @OneToMany(() => ProductDiscount, (pd) => pd.user)
   productDiscounts: ProductDiscount[];
 }

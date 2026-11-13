@@ -56,6 +56,10 @@ let User = class User {
     reset_password_expires;
     credit_balance;
     min_order_amount;
+    utm_source;
+    utm_medium;
+    utm_campaign;
+    utm_content;
     productDiscounts;
 };
 exports.User = User;
@@ -219,6 +223,22 @@ __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, nullable: true }),
     __metadata("design:type", Object)
 ], User.prototype, "min_order_amount", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "utm_source", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "utm_medium", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "utm_campaign", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
+    __metadata("design:type", Object)
+], User.prototype, "utm_content", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

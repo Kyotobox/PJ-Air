@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -12,9 +12,14 @@ import { useAuth } from '@/context/AuthContext';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useLanguage } from '@/context/LanguageContext';
 import { trackMetaEvent } from '@/components/analytics/MetaPixel';
+import { getStoredUtm, captureAndStoreUtm } from '@/lib/utm';
 
 export default function RegisterPage() {
     const router = useRouter();
+
+    useEffect(() => {
+        captureAndStoreUtm();
+    }, []);
     const { updateLocalSession } = useAuth();
     const { t, locale } = useLanguage();
     const [isLoading, setIsLoading] = useState(false);
@@ -156,6 +161,10 @@ export default function RegisterPage() {
                 terms_version: 'v2026.10.29',
                 accepted_at: new Date().toISOString(),
                 check_enabled: false,
+                ...(getStoredUtm()?.utm_source ? { utm_source: getStoredUtm()?.utm_source } : {}),
+                ...(getStoredUtm()?.utm_medium ? { utm_medium: getStoredUtm()?.utm_medium } : {}),
+                ...(getStoredUtm()?.utm_campaign ? { utm_campaign: getStoredUtm()?.utm_campaign } : {}),
+                ...(getStoredUtm()?.utm_content ? { utm_content: getStoredUtm()?.utm_content } : {}),
             }) as any;
 
             trackMetaEvent('CompleteRegistration', { status: 'success', content_name: 'Wholesale Registration' });

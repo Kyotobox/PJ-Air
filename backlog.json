@@ -12,7 +12,7 @@
       "dag_id": "SPRINT-S82-RECONCILED",
       "status": "COMPLETED",
       "reconciled_at": "2026-11-12T12:22:32.497650+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
       "tasks": [
         {
           "id": "TASK-82-01",
@@ -23,14 +23,14 @@
         },
         {
           "id": "TASK-82-02",
-          "title": "Configuración de Descuento General y Motor en OrdersService (Fase B)",
+          "title": "Configuraci\u00f3n de Descuento General y Motor en OrdersService (Fase B)",
           "status": "DONE",
           "type": "BACKEND/DISCOUNT-CONFIG",
           "veracity_hash": null
         },
         {
           "id": "TASK-82-03",
-          "title": "Pruebas Unitarias Jest (§6) Fases A y B en tax y orders services",
+          "title": "Pruebas Unitarias Jest (\u00a76) Fases A y B en tax y orders services",
           "status": "DONE",
           "type": "TEST/CERT",
           "veracity_hash": null
@@ -44,7 +44,7 @@
         },
         {
           "id": "TASK-82-05",
-          "title": "Regularización ST-120 y Claves Nocturnas [TASK-82-07]",
+          "title": "Regularizaci\u00f3n ST-120 y Claves Nocturnas [TASK-82-07]",
           "status": "DONE",
           "type": "FRONTEND/ADMIN-CLIENTS",
           "veracity_hash": null
@@ -68,12 +68,12 @@
     },
     {
       "id": "S83",
-      "title": "Sprint S83: Sincronización en Caliente a Producción, Delivery Fee en Expediente, 3 Grupos de Croissant y Descuento Dual",
+      "title": "Sprint S83: Sincronizaci\u00f3n en Caliente a Producci\u00f3n, Delivery Fee en Expediente, 3 Grupos de Croissant y Descuento Dual",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-83-01",
-          "title": "Respaldo Físico de Base de Datos y Verificación DDL en Producción",
+          "title": "Respaldo F\u00edsico de Base de Datos y Verificaci\u00f3n DDL en Producci\u00f3n",
           "status": "COMPLETED",
           "type": "DATABASE/BACKUP",
           "veracity_hash": null
@@ -87,7 +87,7 @@
         },
         {
           "id": "TASK-83-03",
-          "title": "Segmentación de Croissants en 3 Grupos (Plain, Colores, Small) en Catálogo, Excel y Cocina",
+          "title": "Segmentaci\u00f3n de Croissants en 3 Grupos (Plain, Colores, Small) en Cat\u00e1logo, Excel y Cocina",
           "status": "COMPLETED",
           "type": "CATALOG/REPORTS",
           "veracity_hash": null
@@ -101,21 +101,21 @@
         },
         {
           "id": "TASK-83-05",
-          "title": "Módulo de Auditoría Forense Administrativa (AdminAuditLog) y Vista de Logs",
+          "title": "M\u00f3dulo de Auditor\u00eda Forense Administrativa (AdminAuditLog) y Vista de Logs",
           "status": "COMPLETED",
           "type": "BACKEND/AUDIT",
           "veracity_hash": null
         },
         {
           "id": "TASK-83-06",
-          "title": "Panel de Aprobación B2B Onboarding (Dirección, ST-120, Pago, Flete) y Hard-Gate de Login",
+          "title": "Panel de Aprobaci\u00f3n B2B Onboarding (Direcci\u00f3n, ST-120, Pago, Flete) y Hard-Gate de Login",
           "status": "COMPLETED",
           "type": "AUTH/ONBOARDING",
           "veracity_hash": null
         },
         {
           "id": "TASK-83-07",
-          "title": "Emisión de Factura en Paso Final y Validación OCR Obligatoria para Cheques",
+          "title": "Emisi\u00f3n de Factura en Paso Final y Validaci\u00f3n OCR Obligatoria para Cheques",
           "status": "COMPLETED",
           "type": "ORDERS/INVOICE-OCR",
           "veracity_hash": null
@@ -144,7 +144,7 @@
         {
           "id": "TASK-84-03",
           "title": "UTM attribution capture, User entity persistence and Admin Users display",
-          "status": "TODO",
+          "status": "COMPLETED",
           "type": "FULLSTACK/UTM",
           "veracity_hash": null
         },
@@ -190,12 +190,12 @@
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S83",
-    "title": "Sprint S83: Sincronización en Caliente a Producción, Delivery Fee en Expediente, 3 Grupos de Croissant y Descuento Dual",
+    "title": "Sprint S83: Sincronizaci\u00f3n en Caliente a Producci\u00f3n, Delivery Fee en Expediente, 3 Grupos de Croissant y Descuento Dual",
     "status": "IN_PROGRESS",
     "tasks": [
       {
         "id": "TASK-83-01",
-        "title": "Respaldo Físico de Base de Datos y Verificación DDL en Producción",
+        "title": "Respaldo F\u00edsico de Base de Datos y Verificaci\u00f3n DDL en Producci\u00f3n",
         "status": "TODO",
         "type": "DATABASE/BACKUP",
         "veracity_hash": null
@@ -209,7 +209,7 @@
       },
       {
         "id": "TASK-83-03",
-        "title": "Segmentación de Croissants en 3 Grupos (Plain, Colores, Small) en Catálogo, Excel y Cocina",
+        "title": "Segmentaci\u00f3n de Croissants en 3 Grupos (Plain, Colores, Small) en Cat\u00e1logo, Excel y Cocina",
         "status": "DONE",
         "type": "CATALOG/REPORTS",
         "veracity_hash": null
@@ -223,21 +223,21 @@
       },
       {
         "id": "TASK-83-05",
-        "title": "Módulo de Auditoría Forense Administrativa (AdminAuditLog) y Vista de Logs",
+        "title": "M\u00f3dulo de Auditor\u00eda Forense Administrativa (AdminAuditLog) y Vista de Logs",
         "status": "TODO",
         "type": "BACKEND/AUDIT",
         "veracity_hash": null
       },
       {
         "id": "TASK-83-06",
-        "title": "Panel de Aprobación B2B Onboarding (Dirección, ST-120, Pago, Flete) y Hard-Gate de Login",
+        "title": "Panel de Aprobaci\u00f3n B2B Onboarding (Direcci\u00f3n, ST-120, Pago, Flete) y Hard-Gate de Login",
         "status": "TODO",
         "type": "AUTH/ONBOARDING",
         "veracity_hash": null
       },
       {
         "id": "TASK-83-07",
-        "title": "Emisión de Factura en Paso Final y Validación OCR Obligatoria para Cheques",
+        "title": "Emisi\u00f3n de Factura en Paso Final y Validaci\u00f3n OCR Obligatoria para Cheques",
         "status": "TODO",
         "type": "ORDERS/INVOICE-OCR",
         "veracity_hash": null

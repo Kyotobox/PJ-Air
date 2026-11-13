@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import {
     Users, Search, Loader2, AlertCircle, Shield, User, Mail, Phone,
-    CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Package, Clock, Edit, Truck, Trash2
+    CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Package, Clock, Edit, Truck, Trash2, Target
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
+import { formatUtmDisplay } from '@/lib/utm';
 
 interface Address { id: string; address: string; city: string; state?: string; zip_code?: string; country?: string; is_default?: boolean; }
 interface OrderItem { 
@@ -22,6 +23,10 @@ interface UserRecord {
     profile?: { full_name?: string; username?: string; phone?: string; avatar_url?: string; };
     addresses?: Address[];
     orders?: Order[];
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_content?: string | null;
 }
 
 const ROLES = ['client', 'admin', 'delivery', 'produccion'];
@@ -359,6 +364,7 @@ export default function AdminUsersPage() {
                                     <th className="px-6 py-4">Email</th>
                                     <th className="px-6 py-4">Teléfono</th>
                                     <th className="px-6 py-4">Rol</th>
+                                    <th className="px-6 py-4">Origen / Campaña</th>
                                     <th className="px-6 py-4">Actividad</th>
                                     <th className="px-6 py-4 text-right">Detalle</th>
                                 </tr>
@@ -405,6 +411,29 @@ export default function AdminUsersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
+                                            {(() => {
+                                                const utm = formatUtmDisplay(u);
+                                                return (
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border w-fit ${utm.badgeClass}`}>
+                                                            <Target size={12} className="shrink-0" />
+                                                            <span>{utm.sourceLabel}</span>
+                                                        </span>
+                                                        {utm.campaignLabel && (
+                                                            <span className="text-[11px] font-semibold text-primary truncate max-w-[180px]" title={utm.campaignLabel}>
+                                                                {utm.campaignLabel}
+                                                            </span>
+                                                        )}
+                                                        {utm.detailLabel && !utm.campaignLabel && (
+                                                            <span className="text-[10px] text-muted-foreground truncate max-w-[180px]" title={utm.detailLabel}>
+                                                                {utm.detailLabel}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </td>
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-4 text-xs font-bold">
                                                 <div className="flex items-center gap-1.5 text-slate-500" title="Direcciones">
                                                     <MapPin size={14} className="text-slate-400" />
@@ -422,7 +451,7 @@ export default function AdminUsersPage() {
                                     </tr>
                                 ))}
                                 {filtered.length === 0 && (
-                                    <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">Sin resultados para "{search}"</td></tr>
+                                    <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">Sin resultados para "{search}"</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -483,6 +512,58 @@ export default function AdminUsersPage() {
                                             </button>
                                         </div>
                                     )}
+                                </div>
+                            </section>
+
+                            {/* UTM Attribution / Origen de Registro */}
+                            <section>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                                    <Target size={14} />Origen de Registro / Atribución UTM
+                                </h3>
+                                <div className="bg-muted/40 rounded-2xl p-4 text-sm space-y-2 border border-border">
+                                    {(() => {
+                                        const utm = formatUtmDisplay(selectedUser);
+                                        return (
+                                            <>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground text-xs">Canal / Fuente:</span>
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${utm.badgeClass}`}>
+                                                        <Target size={12} />
+                                                        {utm.sourceLabel}
+                                                    </span>
+                                                </div>
+                                                {selectedUser.utm_source && (
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">utm_source:</span>
+                                                        <span className="font-mono font-medium">{selectedUser.utm_source}</span>
+                                                    </div>
+                                                )}
+                                                {selectedUser.utm_medium && (
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">utm_medium:</span>
+                                                        <span className="font-mono">{selectedUser.utm_medium}</span>
+                                                    </div>
+                                                )}
+                                                {selectedUser.utm_campaign && (
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">utm_campaign:</span>
+                                                        <span className="font-mono font-bold text-primary">{selectedUser.utm_campaign}</span>
+                                                    </div>
+                                                )}
+                                                {selectedUser.utm_content && (
+                                                    <div className="flex justify-between text-xs">
+                                                        <span className="text-muted-foreground">utm_content:</span>
+                                                        <span className="font-mono">{selectedUser.utm_content}</span>
+                                                    </div>
+                                                )}
+                                                {utm.isDirect && (
+                                                    <p className="text-xs text-muted-foreground italic pt-1">
+                                                        Registro directo sin parámetros de campaña publicitaria.
+                                                    </p>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             </section>
 

@@ -874,6 +874,15 @@ let OrdersService = class OrdersService {
         if (updateData.pending_balance !== undefined) {
             order.pending_balance = Number(updateData.pending_balance);
         }
+        if (updateData.delivery_fee !== undefined || updateData.delivery_fee_charged !== undefined) {
+            order.delivery_fee_charged = Number(updateData.delivery_fee ?? updateData.delivery_fee_charged ?? 0);
+        }
+        if (updateData.notes !== undefined && !motivo) {
+            order.notes = updateData.notes;
+        }
+        if (updateData.delivery_user_id !== undefined) {
+            order.delivery_user_id = updateData.delivery_user_id;
+        }
         if (motivo) {
             const originalLines = (order.items || []).map(item => `${item.quantity} Unidades de ${item.product?.name || 'Producto'}, precio unitario: ${item.price_at_time}, subtotal: ${(item.quantity * item.price_at_time).toFixed(2)}`).join('; ');
             const auditLog = `El pedido ha sido modificado por: ${motivo}, pedido original: ${originalLines}, total original: ${Number(order.total || 0).toFixed(2)}. Modificado el ${new Date().toLocaleString('es-ES')}.\n`;
@@ -894,7 +903,12 @@ let OrdersService = class OrdersService {
                 order_id: id,
             }));
             order.items = await this.orderItemRepository.save(newItems);
-            order.total = result.total;
+            if (total !== undefined) {
+                order.total = total;
+            }
+            else {
+                order.total = result.total;
+            }
         }
         else if (total !== undefined) {
             order.total = total;

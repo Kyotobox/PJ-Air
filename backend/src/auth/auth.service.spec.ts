@@ -369,6 +369,34 @@ describe('AuthService', () => {
       expect(result.message).toBe('User registered successfully');
     });
 
+    it('should pass UTM attribution fields to usersService.create upon signup (TASK-84-03 Happy Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockImplementation(async (u: any) => ({ id: 'u-utm-auth-1', ...u }));
+      mockUsersService.createProfile.mockResolvedValue({});
+
+      const result = await service.signup({
+        email: 'utm_signup@bakery.com',
+        password: 'password123',
+        company_name: 'UTM Croissant Cafe',
+        tax_id: '12-9876543',
+        phone: '+13055550188',
+        utm_source: 'meta_instagram',
+        utm_medium: 'paid_feed',
+        utm_campaign: 'black_friday_2026',
+        utm_content: 'carousel_ad',
+      });
+
+      expect(mockUsersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          utm_source: 'meta_instagram',
+          utm_medium: 'paid_feed',
+          utm_campaign: 'black_friday_2026',
+          utm_content: 'carousel_ad',
+        }),
+      );
+      expect(result).toHaveProperty('session');
+    });
+
     it('should not invoke addressRepository if business_address is not provided (TASK-65-04 Omitted Address)', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
       mockUsersService.create.mockResolvedValue({ id: 'user-uuid-77', email: 'noaddr@bakery.com' });

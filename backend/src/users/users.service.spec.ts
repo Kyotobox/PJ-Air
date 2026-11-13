@@ -191,6 +191,59 @@ describe('UsersService', () => {
     });
   });
 
+  describe('create User with UTM attribution (TASK-84-03)', () => {
+    it('should create user entity with full UTM tracking fields (happy path)', async () => {
+      const userData = {
+        email: 'utmuser@bakery.com',
+        password: 'hashedpassword',
+        role: 'client',
+        utm_source: 'meta_instagram',
+        utm_medium: 'paid_story',
+        utm_campaign: 'croissant_launch',
+        utm_content: 'banner_video_1',
+      };
+
+      mockUserRepository.create.mockReturnValue({ id: 'u-utm-1', ...userData });
+      mockUserRepository.save.mockImplementation(async (u: any) => u);
+
+      const created = await service.create(userData);
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        utm_source: 'meta_instagram',
+        utm_medium: 'paid_story',
+        utm_campaign: 'croissant_launch',
+        utm_content: 'banner_video_1',
+      }));
+      expect(created.utm_source).toBe('meta_instagram');
+      expect(created.utm_campaign).toBe('croissant_launch');
+    });
+
+    it('should allow user creation without UTM fields when direct visitor registers (happy path/direct)', async () => {
+      const userData = {
+        email: 'directuser@bakery.com',
+        password: 'hashedpassword',
+        role: 'client',
+      };
+
+      mockUserRepository.create.mockReturnValue({ id: 'u-direct-1', ...userData });
+      mockUserRepository.save.mockImplementation(async (u: any) => u);
+
+      const created = await service.create(userData);
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+        email: 'directuser@bakery.com',
+      }));
+      expect(created.utm_source).toBeUndefined();
+    });
+
+    it('should throw error when repository save fails (sad path)', async () => {
+      mockUserRepository.create.mockReturnValue({ email: 'err@bakery.com' });
+      mockUserRepository.save.mockRejectedValue(new Error('DB connection lost'));
+
+      await expect(service.create({ email: 'err@bakery.com' })).rejects.toThrow('DB connection lost');
+    });
+  });
+
   describe('updateCreditSettings and getUserCreditSummary (TASK-73-01)', () => {
     it('should update credit settings including ach_enabled and check_enabled independently (happy path)', async () => {
       const mockUser: any = {

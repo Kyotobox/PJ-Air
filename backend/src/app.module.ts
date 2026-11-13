@@ -196,6 +196,18 @@ export class AppModule implements OnModuleInit {
       if (!userColNames.includes('credit_balance')) {
         await qr.query(`ALTER TABLE users ADD COLUMN credit_balance DECIMAL(10,2) DEFAULT 0;`);
       }
+      if (!userColNames.includes('utm_source')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN utm_source VARCHAR(100);`);
+      }
+      if (!userColNames.includes('utm_medium')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN utm_medium VARCHAR(100);`);
+      }
+      if (!userColNames.includes('utm_campaign')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN utm_campaign VARCHAR(100);`);
+      }
+      if (!userColNames.includes('utm_content')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN utm_content VARCHAR(100);`);
+      }
 
       await qr.query(`
         CREATE TABLE IF NOT EXISTS check_payments (

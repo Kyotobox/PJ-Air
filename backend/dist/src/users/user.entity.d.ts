@@ -43,5 +43,9 @@ export declare class User {
     reset_password_expires?: Date | null;
     credit_balance: number;
     min_order_amount?: number | null;
+    utm_source?: string | null;
+    utm_medium?: string | null;
+    utm_campaign?: string | null;
+    utm_content?: string | null;
     productDiscounts: ProductDiscount[];
 }
