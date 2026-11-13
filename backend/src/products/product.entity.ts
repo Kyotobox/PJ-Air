@@ -30,5 +30,8 @@ export class Product {
 
   @Column({ nullable: true })
   stripe_price_id: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  production_group: string | null;
 }
 

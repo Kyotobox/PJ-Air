@@ -40,9 +40,39 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExcelService = void 0;
+exports.resolveCroissantProductionGroup = resolveCroissantProductionGroup;
 const common_1 = require("@nestjs/common");
 const ExcelJS = __importStar(require("exceljs"));
+function resolveCroissantProductionGroup(product) {
+    if (product?.production_group === '1' || product?.production_group === '2' || product?.production_group === '3') {
+        return product.production_group;
+    }
+    const name = (product?.name || '').trim().toLowerCase();
+    if (name.startsWith('small') || name.includes('small')) {
+        return '3';
+    }
+    if (name.includes('almond') ||
+        name.includes('banoffee') ||
+        name.includes('beef puff') ||
+        name.includes('chicken puff') ||
+        name.includes('chocolate mousse') ||
+        name.includes('fruit danish') ||
+        name.includes('new york roll') ||
+        name.includes('pain au chocolat') ||
+        name.includes('pistachio') ||
+        name.includes('raspberry') ||
+        name.includes('pain suisse') ||
+        name.includes('pan swiss') ||
+        name.includes('cheese') ||
+        name.includes('turkey bacon')) {
+        return '2';
+    }
+    return '1';
+}
 let ExcelService = class ExcelService {
+    async generateProductionReport(orders) {
+        return this.exportConsolidated(orders);
+    }
     async exportIndividual(orders) {
         const workbook = new ExcelJS.Workbook();
         const usedSheetNames = new Set();
@@ -217,9 +247,16 @@ let ExcelService = class ExcelService {
                 const qty = Number(item.quantity) || 0;
                 if (!dataStructure[cat])
                     dataStructure[cat] = {};
-                if (!dataStructure[cat][prod])
-                    dataStructure[cat][prod] = {};
-                dataStructure[cat][prod][client] = (dataStructure[cat][prod][client] || 0) + qty;
+                if (!dataStructure[cat][prod]) {
+                    dataStructure[cat][prod] = {
+                        productObj: item.product,
+                        clientQtys: {},
+                    };
+                }
+                else if (!dataStructure[cat][prod].productObj && item.product) {
+                    dataStructure[cat][prod].productObj = item.product;
+                }
+                dataStructure[cat][prod].clientQtys[client] = (dataStructure[cat][prod].clientQtys[client] || 0) + qty;
             });
         });
         const fontName = 'Segoe UI';
@@ -237,6 +274,10 @@ let ExcelService = class ExcelService {
             const ws = workbook.addWorksheet('Sin Pedidos');
             ws.addRow(['No hay pedidos en el rango de fechas seleccionado.']);
         }
+        const isCroissantsCategory = (categoryName) => {
+            const norm = categoryName.trim().toUpperCase();
+            return norm === 'CROISSANTS' || norm === 'CROISSANT';
+        };
         for (const [catName, products] of Object.entries(dataStructure)) {
             const cleanSheetName = catName.replace(/[\\\/\?\*\[\]\:]/g, '').toUpperCase().slice(0, 30) || 'CONSOLIDADO';
             let finalSheetName = cleanSheetName;
@@ -265,72 +306,220 @@ let ExcelService = class ExcelService {
             noticeRow.getCell(1).font = { name: fontName, italic: true, size: 9, color: { argb: 'FF5C3D2E' } };
             noticeRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
             worksheet.addRow([]);
-            const headers = ['PRODUCTO', ...clientNames.map(c => c.toUpperCase()), 'TOTAL'];
-            const headerRow = worksheet.addRow(headers);
-            headerRow.height = 22;
-            headerRow.eachCell((cell, colNum) => {
-                cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
-                cell.fill = {
-                    type: 'pattern',
-                    pattern: 'solid',
-                    fgColor: { argb: 'FFF5EBE6' }
+            if (isCroissantsCategory(catName)) {
+                const groupDefs = [
+                    {
+                        id: '1',
+                        title: '🥐 GRUPO 1: CROISSANTS PLAIN (BASE)',
+                        totalLabel: 'TOTAL SUBGRUPO 1 PLAIN',
+                        bgColor: 'FFF5EBE6',
+                    },
+                    {
+                        id: '2',
+                        title: '🎨 GRUPO 2: CROISSANTS DE COLORES (MASAS ESPECIALES)',
+                        totalLabel: 'TOTAL SUBGRUPO 2 COLORES',
+                        bgColor: 'FFEAE0E8',
+                    },
+                    {
+                        id: '3',
+                        title: '🥐 GRUPO 3: SMALL CROISSANTS',
+                        totalLabel: 'TOTAL SUBGRUPO 3 SMALL',
+                        bgColor: 'FFF5EBE6',
+                    },
+                ];
+                const groupedProducts = {
+                    '1': [],
+                    '2': [],
+                    '3': [],
                 };
-                cell.border = cellBorders;
-                cell.alignment = {
-                    horizontal: colNum === 1 ? 'left' : 'right',
-                    vertical: 'middle'
-                };
-            });
-            const clientColumnTotals = {};
-            let grandTotal = 0;
-            for (const [prodName, clientQtys] of Object.entries(products)) {
-                const rowData = [prodName];
-                let prodTotal = 0;
+                for (const [prodName, prodData] of Object.entries(products)) {
+                    const groupKey = resolveCroissantProductionGroup(prodData.productObj || { name: prodName });
+                    groupedProducts[groupKey].push({
+                        prodName,
+                        clientQtys: prodData.clientQtys,
+                    });
+                }
+                for (const key of ['1', '2', '3']) {
+                    groupedProducts[key].sort((a, b) => a.prodName.localeCompare(b.prodName, 'en', { sensitivity: 'base' }));
+                }
+                const overallCroissantTotals = {};
+                let overallCroissantGrandTotal = 0;
+                for (const gDef of groupDefs) {
+                    const gProducts = groupedProducts[gDef.id] || [];
+                    if (gProducts.length === 0)
+                        continue;
+                    const bannerRow = worksheet.addRow([gDef.title]);
+                    worksheet.mergeCells(bannerRow.number, 1, bannerRow.number, clientNames.length + 2);
+                    bannerRow.height = 24;
+                    bannerRow.getCell(1).font = { name: fontName, bold: true, size: 11, color: { argb: 'FF5C3D2E' } };
+                    bannerRow.getCell(1).fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: gDef.bgColor },
+                    };
+                    bannerRow.getCell(1).border = cellBorders;
+                    bannerRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+                    const headers = ['PRODUCTO', ...clientNames.map(c => c.toUpperCase()), 'TOTAL'];
+                    const subHeaderRow = worksheet.addRow(headers);
+                    subHeaderRow.height = 20;
+                    subHeaderRow.eachCell((cell, colNum) => {
+                        cell.font = { name: fontName, bold: true, size: 9, color: { argb: 'FF5C3D2E' } };
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFF5EBE6' },
+                        };
+                        cell.border = cellBorders;
+                        cell.alignment = {
+                            horizontal: colNum === 1 ? 'left' : 'right',
+                            vertical: 'middle',
+                        };
+                    });
+                    const subGroupColumnTotals = {};
+                    let subGroupGrandTotal = 0;
+                    for (const item of gProducts) {
+                        const rowData = [item.prodName];
+                        let prodTotal = 0;
+                        clientNames.forEach(client => {
+                            const qty = item.clientQtys[client] || 0;
+                            rowData.push(qty);
+                            prodTotal += qty;
+                            subGroupColumnTotals[client] = (subGroupColumnTotals[client] || 0) + qty;
+                            overallCroissantTotals[client] = (overallCroissantTotals[client] || 0) + qty;
+                        });
+                        rowData.push(prodTotal);
+                        subGroupGrandTotal += prodTotal;
+                        overallCroissantGrandTotal += prodTotal;
+                        const dataRow = worksheet.addRow(rowData);
+                        dataRow.height = 18;
+                        dataRow.eachCell((cell, colNum) => {
+                            cell.font = { name: fontName, size: 10 };
+                            cell.border = cellBorders;
+                            cell.alignment = {
+                                horizontal: colNum === 1 ? 'left' : 'right',
+                                vertical: 'middle',
+                            };
+                            if (colNum > 1 && cell.value === 0) {
+                                cell.font = { name: fontName, size: 10, color: { argb: 'FFC0C0C0' } };
+                            }
+                        });
+                    }
+                    const subTotalsRowData = [gDef.totalLabel];
+                    clientNames.forEach(client => {
+                        subTotalsRowData.push(subGroupColumnTotals[client] || 0);
+                    });
+                    subTotalsRowData.push(subGroupGrandTotal);
+                    const subTotalsRow = worksheet.addRow(subTotalsRowData);
+                    subTotalsRow.height = 22;
+                    subTotalsRow.eachCell((cell, colNum) => {
+                        cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFE8D0C5' },
+                        };
+                        cell.border = cellBorders;
+                        cell.alignment = {
+                            horizontal: colNum === 1 ? 'left' : 'right',
+                            vertical: 'middle',
+                        };
+                    });
+                    worksheet.addRow([]);
+                }
+                const grandTotalsRowData = ['TOTAL GENERAL CROISSANTS'];
                 clientNames.forEach(client => {
-                    const qty = clientQtys[client] || 0;
-                    rowData.push(qty);
-                    prodTotal += qty;
-                    clientColumnTotals[client] = (clientColumnTotals[client] || 0) + qty;
+                    grandTotalsRowData.push(overallCroissantTotals[client] || 0);
                 });
-                rowData.push(prodTotal);
-                grandTotal += prodTotal;
-                const dataRow = worksheet.addRow(rowData);
-                dataRow.height = 18;
-                dataRow.eachCell((cell, colNum) => {
-                    cell.font = { name: fontName, size: 10 };
+                grandTotalsRowData.push(overallCroissantGrandTotal);
+                const grandTotalsRow = worksheet.addRow(grandTotalsRowData);
+                grandTotalsRow.height = 24;
+                grandTotalsRow.eachCell((cell, colNum) => {
+                    cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FF5C3D2E' },
+                    };
+                    cell.border = {
+                        top: borderStyle,
+                        bottom: { style: 'double', color: { argb: 'FF5C3D2E' } },
+                        left: borderStyle,
+                        right: borderStyle,
+                    };
+                    cell.alignment = {
+                        horizontal: colNum === 1 ? 'left' : 'right',
+                        vertical: 'middle',
+                    };
+                });
+            }
+            else {
+                const headers = ['PRODUCTO', ...clientNames.map(c => c.toUpperCase()), 'TOTAL'];
+                const headerRow = worksheet.addRow(headers);
+                headerRow.height = 22;
+                headerRow.eachCell((cell, colNum) => {
+                    cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFF5EBE6' },
+                    };
                     cell.border = cellBorders;
                     cell.alignment = {
                         horizontal: colNum === 1 ? 'left' : 'right',
-                        vertical: 'middle'
+                        vertical: 'middle',
                     };
-                    if (colNum > 1 && cell.value === 0) {
-                        cell.font = { name: fontName, size: 10, color: { argb: 'FFC0C0C0' } };
-                    }
+                });
+                const clientColumnTotals = {};
+                let grandTotal = 0;
+                for (const [prodName, prodData] of Object.entries(products)) {
+                    const rowData = [prodName];
+                    let prodTotal = 0;
+                    clientNames.forEach(client => {
+                        const qty = prodData.clientQtys[client] || 0;
+                        rowData.push(qty);
+                        prodTotal += qty;
+                        clientColumnTotals[client] = (clientColumnTotals[client] || 0) + qty;
+                    });
+                    rowData.push(prodTotal);
+                    grandTotal += prodTotal;
+                    const dataRow = worksheet.addRow(rowData);
+                    dataRow.height = 18;
+                    dataRow.eachCell((cell, colNum) => {
+                        cell.font = { name: fontName, size: 10 };
+                        cell.border = cellBorders;
+                        cell.alignment = {
+                            horizontal: colNum === 1 ? 'left' : 'right',
+                            vertical: 'middle',
+                        };
+                        if (colNum > 1 && cell.value === 0) {
+                            cell.font = { name: fontName, size: 10, color: { argb: 'FFC0C0C0' } };
+                        }
+                    });
+                }
+                const totalsRowData = ['TOTAL GENERAL'];
+                clientNames.forEach(client => {
+                    totalsRowData.push(clientColumnTotals[client] || 0);
+                });
+                totalsRowData.push(grandTotal);
+                const totalsRow = worksheet.addRow(totalsRowData);
+                totalsRow.height = 22;
+                totalsRow.eachCell((cell, colNum) => {
+                    cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFE8D0C5' },
+                    };
+                    cell.border = cellBorders;
+                    cell.alignment = {
+                        horizontal: colNum === 1 ? 'left' : 'right',
+                        vertical: 'middle',
+                    };
                 });
             }
-            const totalsRowData = ['TOTAL GENERAL'];
-            clientNames.forEach(client => {
-                totalsRowData.push(clientColumnTotals[client] || 0);
-            });
-            totalsRowData.push(grandTotal);
-            const totalsRow = worksheet.addRow(totalsRowData);
-            totalsRow.height = 22;
-            totalsRow.eachCell((cell, colNum) => {
-                cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
-                cell.fill = {
-                    type: 'pattern',
-                    pattern: 'solid',
-                    fgColor: { argb: 'FFE8D0C5' }
-                };
-                cell.border = cellBorders;
-                cell.alignment = {
-                    horizontal: colNum === 1 ? 'left' : 'right',
-                    vertical: 'middle'
-                };
-            });
             worksheet.columns.forEach((column, index) => {
                 if (index === 0) {
-                    column.width = 30;
+                    column.width = 38;
                 }
                 else {
                     column.width = 15;

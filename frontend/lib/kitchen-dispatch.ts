@@ -146,7 +146,53 @@ export function sanitizeOperationalNotes(notes?: string): string {
 }
 
 /**
- * TASK-59-02: Motor puro de ordenamiento A-Z y agrupación por categorías con subtotales deterministas.
+ * Helper para resolver el grupo de producción de un croissant (TASK-83-03):
+ * 1: Plain / Base
+ * 2: Colores / Masas Especiales
+ * 3: Small Croissants
+ */
+export function resolveKitchenCroissantGroup(item: any): '1' | '2' | '3' {
+    const raw = item?.rawItem ?? item;
+    const prod = raw?.product ?? raw;
+    if (prod?.production_group === '1' || prod?.production_group === '2' || prod?.production_group === '3') {
+        return prod.production_group;
+    }
+    const name = (extractProductName(item) || '').trim().toLowerCase();
+    // Grupo 3: Small
+    if (name.startsWith('small') || name.includes('small')) {
+        return '3';
+    }
+    // Grupo 2: Colores / Masas Especiales
+    if (
+        name.includes('almond') ||
+        name.includes('banoffee') ||
+        name.includes('beef puff') ||
+        name.includes('chicken puff') ||
+        name.includes('chocolate mousse') ||
+        name.includes('fruit danish') ||
+        name.includes('new york roll') ||
+        name.includes('pain au chocolat') ||
+        name.includes('pistachio') ||
+        name.includes('raspberry') ||
+        name.includes('pain suisse') ||
+        name.includes('pan swiss') ||
+        name.includes('cheese') ||
+        name.includes('turkey bacon')
+    ) {
+        return '2';
+    }
+    // Grupo 1: Plain (Base)
+    return '1';
+}
+
+export function isCroissantCategoryName(category: string): boolean {
+    const norm = (category || '').trim().toUpperCase();
+    return norm === 'CROISSANTS' || norm === 'CROISSANT';
+}
+
+/**
+ * TASK-59-02 & TASK-83-03: Motor puro de ordenamiento A-Z y agrupación por categorías.
+ * Para Croissants, segmenta en 3 grupos operativos: Plain (Base), Colores (Especiales), y Small.
  */
 export function groupAndSortKitchenItems(rawItems: any[]): GroupedKitchenResult {
     if (!Array.isArray(rawItems) || rawItems.length === 0) {
@@ -186,19 +232,71 @@ export function groupAndSortKitchenItems(rawItems: any[]): GroupedKitchenResult 
 
     for (const cat of sortedCategoryNames) {
         const items = categoryMap.get(cat) || [];
-        // Ordenar productos dentro de cada categoría alfabéticamente A-Z
-        items.sort((a, b) =>
-            a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
-        );
 
-        const subtotal = items.reduce((acc, curr) => acc + curr.quantity, 0);
+        if (isCroissantCategoryName(cat)) {
+            // Segmentación en 3 grupos (TASK-83-03)
+            const g1Items: KitchenItem[] = [];
+            const g2Items: KitchenItem[] = [];
+            const g3Items: KitchenItem[] = [];
 
-        groups.push({
-            category: cat,
-            items,
-            subtotal,
-            subtotalLabel: `TOTAL ${cat}`,
-        });
+            for (const item of items) {
+                const groupNum = resolveKitchenCroissantGroup(item);
+                if (groupNum === '1') {
+                    g1Items.push(item);
+                } else if (groupNum === '2') {
+                    g2Items.push(item);
+                } else {
+                    g3Items.push(item);
+                }
+            }
+
+            if (g1Items.length > 0) {
+                g1Items.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+                const subtotal = g1Items.reduce((acc, curr) => acc + curr.quantity, 0);
+                groups.push({
+                    category: '🥐 GRUPO 1: CROISSANTS PLAIN (BASE)',
+                    items: g1Items,
+                    subtotal,
+                    subtotalLabel: 'TOTAL SUBGRUPO 1 PLAIN',
+                });
+            }
+
+            if (g2Items.length > 0) {
+                g2Items.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+                const subtotal = g2Items.reduce((acc, curr) => acc + curr.quantity, 0);
+                groups.push({
+                    category: '🎨 GRUPO 2: CROISSANTS DE COLORES (MASAS ESPECIALES)',
+                    items: g2Items,
+                    subtotal,
+                    subtotalLabel: 'TOTAL SUBGRUPO 2 COLORES',
+                });
+            }
+
+            if (g3Items.length > 0) {
+                g3Items.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+                const subtotal = g3Items.reduce((acc, curr) => acc + curr.quantity, 0);
+                groups.push({
+                    category: '🥐 GRUPO 3: SMALL CROISSANTS',
+                    items: g3Items,
+                    subtotal,
+                    subtotalLabel: 'TOTAL SUBGRUPO 3 SMALL',
+                });
+            }
+        } else {
+            // Ordenar productos dentro de cada categoría alfabéticamente A-Z
+            items.sort((a, b) =>
+                a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })
+            );
+
+            const subtotal = items.reduce((acc, curr) => acc + curr.quantity, 0);
+
+            groups.push({
+                category: cat,
+                items,
+                subtotal,
+                subtotalLabel: `TOTAL ${cat}`,
+            });
+        }
     }
 
     return { groups, totalUnits };
@@ -324,6 +422,22 @@ export function generateKitchenPrintHtml(options: KitchenPrintOptions): string {
                 </table>
             </div>
         `;
+
+        // Si es el último bloque de croissants, agregar resumen de TOTAL GENERAL CROISSANTS
+        const isCroissant = group.category.includes('CROISSANT');
+        const nextGroup = groups[gIdx + 1];
+        const isNextCroissant = nextGroup ? nextGroup.category.includes('CROISSANT') : false;
+        if (isCroissant && !isNextCroissant) {
+            const croissantTotal = groups
+                .filter(g => g.category.includes('CROISSANT'))
+                .reduce((sum, g) => sum + g.subtotal, 0);
+            tablesHtml += `
+                <div class="croissant-total-banner" style="margin: -6px 0 14px 0; padding: 6px 10px; background-color: #5C3D2E; color: #fff; font-weight: 900; font-size: 11px; display: flex; justify-content: space-between; border-radius: 4px;">
+                    <span>TOTAL GENERAL CROISSANTS:</span>
+                    <span>${croissantTotal} UNIDADES</span>
+                </div>
+            `;
+        }
 
         // Ubicar la alerta al final de la primera página cuando haya desborde real (> 32 items acumulados)
         if (isMultiPage && !pageBreakInserted && accumulatedItems >= 28) {
@@ -633,7 +747,8 @@ export function generateKitchenExcelWorkbook(options: KitchenPrintOptions): {
     // Fila 3 (Índice 2): Espaciador
     rows.push(['', '', '']);
 
-    for (const group of groups) {
+    for (let idx = 0; idx < groups.length; idx++) {
+        const group = groups[idx];
         // Fila de Categoría (ej. "CROISSANTS")
         rows.push([group.category, '', '']);
         // Encabezados de Columna
@@ -646,6 +761,18 @@ export function generateKitchenExcelWorkbook(options: KitchenPrintOptions): {
         rows.push([group.subtotalLabel, group.subtotal, '']);
         // Espaciador entre categorías
         rows.push(['', '', '']);
+
+        // Si es el último grupo de croissants, agregar fila de TOTAL GENERAL CROISSANTS
+        const isCurrentCroissant = group.category.includes('CROISSANT');
+        const nextGroup = groups[idx + 1];
+        const isNextCroissant = nextGroup ? nextGroup.category.includes('CROISSANT') : false;
+        if (isCurrentCroissant && !isNextCroissant) {
+            const totalCroissants = groups
+                .filter(g => g.category.includes('CROISSANT'))
+                .reduce((sum, g) => sum + g.subtotal, 0);
+            rows.push(['TOTAL GENERAL CROISSANTS', totalCroissants, '']);
+            rows.push(['', '', '']);
+        }
     }
 
     // Fila de Total General

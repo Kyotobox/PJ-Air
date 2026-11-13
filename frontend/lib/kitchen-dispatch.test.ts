@@ -51,17 +51,18 @@ describe('Kitchen Dispatch Engine (TASK-59-02, TASK-59-03, TASK-59-04)', () => {
     ];
 
     // =========================================================================
-    // HAPPY PATH TESTS (TASK-59-02)
+    // HAPPY PATH TESTS (TASK-59-02, TASK-83-03)
     // =========================================================================
     describe('groupAndSortKitchenItems - Happy Path', () => {
-        it('groups items by category, sorts categories A-Z, and sorts products A-Z within each category', () => {
+        it('groups items by category, sorts categories A-Z, and segments croissants into operational groups (TASK-83-03)', () => {
             const result = groupAndSortKitchenItems(sampleItems);
 
-            // Categories should be sorted A-Z: CAKES SLICES -> CROISSANTS -> DESSERTS -> TARTS
+            // Categories should be sorted A-Z, with croissants divided into Grupo 1 and Grupo 2:
             const categoryNames = result.groups.map(g => g.category);
             expect(categoryNames).toEqual([
                 'CAKES SLICES',
-                'CROISSANTS',
+                '🥐 GRUPO 1: CROISSANTS PLAIN (BASE)',
+                '🎨 GRUPO 2: CROISSANTS DE COLORES (MASAS ESPECIALES)',
                 'DESSERTS',
                 'TARTS',
             ]);
@@ -69,19 +70,24 @@ describe('Kitchen Dispatch Engine (TASK-59-02, TASK-59-03, TASK-59-04)', () => {
             // Total units across all items: 6 + 12 + 10 + 2 + 4 + 8 + 6 = 48
             expect(result.totalUnits).toBe(48);
 
-            // Products in CROISSANTS category should be sorted A-Z:
-            // Almond Croissant -> Artisanal Croissant -> Dubai Chocolate Croissant
-            const croissantsGroup = result.groups.find(g => g.category === 'CROISSANTS');
-            expect(croissantsGroup).toBeDefined();
-            expect(croissantsGroup?.items.map(i => i.name)).toEqual([
-                'Almond Croissant',
+            // Products in Grupo 1 PLAIN (Artisanal Croissant, Dubai Chocolate Croissant)
+            const g1Group = result.groups.find(g => g.category.includes('GRUPO 1'));
+            expect(g1Group).toBeDefined();
+            expect(g1Group?.items.map(i => i.name)).toEqual([
                 'Artisanal Croissant',
                 'Dubai Chocolate Croissant',
             ]);
+            expect(g1Group?.subtotal).toBe(18); // 6 + 12
+            expect(g1Group?.subtotalLabel).toBe('TOTAL SUBGRUPO 1 PLAIN');
 
-            // Deterministic subtotal for CROISSANTS
-            expect(croissantsGroup?.subtotal).toBe(28);
-            expect(croissantsGroup?.subtotalLabel).toBe('TOTAL CROISSANTS');
+            // Products in Grupo 2 COLORES (Almond Croissant)
+            const g2Group = result.groups.find(g => g.category.includes('GRUPO 2'));
+            expect(g2Group).toBeDefined();
+            expect(g2Group?.items.map(i => i.name)).toEqual([
+                'Almond Croissant',
+            ]);
+            expect(g2Group?.subtotal).toBe(10);
+            expect(g2Group?.subtotalLabel).toBe('TOTAL SUBGRUPO 2 COLORES');
 
             // Products in DESSERTS category should be sorted A-Z: Napoleon -> Tiramisu Cup
             const dessertsGroup = result.groups.find(g => g.category === 'DESSERTS');
@@ -91,6 +97,34 @@ describe('Kitchen Dispatch Engine (TASK-59-02, TASK-59-03, TASK-59-04)', () => {
             ]);
             expect(dessertsGroup?.subtotal).toBe(14);
             expect(dessertsGroup?.subtotalLabel).toBe('TOTAL DESSERTS');
+        });
+
+        it('correctly segments all 3 Croissant groups including Small Croissants (TASK-83-03)', () => {
+            const itemsWithSmall = [
+                ...sampleItems,
+                {
+                    product: { name: 'Small Artisanal Croissant', category: 'Croissants', production_group: '3' },
+                    quantity: 20,
+                    notes: '',
+                },
+                {
+                    product: { name: 'Small Pistachio Croissant', category: 'Croissants' }, // fallback -> 3
+                    quantity: 15,
+                    notes: '',
+                },
+            ];
+
+            const result = groupAndSortKitchenItems(itemsWithSmall);
+
+            const g3Group = result.groups.find(g => g.category.includes('GRUPO 3'));
+            expect(g3Group).toBeDefined();
+            expect(g3Group?.category).toBe('🥐 GRUPO 3: SMALL CROISSANTS');
+            expect(g3Group?.subtotalLabel).toBe('TOTAL SUBGRUPO 3 SMALL');
+            expect(g3Group?.subtotal).toBe(35); // 20 + 15
+            expect(g3Group?.items.map(i => i.name)).toEqual([
+                'Small Artisanal Croissant',
+                'Small Pistachio Croissant',
+            ]);
         });
     });
 
@@ -304,7 +338,9 @@ describe('Kitchen Dispatch Engine (TASK-59-02, TASK-59-03, TASK-59-04)', () => {
             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as any[][];
             const rowTexts = rows.map(r => r.join(' | '));
 
-            expect(rowTexts.some(r => r.includes('TOTAL CROISSANTS'))).toBe(true);
+            expect(rowTexts.some(r => r.includes('TOTAL SUBGRUPO 1 PLAIN'))).toBe(true);
+            expect(rowTexts.some(r => r.includes('TOTAL SUBGRUPO 2 COLORES'))).toBe(true);
+            expect(rowTexts.some(r => r.includes('TOTAL GENERAL CROISSANTS'))).toBe(true);
             expect(rowTexts.some(r => r.includes('TOTAL GENERAL DE UNIDADES'))).toBe(true);
         });
 

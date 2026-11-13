@@ -2,8 +2,43 @@ import { Injectable } from '@nestjs/common';
 import { Order } from './order.entity';
 import * as ExcelJS from 'exceljs';
 
+export function resolveCroissantProductionGroup(product?: { name?: string; production_group?: string | null } | null): '1' | '2' | '3' {
+  if (product?.production_group === '1' || product?.production_group === '2' || product?.production_group === '3') {
+    return product.production_group;
+  }
+  const name = (product?.name || '').trim().toLowerCase();
+  // Grupo 3: Small
+  if (name.startsWith('small') || name.includes('small')) {
+    return '3';
+  }
+  // Grupo 2: Colores / Masas Especiales
+  if (
+    name.includes('almond') ||
+    name.includes('banoffee') ||
+    name.includes('beef puff') ||
+    name.includes('chicken puff') ||
+    name.includes('chocolate mousse') ||
+    name.includes('fruit danish') ||
+    name.includes('new york roll') ||
+    name.includes('pain au chocolat') ||
+    name.includes('pistachio') ||
+    name.includes('raspberry') ||
+    name.includes('pain suisse') ||
+    name.includes('pan swiss') ||
+    name.includes('cheese') ||
+    name.includes('turkey bacon')
+  ) {
+    return '2';
+  }
+  // Grupo 1: Plain (Base)
+  return '1';
+}
+
 @Injectable()
 export class ExcelService {
+  async generateProductionReport(orders: Order[]): Promise<Buffer> {
+    return this.exportConsolidated(orders);
+  }
   
   async exportIndividual(orders: Order[]): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
@@ -208,7 +243,11 @@ export class ExcelService {
     ))).sort();
 
     // 2. Group items by product category, then product name, then client name
-    const dataStructure: Record<string, Record<string, Record<string, number>>> = {};
+    interface ProductRecord {
+      productObj?: any;
+      clientQtys: Record<string, number>;
+    }
+    const dataStructure: Record<string, Record<string, ProductRecord>> = {};
     
     orders.forEach(order => {
       const client = order?.user?.profile?.nickname || order?.user?.profile?.full_name || order?.user?.email || 'Anónimo';
@@ -218,9 +257,16 @@ export class ExcelService {
         const qty = Number(item.quantity) || 0;
 
         if (!dataStructure[cat]) dataStructure[cat] = {};
-        if (!dataStructure[cat][prod]) dataStructure[cat][prod] = {};
+        if (!dataStructure[cat][prod]) {
+          dataStructure[cat][prod] = {
+            productObj: item.product,
+            clientQtys: {},
+          };
+        } else if (!dataStructure[cat][prod].productObj && item.product) {
+          dataStructure[cat][prod].productObj = item.product;
+        }
         
-        dataStructure[cat][prod][client] = (dataStructure[cat][prod][client] || 0) + qty;
+        dataStructure[cat][prod].clientQtys[client] = (dataStructure[cat][prod].clientQtys[client] || 0) + qty;
       });
     });
 
@@ -240,6 +286,11 @@ export class ExcelService {
       const ws = workbook.addWorksheet('Sin Pedidos');
       ws.addRow(['No hay pedidos en el rango de fechas seleccionado.']);
     }
+
+    const isCroissantsCategory = (categoryName: string): boolean => {
+      const norm = categoryName.trim().toUpperCase();
+      return norm === 'CROISSANTS' || norm === 'CROISSANT';
+    };
 
     for (const [catName, products] of Object.entries(dataStructure)) {
       // Clean sheet name (Excel sheets cannot contain \ / ? * [ ] : and must be <= 31 chars)
@@ -277,86 +328,256 @@ export class ExcelService {
 
       worksheet.addRow([]); // Spacer
 
-      // Table headers
-      const headers = ['PRODUCTO', ...clientNames.map(c => c.toUpperCase()), 'TOTAL'];
-      const headerRow = worksheet.addRow(headers);
-      headerRow.height = 22;
-      headerRow.eachCell((cell, colNum) => {
-        cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF5EBE6' } // Soft warm cream
+      if (isCroissantsCategory(catName)) {
+        // Croissant 3-group segmented tables (TASK-83-03)
+        const groupDefs = [
+          {
+            id: '1',
+            title: '🥐 GRUPO 1: CROISSANTS PLAIN (BASE)',
+            totalLabel: 'TOTAL SUBGRUPO 1 PLAIN',
+            bgColor: 'FFF5EBE6',
+          },
+          {
+            id: '2',
+            title: '🎨 GRUPO 2: CROISSANTS DE COLORES (MASAS ESPECIALES)',
+            totalLabel: 'TOTAL SUBGRUPO 2 COLORES',
+            bgColor: 'FFEAE0E8',
+          },
+          {
+            id: '3',
+            title: '🥐 GRUPO 3: SMALL CROISSANTS',
+            totalLabel: 'TOTAL SUBGRUPO 3 SMALL',
+            bgColor: 'FFF5EBE6',
+          },
+        ];
+
+        const groupedProducts: Record<string, { prodName: string; clientQtys: Record<string, number> }[]> = {
+          '1': [],
+          '2': [],
+          '3': [],
         };
-        cell.border = cellBorders;
-        cell.alignment = {
-          horizontal: colNum === 1 ? 'left' : 'right',
-          vertical: 'middle'
-        };
-      });
 
-      const clientColumnTotals: Record<string, number> = {};
-      let grandTotal = 0;
+        for (const [prodName, prodData] of Object.entries(products)) {
+          const groupKey = resolveCroissantProductionGroup(prodData.productObj || { name: prodName });
+          groupedProducts[groupKey].push({
+            prodName,
+            clientQtys: prodData.clientQtys,
+          });
+        }
 
-      // Product rows
-      for (const [prodName, clientQtys] of Object.entries(products)) {
-        const rowData: any[] = [prodName];
-        let prodTotal = 0;
+        // Sort products A-Z within each group
+        for (const key of ['1', '2', '3']) {
+          groupedProducts[key].sort((a, b) => a.prodName.localeCompare(b.prodName, 'en', { sensitivity: 'base' }));
+        }
 
+        const overallCroissantTotals: Record<string, number> = {};
+        let overallCroissantGrandTotal = 0;
+
+        for (const gDef of groupDefs) {
+          const gProducts = groupedProducts[gDef.id] || [];
+          if (gProducts.length === 0) continue;
+
+          // Block Header / Sub-table banner
+          const bannerRow = worksheet.addRow([gDef.title]);
+          worksheet.mergeCells(bannerRow.number, 1, bannerRow.number, clientNames.length + 2);
+          bannerRow.height = 24;
+          bannerRow.getCell(1).font = { name: fontName, bold: true, size: 11, color: { argb: 'FF5C3D2E' } };
+          bannerRow.getCell(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: gDef.bgColor },
+          };
+          bannerRow.getCell(1).border = cellBorders;
+          bannerRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
+
+          // Table headers
+          const headers = ['PRODUCTO', ...clientNames.map(c => c.toUpperCase()), 'TOTAL'];
+          const subHeaderRow = worksheet.addRow(headers);
+          subHeaderRow.height = 20;
+          subHeaderRow.eachCell((cell, colNum) => {
+            cell.font = { name: fontName, bold: true, size: 9, color: { argb: 'FF5C3D2E' } };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF5EBE6' },
+            };
+            cell.border = cellBorders;
+            cell.alignment = {
+              horizontal: colNum === 1 ? 'left' : 'right',
+              vertical: 'middle',
+            };
+          });
+
+          const subGroupColumnTotals: Record<string, number> = {};
+          let subGroupGrandTotal = 0;
+
+          // Product rows
+          for (const item of gProducts) {
+            const rowData: any[] = [item.prodName];
+            let prodTotal = 0;
+
+            clientNames.forEach(client => {
+              const qty = item.clientQtys[client] || 0;
+              rowData.push(qty);
+              prodTotal += qty;
+              subGroupColumnTotals[client] = (subGroupColumnTotals[client] || 0) + qty;
+              overallCroissantTotals[client] = (overallCroissantTotals[client] || 0) + qty;
+            });
+
+            rowData.push(prodTotal);
+            subGroupGrandTotal += prodTotal;
+            overallCroissantGrandTotal += prodTotal;
+
+            const dataRow = worksheet.addRow(rowData);
+            dataRow.height = 18;
+            dataRow.eachCell((cell, colNum) => {
+              cell.font = { name: fontName, size: 10 };
+              cell.border = cellBorders;
+              cell.alignment = {
+                horizontal: colNum === 1 ? 'left' : 'right',
+                vertical: 'middle',
+              };
+              if (colNum > 1 && cell.value === 0) {
+                cell.font = { name: fontName, size: 10, color: { argb: 'FFC0C0C0' } };
+              }
+            });
+          }
+
+          // Subgroup totals row
+          const subTotalsRowData: any[] = [gDef.totalLabel];
+          clientNames.forEach(client => {
+            subTotalsRowData.push(subGroupColumnTotals[client] || 0);
+          });
+          subTotalsRowData.push(subGroupGrandTotal);
+
+          const subTotalsRow = worksheet.addRow(subTotalsRowData);
+          subTotalsRow.height = 22;
+          subTotalsRow.eachCell((cell, colNum) => {
+            cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFE8D0C5' }, // Soft peach
+            };
+            cell.border = cellBorders;
+            cell.alignment = {
+              horizontal: colNum === 1 ? 'left' : 'right',
+              vertical: 'middle',
+            };
+          });
+
+          worksheet.addRow([]); // Spacer
+        }
+
+        // Final TOTAL GENERAL CROISSANTS row
+        const grandTotalsRowData: any[] = ['TOTAL GENERAL CROISSANTS'];
         clientNames.forEach(client => {
-          const qty = clientQtys[client] || 0;
-          rowData.push(qty);
-          prodTotal += qty;
-          clientColumnTotals[client] = (clientColumnTotals[client] || 0) + qty;
+          grandTotalsRowData.push(overallCroissantTotals[client] || 0);
         });
+        grandTotalsRowData.push(overallCroissantGrandTotal);
 
-        rowData.push(prodTotal);
-        grandTotal += prodTotal;
-
-        const dataRow = worksheet.addRow(rowData);
-        dataRow.height = 18;
-        dataRow.eachCell((cell, colNum) => {
-          cell.font = { name: fontName, size: 10 };
+        const grandTotalsRow = worksheet.addRow(grandTotalsRowData);
+        grandTotalsRow.height = 24;
+        grandTotalsRow.eachCell((cell, colNum) => {
+          cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF5C3D2E' }, // Dark brown primary theme
+          };
+          cell.border = {
+            top: borderStyle,
+            bottom: { style: 'double', color: { argb: 'FF5C3D2E' } },
+            left: borderStyle,
+            right: borderStyle,
+          };
+          cell.alignment = {
+            horizontal: colNum === 1 ? 'left' : 'right',
+            vertical: 'middle',
+          };
+        });
+      } else {
+        // Standard category rendering
+        const headers = ['PRODUCTO', ...clientNames.map(c => c.toUpperCase()), 'TOTAL'];
+        const headerRow = worksheet.addRow(headers);
+        headerRow.height = 22;
+        headerRow.eachCell((cell, colNum) => {
+          cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF5EBE6' }, // Soft warm cream
+          };
           cell.border = cellBorders;
           cell.alignment = {
             horizontal: colNum === 1 ? 'left' : 'right',
-            vertical: 'middle'
+            vertical: 'middle',
           };
-          
-          // Mute 0 values for cleaner visual design
-          if (colNum > 1 && cell.value === 0) {
-            cell.font = { name: fontName, size: 10, color: { argb: 'FFC0C0C0' } }; // Light gray
-          }
+        });
+
+        const clientColumnTotals: Record<string, number> = {};
+        let grandTotal = 0;
+
+        // Product rows
+        for (const [prodName, prodData] of Object.entries(products)) {
+          const rowData: any[] = [prodName];
+          let prodTotal = 0;
+
+          clientNames.forEach(client => {
+            const qty = prodData.clientQtys[client] || 0;
+            rowData.push(qty);
+            prodTotal += qty;
+            clientColumnTotals[client] = (clientColumnTotals[client] || 0) + qty;
+          });
+
+          rowData.push(prodTotal);
+          grandTotal += prodTotal;
+
+          const dataRow = worksheet.addRow(rowData);
+          dataRow.height = 18;
+          dataRow.eachCell((cell, colNum) => {
+            cell.font = { name: fontName, size: 10 };
+            cell.border = cellBorders;
+            cell.alignment = {
+              horizontal: colNum === 1 ? 'left' : 'right',
+              vertical: 'middle',
+            };
+            
+            // Mute 0 values for cleaner visual design
+            if (colNum > 1 && cell.value === 0) {
+              cell.font = { name: fontName, size: 10, color: { argb: 'FFC0C0C0' } }; // Light gray
+            }
+          });
+        }
+
+        // Totals row
+        const totalsRowData: any[] = ['TOTAL GENERAL'];
+        clientNames.forEach(client => {
+          totalsRowData.push(clientColumnTotals[client] || 0);
+        });
+        totalsRowData.push(grandTotal);
+
+        const totalsRow = worksheet.addRow(totalsRowData);
+        totalsRow.height = 22;
+        totalsRow.eachCell((cell, colNum) => {
+          cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE8D0C5' }, // Accent peach
+          };
+          cell.border = cellBorders;
+          cell.alignment = {
+            horizontal: colNum === 1 ? 'left' : 'right',
+            vertical: 'middle',
+          };
         });
       }
-
-      // Totals row
-      const totalsRowData: any[] = ['TOTAL GENERAL'];
-      clientNames.forEach(client => {
-        totalsRowData.push(clientColumnTotals[client] || 0);
-      });
-      totalsRowData.push(grandTotal);
-
-      const totalsRow = worksheet.addRow(totalsRowData);
-      totalsRow.height = 22;
-      totalsRow.eachCell((cell, colNum) => {
-        cell.font = { name: fontName, bold: true, size: 10, color: { argb: 'FF5C3D2E' } };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE8D0C5' } // Accent peach
-        };
-        cell.border = cellBorders;
-        cell.alignment = {
-          horizontal: colNum === 1 ? 'left' : 'right',
-          vertical: 'middle'
-        };
-      });
 
       // Column width auto-fit
       worksheet.columns.forEach((column, index) => {
         if (index === 0) {
-          column.width = 30; // Product name column
+          column.width = 38; // Product name column & subtotal labels
         } else {
           column.width = 15; // Client and Total columns
         }

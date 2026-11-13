@@ -1,10 +1,10 @@
 {
   "project": "pj-air",
   "version": "5.0.0",
-  "kernel_version": "5.0.0",
+  "kernel_version": "5.3.1",
   "status": "IN_PROGRESS",
   "current_sprint": "S83",
-  "current_task": "TASK-83-01",
+  "current_task": "TASK-83-03",
   "sprints": [
     {
       "id": "S80",
@@ -92,7 +92,7 @@
         {
           "id": "TASK-83-01",
           "title": "Respaldo F\u00edsico de Base de Datos y Verificaci\u00f3n DDL en Producci\u00f3n",
-          "status": "IN_PROGRESS",
+          "status": "TODO",
           "type": "DATABASE/BACKUP",
           "veracity_hash": null
         },
@@ -106,7 +106,7 @@
         {
           "id": "TASK-83-03",
           "title": "Segmentaci\u00f3n de Croissants en 3 Grupos (Plain, Colores, Small) en Cat\u00e1logo, Excel y Cocina",
-          "status": "TODO",
+          "status": "DONE",
           "type": "CATALOG/REPORTS",
           "veracity_hash": null
         },
@@ -137,9 +137,16 @@
           "status": "TODO",
           "type": "ORDERS/INVOICE-OCR",
           "veracity_hash": null
-        },
+        }
+      ]
+    },
+    {
+      "id": "S84",
+      "title": "Sprint S84: Despliegue a Producci\u00f3n y Testing, y Plan de Pruebas Transversales e Integrales",
+      "status": "TODO",
+      "tasks": [
         {
-          "id": "TASK-83-08",
+          "id": "TASK-84-01",
           "title": "Despliegue a Producci\u00f3n y Testing, y Plan de Pruebas Transversales e Integrales",
           "status": "TODO",
           "type": "DEPLOY/CERT",
@@ -158,7 +165,7 @@
       {
         "id": "TASK-83-01",
         "title": "Respaldo F\u00edsico de Base de Datos y Verificaci\u00f3n DDL en Producci\u00f3n",
-        "status": "IN_PROGRESS",
+        "status": "TODO",
         "type": "DATABASE/BACKUP",
         "veracity_hash": null
       },
@@ -172,7 +179,7 @@
       {
         "id": "TASK-83-03",
         "title": "Segmentaci\u00f3n de Croissants en 3 Grupos (Plain, Colores, Small) en Cat\u00e1logo, Excel y Cocina",
-        "status": "TODO",
+        "status": "DONE",
         "type": "CATALOG/REPORTS",
         "veracity_hash": null
       },
@@ -202,13 +209,6 @@
         "title": "Emisi\u00f3n de Factura en Paso Final y Validaci\u00f3n OCR Obligatoria para Cheques",
         "status": "TODO",
         "type": "ORDERS/INVOICE-OCR",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-83-08",
-        "title": "Despliegue a Producci\u00f3n y Testing, y Plan de Pruebas Transversales e Integrales",
-        "status": "TODO",
-        "type": "DEPLOY/CERT",
         "veracity_hash": null
       }
     ]

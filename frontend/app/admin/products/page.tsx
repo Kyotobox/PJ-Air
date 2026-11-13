@@ -23,6 +23,7 @@ interface Product {
     price: number;
     description: string;
     image: string;
+    production_group?: string | null;
 }
 
 interface ProductForm {
@@ -31,6 +32,7 @@ interface ProductForm {
     price: string;
     description: string;
     image: string;
+    production_group: string;
 }
 
 const emptyForm: ProductForm = {
@@ -39,6 +41,7 @@ const emptyForm: ProductForm = {
     price: '',
     description: '',
     image: '',
+    production_group: '',
 };
 
 export default function AdminProductsPage() {
@@ -106,6 +109,7 @@ export default function AdminProductsPage() {
             price: p.price.toString(),
             description: p.description || '',
             image: p.image || '',
+            production_group: p.production_group || '',
         });
         setFormError(null);
         setShowModal(true);
@@ -164,6 +168,7 @@ export default function AdminProductsPage() {
                 description: form.description.trim(),
                 image: form.image.trim(),
                 category_id: parseInt(form.category_id),
+                production_group: form.production_group || null,
             };
 
             if (editingProduct) {
@@ -268,7 +273,14 @@ export default function AdminProductsPage() {
                                     </div>
                                 </div>
                                 <div className="p-4">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-accent">{product.category?.name || 'Sin categoría'}</span>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent">{product.category?.name || 'Sin categoría'}</span>
+                                        {product.production_group && (
+                                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                                {product.production_group === '1' ? 'G1 Plain' : product.production_group === '2' ? 'G2 Colores' : 'G3 Small'}
+                                            </span>
+                                        )}
+                                    </div>
                                     <h3 className="font-bold truncate mt-0.5">{product.name}</h3>
                                     {product.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{product.description}</p>}
                                     <div className="flex justify-between items-center mt-3">
@@ -311,7 +323,16 @@ export default function AdminProductsPage() {
                                             <p className="font-semibold">{product.name}</p>
                                             {product.description && <p className="text-xs text-muted-foreground truncate max-w-xs">{product.description}</p>}
                                         </td>
-                                        <td className="px-6 py-4"><span className="bg-accent/10 text-accent px-2 py-1 rounded text-xs font-bold">{product.category?.name || 'Sin categoría'}</span></td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="bg-accent/10 text-accent px-2 py-1 rounded text-xs font-bold">{product.category?.name || 'Sin categoría'}</span>
+                                                {product.production_group && (
+                                                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                                        {product.production_group === '1' ? 'G1 Plain' : product.production_group === '2' ? 'G2 Colores' : 'G3 Small'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4 font-bold text-primary">${Number(product.price).toFixed(2)}</td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
@@ -381,6 +402,19 @@ export default function AdminProductsPage() {
                                     </select>
                                 </div>
                                 <div className="col-span-2 sm:col-span-1">
+                                    <label className="block text-xs font-black text-muted-foreground uppercase mb-1.5">Grupo de Producción</label>
+                                    <select
+                                        value={form.production_group}
+                                        onChange={e => setForm(f => ({ ...f, production_group: e.target.value }))}
+                                        className="w-full px-4 py-3 bg-muted rounded-xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                                    >
+                                        <option value="">Sin grupo</option>
+                                        <option value="1">1: Plain / Base</option>
+                                        <option value="2">2: Colores / Especiales</option>
+                                        <option value="3">3: Small</option>
+                                    </select>
+                                </div>
+                                <div className="col-span-2">
                                     <label className="block text-xs font-black text-muted-foreground uppercase mb-1.5">Precio ($) *</label>
                                     <input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="0.00" className="w-full px-4 py-3 bg-muted rounded-xl outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
                                 </div>

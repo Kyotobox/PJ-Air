@@ -9,4 +9,5 @@ export declare class Product {
     is_deleted: boolean;
     stripe_product_id: string;
     stripe_price_id: string;
+    production_group: string | null;
 }

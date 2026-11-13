@@ -120,7 +120,7 @@ describe('ExcelService', () => {
     });
   });
 
-  describe('exportConsolidated', () => {
+  describe('exportConsolidated and generateProductionReport (S83A / TASK-83-03)', () => {
     it('should include dispatch range notice in consolidated worksheets', async () => {
       const mockOrders = [
         {
@@ -159,6 +159,128 @@ describe('ExcelService', () => {
       );
 
       expect(hasRangeNotice).toBe(true);
+    });
+
+    it('should segment Croissants into 3 distinct blocks with subtotals and grand total (happy path)', async () => {
+      const mockOrders = [
+        {
+          id: 'order-cr1',
+          user: { profile: { nickname: 'Bakery-East' } },
+          items: [
+            // Group 1 Plain
+            {
+              product: { name: 'Artisanal Croissant', category: { name: 'Croissants' }, production_group: '1' },
+              quantity: 10,
+            },
+            {
+              product: { name: 'Dubai Chocolate Croissant', category: { name: 'Croissants' } }, // fallback resolution -> 1
+              quantity: 5,
+            },
+            // Group 2 Colores
+            {
+              product: { name: 'Almond Croissant', category: { name: 'Croissants' }, production_group: '2' },
+              quantity: 8,
+            },
+            {
+              product: { name: 'Raspberry Croissant', category: { name: 'Croissants' } }, // fallback resolution -> 2
+              quantity: 7,
+            },
+            // Group 3 Small
+            {
+              product: { name: 'Small Artisanal Croissant', category: { name: 'Croissants' }, production_group: '3' },
+              quantity: 15,
+            },
+          ],
+        } as unknown as Order,
+        {
+          id: 'order-cr2',
+          user: { profile: { nickname: 'Bakery-West' } },
+          items: [
+            {
+              product: { name: 'Artisanal Croissant', category: { name: 'Croissants' }, production_group: '1' },
+              quantity: 4,
+            },
+            {
+              product: { name: 'Small Pistachio Croissant', category: { name: 'Croissants' } }, // fallback resolution -> 3
+              quantity: 6,
+            },
+          ],
+        } as unknown as Order,
+      ];
+
+      const buffer = await service.generateProductionReport(mockOrders);
+      expect(buffer).toBeDefined();
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as any);
+
+      const sheet = workbook.getWorksheet('CROISSANTS');
+      expect(sheet).toBeDefined();
+
+      const allRows: string[][] = [];
+      sheet?.eachRow((row) => {
+        allRows.push(row.values as string[]);
+      });
+
+      const rowStrings = allRows.map((r) => (Array.isArray(r) ? r.join(' | ') : String(r)));
+
+      // 1. Verify 3 Group Headers
+      expect(rowStrings.some((r) => r.includes('🥐 GRUPO 1: CROISSANTS PLAIN (BASE)'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('🎨 GRUPO 2: CROISSANTS DE COLORES (MASAS ESPECIALES)'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('🥐 GRUPO 3: SMALL CROISSANTS'))).toBe(true);
+
+      // 2. Verify 3 Subgroup Total Rows
+      expect(rowStrings.some((r) => r.includes('TOTAL SUBGRUPO 1 PLAIN'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('TOTAL SUBGRUPO 2 COLORES'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('TOTAL SUBGRUPO 3 SMALL'))).toBe(true);
+
+      // 3. Verify Final TOTAL GENERAL CROISSANTS
+      expect(rowStrings.some((r) => r.includes('TOTAL GENERAL CROISSANTS'))).toBe(true);
+    });
+
+    it('should correctly classify products in all 3 groups via canonical name fallback when production_group is null (sad path / fallback)', async () => {
+      const mockOrders = [
+        {
+          id: 'order-fallback',
+          user: { profile: { nickname: 'Store-A' } },
+          items: [
+            { product: { name: 'Blueberry Lavender Croissant', category: { name: 'Croissants' } }, quantity: 2 },
+            { product: { name: 'Beef Puff Pastry', category: { name: 'Croissants' } }, quantity: 3 },
+            { product: { name: 'Small Chocolate Mousse Croissant', category: { name: 'Croissants' } }, quantity: 4 },
+          ],
+        } as unknown as Order,
+      ];
+
+      const buffer = await service.exportConsolidated(mockOrders);
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as any);
+      const sheet = workbook.getWorksheet('CROISSANTS');
+      expect(sheet).toBeDefined();
+
+      const rowStrings: string[] = [];
+      sheet?.eachRow((row) => {
+        rowStrings.push(Array.isArray(row.values) ? (row.values as string[]).join(' | ') : '');
+      });
+
+      expect(rowStrings.some((r) => r.includes('🥐 GRUPO 1: CROISSANTS PLAIN (BASE)'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('🎨 GRUPO 2: CROISSANTS DE COLORES (MASAS ESPECIALES)'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('🥐 GRUPO 3: SMALL CROISSANTS'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('TOTAL SUBGRUPO 1 PLAIN'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('TOTAL SUBGRUPO 2 COLORES'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('TOTAL SUBGRUPO 3 SMALL'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('TOTAL GENERAL CROISSANTS'))).toBe(true);
+    });
+
+    it('should handle croissants category with empty items or missing fields without throwing (sad path)', async () => {
+      const emptyCroissantOrders = [
+        {
+          id: 'order-empty-items',
+          user: { profile: { nickname: 'Empty-Store' } },
+          items: [],
+        } as unknown as Order,
+      ];
+
+      await expect(service.exportConsolidated(emptyCroissantOrders)).resolves.toBeDefined();
     });
   });
 
