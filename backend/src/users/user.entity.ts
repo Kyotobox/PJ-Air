@@ -138,6 +138,9 @@ export class User {
   @Column({ type: 'varchar', length: 100, nullable: true })
   utm_content?: string | null;
 
+  @Column({ type: 'varchar', length: 30, default: 'APPROVED' })
+  account_status: string;
+
   @OneToMany(() => ProductDiscount, (pd) => pd.user)
   productDiscounts: ProductDiscount[];
 }

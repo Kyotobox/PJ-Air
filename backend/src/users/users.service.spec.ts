@@ -290,4 +290,37 @@ describe('UsersService', () => {
       ).rejects.toThrow();
     });
   });
+
+  describe('approveAccount (TASK-85-01)', () => {
+    it('approves user account and sets terms and delivery fee (Happy Path)', async () => {
+      const user = {
+        id: 'u-b2b-app-1',
+        email: 'client@bakery.com',
+        account_status: 'PENDING_APPROVAL',
+        account_type: 'cash',
+        delivery_fee: 0,
+      };
+      mockUserRepository.findOne.mockResolvedValue(user);
+      mockUserRepository.save.mockImplementation((u) => Promise.resolve(u));
+
+      const res = await service.approveAccount('u-b2b-app-1', {
+        account_status: 'APPROVED',
+        payment_terms: 'NET30',
+        delivery_fee: 15,
+      });
+
+      expect(res.account_status).toBe('APPROVED');
+      expect(res.account_type).toBe('credit');
+      expect(res.delivery_fee).toBe(15);
+      expect(mockUserRepository.save).toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when approving non-existent user (Sad Path §6)', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.approveAccount('u-non-existent-404', { account_status: 'APPROVED' }),
+      ).rejects.toThrow();
+    });
+  });
 });

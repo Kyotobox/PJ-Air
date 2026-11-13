@@ -47,6 +47,13 @@ export class UsersController {
     return this.usersService.updateRole(id, body.role);
   }
 
+  @Patch(':id/approve')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async approveAccount(@Param('id') id: string, @Body() body: any) {
+    return this.usersService.approveAccount(id, body);
+  }
+
   @Post(':id/avatar')
   @UseInterceptors(
     FileInterceptor('file', {

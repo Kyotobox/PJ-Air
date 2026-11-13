@@ -27,6 +27,7 @@ interface UserRecord {
     utm_medium?: string | null;
     utm_campaign?: string | null;
     utm_content?: string | null;
+    account_status?: string;
 }
 
 const ROLES = ['client', 'admin', 'delivery', 'produccion'];
@@ -380,7 +381,14 @@ export default function AdminUsersPage() {
                                                     <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center"><User size={16} /></div>
                                                 )}
                                                 <div>
-                                                    <p className="font-semibold text-sm">{u.profile?.full_name || u.email || '—'}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-semibold text-sm">{u.profile?.full_name || u.email || '—'}</p>
+                                                        {u.account_status === 'PENDING_APPROVAL' && (
+                                                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                                                                Pendiente Aprobación
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     {u.profile?.phone && <p className="text-xs text-muted-foreground">{u.profile.phone}</p>}
                                                 </div>
                                             </div>
@@ -487,6 +495,33 @@ export default function AdminUsersPage() {
                         <div className="flex-1 overflow-y-auto p-8 space-y-8">
                             {loadingDetail && (
                                 <div className="flex justify-center py-10"><Loader2 size={24} className="animate-spin text-primary" /></div>
+                            )}
+
+                            {selectedUser.account_status === 'PENDING_APPROVAL' && (
+                                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+                                        <Shield size={16} />
+                                        <span>Cuenta B2B Pendiente de Aprobación</span>
+                                    </div>
+                                    <p className="text-xs text-amber-900/80 leading-relaxed">
+                                        Este cliente comercial está a la espera de autorización para habilitar el acceso a pedidos.
+                                    </p>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await api.patch(`/users/${selectedUser.id}/approve`, { account_status: 'APPROVED' });
+                                                setSelectedUser({ ...selectedUser, account_status: 'APPROVED' });
+                                                setUsers(users.map(u => u.id === selectedUser.id ? { ...u, account_status: 'APPROVED' } : u));
+                                            } catch (e: any) {
+                                                alert('Error aprobando cuenta: ' + e.message);
+                                            }
+                                        }}
+                                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <CheckCircle2 size={15} />
+                                        Aprobar Cuenta Comercial
+                                    </button>
+                                </div>
                             )}
 
                             {/* Profile info */}

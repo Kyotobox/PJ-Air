@@ -47,5 +47,6 @@ export declare class User {
     utm_medium?: string | null;
     utm_campaign?: string | null;
     utm_content?: string | null;
+    account_status: string;
     productDiscounts: ProductDiscount[];
 }

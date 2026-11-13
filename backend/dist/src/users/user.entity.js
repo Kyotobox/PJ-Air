@@ -60,6 +60,7 @@ let User = class User {
     utm_medium;
     utm_campaign;
     utm_content;
+    account_status;
     productDiscounts;
 };
 exports.User = User;
@@ -239,6 +240,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 100, nullable: true }),
     __metadata("design:type", Object)
 ], User.prototype, "utm_content", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 30, default: 'APPROVED' }),
+    __metadata("design:type", String)
+], User.prototype, "account_status", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => product_discount_entity_1.ProductDiscount, (pd) => pd.user),
     __metadata("design:type", Array)

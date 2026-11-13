@@ -244,6 +244,23 @@ let UsersService = class UsersService {
         if (data.delivery_fee !== undefined) {
             user.delivery_fee = Number(data.delivery_fee);
         }
+        if (data.account_status !== undefined) {
+            user.account_status = data.account_status;
+        }
+        return this.userRepository.save(user);
+    }
+    async approveAccount(id, body) {
+        const user = await this.findOne(id);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        user.account_status = body?.account_status || 'APPROVED';
+        if (body?.delivery_fee !== undefined) {
+            user.delivery_fee = Number(body.delivery_fee);
+        }
+        if (body?.payment_terms) {
+            user.account_type = (body.payment_terms === 'NET15' || body.payment_terms === 'NET30') ? 'credit' : 'cash';
+        }
         return this.userRepository.save(user);
     }
     async setProductDiscount(userId, productId, data) {

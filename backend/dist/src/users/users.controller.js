@@ -79,6 +79,9 @@ let UsersController = class UsersController {
     async updateRole(id, body) {
         return this.usersService.updateRole(id, body.role);
     }
+    async approveAccount(id, body) {
+        return this.usersService.approveAccount(id, body);
+    }
     async uploadAvatar(id, file) {
         console.log('--- Avatar Upload Request ---');
         console.log('User ID:', id);
@@ -185,6 +188,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateRole", null);
+__decorate([
+    (0, common_1.Patch)(':id/approve'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "approveAccount", null);
 __decorate([
     (0, common_1.Post)(':id/avatar'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {

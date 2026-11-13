@@ -46,6 +46,11 @@ export declare class UsersService {
         credit_balance?: number;
     }>;
     updateUser(id: string, data: Partial<User>): Promise<User>;
+    approveAccount(id: string, body?: {
+        account_status?: string;
+        payment_terms?: string;
+        delivery_fee?: number;
+    }): Promise<User>;
     setProductDiscount(userId: string, productId: number, data: {
         discount_percentage?: number;
         special_price?: number;

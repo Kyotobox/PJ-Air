@@ -41,7 +41,12 @@ function LoginContent() {
                 else router.push(redirectParam || '/');
             }
         } catch (err: any) {
-            setError(err.message || 'Error al iniciar sesión');
+            const rawMsg = err.message || '';
+            if (rawMsg.includes('ACCOUNT_PENDING_APPROVAL')) {
+                setError('Tu cuenta comercial está en proceso de revisión por nuestro equipo administrativo. Te notificaremos una vez aprobada.');
+            } else {
+                setError(rawMsg || 'Error al iniciar sesión');
+            }
         } finally {
             setIsLoading(false);
         }

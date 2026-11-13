@@ -10,6 +10,7 @@ export declare class UsersController {
     updateRole(id: string, body: {
         role: string;
     }): Promise<import("./user.entity").User>;
+    approveAccount(id: string, body: any): Promise<import("./user.entity").User>;
     uploadAvatar(id: string, file: Express.Multer.File): Promise<import("./profile.entity").Profile>;
     uploadSt120(id: string, file: Express.Multer.File, taxId?: string): Promise<import("./profile.entity").Profile>;
     updateGeneralDiscount(id: string, body: {

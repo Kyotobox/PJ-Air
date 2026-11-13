@@ -699,5 +699,54 @@ describe('AuthService', () => {
       await expect(service.verifySmsOtp({ phone: '+13055550199', code: '' })).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('B2B Wholesale Approval Gate (TASK-85-01)', () => {
+    it('throws UnauthorizedException when client account is PENDING_APPROVAL (Sad Path §6)', async () => {
+      mockUsersService.findByEmailWithRole.mockResolvedValueOnce({
+        id: 'user-pending-1',
+        email: 'pending@b2b.com',
+        password: 'plainpassword',
+        role: 'client',
+        is_active: true,
+        account_status: 'PENDING_APPROVAL',
+      });
+
+      await expect(service.login('pending@b2b.com', 'plainpassword')).rejects.toThrow(
+        /ACCOUNT_PENDING_APPROVAL/,
+      );
+    });
+
+    it('allows client login when account_status is APPROVED (Happy Path)', async () => {
+      mockUsersService.findByEmailWithRole.mockResolvedValueOnce({
+        id: 'user-approved-1',
+        email: 'approved@b2b.com',
+        password: 'plainpassword',
+        role: 'client',
+        is_active: true,
+        account_status: 'APPROVED',
+      });
+      mockUsersService.updatePassword.mockResolvedValueOnce(true);
+
+      const res = await service.login('approved@b2b.com', 'plainpassword');
+      expect(res.user.email).toBe('approved@b2b.com');
+      expect(res.session.access_token).toBeDefined();
+    });
+
+    it('allows admin login regardless of account_status (Happy Path)', async () => {
+      mockUsersService.findByEmailWithRole.mockResolvedValueOnce({
+        id: 'admin-1',
+        email: 'admin@b2b.com',
+        password: 'plainpassword',
+        role: 'admin',
+        is_active: true,
+        account_status: 'PENDING_APPROVAL',
+      });
+      mockUsersService.updatePassword.mockResolvedValueOnce(true);
+
+      const res = await service.login('admin@b2b.com', 'plainpassword');
+      expect(res.user.email).toBe('admin@b2b.com');
+      expect(res.user.user_metadata.role).toBe('admin');
+    });
+  });
 });
 
