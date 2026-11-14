@@ -21,9 +21,13 @@ export class OrdersController {
   @Post()
   @UseGuards(AuthGuard)
   async create(@Body() body: any, @Req() req: any) {
-    const targetUserId = (req.user?.role === 'admin' && body.userId) ? body.userId : req.user.id;
+    const isAdmin = req.user?.role === 'admin';
+    const targetUserId = (isAdmin && body.userId) ? body.userId : req.user.id;
+    if (isAdmin && (body.manual_entry || body.admin_created) && !body.userId) {
+      throw new BadRequestException('Debe seleccionar un cliente para registrar el pedido manual');
+    }
     const { userId, ...orderData } = body;
-    return this.ordersService.create(targetUserId, orderData);
+    return this.ordersService.create(targetUserId, orderData, { isAdmin });
   }
 
   @Post('settle-batch')

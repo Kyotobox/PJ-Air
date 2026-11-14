@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ExcelService } from './excel.service';
@@ -77,8 +78,41 @@ describe('OrdersController', () => {
       const req = { user: { id: 'user-123', role: 'client' } };
       const result = await controller.create(body, req as any);
 
-      expect(service.create).toHaveBeenCalledWith('user-123', expectedOrderData);
+      expect(service.create).toHaveBeenCalledWith('user-123', expectedOrderData, { isAdmin: false });
       expect(result).toBe('mock-order');
+    });
+
+    it('TASK-91-01 Happy path: should allow admin to create manual order for target userId', async () => {
+      const body = {
+        userId: 'client-b2b-id',
+        manual_entry: true,
+        total: 150,
+        items: [{ productId: 1, quantity: 3, price_at_time: 50 }],
+      };
+
+      mockOrdersService.create.mockResolvedValue({ id: 'order-created-admin' });
+
+      const req = { user: { id: 'admin-id', role: 'admin' } };
+      const result = await controller.create(body, req as any);
+
+      expect(service.create).toHaveBeenCalledWith(
+        'client-b2b-id',
+        expect.objectContaining({ manual_entry: true }),
+        { isAdmin: true },
+      );
+      expect(result).toEqual({ id: 'order-created-admin' });
+    });
+
+    it('TASK-91-01 Sad path (§6): should throw BadRequestException if admin submits manual order without userId', async () => {
+      const body = {
+        manual_entry: true,
+        items: [{ productId: 1, quantity: 1 }],
+      };
+
+      const req = { user: { id: 'admin-id', role: 'admin' } };
+      await expect(controller.create(body, req as any)).rejects.toThrow(
+        new BadRequestException('Debe seleccionar un cliente para registrar el pedido manual'),
+      );
     });
   });
 

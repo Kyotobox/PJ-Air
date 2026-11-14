@@ -256,6 +256,9 @@ export class OrdersService {
       case 'en produccion':
       case 'processing':
         return 'confirmed';
+      case 'draft':
+      case 'borrador':
+        return 'draft';
       case 'cancelled':
       case 'cancelado':
         return 'cancelled';
@@ -271,6 +274,7 @@ export class OrdersService {
     if (userRole === 'admin') return next;
 
     const validTransitions: Record<string, string[]> = {
+      'draft': ['pending', 'confirmed', 'cancelled'],
       'pending': ['confirmed', 'shipped', 'cancelled'],
       'confirmed': ['shipped', 'cancelled'],
       'shipped': ['delivered', 'cancelled'],
@@ -288,7 +292,11 @@ export class OrdersService {
     return next;
   }
 
-  private async calculateOrderPricesAndTotal(userId: string, items: any[]): Promise<{ validatedItems: any[], total: number }> {
+  private async calculateOrderPricesAndTotal(
+    userId: string, 
+    items: any[], 
+    allowPriceOverride: boolean = false
+  ): Promise<{ validatedItems: any[], total: number }> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['productDiscounts']
@@ -326,15 +334,29 @@ export class OrdersService {
 
       let finalPrice = Number(product.price);
 
-      const productDiscount = user.productDiscounts?.find(d => d.product_id === product.id);
-      if (productDiscount) {
-        if (productDiscount.special_price !== null && productDiscount.special_price !== undefined && Number(productDiscount.special_price) > 0) {
-          finalPrice = Number(productDiscount.special_price);
-        } else if (productDiscount.discount_percentage !== null && productDiscount.discount_percentage !== undefined && Number(productDiscount.discount_percentage) > 0) {
-          finalPrice = Number(product.price) * (1 - Number(productDiscount.discount_percentage) / 100);
+      const hasCustomPrice = (item.price_at_time !== undefined && item.price_at_time !== null) ||
+                             (item.price !== undefined && item.price !== null);
+
+      if (allowPriceOverride && hasCustomPrice) {
+        const rawCustom = item.price_at_time !== undefined && item.price_at_time !== null
+          ? item.price_at_time
+          : item.price;
+        const parsedCustom = Number(rawCustom);
+        if (isNaN(parsedCustom) || parsedCustom < 0) {
+          throw new BadRequestException('El precio unitario personalizado debe ser un número mayor o igual a 0');
         }
-      } else if (user.general_discount !== null && user.general_discount !== undefined && Number(user.general_discount) > 0 && user.productDiscounts && user.productDiscounts.length > 0) {
-        finalPrice = Number(product.price) * (1 - Number(user.general_discount) / 100);
+        finalPrice = parsedCustom;
+      } else {
+        const productDiscount = user.productDiscounts?.find(d => d.product_id === product.id);
+        if (productDiscount) {
+          if (productDiscount.special_price !== null && productDiscount.special_price !== undefined && Number(productDiscount.special_price) > 0) {
+            finalPrice = Number(productDiscount.special_price);
+          } else if (productDiscount.discount_percentage !== null && productDiscount.discount_percentage !== undefined && Number(productDiscount.discount_percentage) > 0) {
+            finalPrice = Number(product.price) * (1 - Number(productDiscount.discount_percentage) / 100);
+          }
+        } else if (user.general_discount !== null && user.general_discount !== undefined && Number(user.general_discount) > 0 && user.productDiscounts && user.productDiscounts.length > 0) {
+          finalPrice = Number(product.price) * (1 - Number(user.general_discount) / 100);
+        }
       }
 
       finalPrice = Math.round((finalPrice + Number.EPSILON) * 100) / 100;
@@ -392,7 +414,7 @@ export class OrdersService {
       .andWhere('order.payment_status NOT IN (:...pendingVerifications)', {
         pendingVerifications: ['pending_zelle_verification', 'pending_check_verification', 'pending_wire_verification'],
       })
-      .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] });
+      .andWhere('order.status NOT IN (:...excludedStatuses)', { excludedStatuses: ['cancelled', 'Cancelado', 'draft', 'borrador'] });
 
     if (userId) {
       qb.andWhere('order.user_id = :userId', { userId });
@@ -535,7 +557,9 @@ export class OrdersService {
     return unassignedOrders.length;
   }
 
-  async create(userId: string, orderData: any): Promise<Order> {
+  async create(userId: string, orderData: any, options?: { isAdmin?: boolean }): Promise<Order> {
+    const isAdmin = Boolean(options?.isAdmin || (orderData as any).is_admin_actor);
+
     // TASK-83-04: Boundary Validation for Delivery Fee (§6)
     // TASK-83-04 & TASK-90-02: Boundary Validation for Delivery Fee (desacoplado para rutas de larga distancia)
     const rawDeliveryFee = (orderData as any).delivery_fee_charged !== undefined 
@@ -560,34 +584,54 @@ export class OrdersService {
     }
 
     // TASK-85-03: Early Check Photo Validation (§6, §45)
+    // TASK-91-01: Exención de comprobante inmediato si es ingreso manual por administración
+    const isManualAdmin = isAdmin && Boolean((orderData as any).admin_created || (orderData as any).manual_entry);
     const earlyMethod = (orderData as any).paymentMethod || (orderData as any).payment_method;
     const isEarlyCheck = String(earlyMethod || '').trim().toUpperCase() === 'CHECK';
     const earlyCheckPhoto = (orderData as any).checkImageUrl ||
       (orderData as any).check_image_url ||
       (orderData as any).checkPhoto ||
       (orderData as any).check_photo;
-    if (isEarlyCheck && (!earlyCheckPhoto || !String(earlyCheckPhoto).trim())) {
+    if (isEarlyCheck && (!earlyCheckPhoto || !String(earlyCheckPhoto).trim()) && !isManualAdmin) {
       throw new BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
     }
 
     // TASK-89-02: Early Wire/ACH Receipt Validation (§6, §45)
+    // TASK-91-01: Exención de comprobante inmediato si es ingreso manual por administración
     const isEarlyWire = ['ACH', 'WIRE', 'BANK_TRANSFER'].includes(String(earlyMethod || '').trim().toUpperCase());
     const earlyWirePhoto = (orderData as any).wire_receipt_url ||
       (orderData as any).wireReceiptUrl ||
       (orderData as any).ach_receipt_url ||
       (orderData as any).achReceiptUrl;
-    if (isEarlyWire && (!earlyWirePhoto || !String(earlyWirePhoto).trim())) {
+    if (isEarlyWire && (!earlyWirePhoto || !String(earlyWirePhoto).trim()) && !isManualAdmin) {
       throw new BadRequestException('Comprobante de transferencia bancaria es obligatorio para pagos ACH / Wire');
+    }
+
+    // TASK-91-01: Admin Price Override permission check
+    const isPriceOverrideRequested = Boolean((orderData as any).override_prices || (orderData as any).overridePrices);
+    if (isPriceOverrideRequested && !isAdmin) {
+      throw new BadRequestException('Solo administradores pueden asignar precios personalizados');
+    }
+
+    // TASK-91-01: Admin Cutoff Override permission check
+    const isCutoffOverrideRequested = Boolean(
+      (orderData as any).admin_override_cutoff || 
+      (orderData as any).override_cutoff || 
+      (orderData as any).bypass_cutoff
+    );
+    if (isCutoffOverrideRequested && !isAdmin) {
+      throw new BadRequestException('Solo administradores pueden eludir la hora de corte de producción');
     }
 
     const { items, ...rest } = orderData;
     const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, paymentStatus, ...otherData } = rest;
+    const isDraft = Boolean((orderData as any).is_draft || (orderData as any).draft || (otherData as any).status === 'draft' || (otherData as any).status === 'borrador');
 
     let itemsTotal = 0;
     let validatedItems: any[] = [];
 
     if (items && items.length > 0) {
-      const result = await this.calculateOrderPricesAndTotal(userId, items);
+      const result = await this.calculateOrderPricesAndTotal(userId, items, isPriceOverrideRequested);
       validatedItems = result.validatedItems;
       itemsTotal = result.total;
     }
@@ -647,10 +691,10 @@ export class OrdersService {
     const appliedCheckImageUrl = rawCheckImage ? String(rawCheckImage).trim() : null;
 
     if (isCheckPayment) {
-      if (!appliedCheckImageUrl) {
+      if (!appliedCheckImageUrl && !isManualAdmin) {
         throw new BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
       }
-      appliedPaymentStatus = 'pending_check_verification';
+      appliedPaymentStatus = appliedCheckImageUrl ? 'pending_check_verification' : (appliedPaymentStatus || 'pending');
     }
 
     // TASK-89-02: ACH / Wire verification & receipt capture
@@ -675,10 +719,10 @@ export class OrdersService {
     const appliedWireReference = rawWireRef ? String(rawWireRef).trim() : null;
 
     if (isWirePayment) {
-      if (!appliedWireReceiptUrl) {
+      if (!appliedWireReceiptUrl && !isManualAdmin) {
         throw new BadRequestException('Comprobante de transferencia bancaria es obligatorio para pagos ACH / Wire');
       }
-      appliedPaymentStatus = 'pending_wire_verification';
+      appliedPaymentStatus = appliedWireReceiptUrl ? 'pending_wire_verification' : (appliedPaymentStatus || 'pending');
     }
 
     // TASK-43-04: Deterministic payment_due_date calculation
@@ -701,7 +745,19 @@ export class OrdersService {
     }
 
     // Validate 12:00 PM cutoff time for next-day deliveries
-    this.validateCutoffTime(appliedDeliveryDate);
+    // TASK-91-01: Bypass de corte autorizado por administración
+    if (isCutoffOverrideRequested && isAdmin) {
+      if (!appliedDeliveryDate || typeof appliedDeliveryDate !== 'string') {
+        throw new BadRequestException('La fecha de entrega es requerida para registrar el pedido');
+      }
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const cleanDate = appliedDeliveryDate.split('T')[0].split(' ')[0];
+      if (!dateRegex.test(cleanDate)) {
+        throw new BadRequestException('Formato de fecha de entrega inválido (se requiere YYYY-MM-DD)');
+      }
+    } else {
+      this.validateCutoffTime(appliedDeliveryDate);
+    }
 
     // TASK-47-04: Calculate processing fee via FeeCalculatorService
     const feeMethod = (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card')
@@ -794,6 +850,9 @@ export class OrdersService {
     if (isComplementary && !appliedNotes.includes('Complementario a orden existente')) {
       appliedNotes = appliedNotes ? `${appliedNotes}\n[Complementario a orden existente]` : '[Complementario a orden existente]';
     }
+    if (isCutoffOverrideRequested && isAdmin && !appliedNotes.includes('Bypass de Corte Autorizado')) {
+      appliedNotes = appliedNotes ? `${appliedNotes}\n[Bypass de Corte Autorizado por Administración]` : '[Bypass de Corte Autorizado por Administración]';
+    }
 
     // TASK-83-04: Motor de Descuento Dual Admin (Mayor no acumulativo, 3.5% default eliminado)
     let activeStoreDiscount = 0;
@@ -884,15 +943,15 @@ export class OrdersService {
     let prospectiveCreditTotal = 0;
     let clientCreditLimit = 0;
 
-    // Credit gate validation for B2B accounts
-    if (user?.account_type === 'credit' || appliedPaymentMethod === 'credit') {
+    // Credit gate validation for B2B accounts (excluye borradores)
+    if (!isDraft && (user?.account_type === 'credit' || appliedPaymentMethod === 'credit')) {
       let usedCredit = 0;
       if (this.creditService) {
         clientCreditLimit = await this.creditService.getCreditLimit(userId);
         usedCredit = await this.creditService.getUsedCredit(userId);
       } else {
         const unpaidOrders = (user?.orders || []).filter(
-          (o: any) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado'
+          (o: any) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado' && o.status !== 'draft'
         );
         usedCredit = unpaidOrders.reduce((acc: number, o: any) => {
           const netOrderDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
@@ -941,14 +1000,15 @@ export class OrdersService {
     }
 
     const rawStatus = (otherData as any).status;
-    const initialStatus = rawStatus ? this.normalizeStatus(rawStatus) : 'pending';
+    let initialStatus = isDraft ? 'draft' : (rawStatus ? this.normalizeStatus(rawStatus) : 'pending');
+    if (isDraft) initialStatus = 'draft';
     const isDirectlyConfirmed = initialStatus === 'confirmed';
 
     const savedOrderId = await this.dataSource.transaction(async (manager) => {
-      // TASK-85-02: Late Invoicing Engine.
+      // TASK-85-02 & TASK-91-01: Late Invoicing Engine.
       // Sequential invoice number is strictly generated only on confirmed checkout, not on preliminary/draft creation.
       let invoiceNumber: string | null = null;
-      if (isDirectlyConfirmed && !(otherData as any).is_preliminary && !(otherData as any).draft) {
+      if (isDirectlyConfirmed && !isDraft && !(otherData as any).is_preliminary && !(otherData as any).draft) {
         invoiceNumber = await this.getNextInvoiceNumber(manager);
       }
 
@@ -994,7 +1054,7 @@ export class OrdersService {
       const savedResult = await manager.save(Order, orderToCreate);
       const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
 
-      if (storeCreditApplied > 0 && user) {
+      if (!isDraft && storeCreditApplied > 0 && user) {
         user.credit_balance = Math.max(0, Math.round((userCreditBalance - storeCreditApplied) * 100) / 100);
         await manager.save(User, user);
       }
@@ -1017,10 +1077,10 @@ export class OrdersService {
     // TASK-88-02: Solo despachar recibo al cliente y alerta a cocina si la orden está formalmente confirmada/pagada.
     // Para órdenes con pago pendiente en pasarela externa (Stripe, Zelle no verificado, Cheques en revisión),
     // los recibos y alertas se despachan exclusivamente tras confirmación vía webhook o aprobación administrativa.
-    const isConfirmedOrPaid = appliedPaymentStatus === 'paid' || 
+    const isConfirmedOrPaid = !isDraft && (appliedPaymentStatus === 'paid' || 
                               initialStatus === 'confirmed' || 
                               appliedPaymentMethod === 'credit' ||
-                              appliedPaymentMethod === 'cash';
+                              appliedPaymentMethod === 'cash');
 
     if (isConfirmedOrPaid) {
       // TASK-37-01: Disparar recibo de compra al cliente de forma asíncrona no bloqueante

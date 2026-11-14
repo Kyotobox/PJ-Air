@@ -2924,5 +2924,126 @@ describe('OrdersService', () => {
       );
     });
   });
+
+  describe('Sprint S91: Creación y Gestión Manual de Pedidos B2B desde Administración (Testing VPS)', () => {
+    it('TASK-91-01 Sad Path (§6): should throw BadRequestException if non-admin requests price override', async () => {
+      const orderPayload = {
+        override_prices: true,
+        items: [{ productId: 1, quantity: 2, price_at_time: 15.00 }],
+        deliveryDate: '2026-11-20',
+      };
+
+      await expect(service.create('regular-user-id', orderPayload, { isAdmin: false }))
+        .rejects
+        .toThrow(new BadRequestException('Solo administradores pueden asignar precios personalizados'));
+    });
+
+    it('TASK-91-01 Sad Path (§6): should throw BadRequestException if non-admin requests cutoff override', async () => {
+      const orderPayload = {
+        admin_override_cutoff: true,
+        items: [{ productId: 1, quantity: 2 }],
+        deliveryDate: '2026-11-20',
+      };
+
+      await expect(service.create('regular-user-id', orderPayload, { isAdmin: false }))
+        .rejects
+        .toThrow(new BadRequestException('Solo administradores pueden eludir la hora de corte de producción'));
+    });
+
+    it('TASK-91-01 Sad Path (§6): should throw BadRequestException if custom price is negative', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-admin-order',
+        email: 'test@b2b.com',
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([
+        { id: 1, price: '25.00' },
+      ]);
+
+      const orderPayload = {
+        override_prices: true,
+        items: [{ productId: 1, quantity: 2, price_at_time: -5.00 }],
+        deliveryDate: '2026-11-20',
+      };
+
+      await expect(service.create('user-admin-order', orderPayload, { isAdmin: true }))
+        .rejects
+        .toThrow(new BadRequestException('El precio unitario personalizado debe ser un número mayor o igual a 0'));
+    });
+
+    it('TASK-91-01 Happy Path: Admin creates manual order with price override and cutoff bypass', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-admin-order',
+        email: 'client@b2b.com',
+        account_type: 'credit',
+        credit_limit: 10000,
+        orders: [],
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([
+        { id: 1, price: '25.00' },
+      ]);
+
+      const mockSavedOrder = {
+        id: 'order-manual-s91',
+        user_id: 'user-admin-order',
+        total: 35.00,
+        delivery_date: '2026-11-15',
+        status: 'confirmed',
+        invoice_number: 'INV-1650',
+      };
+      service.findOne = jest.fn().mockResolvedValue(mockSavedOrder);
+      service.getNextInvoiceNumber = jest.fn().mockResolvedValue('INV-1650');
+
+      const orderPayload = {
+        manual_entry: true,
+        admin_override_cutoff: true,
+        override_prices: true,
+        status: 'confirmed',
+        items: [{ productId: 1, quantity: 2, price_at_time: 17.50 }],
+        deliveryDate: '2026-11-15',
+        paymentMethod: 'cash',
+      };
+
+      const result = await service.create('user-admin-order', orderPayload, { isAdmin: true });
+      expect(result).toBeDefined();
+      expect(result.id).toBe('order-manual-s91');
+    });
+
+    it('TASK-91-01 Happy Path: Admin creates draft order with null invoice_number and no email alerts', async () => {
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-draft-client',
+        email: 'draft-client@b2b.com',
+        orders: [],
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([
+        { id: 1, price: '20.00' },
+      ]);
+
+      const mockDraftOrder = {
+        id: 'order-draft-s91',
+        user_id: 'user-draft-client',
+        total: 40.00,
+        delivery_date: '2026-11-20',
+        status: 'draft',
+        invoice_number: null,
+      };
+      service.findOne = jest.fn().mockResolvedValue(mockDraftOrder);
+
+      const orderPayload = {
+        manual_entry: true,
+        is_draft: true,
+        items: [{ productId: 1, quantity: 2 }],
+        deliveryDate: '2026-11-20',
+        paymentMethod: 'credit',
+      };
+
+      const result = await service.create('user-draft-client', orderPayload, { isAdmin: true });
+      expect(result.status).toBe('draft');
+      expect(result.invoice_number).toBeNull();
+      expect(mockMailService.sendOrderReceipt).not.toHaveBeenCalledWith(mockDraftOrder, expect.anything());
+    });
+  });
 });
 
