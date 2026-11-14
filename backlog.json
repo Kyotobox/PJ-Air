@@ -65,7 +65,7 @@
     {
       "id": "S87",
       "title": "Sprint S87: Gestión de Cheques, Blindaje de Cocina, Aprobación Administrativa y Normalización de Estados",
-      "status": "ACTIVE",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-87-01",
@@ -84,7 +84,7 @@
         {
           "id": "TASK-87-03",
           "title": "Suite E2E de validación y certificación en Testing VPS del ciclo completo de cheques, filtros y blindaje de producción",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "DEVOPS/TESTING",
           "veracity_hash": null
         }
@@ -96,7 +96,7 @@
   "active_sprint": {
     "id": "S87",
     "title": "Sprint S87: Gestión de Cheques, Blindaje de Cocina, Aprobación Administrativa y Normalización de Estados",
-    "status": "ACTIVE",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-87-01",
@@ -115,7 +115,7 @@
       {
         "id": "TASK-87-03",
         "title": "Suite E2E de validación y certificación en Testing VPS del ciclo completo de cheques, filtros y blindaje de producción",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "DEVOPS/TESTING",
         "veracity_hash": null
       }
