@@ -15,19 +15,25 @@ const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-// Load .env
-const envPath = path.resolve(__dirname, '../.env');
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const eqIdx = trimmed.indexOf('=');
-    if (eqIdx > 0) {
-      const key = trimmed.slice(0, eqIdx).trim();
-      const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
-      if (!process.env[key]) {
-        process.env[key] = val;
+// Load .env from cwd or __dirname
+const candidateEnvs = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '../.env'),
+];
+
+for (const envPath of candidateEnvs) {
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    for (const line of envContent.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
       }
     }
   }
@@ -35,7 +41,14 @@ if (fs.existsSync(envPath)) {
 
 const isDryRun = process.argv.includes('--dry-run');
 const dbArg = process.argv.find(arg => arg.startsWith('--db='));
-const dbPath = dbArg ? dbArg.replace('--db=', '') : path.resolve(__dirname, '../database.sqlite');
+const defaultDbCandidates = [
+  process.env.DATABASE_PATH,
+  path.resolve(process.cwd(), 'database.sqlite'),
+  path.resolve(__dirname, '../database.sqlite'),
+];
+const dbPath = dbArg 
+  ? dbArg.replace('--db=', '') 
+  : defaultDbCandidates.find(p => p && fs.existsSync(p)) || path.resolve(__dirname, '../database.sqlite');
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
 if (!STRIPE_SECRET) {
