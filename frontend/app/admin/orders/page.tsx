@@ -110,7 +110,6 @@ export default function AdminOrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [editedItems, setEditedItems] = useState<OrderItem[]>([]);
-    const [editedDeliveryFee, setEditedDeliveryFee] = useState<number>(0);
     const [orderNotes, setOrderNotes] = useState<string>('');
     const [savingNotes, setSavingNotes] = useState(false);
     const [motivo, setMotivo] = useState('');
@@ -381,7 +380,6 @@ export default function AdminOrdersPage() {
         setSelectedOrder(order);
         setEditMode(false);
         setEditedItems(order.items || []);
-        setEditedDeliveryFee(Number(order.delivery_fee_charged ?? order.delivery_fee ?? 0));
         setOrderNotes(order.notes || '');
         setMotivo('');
         fetchDeliveryUsers();
@@ -390,7 +388,6 @@ export default function AdminOrdersPage() {
     const toggleEditMode = () => {
         if (!editMode) {
             setEditedItems([...(selectedOrder?.items || [])]);
-            setEditedDeliveryFee(Number(selectedOrder?.delivery_fee_charged ?? selectedOrder?.delivery_fee ?? 0));
         }
         setEditMode(!editMode);
     };
@@ -415,12 +412,13 @@ export default function AdminOrdersPage() {
 
     const calculateNewTotal = () => {
         if (!selectedOrder) return 0;
+        const currentDeliveryFee = Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0);
         const summary = calculateOrderFinancials(editedItems, {
             globalDiscountPercentage: selectedOrder.global_discount_percentage,
             globalDiscountAmount: selectedOrder.global_discount_amount,
             packagingFee: selectedOrder.packaging_fee,
             packagingDiscount: selectedOrder.packaging_discount,
-            deliveryFee: editedDeliveryFee,
+            deliveryFee: currentDeliveryFee,
         });
         return summary.grandTotal;
     };
@@ -428,15 +426,12 @@ export default function AdminOrdersPage() {
     const handleSaveOrderChanges = async () => {
         if (!selectedOrder) return;
         
-        // Validar si hubo cambios en los items o en la tarifa de entrega
+        // Validar si hubo cambios en los items
         const originalItemsJSON = JSON.stringify((selectedOrder.items || []).map(i => ({ id: i.id, q: i.quantity })));
         const currentItemsJSON = JSON.stringify(editedItems.map(i => ({ id: i.id, q: i.quantity })));
         const hasItemChanges = originalItemsJSON !== currentItemsJSON;
-        const originalFee = Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0);
-        const hasFeeChanges = Math.abs(originalFee - editedDeliveryFee) > 0.001;
-        const hasChanges = hasItemChanges || hasFeeChanges;
 
-        if (hasChanges && !motivo.trim()) {
+        if (hasItemChanges && !motivo.trim()) {
             showToast('⚠️ Debes ingresar un motivo para la modificación', 'error');
             return;
         }
@@ -450,12 +445,10 @@ export default function AdminOrdersPage() {
                     price: i.price_at_time
                 })),
                 total: calculateNewTotal(),
-                delivery_fee: editedDeliveryFee,
-                delivery_fee_charged: editedDeliveryFee,
                 notes: orderNotes
             };
 
-            if (hasChanges) {
+            if (hasItemChanges) {
                 updates.motivo = motivo;
             }
 
@@ -465,7 +458,6 @@ export default function AdminOrdersPage() {
             // Actualizar lista local
             setOrders(prev => prev.map(o => o.id === selectedOrder.id ? updated : o));
             setSelectedOrder(updated);
-            setEditedDeliveryFee(Number(updated.delivery_fee_charged ?? updated.delivery_fee ?? 0));
             setOrderNotes(updated.notes || '');
             setEditMode(false);
             setMotivo('');
@@ -1964,7 +1956,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 {/* Financial Breakdown Card (S83B / TASK-83-02) */}
                                 {(() => {
                                     const activeItems = editMode ? editedItems : (selectedOrder.items || []);
-                                    const activeFee = editMode ? editedDeliveryFee : Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0);
+                                    const activeFee = Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0);
                                     const summary = calculateOrderFinancials(activeItems, {
                                         globalDiscountPercentage: selectedOrder.global_discount_percentage,
                                         globalDiscountAmount: selectedOrder.global_discount_amount,
@@ -1991,7 +1983,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                 </div>
                                                 {editMode && (
                                                     <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider border border-amber-200 animate-pulse">
-                                                        Ajuste Manual Habilitado
+                                                        Ajuste de Productos Habilitado
                                                     </span>
                                                 )}
                                             </div>
@@ -2046,34 +2038,14 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                             </span>
                                                         </div>
                                                         <span className="text-[10px] text-amber-800/80 font-bold mt-1">
-                                                            {editMode 
-                                                                ? 'Sobrescribe manualmente el flete para esta orden puntual' 
-                                                                : (selectedOrder.delivery_type === 'pickup' 
-                                                                    ? 'Retiro en Tienda (Store Pick Up)' 
-                                                                    : 'Flete de despacho asignado a la orden')}
+                                                            {selectedOrder.delivery_type === 'pickup' 
+                                                                ? 'Retiro en Tienda (Store Pick Up)' 
+                                                                : 'Flete de despacho asignado a la orden (Según políticas y perfil de cliente)'}
                                                         </span>
                                                     </div>
-                                                    {editMode ? (
-                                                        <div className="flex items-center gap-2 self-end sm:self-auto">
-                                                            <span className="text-base font-black text-amber-900">$</span>
-                                                            <input 
-                                                                type="number" 
-                                                                min="0" 
-                                                                step="0.5" 
-                                                                value={editedDeliveryFee} 
-                                                                onChange={(e) => {
-                                                                    const val = Math.max(0, parseFloat(e.target.value) || 0);
-                                                                    setEditedDeliveryFee(Math.round(val * 100) / 100);
-                                                                }}
-                                                                className="w-28 px-3 py-2 bg-white border-2 border-amber-400 focus:border-primary rounded-xl text-right font-black font-mono text-slate-900 outline-none shadow-inner text-base"
-                                                                placeholder="0.00"
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <span className="font-mono font-black text-amber-900 text-lg self-end sm:self-auto">
-                                                            +${summary.deliveryFee.toFixed(2)}
-                                                        </span>
-                                                    )}
+                                                    <span className="font-mono font-black text-amber-900 text-lg self-end sm:self-auto">
+                                                        {selectedOrder.delivery_type === 'pickup' ? '$0.00' : `+$${summary.deliveryFee.toFixed(2)}`}
+                                                    </span>
                                                 </div>
                                             </div>
 
@@ -2135,7 +2107,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                             </span>
                                         </div>
 
-                                        {/* Casilla Delivery Fee Destacada */}
+                                        {/* Casilla Delivery Fee Destacada (Estrictamente Sólo Lectura) */}
                                         <div className="flex items-center gap-3 bg-amber-50 px-4 py-2.5 rounded-2xl border-2 border-amber-200 shadow-sm">
                                             <div className="w-8 h-8 rounded-xl bg-amber-200/80 flex items-center justify-center text-amber-800 shrink-0">
                                                 <Truck size={16} />
@@ -2144,38 +2116,11 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-800">
                                                     {selectedOrder.delivery_type === 'pickup' ? 'Retiro (Pickup)' : 'Delivery Fee'}
                                                 </span>
-                                                <div className="flex items-center gap-1.5">
-                                                    {editMode ? (
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="text-xs font-bold text-amber-900">$</span>
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                step="0.5"
-                                                                value={editedDeliveryFee}
-                                                                onChange={(e) => {
-                                                                    const val = Math.max(0, parseFloat(e.target.value) || 0);
-                                                                    setEditedDeliveryFee(Math.round(val * 100) / 100);
-                                                                }}
-                                                                className="w-20 px-2 py-0.5 bg-white border border-amber-400 rounded-lg text-right font-black font-mono text-sm"
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <span className="text-lg font-black text-amber-950 font-mono">
-                                                                +${(Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0)).toFixed(2)}
-                                                            </span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={toggleEditMode}
-                                                                className="text-[9px] font-black uppercase text-amber-800 hover:text-amber-950 bg-amber-200/60 hover:bg-amber-200 px-2 py-0.5 rounded-md transition-all ml-1 shadow-sm"
-                                                                title="Modificar tarifa de flete"
-                                                            >
-                                                                Ajustar
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
+                                                <span className="text-lg font-black text-amber-950 font-mono">
+                                                    {selectedOrder.delivery_type === 'pickup'
+                                                        ? '$0.00'
+                                                        : `+$${(Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0)).toFixed(2)}`}
+                                                </span>
                                             </div>
                                         </div>
 
