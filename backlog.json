@@ -102,28 +102,28 @@
         {
           "id": "TASK-91-01",
           "title": "Soporte en Backend para Pedidos Manuales de Administración (Bypass de Hora de Corte, Precios Personalizados y Borradores)",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "BACKEND/ORDERS",
           "veracity_hash": null
         },
         {
           "id": "TASK-91-02",
           "title": "Interfaz Administrativa de Nuevo Pedido (/admin/orders/new): Selección de Cliente B2B, Direcciones y Términos Comerciales",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/ADMIN",
           "veracity_hash": null
         },
         {
           "id": "TASK-91-03",
           "title": "Selector de Catálogo de Productos, Descuentos Especiales, Flete Manual y Confirmación/Emisión de Factura o Borrador",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/ADMIN",
           "veracity_hash": null
         },
         {
           "id": "TASK-91-04",
           "title": "Pruebas Automatizadas con Sad Paths (§6), Certificación y Despliegue en Ambiente de Testing VPS",
-          "status": "TODO",
+          "status": "IN_PROGRESS",
           "type": "DEVOPS/TESTING",
           "veracity_hash": null
         }

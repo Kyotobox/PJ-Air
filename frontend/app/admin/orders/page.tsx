@@ -932,6 +932,16 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         <h1 className="text-3xl font-black mb-1 animate-fade-in text-slate-800">Panel de Pedidos</h1>
                         <p className="text-muted-foreground font-medium">Supervisión y control de ventas en tiempo real</p>
                     </div>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/admin/orders/new"
+                            data-testid="btn-create-manual-order"
+                            className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-black text-sm px-5 py-3 rounded-2xl shadow-lg shadow-amber-600/25 transition-all active:scale-95 hover:shadow-amber-600/40"
+                        >
+                            <Plus size={18} className="stroke-[3]" />
+                            <span>Crear Pedido Manual</span>
+                        </Link>
+                    </div>
                 </header>
 
                 {/* Check Reconciliation & Segmented Orders Tabs (TASK-87-02) */}
