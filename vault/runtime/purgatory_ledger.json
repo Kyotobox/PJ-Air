@@ -579,5 +579,33 @@
     "exile_name": "broker_rejected_1794592275100_TCK-PJ-AIR-S85A-1794582572458.json",
     "verdict": "REJECTED",
     "reason": "Violación de directiva §12.b: El lote excede el límite estricto de 5 archivos (8 detectados)."
+  },
+  {
+    "timestamp": "2026-11-14T07:02:44.515264",
+    "original_name": "ARCHITECTURE.md",
+    "exile_name": "1794639764514_ARCHITECTURE.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/ARCHITECTURE.md"
+  },
+  {
+    "timestamp": "2026-11-14T07:02:44.517186",
+    "original_name": "PO-Executive-Map.md",
+    "exile_name": "1794639764516_PO-Executive-Map.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/PO-Executive-Map.md"
+  },
+  {
+    "timestamp": "2026-11-14T07:02:44.519815",
+    "original_name": "deploy-testing.sh",
+    "exile_name": "1794639764518_deploy-testing.sh",
+    "hash": "F5F52B77C6A2919CEA7229E1863B877040F3EA3090B7C5D906D96B90FDB78AFE",
+    "original_path": "/home/opc/code/pj-air/deploy-testing.sh"
+  },
+  {
+    "timestamp": "2026-11-14T07:02:44.525156",
+    "original_name": "database.sqlite",
+    "exile_name": "1794639764520_database.sqlite",
+    "hash": "04943746814079302EA81BDD3A44320A5D117C19F32FE904BC6E53A1F3E69017",
+    "original_path": "/home/opc/code/pj-air/database.sqlite"
   }
 ]
