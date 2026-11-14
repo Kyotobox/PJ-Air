@@ -9,5 +9,6 @@ export declare class AdminAuditLog {
     new_state_json: string | null;
     notes: string | null;
     ip_address: string | null;
+    actor_role: string;
     created_at: Date;
 }

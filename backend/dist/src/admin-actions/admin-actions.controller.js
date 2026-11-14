@@ -23,7 +23,7 @@ let AdminActionsController = class AdminActionsController {
     constructor(adminActionsService) {
         this.adminActionsService = adminActionsService;
     }
-    async getAuditLogs(page, limit, action, targetEntity, targetEntityCamel, targetId, targetIdCamel, adminId, adminIdCamel, startDate, endDate) {
+    async getAuditLogs(page, limit, action, targetEntity, targetEntityCamel, targetId, targetIdCamel, adminId, adminIdCamel, actorRole, actorRoleCamel, search, startDate, endDate) {
         return this.adminActionsService.getAuditLogs({
             page: page ? parseInt(page, 10) : 1,
             limit: limit ? parseInt(limit, 10) : 20,
@@ -31,6 +31,8 @@ let AdminActionsController = class AdminActionsController {
             targetEntity: targetEntity || targetEntityCamel,
             targetId: targetId || targetIdCamel,
             adminId: adminId || adminIdCamel,
+            actorRole: actorRole || actorRoleCamel,
+            search,
             startDate,
             endDate,
         });
@@ -79,10 +81,13 @@ __decorate([
     __param(6, (0, common_1.Query)('targetId')),
     __param(7, (0, common_1.Query)('admin_id')),
     __param(8, (0, common_1.Query)('adminId')),
-    __param(9, (0, common_1.Query)('startDate')),
-    __param(10, (0, common_1.Query)('endDate')),
+    __param(9, (0, common_1.Query)('actor_role')),
+    __param(10, (0, common_1.Query)('actorRole')),
+    __param(11, (0, common_1.Query)('search')),
+    __param(12, (0, common_1.Query)('startDate')),
+    __param(13, (0, common_1.Query)('endDate')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String, String, String, String, String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], AdminActionsController.prototype, "getAuditLogs", null);
 __decorate([

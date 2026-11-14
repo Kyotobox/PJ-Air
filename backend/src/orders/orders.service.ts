@@ -777,6 +777,10 @@ export class OrdersService {
     const packagingDiscount = 0;
 
     if (appliedPaymentMethod === 'zelle') {
+      if (!user?.zelle_enabled && !isAdmin) {
+        throw new BadRequestException('El método de pago Zelle no está habilitado para esta cuenta');
+      }
+
       if (!appliedZelleReference) {
         throw new BadRequestException('El número de referencia o confirmación de Zelle es obligatorio para pagos con Zelle.');
       }
@@ -794,14 +798,22 @@ export class OrdersService {
       appliedPaymentStatus = 'pending_zelle_verification';
     }
 
-    // Precedence Matrix for Delivery Fee (TASK-78-03 & TASK-90-02):
+    // Precedence Matrix for Delivery Fee (TASK-78-03, TASK-90-02, TASK-94-02):
+    // 0. Free delivery by client (user.free_delivery_enabled) or per-order waiver (free_delivery: true): always $0.00.
     // 1. Pickup: always $0.00.
     // 2. VIP special fee set on user profile (user.delivery_fee > 0): takes absolute precedence over distance/mileage.
     // 3. Manual delivery fee explicitly provided in orderData (delivery_fee_charged / delivery_fee)
     // 4. Dynamic Calculation: EXCLUSIVELY via MileageFreightService (Zones eliminated to prevent fee noise/conflicts).
     // 5. Contingency fallback: orderData.delivery_fee or user.delivery_fee or 0.
     let deliveryFee = 0;
-    if (appliedDeliveryType === 'pickup') {
+    const isFreeDeliveryOrder = Boolean(
+      user?.free_delivery_enabled || 
+      (orderData as any).free_delivery || 
+      (orderData as any).free_delivery_enabled || 
+      (orderData as any).waive_delivery_fee || 
+      (orderData as any).is_free_delivery
+    );
+    if (isFreeDeliveryOrder || appliedDeliveryType === 'pickup') {
       deliveryFee = 0;
     } else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
       deliveryFee = Number(user.delivery_fee);
@@ -1160,6 +1172,11 @@ export class OrdersService {
 
     const saved = await this.orderRepository.save(order);
 
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
+
     if (saved.payment_status === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
       const user = await this.userRepository.findOne({ where: { id: saved.user_id } });
       if (user?.email) {
@@ -1183,6 +1200,7 @@ export class OrdersService {
     const oldTotal = Number(order.total) || 0;
     const oldPaymentStatus = order.payment_status;
     const oldStatus = order.status;
+    const oldDeliveryFeeCharged = Number(order.delivery_fee_charged) || 0;
     const { status, total, delivery_date, address_id, motivo, items, payment_status, paymentStatus } = updateData;
     
     if (status) {
@@ -1342,6 +1360,9 @@ export class OrdersService {
       }
     } else if (total !== undefined) {
       order.total = total;
+    } else if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
+      const feeDiff = Number(order.delivery_fee_charged || 0) - oldDeliveryFeeCharged;
+      order.total = Math.max(0, Math.round(((Number(order.total) || 0) + feeDiff) * 100) / 100);
     }
 
     if (oldPaymentStatus === 'paid' && Number(order.total) < oldTotal) {
@@ -1354,6 +1375,11 @@ export class OrdersService {
     }
     
     const saved = await this.orderRepository.save(order);
+
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
 
     const isNowPaidOrApproved = (saved.payment_status === 'paid' || saved.status === 'approved' || saved.status === 'aprobado');
     const wasPaidOrApproved = (oldPaymentStatus === 'paid' || oldStatus === 'approved' || oldStatus === 'aprobado');
@@ -1387,6 +1413,11 @@ export class OrdersService {
     }
     const saved = await this.orderRepository.save(order);
 
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
+
     const user = await this.userRepository.findOne({ where: { id: order.user_id } });
     if (user?.email) {
       if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function') {
@@ -1415,6 +1446,11 @@ export class OrdersService {
       order.notes = `[Rechazo Zelle]: ${reason}\n${order.notes || ''}`;
     }
     const saved = await this.orderRepository.save(order);
+
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
 
     if (this.mailService && typeof this.mailService.sendZelleRejectionAlert === 'function') {
       const user = await this.userRepository.findOne({ where: { id: order.user_id } });
@@ -1452,6 +1488,11 @@ export class OrdersService {
       order.notes = order.notes ? `${order.notes}\n[Aprobación Cheque]: ${notes}` : `[Aprobación Cheque]: ${notes}`;
     }
     const saved = await this.orderRepository.save(order);
+
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
 
     if (this.checkPaymentsService) {
       try {
@@ -1508,6 +1549,11 @@ export class OrdersService {
       order.notes = `[Rechazo Cheque]: ${reason}\n${order.notes || ''}`;
     }
     const saved = await this.orderRepository.save(order);
+
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
     return saved;
   }
 
@@ -1531,6 +1577,11 @@ export class OrdersService {
       order.notes = order.notes ? `${order.notes}\n[Aprobación Transferencia ACH/Wire]: ${notes}` : `[Aprobación Transferencia ACH/Wire]: ${notes}`;
     }
     const saved = await this.orderRepository.save(order);
+
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
 
     const user = await this.userRepository.findOne({ where: { id: order.user_id } });
     if (user?.email && this.mailService) {
@@ -1566,6 +1617,11 @@ export class OrdersService {
       order.notes = `[Rechazo Transferencia ACH/Wire]: ${reason}\n${order.notes || ''}`;
     }
     const saved = await this.orderRepository.save(order);
+
+    // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
+    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+      this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
+    }
     return saved;
   }
 
@@ -1587,6 +1643,12 @@ export class OrdersService {
     }
 
     const cleanMethod = dto.payment_method.trim().toLowerCase();
+    if (cleanMethod === 'zelle') {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (userRole !== 'admin' && !user?.zelle_enabled) {
+        throw new BadRequestException('El método de pago Zelle no está habilitado para esta cuenta');
+      }
+    }
     if (cleanMethod === 'check') {
       const checkPhoto = (dto as any).checkImageUrl || (dto as any).check_image_url || (dto as any).checkPhoto || (dto as any).check_photo;
       if (!checkPhoto || typeof checkPhoto !== 'string' || !checkPhoto.trim()) {

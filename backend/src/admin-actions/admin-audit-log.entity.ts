@@ -32,6 +32,9 @@ export class AdminAuditLog {
   @Column({ type: 'varchar', nullable: true })
   ip_address: string | null;
 
+  @Column({ type: 'varchar', length: 20, default: 'admin' })
+  actor_role: string;
+
   @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
 }

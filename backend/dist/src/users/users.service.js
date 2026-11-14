@@ -182,6 +182,10 @@ let UsersService = class UsersService {
             user.check_enabled = Boolean(data.check_enabled);
         if (data.ach_enabled !== undefined)
             user.ach_enabled = Boolean(data.ach_enabled);
+        if (data.zelle_enabled !== undefined)
+            user.zelle_enabled = Boolean(data.zelle_enabled);
+        if (data.free_delivery_enabled !== undefined)
+            user.free_delivery_enabled = Boolean(data.free_delivery_enabled);
         await this.userRepository.save(user);
         return this.findOne(userId);
     }
@@ -202,6 +206,8 @@ let UsersService = class UsersService {
             credit_override: Boolean(user.credit_override),
             check_enabled: Boolean(user.check_enabled),
             ach_enabled: Boolean(user.ach_enabled),
+            zelle_enabled: Boolean(user.zelle_enabled),
+            free_delivery_enabled: Boolean(user.free_delivery_enabled),
             used_credit: Math.round(used_credit * 100) / 100,
             available_credit: Math.round(available_credit * 100) / 100,
             is_overdraft,
@@ -237,6 +243,12 @@ let UsersService = class UsersService {
         }
         if (data.ach_enabled !== undefined) {
             user.ach_enabled = Boolean(data.ach_enabled);
+        }
+        if (data.zelle_enabled !== undefined) {
+            user.zelle_enabled = Boolean(data.zelle_enabled);
+        }
+        if (data.free_delivery_enabled !== undefined) {
+            user.free_delivery_enabled = Boolean(data.free_delivery_enabled);
         }
         if (data.general_discount !== undefined) {
             user.general_discount = Number(data.general_discount);
@@ -305,6 +317,8 @@ let UsersService = class UsersService {
             'stripe_payment_method_id',
             'check_enabled',
             'ach_enabled',
+            'zelle_enabled',
+            'free_delivery_enabled',
         ];
         for (const field of allowedFields) {
             if (data[field] !== undefined) {

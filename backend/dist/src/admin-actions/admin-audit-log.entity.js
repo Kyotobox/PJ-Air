@@ -22,6 +22,7 @@ let AdminAuditLog = class AdminAuditLog {
     new_state_json;
     notes;
     ip_address;
+    actor_role;
     created_at;
 };
 exports.AdminAuditLog = AdminAuditLog;
@@ -65,6 +66,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], AdminAuditLog.prototype, "ip_address", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 20, default: 'admin' }),
+    __metadata("design:type", String)
+], AdminAuditLog.prototype, "actor_role", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ type: 'datetime' }),
     __metadata("design:type", Date)

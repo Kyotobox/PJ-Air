@@ -51,6 +51,8 @@ let User = class User {
     stripe_payment_method_id;
     check_enabled;
     ach_enabled;
+    zelle_enabled;
+    free_delivery_enabled;
     is_active;
     reset_password_token;
     reset_password_expires;
@@ -204,6 +206,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "ach_enabled", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "zelle_enabled", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "free_delivery_enabled", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: true }),
     __metadata("design:type", Boolean)

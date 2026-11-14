@@ -277,6 +277,26 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         }
     };
 
+    const [isUpdatingFee, setIsUpdatingFee] = useState(false);
+
+    const handleWaiveDeliveryFee = async () => {
+        if (!order) return;
+        if (!window.confirm('¿Deseas exonerar el costo de flete para este pedido puntual? El flete pasará a $0.00 y el total se recalculará automáticamente.')) return;
+        setIsUpdatingFee(true);
+        try {
+            const updated = await api.patch(`/orders/${order.id}`, {
+                delivery_fee_charged: 0,
+                motivo: 'Exoneración puntual de flete por administración ($0.00)',
+            }) as any;
+            setOrder(prev => prev ? { ...prev, ...updated, delivery_fee_charged: 0 } : null);
+            showToast('✅ Flete exonerado ($0.00) y total de orden recalculado exitosamente');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al exonerar flete', 'error');
+        } finally {
+            setIsUpdatingFee(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex bg-[#fcfbf9] min-h-screen">
@@ -915,16 +935,32 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Subtotal Productos</span>
                                         <span className="text-base font-black text-slate-800 font-mono">${itemsSubtotal.toFixed(2)}</span>
                                     </div>
-                                    <div className="flex items-center gap-2.5 bg-amber-50 px-4 py-2 rounded-2xl border border-amber-200">
+                                    <div className="flex items-center gap-3 bg-amber-50 px-4 py-2 rounded-2xl border border-amber-200">
                                         <Truck size={16} className="text-amber-700" />
                                         <div className="flex flex-col">
                                             <span className="text-[9px] font-black uppercase tracking-wider text-amber-800">
                                                 {isPickup ? 'Retiro en Tienda' : 'Delivery Fee'}
                                             </span>
                                             <span className="text-base font-black text-amber-950 font-mono">
-                                                {isPickup ? '$0.00' : `+$${deliveryFee.toFixed(2)}`}
+                                                {isPickup ? '$0.00' : (deliveryFee === 0 ? '$0.00 (Gratis)' : `+$${deliveryFee.toFixed(2)}`)}
                                             </span>
                                         </div>
+                                        {!isPickup && deliveryFee > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleWaiveDeliveryFee}
+                                                disabled={isUpdatingFee}
+                                                className="ml-2 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-all disabled:opacity-50"
+                                                title="Exonerar costo de flete para esta orden"
+                                            >
+                                                {isUpdatingFee ? 'Exonerando...' : 'Exonerar Flete ($0)'}
+                                            </button>
+                                        )}
+                                        {!isPickup && deliveryFee === 0 && (
+                                            <span className="ml-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-teal-100 text-teal-800 border border-teal-200">
+                                                Exonerado
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex flex-col text-right">

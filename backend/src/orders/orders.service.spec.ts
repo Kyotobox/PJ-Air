@@ -414,6 +414,7 @@ describe('OrdersService', () => {
 
       userRepository.findOne.mockResolvedValue({
         id: 'user-zelle-1',
+        zelle_enabled: true,
         delivery_fee: 0,
         productDiscounts: [],
       });
@@ -453,7 +454,7 @@ describe('OrdersService', () => {
         zelle_reference: '   ',
       };
 
-      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-2', productDiscounts: [] });
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-2', zelle_enabled: true, productDiscounts: [] });
       productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
 
       await expect(service.create('user-zelle-2', orderData)).rejects.toThrow(BadRequestException);
@@ -466,7 +467,7 @@ describe('OrdersService', () => {
         zelle_reference: 'ZEL-DUP-999',
       };
 
-      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-3', productDiscounts: [] });
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-3', zelle_enabled: true, productDiscounts: [] });
       productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
 
       // Mock duplicate found in query builder
@@ -478,6 +479,101 @@ describe('OrdersService', () => {
       orderRepository.createQueryBuilder = jest.fn().mockReturnValue(dupQueryBuilder);
 
       await expect(service.create('user-zelle-3', orderData)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if payment_method is zelle and client does not have zelle_enabled (Sad Path §6, TASK-94-01)', async () => {
+      const orderData = {
+        items: [{ productId: 1, quantity: 2 }],
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-CONF-NEW',
+      };
+
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-disabled', zelle_enabled: false, productDiscounts: [] });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
+
+      await expect(service.create('user-zelle-disabled', orderData)).rejects.toThrow(
+        new BadRequestException('El método de pago Zelle no está habilitado para esta cuenta'),
+      );
+    });
+
+    it('should allow admin to create order with zelle even if client does not have zelle_enabled (Happy Path Admin Bypass, TASK-94-01)', async () => {
+      const orderData = {
+        items: [{ productId: 1, quantity: 2 }],
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-ADMIN-OVERRIDE',
+        delivery_type: 'pickup',
+      };
+
+      userRepository.findOne.mockResolvedValue({ id: 'user-zelle-disabled', zelle_enabled: false, delivery_fee: 0, productDiscounts: [] });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
+      const createdOrder = {
+        id: 'order-admin-zelle',
+        total: 100,
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-ADMIN-OVERRIDE',
+        payment_status: 'pending_zelle_verification',
+      };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      const result = await service.create('user-zelle-disabled', orderData, { isAdmin: true });
+      expect(result.id).toBe('order-admin-zelle');
+      expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+        payment_method: 'zelle',
+        zelle_reference: 'ZEL-ADMIN-OVERRIDE',
+      }));
+    });
+
+    it('should set delivery_fee to 0.00 when client has free_delivery_enabled: true (TASK-94-02)', async () => {
+      const orderData = {
+        items: [{ productId: 1, quantity: 2 }],
+        payment_method: 'stripe',
+        delivery_type: 'delivery',
+      };
+
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-free-del',
+        free_delivery_enabled: true,
+        delivery_fee: 50, // Should be overridden by free_delivery_enabled
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
+      const createdOrder = { id: 'order-free-1', total: 100, delivery_fee_charged: 0 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      await service.create('user-free-del', orderData);
+      expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+        delivery_fee_charged: 0,
+      }));
+    });
+
+    it('should set delivery_fee to 0.00 when orderData specifies free_delivery: true (TASK-94-02)', async () => {
+      const orderData = {
+        items: [{ productId: 1, quantity: 2 }],
+        payment_method: 'stripe',
+        delivery_type: 'delivery',
+        free_delivery: true,
+      };
+
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-regular',
+        free_delivery_enabled: false,
+        delivery_fee: 45,
+        productDiscounts: [],
+      });
+      productRepository.find.mockResolvedValue([{ id: 1, price: 50 }]);
+      const createdOrder = { id: 'order-free-2', total: 100, delivery_fee_charged: 0 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockResolvedValue(createdOrder);
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      await service.create('user-regular', orderData);
+      expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+        delivery_fee_charged: 0,
+      }));
     });
 
     it('should approve Zelle payment, mark order as paid, and send order receipt', async () => {
@@ -621,6 +717,25 @@ describe('OrdersService', () => {
       expect(updated.refunded_amount).toBe(150);
       expect(updated.credit_note_number).toBeDefined();
       expect(updated.credit_note_number).toMatch(/^NC-\d{4}-[A-Z0-9]{4}$/);
+    });
+
+    it('should atomically recalculate total when delivery_fee_charged is updated/waived (TASK-94-02)', async () => {
+      const existingOrder: any = {
+        id: 'ord-fee-recalc-1',
+        total: 250.00,
+        delivery_fee_charged: 50.00,
+        status: 'pending',
+        payment_status: 'pending',
+      };
+      service.findOne = jest.fn().mockResolvedValue(existingOrder);
+      orderRepository.save = jest.fn().mockImplementation(o => Promise.resolve(o));
+
+      const updated = await service.update('ord-fee-recalc-1', {
+        delivery_fee_charged: 0,
+      }, 'admin');
+
+      expect(updated.delivery_fee_charged).toBe(0);
+      expect(updated.total).toBe(200.00);
     });
 
     it('Cutoff Time Happy Path: Jueves 10 AM permite Sábado (T+2) y Jueves 3:15 PM exige Domingo (T+3)', () => {
@@ -973,6 +1088,7 @@ describe('OrdersService', () => {
       const order1 = { id: 'ord-zelle', user_id: 'usr-1', total: 450, refunded_amount: 0, status: 'confirmed', payment_status: 'pending' };
       orderRepository.find.mockResolvedValue([order1]);
       orderRepository.save.mockImplementation(async (o: any) => o);
+      userRepository.findOne.mockResolvedValue({ id: 'usr-1', zelle_enabled: true });
 
       const result = await service.settleBatch('usr-1', 'client', {
         order_ids: ['ord-zelle'],
@@ -984,6 +1100,17 @@ describe('OrdersService', () => {
       expect(result.total_paid).toBe(450);
       expect(order1.payment_status).toBe('paid');
       expect((order1 as any).zelle_reference).toContain('ZELLE-CONF-987');
+    });
+
+    it('should throw BadRequestException when client settles batch with Zelle without zelle_enabled (Sad Path §6)', async () => {
+      userRepository.findOne.mockResolvedValue({ id: 'usr-2', zelle_enabled: false });
+
+      await expect(
+        service.settleBatch('usr-2', 'client', {
+          order_ids: ['ord-zelle-fail'],
+          payment_method: 'zelle',
+        }),
+      ).rejects.toThrow(new BadRequestException('El método de pago Zelle no está habilitado para esta cuenta'));
     });
 
     it('should throw BadRequestException for empty order_ids list (Sad Path §6)', async () => {

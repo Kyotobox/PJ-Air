@@ -2,7 +2,7 @@ import { AdminActionsService } from './admin-actions.service';
 export declare class AdminActionsController {
     private readonly adminActionsService;
     constructor(adminActionsService: AdminActionsService);
-    getAuditLogs(page?: string, limit?: string, action?: string, targetEntity?: string, targetEntityCamel?: string, targetId?: string, targetIdCamel?: string, adminId?: string, adminIdCamel?: string, startDate?: string, endDate?: string): Promise<{
+    getAuditLogs(page?: string, limit?: string, action?: string, targetEntity?: string, targetEntityCamel?: string, targetId?: string, targetIdCamel?: string, adminId?: string, adminIdCamel?: string, actorRole?: string, actorRoleCamel?: string, search?: string, startDate?: string, endDate?: string): Promise<{
         logs: import("./admin-audit-log.entity").AdminAuditLog[];
         total: number;
         page: number;

@@ -20,6 +20,7 @@ interface AuditLogItem {
     new_state_json?: string | null;
     notes?: string | null;
     ip_address?: string | null;
+    actor_role?: string;
     created_at: string;
 }
 
@@ -43,6 +44,7 @@ export default function AdminAuditLogsPage() {
     const [limit] = useState(20);
 
     const [actionFilter, setActionFilter] = useState('');
+    const [actorRoleFilter, setActorRoleFilter] = useState('');
     const [targetEntityFilter, setTargetEntityFilter] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -57,6 +59,7 @@ export default function AdminAuditLogsPage() {
             params.set('page', String(page));
             params.set('limit', String(limit));
             if (actionFilter) params.set('action', actionFilter);
+            if (actorRoleFilter) params.set('actor_role', actorRoleFilter);
             if (targetEntityFilter) params.set('target_entity', targetEntityFilter);
             if (startDate) params.set('startDate', startDate);
             if (endDate) params.set('endDate', endDate);
@@ -80,7 +83,7 @@ export default function AdminAuditLogsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page, limit, actionFilter, targetEntityFilter, startDate, endDate]);
+    }, [page, limit, actionFilter, actorRoleFilter, targetEntityFilter, startDate, endDate]);
 
     useEffect(() => {
         fetchLogs();
@@ -194,7 +197,7 @@ export default function AdminAuditLogsPage() {
                             <span>{isEn ? 'Search & Filters' : 'Filtros y Búsqueda'}</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                             <div className="relative">
                                 <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                                 <input
@@ -204,6 +207,21 @@ export default function AdminAuditLogsPage() {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
                                 />
+                            </div>
+
+                            <div>
+                                <select
+                                    value={actorRoleFilter}
+                                    onChange={(e) => {
+                                        setActorRoleFilter(e.target.value);
+                                        setPage(1);
+                                    }}
+                                    className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="">{isEn ? 'All Actors' : 'Todos los Actores'}</option>
+                                    <option value="admin">{isEn ? 'Administrators' : 'Administradores'}</option>
+                                    <option value="client">{isEn ? 'Clients' : 'Clientes'}</option>
+                                </select>
                             </div>
 
                             <div>
@@ -291,7 +309,7 @@ export default function AdminAuditLogsPage() {
                                     <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground tracking-wider font-semibold">
                                         <tr>
                                             <th className="py-3.5 px-4">{isEn ? 'Date / Time' : 'Fecha / Hora'}</th>
-                                            <th className="py-3.5 px-4">{isEn ? 'Administrator' : 'Administrador'}</th>
+                                            <th className="py-3.5 px-4">{isEn ? 'Actor / User' : 'Actor / Usuario'}</th>
                                             <th className="py-3.5 px-4">{isEn ? 'Action' : 'Acción'}</th>
                                             <th className="py-3.5 px-4">{isEn ? 'Target Record' : 'Registro Afectado'}</th>
                                             <th className="py-3.5 px-4">{isEn ? 'Change Details' : 'Detalle de Cambios'}</th>
@@ -309,6 +327,8 @@ export default function AdminAuditLogsPage() {
                                                 second: '2-digit',
                                             });
 
+                                            const isClientActor = log.actor_role === 'client';
+
                                             return (
                                                 <tr key={log.id} className="hover:bg-muted/30 transition">
                                                     <td className="py-3 px-4 whitespace-nowrap text-muted-foreground font-sans">
@@ -320,11 +340,24 @@ export default function AdminAuditLogsPage() {
 
                                                     <td className="py-3 px-4 font-sans">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
-                                                                {log.admin_name ? log.admin_name.charAt(0).toUpperCase() : 'A'}
+                                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                                                isClientActor
+                                                                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                                                                    : 'bg-primary/10 text-primary'
+                                                            }`}>
+                                                                {isClientActor ? 'C' : (log.admin_name ? log.admin_name.charAt(0).toUpperCase() : 'A')}
                                                             </div>
                                                             <div>
-                                                                <div className="font-semibold text-foreground text-xs">{log.admin_name || 'Admin'}</div>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="font-semibold text-foreground text-xs">{log.admin_name || (isClientActor ? 'Cliente' : 'Admin')}</span>
+                                                                    <span className={`inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                                                        isClientActor
+                                                                            ? 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-950 dark:text-purple-300'
+                                                                            : 'bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950 dark:text-blue-300'
+                                                                    }`}>
+                                                                        {isClientActor ? 'CLIENTE' : 'ADMIN'}
+                                                                    </span>
+                                                                </div>
                                                                 <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">{log.admin_id}</div>
                                                             </div>
                                                         </div>
@@ -428,7 +461,7 @@ export default function AdminAuditLogsPage() {
                         </div>
 
                         <div className="p-6 overflow-y-auto space-y-6">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-muted/40 text-xs">
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 p-4 rounded-xl bg-muted/40 text-xs">
                                 <div>
                                     <div className="text-muted-foreground mb-0.5">{isEn ? 'Action' : 'Acción'}</div>
                                     <span className={`inline-block px-2 py-0.5 rounded font-semibold text-[10px] border ${getActionBadgeClass(selectedLog.action)}`}>
@@ -436,7 +469,15 @@ export default function AdminAuditLogsPage() {
                                     </span>
                                 </div>
                                 <div>
-                                    <div className="text-muted-foreground mb-0.5">{isEn ? 'Admin' : 'Administrador'}</div>
+                                    <div className="text-muted-foreground mb-0.5">{isEn ? 'Actor Role' : 'Rol del Actor'}</div>
+                                    <span className={`inline-block px-2 py-0.5 rounded font-bold text-[10px] uppercase ${
+                                        selectedLog.actor_role === 'client' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                    }`}>
+                                        {selectedLog.actor_role === 'client' ? 'CLIENTE' : 'ADMIN'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div className="text-muted-foreground mb-0.5">{isEn ? 'User / Name' : 'Usuario / Nombre'}</div>
                                     <div className="font-semibold text-foreground">{selectedLog.admin_name}</div>
                                 </div>
                                 <div>

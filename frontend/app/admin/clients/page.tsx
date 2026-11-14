@@ -59,6 +59,8 @@ interface UserRecord {
     credit_override?: boolean;
     check_enabled?: boolean;
     ach_enabled?: boolean;
+    zelle_enabled?: boolean;
+    free_delivery_enabled?: boolean;
     is_active?: boolean;
     credit_balance?: number;
     tax_id?: string;
@@ -194,6 +196,8 @@ export default function AdminClientsPage() {
     const [creditOverride, setCreditOverride] = useState<boolean>(false);
     const [checkEnabled, setCheckEnabled] = useState<boolean>(false);
     const [achEnabled, setAchEnabled] = useState<boolean>(false);
+    const [zelleEnabled, setZelleEnabled] = useState<boolean>(false);
+    const [freeDeliveryEnabled, setFreeDeliveryEnabled] = useState<boolean>(false);
     const [isSavingCredit, setIsSavingCredit] = useState(false);
     const [creditSummary, setCreditSummary] = useState<any>(null);
     const [isGeneratingDigitalST120, setIsGeneratingDigitalST120] = useState(false);
@@ -210,6 +214,10 @@ export default function AdminClientsPage() {
 
     // ST-120 Tax Exemption Audit Modal state
     const [auditModalUser, setAuditModalUser] = useState<UserRecord | null>(null);
+
+    // Client Audit Trail states
+    const [clientAuditLogs, setClientAuditLogs] = useState<any[]>([]);
+    const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
 
     // TASK-65-05: Selected Client Primary Address, Facade Photo & Google Maps URL
     const selectedUserPrimaryAddress = useMemo(() => {
@@ -330,6 +338,8 @@ export default function AdminClientsPage() {
         setCreditOverride(Boolean(user.credit_override));
         setCheckEnabled(Boolean(user.check_enabled));
         setAchEnabled(Boolean(user.ach_enabled));
+        setZelleEnabled(Boolean(user.zelle_enabled));
+        setFreeDeliveryEnabled(Boolean(user.free_delivery_enabled));
         
         try {
             setLoadingDetail(true);
@@ -344,6 +354,8 @@ export default function AdminClientsPage() {
             setCreditOverride(Boolean(detail.credit_override));
             setCheckEnabled(Boolean(detail.check_enabled));
             setAchEnabled(Boolean(detail.ach_enabled));
+            setZelleEnabled(Boolean(detail.zelle_enabled));
+            setFreeDeliveryEnabled(Boolean(detail.free_delivery_enabled));
             
             // Get product discounts
             const discounts = await api.get(`/users/${detail.id}/product-discounts`) as any[];
@@ -355,6 +367,17 @@ export default function AdminClientsPage() {
                 setCreditSummary(summary);
             } catch {
                 setCreditSummary(null);
+            }
+
+            // Get client audit logs
+            try {
+                setLoadingAuditLogs(true);
+                const auditRes = await api.get(`/api/admin-actions/audit-logs?target_id=${detail.id}&limit=10`) as any;
+                setClientAuditLogs(auditRes?.logs || []);
+            } catch {
+                setClientAuditLogs([]);
+            } finally {
+                setLoadingAuditLogs(false);
             }
         } catch (err) {
             console.error("Error loading user details", err);
@@ -373,8 +396,10 @@ export default function AdminClientsPage() {
                 credit_override: creditOverride,
                 check_enabled: checkEnabled,
                 ach_enabled: achEnabled,
+                zelle_enabled: zelleEnabled,
+                free_delivery_enabled: freeDeliveryEnabled,
             });
-            showToast('✅ Configuración comercial, de cheques y banco actualizada');
+            showToast('✅ Configuración comercial, de pagos y flete actualizada');
             setUsers(prev => prev.map(u => u.id === selectedUser.id ? {
                 ...u,
                 account_type: accountType,
@@ -382,6 +407,8 @@ export default function AdminClientsPage() {
                 credit_override: creditOverride,
                 check_enabled: checkEnabled,
                 ach_enabled: achEnabled,
+                zelle_enabled: zelleEnabled,
+                free_delivery_enabled: freeDeliveryEnabled,
             } : u));
             setSelectedUser(prev => prev ? {
                 ...prev,
@@ -390,6 +417,8 @@ export default function AdminClientsPage() {
                 credit_override: creditOverride,
                 check_enabled: checkEnabled,
                 ach_enabled: achEnabled,
+                zelle_enabled: zelleEnabled,
+                free_delivery_enabled: freeDeliveryEnabled,
             } : null);
 
             // Refresh credit summary
@@ -921,6 +950,16 @@ export default function AdminClientsPage() {
                                             {u.ach_enabled && (
                                                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200" title="Transferencia ACH habilitada">
                                                     ACH ON
+                                                </span>
+                                            )}
+                                            {u.zelle_enabled && (
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-violet-100 text-violet-800 border border-violet-200" title="Transferencia Zelle habilitada">
+                                                    Zelle ON
+                                                </span>
+                                            )}
+                                            {u.free_delivery_enabled && (
+                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-teal-100 text-teal-800 border border-teal-200" title="Flete Gratis Permanente">
+                                                    Flete Gratis
                                                 </span>
                                             )}
                                         </div>
@@ -1953,6 +1992,92 @@ export default function AdminClientsPage() {
                                         </div>
                                     </div>
 
+                                    {/* Toggle Zelle B2B (TASK-94-01) */}
+                                    <div className="p-4 bg-violet-50/50 rounded-2xl border border-violet-200/80 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-xl bg-violet-100 text-violet-800 flex items-center justify-center font-black text-xs shrink-0">
+                                                    ZEL
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-800 uppercase">Habilitar Transferencia Zelle B2B</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">
+                                                        Permite al cliente registrar pagos vía Zelle ($0.00 Fee). Por defecto desactivado.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                data-testid="toggle-zelle-enabled"
+                                                onClick={() => setZelleEnabled(!zelleEnabled)}
+                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    zelleEnabled ? 'bg-violet-600' : 'bg-slate-300'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                                        zelleEnabled ? 'translate-x-5' : 'translate-x-0'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2 pt-1 border-t border-violet-100">
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                zelleEnabled ? 'bg-violet-100 text-violet-800 border border-violet-200' : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                                {zelleEnabled ? 'Zelle Habilitado [ON]' : 'Zelle Deshabilitado [OFF]'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {zelleEnabled
+                                                    ? 'El cliente puede seleccionar Zelle en el checkout.'
+                                                    : 'Opción Zelle oculta y bloqueada en checkout para este cliente.'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Toggle Free Delivery / Flete Gratis Permanente (TASK-94-02) */}
+                                    <div className="p-4 bg-teal-50/50 rounded-2xl border border-teal-200/80 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-black text-xs shrink-0">
+                                                    $0
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-800 uppercase">Flete Gratis Permanente para el Cliente</p>
+                                                    <p className="text-[10px] text-slate-400 font-medium">
+                                                        Exonera el costo de entrega en todos sus pedidos ($0.00 Delivery Fee automático).
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                data-testid="toggle-free-delivery-enabled"
+                                                onClick={() => setFreeDeliveryEnabled(!freeDeliveryEnabled)}
+                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    freeDeliveryEnabled ? 'bg-teal-600' : 'bg-slate-300'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                                        freeDeliveryEnabled ? 'translate-x-5' : 'translate-x-0'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2 pt-1 border-t border-teal-100">
+                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                freeDeliveryEnabled ? 'bg-teal-100 text-teal-800 border border-teal-200' : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                                {freeDeliveryEnabled ? 'Flete Gratis Activo [ON]' : 'Tarifa Normal de Flete [OFF]'}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {freeDeliveryEnabled
+                                                    ? 'Todos los pedidos de este cliente tendrán $0.00 de flete en checkout.'
+                                                    : 'Se aplicará tarifa asignada o cálculo de millaje.'}
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     <div className="flex justify-end pt-2">
                                         <button
                                             type="button"
@@ -2284,6 +2409,72 @@ export default function AdminClientsPage() {
                                     <div className="text-center py-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
                                         <ShoppingBag size={32} className="mx-auto text-slate-300 mb-2" />
                                         <p className="text-xs font-bold text-slate-500">Este cliente aún no registra pedidos.</p>
+                                    </div>
+                                )}
+                            </section>
+
+                            {/* Client Audit Trail Section */}
+                            <section className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <ShieldCheck size={18} className="text-primary" />
+                                        <h3 className="text-xs font-black uppercase tracking-[.25em] text-slate-400">
+                                            Bitácora de Auditoría y Eventos
+                                        </h3>
+                                    </div>
+                                    <Link
+                                        href="/admin/audit-logs"
+                                        target="_blank"
+                                        className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1"
+                                    >
+                                        <span>Ver Bitácora Global</span>
+                                        <ExternalLink size={11} />
+                                    </Link>
+                                </div>
+
+                                {loadingAuditLogs ? (
+                                    <div className="flex justify-center py-6 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <Loader2 className="animate-spin text-primary w-5 h-5" />
+                                    </div>
+                                ) : clientAuditLogs.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {clientAuditLogs.map((log: any) => {
+                                            const isClient = log.actor_role === 'client';
+                                            const formattedDate = new Date(log.created_at).toLocaleString('es-ES', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                            });
+
+                                            return (
+                                                <div
+                                                    key={log.id}
+                                                    className="bg-slate-50 hover:bg-slate-100/80 transition-all rounded-2xl p-3.5 border border-slate-100 flex flex-col gap-1.5 text-xs"
+                                                >
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                                                                isClient ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                                                            }`}>
+                                                                {isClient ? 'CLIENTE' : 'ADMIN'}
+                                                            </span>
+                                                            <span className="font-bold text-slate-800">{log.action}</span>
+                                                        </div>
+                                                        <span className="text-[11px] text-slate-400 font-medium">{formattedDate}</span>
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-600 flex items-center justify-between">
+                                                        <span>Actor: <strong className="text-slate-800">{log.admin_name || 'Sistema'}</strong></span>
+                                                        {log.notes && <span className="text-slate-500 italic truncate max-w-[200px]" title={log.notes}>{log.notes}</span>}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                        <ShieldCheck size={24} className="mx-auto text-slate-300 mb-1" />
+                                        <p className="text-xs font-medium text-slate-500">Sin eventos de auditoría registrados para este cliente.</p>
                                     </div>
                                 )}
                             </section>

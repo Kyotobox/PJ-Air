@@ -111,6 +111,12 @@ export class User {
   @Column({ type: 'boolean', default: false })
   ach_enabled: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  zelle_enabled: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  free_delivery_enabled: boolean;
+
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 

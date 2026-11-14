@@ -99,6 +99,7 @@ export class AdminActionsService {
     newState?: any,
     notes?: string,
     ip?: string,
+    actorRole: string = 'admin',
   ): Promise<AdminAuditLog> {
     const prevJson = prevState !== undefined && prevState !== null
       ? (typeof prevState === 'string' ? prevState : JSON.stringify(prevState))
@@ -109,7 +110,7 @@ export class AdminActionsService {
 
     const log = this.adminAuditLogRepository.create({
       admin_id: String(adminId || ''),
-      admin_name: String(adminName || 'Admin'),
+      admin_name: String(adminName || (actorRole === 'client' ? 'Cliente' : 'Admin')),
       action: String(action || ''),
       target_entity: String(targetEntity || ''),
       target_id: String(targetId || ''),
@@ -117,6 +118,7 @@ export class AdminActionsService {
       new_state_json: newJson,
       notes: notes || null,
       ip_address: ip || null,
+      actor_role: actorRole || 'admin',
     });
 
     return this.adminAuditLogRepository.save(log);
@@ -129,6 +131,8 @@ export class AdminActionsService {
     targetEntity?: string;
     targetId?: string;
     adminId?: string;
+    actorRole?: string;
+    search?: string;
     startDate?: string;
     endDate?: string;
   }): Promise<{ logs: AdminAuditLog[]; total: number; page: number; limit: number; totalPages: number }> {
@@ -149,6 +153,15 @@ export class AdminActionsService {
     }
     if (options?.adminId) {
       qb.andWhere('log.admin_id = :adminId', { adminId: options.adminId });
+    }
+    if (options?.actorRole) {
+      qb.andWhere('log.actor_role = :actorRole', { actorRole: options.actorRole });
+    }
+    if (options?.search) {
+      qb.andWhere(
+        '(LOWER(log.admin_name) LIKE :q OR LOWER(log.action) LIKE :q OR LOWER(log.target_entity) LIKE :q OR LOWER(log.target_id) LIKE :q OR LOWER(log.notes) LIKE :q)',
+        { q: `%${options.search.toLowerCase()}%` }
+      );
     }
     if (options?.startDate) {
       qb.andWhere('log.created_at >= :startDate', { startDate: options.startDate });

@@ -42,6 +42,7 @@ export declare class PaymentsService {
         amount: number;
         status?: string;
     }>;
+    syncInvoiceToStripe(orderId: string, invoiceNumber: string, paymentIntentId?: string): Promise<boolean>;
     createSettlementLink(data: {
         orderId?: string;
         clientId?: string;

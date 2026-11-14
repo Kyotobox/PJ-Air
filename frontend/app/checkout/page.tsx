@@ -938,14 +938,15 @@ export default function CheckoutPage() {
         });
     }, [userOrders, rawDeliveryDate, deliveryDate, deliveryType, selectedAddressId]);
 
-    // Matriz de precedencia (TASK-78-03):
-    // 0. Pedido Complementario: siempre $0.00 (TASK-63-04)
+    // Matriz de precedencia (TASK-78-03, TASK-90-02, TASK-94-02):
+    // 0. Flete Gratis permanente (user.free_delivery_enabled) o Complementario: siempre $0.00
     // 1. Pickup: siempre $0.00
     // 2. Tarifa Fija Asignada pactada en perfil (user.delivery_fee > 0): PREVALECE DE FORMA ABSOLUTA
     // 3. Cotización Oficial MileageFreightService por coordenadas (TASK-49-06)
     // 4. Contingencia fallback ($15.00) si no hay coordenadas disponibles
+    const isFreeDeliveryClient = Boolean(profile?.free_delivery_enabled || (user as any)?.free_delivery_enabled || creditSummary?.free_delivery_enabled);
     let deliveryFee = 0;
-    if (deliveryType === 'pickup' || isComplementaryOrder) {
+    if (deliveryType === 'pickup' || isComplementaryOrder || isFreeDeliveryClient) {
         deliveryFee = 0;
     } else if (hasVipFee) {
         deliveryFee = userCustomFee;
@@ -995,6 +996,9 @@ export default function CheckoutPage() {
     // TASK-60-05: Restringir opción 'Pago con Cheque' ÚNICAMENTE a clientes con check_enabled: true
     const isCheckAvailable = Boolean(profile?.check_enabled || user?.check_enabled || creditSummary?.check_enabled);
 
+    // TASK-94-01: Restringir opción 'Zelle' ÚNICAMENTE a clientes con zelle_enabled: true
+    const isZelleAvailable = Boolean(profile?.zelle_enabled || (user as any)?.zelle_enabled || creditSummary?.zelle_enabled);
+
     useEffect(() => {
         if (!isAchAvailable && paymentMethod === 'ach') {
             setPaymentMethod('stripe');
@@ -1002,7 +1006,10 @@ export default function CheckoutPage() {
         if (!isCheckAvailable && paymentMethod === 'check') {
             setPaymentMethod('stripe');
         }
-    }, [isAchAvailable, isCheckAvailable, paymentMethod]);
+        if (!isZelleAvailable && paymentMethod === 'zelle') {
+            setPaymentMethod('stripe');
+        }
+    }, [isAchAvailable, isCheckAvailable, isZelleAvailable, paymentMethod]);
 
     // ── Delivery date (NY timezone & 12:00 PM cutoff guard - TASK-49-04 & TASK-68-04) ──────
     useEffect(() => {
@@ -2003,7 +2010,8 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
-                                {/* Zelle option */}
+                                {/* Zelle option (TASK-94-01) */}
+                                {isZelleAvailable && (
                                 <div 
                                     data-testid="payment-method-zelle"
                                     onClick={() => setPaymentMethod('zelle')}
@@ -2037,6 +2045,7 @@ export default function CheckoutPage() {
                                         {lbl('Pago directo interbancario sin comisiones de procesamiento ($0.00).', 'Direct bank transfer with zero processing fees ($0.00).')}
                                     </p>
                                 </div>
+                                )}
 
                                 {/* Check Payment Option (TASK-60-05) */}
                                 {isCheckAvailable && (

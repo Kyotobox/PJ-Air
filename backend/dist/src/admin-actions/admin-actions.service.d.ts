@@ -15,7 +15,7 @@ export declare class AdminActionsService {
         success: boolean;
         message: string;
     }>;
-    logAction(adminId: string, adminName: string, action: string, targetEntity: string, targetId: string, prevState?: any, newState?: any, notes?: string, ip?: string): Promise<AdminAuditLog>;
+    logAction(adminId: string, adminName: string, action: string, targetEntity: string, targetId: string, prevState?: any, newState?: any, notes?: string, ip?: string, actorRole?: string): Promise<AdminAuditLog>;
     getAuditLogs(options?: {
         page?: number;
         limit?: number;
@@ -23,6 +23,8 @@ export declare class AdminActionsService {
         targetEntity?: string;
         targetId?: string;
         adminId?: string;
+        actorRole?: string;
+        search?: string;
         startDate?: string;
         endDate?: string;
     }): Promise<{

@@ -323,6 +323,38 @@ export class PaymentsService {
     }
   }
 
+  /**
+   * TASK-94-03: Sincroniza en tiempo real el invoice_number oficial consecutivo
+   * en la descripción y metadatos del PaymentIntent de Stripe.
+   */
+  async syncInvoiceToStripe(orderId: string, invoiceNumber: string, paymentIntentId?: string): Promise<boolean> {
+    if (!this.stripe || !invoiceNumber) return false;
+    try {
+      let targetIntentId = paymentIntentId;
+      const order = await this.ordersService.findOne(orderId);
+      if (!targetIntentId) {
+        targetIntentId = order?.stripe_payment_id || undefined;
+      }
+      if (!targetIntentId || !targetIntentId.startsWith('pi_')) {
+        return false;
+      }
+
+      const clientName = order?.user?.profile?.full_name || order?.user?.email || 'Customer';
+      await this.stripe.paymentIntents.update(targetIntentId, {
+        description: `Invoice ${invoiceNumber} — ${clientName}`,
+        metadata: {
+          invoice_number: invoiceNumber,
+          orderId: order?.id || orderId,
+        },
+      });
+      this.logger.log(`[StripeSync] Successfully synced invoice ${invoiceNumber} to PaymentIntent ${targetIntentId}`);
+      return true;
+    } catch (err: any) {
+      this.logger.warn(`[StripeSync] Could not sync invoice ${invoiceNumber} to Stripe: ${err.message}`);
+      return false;
+    }
+  }
+
   async createSettlementLink(data: {
     orderId?: string;
     clientId?: string;
@@ -716,6 +748,16 @@ export class PaymentsService {
         }
         await this.ordersService.update(orderId, updatePayload, 'admin');
 
+        // TASK-94-03: Sincronizar en Stripe el invoice_number oficial consecutivo
+        try {
+          const reconciledOrder = await this.ordersService.findOne(orderId);
+          if (reconciledOrder?.invoice_number) {
+            await this.syncInvoiceToStripe(orderId, reconciledOrder.invoice_number, paymentIntent.id);
+          }
+        } catch (syncErr: any) {
+          this.logger.warn(`Could not sync invoice_number after webhook reconcile: ${syncErr?.message || syncErr}`);
+        }
+
         // TASK-37-01: Disparar recibo de compra tras conciliar webhook payment_intent.succeeded
         const mailSvc = this.mailService;
         if (mailSvc) {
@@ -761,6 +803,16 @@ export class PaymentsService {
           updatePayload.fee_method = session.metadata.feeMethod;
         }
         await this.ordersService.update(orderId, updatePayload, 'admin');
+
+        // TASK-94-03: Sincronizar en Stripe el invoice_number oficial consecutivo
+        try {
+          const reconciledOrder = await this.ordersService.findOne(orderId);
+          if (reconciledOrder?.invoice_number && paymentIntentId) {
+            await this.syncInvoiceToStripe(orderId, reconciledOrder.invoice_number, paymentIntentId);
+          }
+        } catch (syncErr: any) {
+          this.logger.warn(`Could not sync invoice_number after checkout session reconcile: ${syncErr?.message || syncErr}`);
+        }
 
         if (mailSvc) {
           (async () => {
@@ -818,6 +870,16 @@ export class PaymentsService {
           updatePayload.fee_method = session.metadata.feeMethod;
         }
         await this.ordersService.update(orderId, updatePayload, 'admin');
+
+        // TASK-94-03: Sincronizar en Stripe el invoice_number oficial consecutivo
+        try {
+          const reconciledOrder = await this.ordersService.findOne(orderId);
+          if (reconciledOrder?.invoice_number && paymentIntentId) {
+            await this.syncInvoiceToStripe(orderId, reconciledOrder.invoice_number, paymentIntentId);
+          }
+        } catch (syncErr: any) {
+          this.logger.warn(`Could not sync invoice_number after checkout session reconcile: ${syncErr?.message || syncErr}`);
+        }
 
         if (mailSvc) {
           (async () => {

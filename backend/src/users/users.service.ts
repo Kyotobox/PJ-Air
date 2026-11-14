@@ -180,7 +180,7 @@ export class UsersService {
 
   async updateCreditSettings(
     userId: string, 
-    data: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean; check_enabled?: boolean; ach_enabled?: boolean }
+    data: { account_type?: 'cash' | 'credit'; credit_limit?: number; credit_override?: boolean; check_enabled?: boolean; ach_enabled?: boolean; zelle_enabled?: boolean; free_delivery_enabled?: boolean }
   ): Promise<User> {
     const user = await this.findOne(userId);
     if (data.account_type !== undefined) user.account_type = data.account_type;
@@ -188,6 +188,8 @@ export class UsersService {
     if (data.credit_override !== undefined) user.credit_override = Boolean(data.credit_override);
     if (data.check_enabled !== undefined) user.check_enabled = Boolean(data.check_enabled);
     if (data.ach_enabled !== undefined) user.ach_enabled = Boolean(data.ach_enabled);
+    if (data.zelle_enabled !== undefined) user.zelle_enabled = Boolean(data.zelle_enabled);
+    if (data.free_delivery_enabled !== undefined) user.free_delivery_enabled = Boolean(data.free_delivery_enabled);
     
     await this.userRepository.save(user);
     return this.findOne(userId);
@@ -199,6 +201,8 @@ export class UsersService {
     credit_override: boolean;
     check_enabled: boolean;
     ach_enabled: boolean;
+    zelle_enabled: boolean;
+    free_delivery_enabled: boolean;
     used_credit: number;
     available_credit: number;
     is_overdraft: boolean;
@@ -224,6 +228,8 @@ export class UsersService {
       credit_override: Boolean(user.credit_override),
       check_enabled: Boolean(user.check_enabled),
       ach_enabled: Boolean(user.ach_enabled),
+      zelle_enabled: Boolean(user.zelle_enabled),
+      free_delivery_enabled: Boolean(user.free_delivery_enabled),
       used_credit: Math.round(used_credit * 100) / 100,
       available_credit: Math.round(available_credit * 100) / 100,
       is_overdraft,
@@ -260,6 +266,12 @@ export class UsersService {
     }
     if (data.ach_enabled !== undefined) {
       user.ach_enabled = Boolean(data.ach_enabled);
+    }
+    if (data.zelle_enabled !== undefined) {
+      user.zelle_enabled = Boolean(data.zelle_enabled);
+    }
+    if (data.free_delivery_enabled !== undefined) {
+      user.free_delivery_enabled = Boolean(data.free_delivery_enabled);
     }
     if (data.general_discount !== undefined) {
       user.general_discount = Number(data.general_discount);
@@ -332,6 +344,8 @@ export class UsersService {
       'stripe_payment_method_id',
       'check_enabled',
       'ach_enabled',
+      'zelle_enabled',
+      'free_delivery_enabled',
     ];
     for (const field of allowedFields) {
       if ((data as any)[field] !== undefined) {

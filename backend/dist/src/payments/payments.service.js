@@ -297,6 +297,34 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             throw new common_1.BadRequestException(`Stripe error: ${err.message}`);
         }
     }
+    async syncInvoiceToStripe(orderId, invoiceNumber, paymentIntentId) {
+        if (!this.stripe || !invoiceNumber)
+            return false;
+        try {
+            let targetIntentId = paymentIntentId;
+            const order = await this.ordersService.findOne(orderId);
+            if (!targetIntentId) {
+                targetIntentId = order?.stripe_payment_id || undefined;
+            }
+            if (!targetIntentId || !targetIntentId.startsWith('pi_')) {
+                return false;
+            }
+            const clientName = order?.user?.profile?.full_name || order?.user?.email || 'Customer';
+            await this.stripe.paymentIntents.update(targetIntentId, {
+                description: `Invoice ${invoiceNumber} — ${clientName}`,
+                metadata: {
+                    invoice_number: invoiceNumber,
+                    orderId: order?.id || orderId,
+                },
+            });
+            this.logger.log(`[StripeSync] Successfully synced invoice ${invoiceNumber} to PaymentIntent ${targetIntentId}`);
+            return true;
+        }
+        catch (err) {
+            this.logger.warn(`[StripeSync] Could not sync invoice ${invoiceNumber} to Stripe: ${err.message}`);
+            return false;
+        }
+    }
     async createSettlementLink(data) {
         const { orderId, clientId, clientEmail, paymentMethod } = data;
         const rawMethod = (paymentMethod || 'STRIPE_CARD').trim().toUpperCase();
@@ -620,6 +648,15 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     updatePayload.fee_method = paymentIntent.metadata.feeMethod;
                 }
                 await this.ordersService.update(orderId, updatePayload, 'admin');
+                try {
+                    const reconciledOrder = await this.ordersService.findOne(orderId);
+                    if (reconciledOrder?.invoice_number) {
+                        await this.syncInvoiceToStripe(orderId, reconciledOrder.invoice_number, paymentIntent.id);
+                    }
+                }
+                catch (syncErr) {
+                    this.logger.warn(`Could not sync invoice_number after webhook reconcile: ${syncErr?.message || syncErr}`);
+                }
                 const mailSvc = this.mailService;
                 if (mailSvc) {
                     (async () => {
@@ -664,6 +701,15 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     updatePayload.fee_method = session.metadata.feeMethod;
                 }
                 await this.ordersService.update(orderId, updatePayload, 'admin');
+                try {
+                    const reconciledOrder = await this.ordersService.findOne(orderId);
+                    if (reconciledOrder?.invoice_number && paymentIntentId) {
+                        await this.syncInvoiceToStripe(orderId, reconciledOrder.invoice_number, paymentIntentId);
+                    }
+                }
+                catch (syncErr) {
+                    this.logger.warn(`Could not sync invoice_number after checkout session reconcile: ${syncErr?.message || syncErr}`);
+                }
                 if (mailSvc) {
                     (async () => {
                         try {
@@ -724,6 +770,15 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     updatePayload.fee_method = session.metadata.feeMethod;
                 }
                 await this.ordersService.update(orderId, updatePayload, 'admin');
+                try {
+                    const reconciledOrder = await this.ordersService.findOne(orderId);
+                    if (reconciledOrder?.invoice_number && paymentIntentId) {
+                        await this.syncInvoiceToStripe(orderId, reconciledOrder.invoice_number, paymentIntentId);
+                    }
+                }
+                catch (syncErr) {
+                    this.logger.warn(`Could not sync invoice_number after checkout session reconcile: ${syncErr?.message || syncErr}`);
+                }
                 if (mailSvc) {
                     (async () => {
                         try {

@@ -37,6 +37,8 @@ interface ClientUser {
     account_status?: string;
     credit_limit?: number;
     delivery_fee?: number;
+    free_delivery_enabled?: boolean;
+    zelle_enabled?: boolean;
     general_discount?: number;
     tax_exempt?: boolean;
     tax_id?: string;
@@ -144,8 +146,8 @@ export default function NewManualOrderPage() {
             setDeliveryType('pickup');
         }
 
-        // Preload delivery fee
-        const assignedFee = Number(client.delivery_fee || 0);
+        // Preload delivery fee (TASK-94-02: $0 si el cliente tiene flete gratis permanente)
+        const assignedFee = client.free_delivery_enabled ? 0 : Number(client.delivery_fee || 0);
         setDeliveryFee(assignedFee);
 
         // Preload discount
@@ -610,9 +612,21 @@ export default function NewManualOrderPage() {
 
                                 {/* Manual Delivery Fee */}
                                 <div>
-                                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
-                                        Tarifa de Flete / Entrega ($)
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
+                                            Tarifa de Flete / Entrega ($)
+                                        </label>
+                                        {deliveryType !== 'pickup' && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setDeliveryFee(0)}
+                                                className="text-[10px] font-black text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded-lg border border-teal-200 uppercase tracking-wider transition-all"
+                                                title="Exonerar costo de flete para este pedido"
+                                            >
+                                                Exonerar ($0.00)
+                                            </button>
+                                        )}
+                                    </div>
                                     <div className="relative">
                                         <DollarSign className="absolute left-3 top-2.5 text-slate-400" size={16} />
                                         <input

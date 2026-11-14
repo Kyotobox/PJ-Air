@@ -118,6 +118,9 @@ export class AppModule implements OnModuleInit {
       if (!orderColNames.includes('pending_balance')) {
         await qr.query(`ALTER TABLE orders ADD COLUMN pending_balance DECIMAL(10,2) DEFAULT 0;`);
       }
+      if (!orderColNames.includes('invoice_number')) {
+        await qr.query(`ALTER TABLE orders ADD COLUMN invoice_number VARCHAR(50);`);
+      }
 
       const userCols = await qr.query(`PRAGMA table_info(users);`);
       const userColNames = userCols.map((c: any) => c.name);
@@ -189,6 +192,13 @@ export class AppModule implements OnModuleInit {
       }
       if (!userColNames.includes('ach_enabled')) {
         await qr.query(`ALTER TABLE users ADD COLUMN ach_enabled BOOLEAN DEFAULT 0;`);
+      }
+      if (!userColNames.includes('zelle_enabled')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN zelle_enabled BOOLEAN DEFAULT 0;`);
+        await qr.query(`UPDATE users SET zelle_enabled = 1 WHERE role = 'client' AND (check_enabled = 1 OR ach_enabled = 1);`);
+      }
+      if (!userColNames.includes('free_delivery_enabled')) {
+        await qr.query(`ALTER TABLE users ADD COLUMN free_delivery_enabled BOOLEAN DEFAULT 0;`);
       }
       if (!userColNames.includes('is_active')) {
         await qr.query(`ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1;`);
@@ -339,7 +349,7 @@ export class AppModule implements OnModuleInit {
         );
       `);
 
-      // TASK-83-05: Crear tabla admin_audit_logs si no existe
+      // TASK-83-05 & TASK-94-04: Crear tabla admin_audit_logs si no existe y asegurar columna actor_role
       await qr.query(`
         CREATE TABLE IF NOT EXISTS admin_audit_logs (
           id VARCHAR PRIMARY KEY,
@@ -352,9 +362,15 @@ export class AppModule implements OnModuleInit {
           new_state_json TEXT,
           notes TEXT,
           ip_address VARCHAR,
+          actor_role VARCHAR(20) DEFAULT 'admin',
           created_at DATETIME DEFAULT (datetime('now'))
         );
       `);
+      const auditCols = await qr.query(`PRAGMA table_info(admin_audit_logs);`);
+      const auditColNames = auditCols.map((c: any) => c.name);
+      if (!auditColNames.includes('actor_role')) {
+        await qr.query(`ALTER TABLE admin_audit_logs ADD COLUMN actor_role VARCHAR(20) DEFAULT 'admin';`);
+      }
       await qr.release();
       this.logger.log('Schema verification completed successfully.');
     } catch (e: any) {

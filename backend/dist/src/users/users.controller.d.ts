@@ -31,6 +31,8 @@ export declare class UsersController {
         credit_override?: boolean;
         check_enabled?: boolean;
         ach_enabled?: boolean;
+        zelle_enabled?: boolean;
+        free_delivery_enabled?: boolean;
     }): Promise<import("./user.entity").User>;
     getCreditSummary(id: string): Promise<{
         account_type: "cash" | "credit";
@@ -38,6 +40,8 @@ export declare class UsersController {
         credit_override: boolean;
         check_enabled: boolean;
         ach_enabled: boolean;
+        zelle_enabled: boolean;
+        free_delivery_enabled: boolean;
         used_credit: number;
         available_credit: number;
         is_overdraft: boolean;

@@ -21,6 +21,9 @@ export class AdminActionsController {
     @Query('targetId') targetIdCamel?: string,
     @Query('admin_id') adminId?: string,
     @Query('adminId') adminIdCamel?: string,
+    @Query('actor_role') actorRole?: string,
+    @Query('actorRole') actorRoleCamel?: string,
+    @Query('search') search?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
@@ -31,6 +34,8 @@ export class AdminActionsController {
       targetEntity: targetEntity || targetEntityCamel,
       targetId: targetId || targetIdCamel,
       adminId: adminId || adminIdCamel,
+      actorRole: actorRole || actorRoleCamel,
+      search,
       startDate,
       endDate,
     });

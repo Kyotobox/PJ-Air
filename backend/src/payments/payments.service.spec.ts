@@ -360,4 +360,73 @@ describe('PaymentsService', () => {
       await expect(service.getOrCreateCustomer('user-1')).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('Sprint S94: Stripe Invoice Synchronization (TASK-94-03)', () => {
+    it('should successfully sync invoice_number and client description to Stripe PaymentIntent (Happy Path)', async () => {
+      const mockOrder: any = {
+        id: 'ord-sync-1',
+        invoice_number: 'INV-1654',
+        stripe_payment_id: 'pi_3Ubk50S91wzOMOtr1Y3joo7V',
+        user: {
+          email: 'emad@client.com',
+          profile: { full_name: 'Emad Zokari' },
+        },
+      };
+      ordersService.findOne.mockResolvedValue(mockOrder);
+
+      const mockStripe = {
+        paymentIntents: {
+          update: jest.fn().mockResolvedValue({ id: 'pi_3Ubk50S91wzOMOtr1Y3joo7V' }),
+        },
+      };
+      (service as any).stripe = mockStripe;
+
+      const result = await service.syncInvoiceToStripe('ord-sync-1', 'INV-1654', 'pi_3Ubk50S91wzOMOtr1Y3joo7V');
+
+      expect(result).toBe(true);
+      expect(mockStripe.paymentIntents.update).toHaveBeenCalledWith('pi_3Ubk50S91wzOMOtr1Y3joo7V', {
+        description: 'Invoice INV-1654 — Emad Zokari',
+        metadata: {
+          invoice_number: 'INV-1654',
+          orderId: 'ord-sync-1',
+        },
+      });
+    });
+
+    it('should return false when invoice_number is missing (Sad Path 1 §6)', async () => {
+      const result = await service.syncInvoiceToStripe('ord-sync-2', '');
+      expect(result).toBe(false);
+    });
+
+    it('should return false when Stripe is not initialized (Sad Path 2 §6)', async () => {
+      (service as any).stripe = null;
+      const result = await service.syncInvoiceToStripe('ord-sync-3', 'INV-1655', 'pi_123');
+      expect(result).toBe(false);
+    });
+
+    it('should return false when paymentIntentId is invalid (not starting with pi_) (Sad Path 3 §6)', async () => {
+      (service as any).stripe = { paymentIntents: { update: jest.fn() } };
+      ordersService.findOne.mockResolvedValue({ id: 'ord-sync-4', stripe_payment_id: 'invalid_id' });
+      const result = await service.syncInvoiceToStripe('ord-sync-4', 'INV-1656', 'invalid_id');
+      expect(result).toBe(false);
+    });
+
+    it('should return false and log warning when Stripe API throws an error (Sad Path 4 §6)', async () => {
+      const mockStripe = {
+        paymentIntents: {
+          update: jest.fn().mockRejectedValue(new Error('Stripe API network timeout')),
+        },
+      };
+      (service as any).stripe = mockStripe;
+      ordersService.findOne.mockResolvedValue({
+        id: 'ord-sync-5',
+        invoice_number: 'INV-1657',
+        stripe_payment_id: 'pi_error',
+        user: { email: 'client@error.com' },
+      });
+
+      const result = await service.syncInvoiceToStripe('ord-sync-5', 'INV-1657', 'pi_error');
+      expect(result).toBe(false);
+    });
+  });
 });

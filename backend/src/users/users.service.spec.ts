@@ -254,6 +254,8 @@ describe('UsersService', () => {
         credit_override: false,
         check_enabled: false,
         ach_enabled: false,
+        zelle_enabled: false,
+        free_delivery_enabled: false,
         orders: [],
       };
       mockUserRepository.findOne.mockResolvedValue(mockUser);
@@ -265,6 +267,8 @@ describe('UsersService', () => {
         credit_override: true,
         check_enabled: false,
         ach_enabled: true,
+        zelle_enabled: true,
+        free_delivery_enabled: true,
       });
 
       expect(mockUserRepository.save).toHaveBeenCalled();
@@ -273,11 +277,34 @@ describe('UsersService', () => {
       expect(result.credit_override).toBe(true);
       expect(result.check_enabled).toBe(false);
       expect(result.ach_enabled).toBe(true);
+      expect(result.zelle_enabled).toBe(true);
+      expect(result.free_delivery_enabled).toBe(true);
 
       const summary = await service.getUserCreditSummary('u-ach-1');
       expect(summary.ach_enabled).toBe(true);
       expect(summary.check_enabled).toBe(false);
+      expect(summary.zelle_enabled).toBe(true);
+      expect(summary.free_delivery_enabled).toBe(true);
       expect(summary.can_order).toBe(true);
+    });
+
+    it('should update zelle_enabled and free_delivery_enabled through updateUser (TASK-94-01 & TASK-94-02)', async () => {
+      const mockUser: any = {
+        id: 'u-zelle-1',
+        email: 'zelle@client.com',
+        zelle_enabled: false,
+        free_delivery_enabled: false,
+      };
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.save.mockImplementation(async (u) => u);
+
+      const result = await service.updateUser('u-zelle-1', {
+        zelle_enabled: true,
+        free_delivery_enabled: true,
+      });
+
+      expect(result.zelle_enabled).toBe(true);
+      expect(result.free_delivery_enabled).toBe(true);
     });
 
     it('should throw NotFoundException when updating credit for non-existent user (sad path)', async () => {

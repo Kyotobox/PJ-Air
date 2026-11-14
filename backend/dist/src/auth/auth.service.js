@@ -137,7 +137,7 @@ let AuthService = AuthService_1 = class AuthService {
             ...(utm_medium ? { utm_medium: String(utm_medium).trim().slice(0, 100) } : (body.utm_medium ? { utm_medium: String(body.utm_medium).trim().slice(0, 100) } : {})),
             ...(utm_campaign ? { utm_campaign: String(utm_campaign).trim().slice(0, 100) } : (body.utm_campaign ? { utm_campaign: String(body.utm_campaign).trim().slice(0, 100) } : {})),
             ...(utm_content ? { utm_content: String(utm_content).trim().slice(0, 100) } : (body.utm_content ? { utm_content: String(body.utm_content).trim().slice(0, 100) } : {})),
-            account_status: userRole === 'admin' ? 'APPROVED' : (body.account_status || 'PENDING_APPROVAL'),
+            account_status: userRole === 'admin' ? 'APPROVED' : (body.account_status || 'APPROVED'),
         });
         const user = Array.isArray(userResult) ? userResult[0] : userResult;
         await this.usersService.createProfile({

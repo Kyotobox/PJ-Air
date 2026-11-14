@@ -146,10 +146,48 @@ describe('AdminActionsService', () => {
           new_state_json: JSON.stringify(newState),
           notes: 'Ajuste de cortesía por retraso en entrega',
           ip_address: '192.168.1.50',
+          actor_role: 'admin',
         });
         expect(adminAuditLogRepositoryMock.save).toHaveBeenCalled();
         expect(result.id).toBe('audit-uuid-1');
         expect(result.action).toBe('FEE_OVERRIDE');
+      });
+
+      it('Happy Path: Registro de eventos generados por cliente con actor_role = "client"', async () => {
+        const result = await service.logAction(
+          'client-uuid-42',
+          'Panadería El Trigo',
+          'ORDER_CREATE',
+          'Order',
+          'order-uuid-101',
+          null,
+          { total: 85.5 },
+          'Pedido realizado vía Checkout B2B',
+          '201.240.10.5',
+          'client',
+        );
+
+        expect(adminAuditLogRepositoryMock.create).toHaveBeenCalledWith({
+          admin_id: 'client-uuid-42',
+          admin_name: 'Panadería El Trigo',
+          action: 'ORDER_CREATE',
+          target_entity: 'Order',
+          target_id: 'order-uuid-101',
+          previous_state_json: null,
+          new_state_json: JSON.stringify({ total: 85.5 }),
+          notes: 'Pedido realizado vía Checkout B2B',
+          ip_address: '201.240.10.5',
+          actor_role: 'client',
+        });
+        expect(adminAuditLogRepositoryMock.save).toHaveBeenCalled();
+      });
+
+      it('Sad Path (§6): Propaga error si el repositorio falla al persistir el log de auditoría', async () => {
+        adminAuditLogRepositoryMock.save.mockRejectedValueOnce(new Error('DB_DISK_FULL'));
+
+        await expect(
+          service.logAction('admin-1', 'Admin', 'TEST_FAIL', 'System', 'sys-1')
+        ).rejects.toThrow('DB_DISK_FULL');
       });
 
       it('Happy Path: Registro correcto de eventos cuando estados son cadenas de texto directas', async () => {
@@ -175,6 +213,7 @@ describe('AdminActionsService', () => {
           new_state_json: '{"percentage":15}',
           notes: 'Activación de descuento general de tienda',
           ip_address: '10.0.0.1',
+          actor_role: 'admin',
         });
         expect(result.action).toBe('DISCOUNT_CHANGE');
       });
@@ -200,6 +239,7 @@ describe('AdminActionsService', () => {
           new_state_json: null,
           notes: null,
           ip_address: null,
+          actor_role: 'admin',
         });
         expect(result.action).toBe('CLIENT_RATE_UPDATE');
       });
@@ -232,7 +272,7 @@ describe('AdminActionsService', () => {
         expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
       });
 
-      it('Happy Path: Aplica filtros por acción, target_entity, target_id, admin_id y rango de fechas', async () => {
+      it('Happy Path: Aplica filtros por acción, target_entity, target_id, admin_id, actor_role, search y rango de fechas', async () => {
         mockQueryBuilder.getManyAndCount.mockResolvedValueOnce([[], 0]);
 
         await service.getAuditLogs({
@@ -242,6 +282,8 @@ describe('AdminActionsService', () => {
           targetEntity: 'Order',
           targetId: 'ord-123',
           adminId: 'admin-99',
+          actorRole: 'client',
+          search: 'Panadería',
           startDate: '2026-11-01',
           endDate: '2026-11-30',
         });
@@ -250,10 +292,21 @@ describe('AdminActionsService', () => {
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('log.target_entity = :targetEntity', { targetEntity: 'Order' });
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('log.target_id = :targetId', { targetId: 'ord-123' });
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('log.admin_id = :adminId', { adminId: 'admin-99' });
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('log.actor_role = :actorRole', { actorRole: 'client' });
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          expect.stringContaining('LOWER(log.admin_name) LIKE :q'),
+          { q: '%panadería%' }
+        );
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('log.created_at >= :startDate', { startDate: '2026-11-01' });
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('log.created_at <= :endDate', { endDate: '2026-11-30' });
         expect(mockQueryBuilder.skip).toHaveBeenCalledWith(10);
         expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
+      });
+
+      it('Sad Path (§6): Propaga error si queryBuilder falla al ejecutar la consulta', async () => {
+        mockQueryBuilder.getManyAndCount.mockRejectedValueOnce(new Error('QUERY_FAILED'));
+
+        await expect(service.getAuditLogs({ page: 1, limit: 10 })).rejects.toThrow('QUERY_FAILED');
       });
     });
   });

@@ -662,6 +662,9 @@ let OrdersService = class OrdersService {
         const packagingFee = 0;
         const packagingDiscount = 0;
         if (appliedPaymentMethod === 'zelle') {
+            if (!user?.zelle_enabled && !isAdmin) {
+                throw new common_1.BadRequestException('El método de pago Zelle no está habilitado para esta cuenta');
+            }
             if (!appliedZelleReference) {
                 throw new common_1.BadRequestException('El número de referencia o confirmación de Zelle es obligatorio para pagos con Zelle.');
             }
@@ -675,7 +678,12 @@ let OrdersService = class OrdersService {
             appliedPaymentStatus = 'pending_zelle_verification';
         }
         let deliveryFee = 0;
-        if (appliedDeliveryType === 'pickup') {
+        const isFreeDeliveryOrder = Boolean(user?.free_delivery_enabled ||
+            orderData.free_delivery ||
+            orderData.free_delivery_enabled ||
+            orderData.waive_delivery_fee ||
+            orderData.is_free_delivery);
+        if (isFreeDeliveryOrder || appliedDeliveryType === 'pickup') {
             deliveryFee = 0;
         }
         else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
@@ -962,6 +970,9 @@ let OrdersService = class OrdersService {
             order.invoice_number = await this.getNextInvoiceNumber();
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         if (saved.payment_status === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
             const user = await this.userRepository.findOne({ where: { id: saved.user_id } });
             if (user?.email) {
@@ -982,6 +993,7 @@ let OrdersService = class OrdersService {
         const oldTotal = Number(order.total) || 0;
         const oldPaymentStatus = order.payment_status;
         const oldStatus = order.status;
+        const oldDeliveryFeeCharged = Number(order.delivery_fee_charged) || 0;
         const { status, total, delivery_date, address_id, motivo, items, payment_status, paymentStatus } = updateData;
         if (status) {
             const normalizedStatus = this.validateStatusTransition(order.status, status, userRole);
@@ -1125,6 +1137,10 @@ let OrdersService = class OrdersService {
         else if (total !== undefined) {
             order.total = total;
         }
+        else if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
+            const feeDiff = Number(order.delivery_fee_charged || 0) - oldDeliveryFeeCharged;
+            order.total = Math.max(0, Math.round(((Number(order.total) || 0) + feeDiff) * 100) / 100);
+        }
         if (oldPaymentStatus === 'paid' && Number(order.total) < oldTotal) {
             const diff = Math.round((oldTotal - Number(order.total)) * 100) / 100;
             const client = await this.userRepository.findOne({ where: { id: order.user_id } });
@@ -1134,6 +1150,9 @@ let OrdersService = class OrdersService {
             }
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         const isNowPaidOrApproved = (saved.payment_status === 'paid' || saved.status === 'approved' || saved.status === 'aprobado');
         const wasPaidOrApproved = (oldPaymentStatus === 'paid' || oldStatus === 'approved' || oldStatus === 'aprobado');
         if (isNowPaidOrApproved && !wasPaidOrApproved && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
@@ -1162,6 +1181,9 @@ let OrdersService = class OrdersService {
             order.invoice_number = await this.getNextInvoiceNumber();
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         const user = await this.userRepository.findOne({ where: { id: order.user_id } });
         if (user?.email) {
             if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function') {
@@ -1188,6 +1210,9 @@ let OrdersService = class OrdersService {
             order.notes = `[Rechazo Zelle]: ${reason}\n${order.notes || ''}`;
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         if (this.mailService && typeof this.mailService.sendZelleRejectionAlert === 'function') {
             const user = await this.userRepository.findOne({ where: { id: order.user_id } });
             const customerEmail = user?.email || order.user?.email;
@@ -1218,6 +1243,9 @@ let OrdersService = class OrdersService {
             order.notes = order.notes ? `${order.notes}\n[Aprobación Cheque]: ${notes}` : `[Aprobación Cheque]: ${notes}`;
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         if (this.checkPaymentsService) {
             try {
                 const existing = await this.checkPaymentsService.findByOrder(saved.id);
@@ -1271,6 +1299,9 @@ let OrdersService = class OrdersService {
             order.notes = `[Rechazo Cheque]: ${reason}\n${order.notes || ''}`;
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         return saved;
     }
     async approveWirePayment(orderId, notes) {
@@ -1292,6 +1323,9 @@ let OrdersService = class OrdersService {
             order.notes = order.notes ? `${order.notes}\n[Aprobación Transferencia ACH/Wire]: ${notes}` : `[Aprobación Transferencia ACH/Wire]: ${notes}`;
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         const user = await this.userRepository.findOne({ where: { id: order.user_id } });
         if (user?.email && this.mailService) {
             if (typeof this.mailService.sendOrderReceipt === 'function') {
@@ -1324,6 +1358,9 @@ let OrdersService = class OrdersService {
             order.notes = `[Rechazo Transferencia ACH/Wire]: ${reason}\n${order.notes || ''}`;
         }
         const saved = await this.orderRepository.save(order);
+        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+            this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
+        }
         return saved;
     }
     async settleBatch(userId, userRole, dto) {
@@ -1334,6 +1371,12 @@ let OrdersService = class OrdersService {
             throw new common_1.BadRequestException('El método de pago es obligatorio para la liquidación');
         }
         const cleanMethod = dto.payment_method.trim().toLowerCase();
+        if (cleanMethod === 'zelle') {
+            const user = await this.userRepository.findOne({ where: { id: userId } });
+            if (userRole !== 'admin' && !user?.zelle_enabled) {
+                throw new common_1.BadRequestException('El método de pago Zelle no está habilitado para esta cuenta');
+            }
+        }
         if (cleanMethod === 'check') {
             const checkPhoto = dto.checkImageUrl || dto.check_image_url || dto.checkPhoto || dto.check_photo;
             if (!checkPhoto || typeof checkPhoto !== 'string' || !checkPhoto.trim()) {
