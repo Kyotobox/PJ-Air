@@ -1,6 +1,6 @@
 ### 🛡️ ASISTENTE FORENSE: RESUMEN DE SESIÓN (V15)
-**Timestamp**: 2026-11-14T15:25:06
-**Duración de Fase**: 0h 6m | **Masa Crítica**: 0.0 KB
+**Timestamp**: 2026-11-14T17:13:37
+**Duración de Fase**: 1h 48m | **Masa Crítica**: 0.0 KB
 
 | Tipo | Tarea | Detalle |
 | :--- | :--- | :--- |
