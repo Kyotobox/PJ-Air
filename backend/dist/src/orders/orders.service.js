@@ -231,6 +231,9 @@ let OrdersService = class OrdersService {
             case 'en produccion':
             case 'processing':
                 return 'confirmed';
+            case 'draft':
+            case 'borrador':
+                return 'draft';
             case 'cancelled':
             case 'cancelado':
                 return 'cancelled';
@@ -244,6 +247,7 @@ let OrdersService = class OrdersService {
         if (userRole === 'admin')
             return next;
         const validTransitions = {
+            'draft': ['pending', 'confirmed', 'cancelled'],
             'pending': ['confirmed', 'shipped', 'cancelled'],
             'confirmed': ['shipped', 'cancelled'],
             'shipped': ['delivered', 'cancelled'],
@@ -258,7 +262,7 @@ let OrdersService = class OrdersService {
         }
         return next;
     }
-    async calculateOrderPricesAndTotal(userId, items) {
+    async calculateOrderPricesAndTotal(userId, items, allowPriceOverride = false) {
         const user = await this.userRepository.findOne({
             where: { id: userId },
             relations: ['productDiscounts']
@@ -286,17 +290,31 @@ let OrdersService = class OrdersService {
                 throw new common_1.BadRequestException('Validation Error: Item quantity must be at least 1');
             }
             let finalPrice = Number(product.price);
-            const productDiscount = user.productDiscounts?.find(d => d.product_id === product.id);
-            if (productDiscount) {
-                if (productDiscount.special_price !== null && productDiscount.special_price !== undefined && Number(productDiscount.special_price) > 0) {
-                    finalPrice = Number(productDiscount.special_price);
+            const hasCustomPrice = (item.price_at_time !== undefined && item.price_at_time !== null) ||
+                (item.price !== undefined && item.price !== null);
+            if (allowPriceOverride && hasCustomPrice) {
+                const rawCustom = item.price_at_time !== undefined && item.price_at_time !== null
+                    ? item.price_at_time
+                    : item.price;
+                const parsedCustom = Number(rawCustom);
+                if (isNaN(parsedCustom) || parsedCustom < 0) {
+                    throw new common_1.BadRequestException('El precio unitario personalizado debe ser un número mayor o igual a 0');
                 }
-                else if (productDiscount.discount_percentage !== null && productDiscount.discount_percentage !== undefined && Number(productDiscount.discount_percentage) > 0) {
-                    finalPrice = Number(product.price) * (1 - Number(productDiscount.discount_percentage) / 100);
-                }
+                finalPrice = parsedCustom;
             }
-            else if (user.general_discount !== null && user.general_discount !== undefined && Number(user.general_discount) > 0 && user.productDiscounts && user.productDiscounts.length > 0) {
-                finalPrice = Number(product.price) * (1 - Number(user.general_discount) / 100);
+            else {
+                const productDiscount = user.productDiscounts?.find(d => d.product_id === product.id);
+                if (productDiscount) {
+                    if (productDiscount.special_price !== null && productDiscount.special_price !== undefined && Number(productDiscount.special_price) > 0) {
+                        finalPrice = Number(productDiscount.special_price);
+                    }
+                    else if (productDiscount.discount_percentage !== null && productDiscount.discount_percentage !== undefined && Number(productDiscount.discount_percentage) > 0) {
+                        finalPrice = Number(product.price) * (1 - Number(productDiscount.discount_percentage) / 100);
+                    }
+                }
+                else if (user.general_discount !== null && user.general_discount !== undefined && Number(user.general_discount) > 0 && user.productDiscounts && user.productDiscounts.length > 0) {
+                    finalPrice = Number(product.price) * (1 - Number(user.general_discount) / 100);
+                }
             }
             finalPrice = Math.round((finalPrice + Number.EPSILON) * 100) / 100;
             calculatedTotal += finalPrice * quantity;
@@ -341,7 +359,7 @@ let OrdersService = class OrdersService {
             .andWhere('order.payment_status NOT IN (:...pendingVerifications)', {
             pendingVerifications: ['pending_zelle_verification', 'pending_check_verification', 'pending_wire_verification'],
         })
-            .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] });
+            .andWhere('order.status NOT IN (:...excludedStatuses)', { excludedStatuses: ['cancelled', 'Cancelado', 'draft', 'borrador'] });
         if (userId) {
             qb.andWhere('order.user_id = :userId', { userId });
         }
@@ -463,7 +481,8 @@ let OrdersService = class OrdersService {
         }
         return unassignedOrders.length;
     }
-    async create(userId, orderData) {
+    async create(userId, orderData, options) {
+        const isAdmin = Boolean(options?.isAdmin || orderData.is_admin_actor);
         const rawDeliveryFee = orderData.delivery_fee_charged !== undefined
             ? orderData.delivery_fee_charged
             : orderData.delivery_fee;
@@ -482,13 +501,14 @@ let OrdersService = class OrdersService {
                 throw new common_1.BadRequestException('El porcentaje de descuento no puede exceder el 50%');
             }
         }
+        const isManualAdmin = isAdmin && Boolean(orderData.admin_created || orderData.manual_entry);
         const earlyMethod = orderData.paymentMethod || orderData.payment_method;
         const isEarlyCheck = String(earlyMethod || '').trim().toUpperCase() === 'CHECK';
         const earlyCheckPhoto = orderData.checkImageUrl ||
             orderData.check_image_url ||
             orderData.checkPhoto ||
             orderData.check_photo;
-        if (isEarlyCheck && (!earlyCheckPhoto || !String(earlyCheckPhoto).trim())) {
+        if (isEarlyCheck && (!earlyCheckPhoto || !String(earlyCheckPhoto).trim()) && !isManualAdmin) {
             throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
         }
         const isEarlyWire = ['ACH', 'WIRE', 'BANK_TRANSFER'].includes(String(earlyMethod || '').trim().toUpperCase());
@@ -496,15 +516,26 @@ let OrdersService = class OrdersService {
             orderData.wireReceiptUrl ||
             orderData.ach_receipt_url ||
             orderData.achReceiptUrl;
-        if (isEarlyWire && (!earlyWirePhoto || !String(earlyWirePhoto).trim())) {
+        if (isEarlyWire && (!earlyWirePhoto || !String(earlyWirePhoto).trim()) && !isManualAdmin) {
             throw new common_1.BadRequestException('Comprobante de transferencia bancaria es obligatorio para pagos ACH / Wire');
+        }
+        const isPriceOverrideRequested = Boolean(orderData.override_prices || orderData.overridePrices);
+        if (isPriceOverrideRequested && !isAdmin) {
+            throw new common_1.BadRequestException('Solo administradores pueden asignar precios personalizados');
+        }
+        const isCutoffOverrideRequested = Boolean(orderData.admin_override_cutoff ||
+            orderData.override_cutoff ||
+            orderData.bypass_cutoff);
+        if (isCutoffOverrideRequested && !isAdmin) {
+            throw new common_1.BadRequestException('Solo administradores pueden eludir la hora de corte de producción');
         }
         const { items, ...rest } = orderData;
         const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, paymentStatus, ...otherData } = rest;
+        const isDraft = Boolean(orderData.is_draft || orderData.draft || otherData.status === 'draft' || otherData.status === 'borrador');
         let itemsTotal = 0;
         let validatedItems = [];
         if (items && items.length > 0) {
-            const result = await this.calculateOrderPricesAndTotal(userId, items);
+            const result = await this.calculateOrderPricesAndTotal(userId, items, isPriceOverrideRequested);
             validatedItems = result.validatedItems;
             itemsTotal = result.total;
         }
@@ -558,10 +589,10 @@ let OrdersService = class OrdersService {
             rest.check_photo;
         const appliedCheckImageUrl = rawCheckImage ? String(rawCheckImage).trim() : null;
         if (isCheckPayment) {
-            if (!appliedCheckImageUrl) {
+            if (!appliedCheckImageUrl && !isManualAdmin) {
                 throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
             }
-            appliedPaymentStatus = 'pending_check_verification';
+            appliedPaymentStatus = appliedCheckImageUrl ? 'pending_check_verification' : (appliedPaymentStatus || 'pending');
         }
         const isWirePayment = ['ach', 'wire', 'bank_transfer'].includes(String(appliedPaymentMethod || '').trim().toLowerCase());
         const rawWireReceipt = orderData.wire_receipt_url ||
@@ -583,10 +614,10 @@ let OrdersService = class OrdersService {
             rest.achReference;
         const appliedWireReference = rawWireRef ? String(rawWireRef).trim() : null;
         if (isWirePayment) {
-            if (!appliedWireReceiptUrl) {
+            if (!appliedWireReceiptUrl && !isManualAdmin) {
                 throw new common_1.BadRequestException('Comprobante de transferencia bancaria es obligatorio para pagos ACH / Wire');
             }
-            appliedPaymentStatus = 'pending_wire_verification';
+            appliedPaymentStatus = appliedWireReceiptUrl ? 'pending_wire_verification' : (appliedPaymentStatus || 'pending');
         }
         let appliedPaymentDueDate = null;
         if (appliedPaymentMethod === 'credit') {
@@ -605,7 +636,19 @@ let OrdersService = class OrdersService {
         else {
             appliedPaymentDueDate = null;
         }
-        this.validateCutoffTime(appliedDeliveryDate);
+        if (isCutoffOverrideRequested && isAdmin) {
+            if (!appliedDeliveryDate || typeof appliedDeliveryDate !== 'string') {
+                throw new common_1.BadRequestException('La fecha de entrega es requerida para registrar el pedido');
+            }
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            const cleanDate = appliedDeliveryDate.split('T')[0].split(' ')[0];
+            if (!dateRegex.test(cleanDate)) {
+                throw new common_1.BadRequestException('Formato de fecha de entrega inválido (se requiere YYYY-MM-DD)');
+            }
+        }
+        else {
+            this.validateCutoffTime(appliedDeliveryDate);
+        }
         const feeMethod = (appliedPaymentMethod === 'stripe' || appliedPaymentMethod === 'card')
             ? 'STRIPE_CARD'
             : (appliedPaymentMethod === 'ach' || appliedPaymentMethod === 'ach_debit')
@@ -681,6 +724,9 @@ let OrdersService = class OrdersService {
         if (isComplementary && !appliedNotes.includes('Complementario a orden existente')) {
             appliedNotes = appliedNotes ? `${appliedNotes}\n[Complementario a orden existente]` : '[Complementario a orden existente]';
         }
+        if (isCutoffOverrideRequested && isAdmin && !appliedNotes.includes('Bypass de Corte Autorizado')) {
+            appliedNotes = appliedNotes ? `${appliedNotes}\n[Bypass de Corte Autorizado por Administración]` : '[Bypass de Corte Autorizado por Administración]';
+        }
         let activeStoreDiscount = 0;
         let storeDiscountReason = null;
         if (this.systemConfigsService && typeof this.systemConfigsService.getStoreDiscount === 'function') {
@@ -749,14 +795,14 @@ let OrdersService = class OrdersService {
         let isOverdraftAlert = false;
         let prospectiveCreditTotal = 0;
         let clientCreditLimit = 0;
-        if (user?.account_type === 'credit' || appliedPaymentMethod === 'credit') {
+        if (!isDraft && (user?.account_type === 'credit' || appliedPaymentMethod === 'credit')) {
             let usedCredit = 0;
             if (this.creditService) {
                 clientCreditLimit = await this.creditService.getCreditLimit(userId);
                 usedCredit = await this.creditService.getUsedCredit(userId);
             }
             else {
-                const unpaidOrders = (user?.orders || []).filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado');
+                const unpaidOrders = (user?.orders || []).filter((o) => o.payment_status !== 'paid' && o.payment_status !== 'refunded' && o.status !== 'cancelled' && o.status !== 'Cancelado' && o.status !== 'draft');
                 usedCredit = unpaidOrders.reduce((acc, o) => {
                     const netOrderDebt = Math.max(0, (Number(o.total) || 0) - (Number(o.refunded_amount) || 0));
                     return acc + netOrderDebt;
@@ -796,11 +842,13 @@ let OrdersService = class OrdersService {
             appliedTaxLegend = null;
         }
         const rawStatus = otherData.status;
-        const initialStatus = rawStatus ? this.normalizeStatus(rawStatus) : 'pending';
+        let initialStatus = isDraft ? 'draft' : (rawStatus ? this.normalizeStatus(rawStatus) : 'pending');
+        if (isDraft)
+            initialStatus = 'draft';
         const isDirectlyConfirmed = initialStatus === 'confirmed';
         const savedOrderId = await this.dataSource.transaction(async (manager) => {
             let invoiceNumber = null;
-            if (isDirectlyConfirmed && !otherData.is_preliminary && !otherData.draft) {
+            if (isDirectlyConfirmed && !isDraft && !otherData.is_preliminary && !otherData.draft) {
                 invoiceNumber = await this.getNextInvoiceNumber(manager);
             }
             const orderToCreate = manager.create(order_entity_1.Order, {
@@ -843,7 +891,7 @@ let OrdersService = class OrdersService {
             });
             const savedResult = await manager.save(order_entity_1.Order, orderToCreate);
             const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
-            if (storeCreditApplied > 0 && user) {
+            if (!isDraft && storeCreditApplied > 0 && user) {
                 user.credit_balance = Math.max(0, Math.round((userCreditBalance - storeCreditApplied) * 100) / 100);
                 await manager.save(user_entity_1.User, user);
             }
@@ -859,10 +907,10 @@ let OrdersService = class OrdersService {
             return savedOrder.id;
         });
         const createdOrder = await this.findOne(savedOrderId);
-        const isConfirmedOrPaid = appliedPaymentStatus === 'paid' ||
+        const isConfirmedOrPaid = !isDraft && (appliedPaymentStatus === 'paid' ||
             initialStatus === 'confirmed' ||
             appliedPaymentMethod === 'credit' ||
-            appliedPaymentMethod === 'cash';
+            appliedPaymentMethod === 'cash');
         if (isConfirmedOrPaid) {
             if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function' && user?.email) {
                 this.mailService.sendOrderReceipt(createdOrder, user.email).catch(err => {

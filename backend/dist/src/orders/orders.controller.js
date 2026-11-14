@@ -66,9 +66,13 @@ let OrdersController = class OrdersController {
         this.excelService = excelService;
     }
     async create(body, req) {
-        const targetUserId = (req.user?.role === 'admin' && body.userId) ? body.userId : req.user.id;
+        const isAdmin = req.user?.role === 'admin';
+        const targetUserId = (isAdmin && body.userId) ? body.userId : req.user.id;
+        if (isAdmin && (body.manual_entry || body.admin_created) && !body.userId) {
+            throw new common_1.BadRequestException('Debe seleccionar un cliente para registrar el pedido manual');
+        }
         const { userId, ...orderData } = body;
-        return this.ordersService.create(targetUserId, orderData);
+        return this.ordersService.create(targetUserId, orderData, { isAdmin });
     }
     async settleBatch(body, req) {
         return this.ordersService.settleBatch(req.user.id, req.user.role, body);

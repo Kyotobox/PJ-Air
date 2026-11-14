@@ -123,7 +123,7 @@
         {
           "id": "TASK-91-04",
           "title": "Pruebas Automatizadas con Sad Paths (§6), Certificación y Despliegue en Ambiente de Testing VPS",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "DEVOPS/TESTING",
           "veracity_hash": null
         }
