@@ -1,7 +1,7 @@
-# SPRINT S86 - Sprint Activo
-**Objetivo**: Sin objetivo especificado
-**Fecha**: 2026-11-13
+# SPRINT S87 - Sprint Activo
+**Objetivo**: Gestión de Cheques, Blindaje de Cocina, Aprobación Administrativa y Normalización de Estados
+**Fecha**: 2026-11-14
 
-- [x] **TASK-86-01** [TASK] Resilient checkout authentication, stale session recovery, and NY timezone cutoff sync
-- [x] **TASK-86-02** [TASK] Defensive delivery fee calculation and payment method boundaries in checkout engine
-- [x] **TASK-86-03** [TASK] UI & E2E validation in testing environment, hot-deploy to testing and production VPS
+- [/] **TASK-87-01** [TASK] Kitchen Shield para Cheques (exclusión en findInRange) y endpoints atómicos approve-check y reject-check con Late Invoicing e inserción contable en check_payments
+- [ ] **TASK-87-02** [TASK] Normalización de filtros de estados en panel Admin (Pedido Enviado en 'Pedido') y vistas segmentadas para Verificaciones Pendientes y Borradores
+- [ ] **TASK-87-03** [TASK] Suite E2E de validación y certificación en Testing VPS del ciclo completo de cheques, filtros y blindaje de producción
