@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S89",
-  "current_task": "TASK-89-01",
+  "current_sprint": "S90",
+  "current_task": "TASK-90-01",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -24,34 +24,6 @@
     }
   ],
   "sprints": [
-    {
-      "id": "S87",
-      "title": "Sprint S87: Gestión de Cheques, Blindaje de Cocina, Aprobación Administrativa y Normalización de Estados",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-87-01",
-          "title": "Kitchen Shield para Cheques (exclusión en findInRange) y endpoints atómicos approve-check y reject-check con Late Invoicing e inserción contable en check_payments",
-          "status": "DONE",
-          "type": "BACKEND/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-87-02",
-          "title": "Normalización de filtros de estados en panel Admin (Pedido Enviado en 'Pedido') y vistas segmentadas para Verificaciones Pendientes y Borradores",
-          "status": "DONE",
-          "type": "FRONTEND/ADMIN",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-87-03",
-          "title": "Suite E2E de validación y certificación en Testing VPS del ciclo completo de cheques, filtros y blindaje de producción",
-          "status": "DONE",
-          "type": "DEVOPS/TESTING",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S88",
       "title": "Sprint S88: Resiliencia Contable (Fallback y Alias Postfix), Blindaje de Recibos en Checkout, Validación Defensiva de Direcciones e Higiene",
@@ -97,7 +69,7 @@
     {
       "id": "S89",
       "title": "Sprint S89: Blindaje para Transferencias Bancarias / Depósitos (ACH / Wire) con Kitchen Shield y Aprobación Administrativa",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-89-01",
@@ -128,40 +100,75 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S90",
+      "title": "Sprint S90: Cobertura Sin Límites de Millaje (Boston/MA y Multiestatal) y Gestión de Fletes Manuales",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-90-01",
+          "title": "Desbloqueo Geográfico Multi-Estatal y Validación Ampliada (Soporte Boston / MA y Larga Distancia en AddressValidationService)",
+          "status": "TODO",
+          "type": "BACKEND/ADDRESSES",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-90-02",
+          "title": "Rutas de Larga Distancia (>250 mi) y Desacoplamiento de Límite Artificial de Flete ($150) en MileageFreightService y OrdersService",
+          "status": "TODO",
+          "type": "BACKEND/LOGISTICS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-90-03",
+          "title": "Gestión, Cotización y Asignación de Flete Manual en Panel de Administración (Clientes, Pedidos y Checkout)",
+          "status": "TODO",
+          "type": "FRONTEND/ADMIN",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-90-04",
+          "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Producción",
+          "status": "TODO",
+          "type": "DEVOPS/TESTING",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 86,
+  "archived_sprints_count": 87,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S89",
-    "title": "Sprint S89: Blindaje para Transferencias Bancarias / Depósitos (ACH / Wire) con Kitchen Shield y Aprobación Administrativa",
+    "id": "S90",
+    "title": "Sprint S90: Cobertura Sin Límites de Millaje (Boston/MA y Multiestatal) y Gestión de Fletes Manuales",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-89-01",
-        "title": "Instrucciones Bancarias Oficiales y Carga de Comprobante ACH/Wire en Checkout",
-        "status": "IN_PROGRESS",
-        "type": "FRONTEND/CHECKOUT",
+        "id": "TASK-90-01",
+        "title": "Desbloqueo Geográfico Multi-Estatal y Validación Ampliada (Soporte Boston / MA y Larga Distancia en AddressValidationService)",
+        "status": "TODO",
+        "type": "BACKEND/ADDRESSES",
         "veracity_hash": null
       },
       {
-        "id": "TASK-89-02",
-        "title": "Kitchen Shield y Late Invoicing para Transferencias Bancarias (exclusión en findInRange y estado pending_wire_verification)",
-        "status": "PENDING",
-        "type": "BACKEND/ORDERS",
+        "id": "TASK-90-02",
+        "title": "Rutas de Larga Distancia (>250 mi) y Desacoplamiento de Límite Artificial de Flete ($150) en MileageFreightService y OrdersService",
+        "status": "TODO",
+        "type": "BACKEND/LOGISTICS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-89-03",
-        "title": "Panel Administrativo de Aprobación/Rechazo de Transferencias (endpoints approve-wire y reject-wire con alerta a cocina)",
-        "status": "PENDING",
-        "type": "BACKEND/ADMIN",
+        "id": "TASK-90-03",
+        "title": "Gestión, Cotización y Asignación de Flete Manual en Panel de Administración (Clientes, Pedidos y Checkout)",
+        "status": "TODO",
+        "type": "FRONTEND/ADMIN",
         "veracity_hash": null
       },
       {
-        "id": "TASK-89-04",
-        "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Testing VPS",
-        "status": "PENDING",
+        "id": "TASK-90-04",
+        "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Producción",
+        "status": "TODO",
         "type": "DEVOPS/TESTING",
         "veracity_hash": null
       }
