@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S92",
-  "current_task": "TASK-92-04",
+  "current_sprint": "S94",
+  "current_task": "TASK-94-01",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -24,76 +24,6 @@
     }
   ],
   "sprints": [
-    {
-      "id": "S90",
-      "title": "Sprint S90: Cobertura Sin Límites de Millaje (Boston/MA y Multiestatal) y Gestión de Fletes Manuales",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-90-01",
-          "title": "Desbloqueo Geográfico Multi-Estatal y Validación Ampliada (Soporte Boston / MA y Larga Distancia en AddressValidationService)",
-          "status": "DONE",
-          "type": "BACKEND/ADDRESSES",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-90-02",
-          "title": "Rutas de Larga Distancia (>250 mi) y Desacoplamiento de Límite Artificial de Flete ($150) en MileageFreightService y OrdersService",
-          "status": "DONE",
-          "type": "BACKEND/LOGISTICS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-90-03",
-          "title": "Gestión, Cotización y Asignación de Flete Manual en Panel de Administración (Clientes, Pedidos y Checkout)",
-          "status": "DONE",
-          "type": "FRONTEND/ADMIN",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-90-04",
-          "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Producción",
-          "status": "DONE",
-          "type": "DEVOPS/TESTING",
-          "veracity_hash": null
-        }
-      ]
-    },
-    {
-      "id": "S91",
-      "title": "Sprint S91: Creación y Gestión Manual de Pedidos B2B desde Administración (Late Invoicing, Bypass de Corte y Tarifas Especiales) en Testing",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-91-01",
-          "title": "Soporte en Backend para Pedidos Manuales de Administración (Bypass de Hora de Corte, Precios Personalizados y Borradores)",
-          "status": "DONE",
-          "type": "BACKEND/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-91-02",
-          "title": "Interfaz Administrativa de Nuevo Pedido (/admin/orders/new): Selección de Cliente B2B, Direcciones y Términos Comerciales",
-          "status": "DONE",
-          "type": "FRONTEND/ADMIN",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-91-03",
-          "title": "Selector de Catálogo de Productos, Descuentos Especiales, Flete Manual y Confirmación/Emisión de Factura o Borrador",
-          "status": "DONE",
-          "type": "FRONTEND/ADMIN",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-91-04",
-          "title": "Pruebas Automatizadas con Sad Paths (§6), Certificación y Despliegue en Ambiente de Testing VPS",
-          "status": "DONE",
-          "type": "DEVOPS/TESTING",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S92",
       "title": "Sprint S92: Desglose de Delivery Fee en Expediente, Segmentación Canónica de Croissants (Grupo 1 vs 2) en Reportes y Despliegue",
@@ -128,41 +58,118 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S93",
+      "title": "Sprint S93: Desbloqueo y auto-aprobación de cuentas comerciales B2B y clarificación de órdenes a Crédito B2B en panel administrativo",
+      "status": "COMPLETED",
+      "tasks": [
+        {
+          "id": "TASK-93-01",
+          "title": "Desbloqueo y Aprobación de Clientes B2B (account_status = 'APPROVED') y configuración de política de auto-aprobación en registro (auth.service.ts)",
+          "status": "DONE",
+          "type": "BACKEND/AUTH",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-93-02",
+          "title": "Clarificación y Rediseño de Insignia de Pedidos a Crédito B2B (🏢 CRÉDITO B2B / Facturación) en listado y expediente de órdenes",
+          "status": "DONE",
+          "type": "FRONTEND/ADMIN",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-93-03",
+          "title": "Suite de pruebas automatizadas con Sad Paths (§6), confirmación operativa de INV-1647 y despliegue a VPS (Testing y Producción)",
+          "status": "DONE",
+          "type": "DEVOPS/DEPLOY",
+          "veracity_hash": null
+        }
+      ]
+    },
+    {
+      "id": "S94",
+      "title": "Sprint S94: Control de Zelle, Flete Gratis Dual (Cliente y Pedido), Bitácora de Auditoría Unificada y Sincronización Stripe",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-94-01",
+          "title": "Modelo y Control de Zelle (zelle_enabled: false por default, migración condicional por Cheque/ACH, bloqueo en checkout y backend)",
+          "status": "TODO",
+          "type": "BACKEND/FINANCE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-94-02",
+          "title": "Motor de Flete Gratis Dual (Por Cliente permanente free_delivery_enabled y Por Pedido Puntual con recálculo de totales en Admin)",
+          "status": "TODO",
+          "type": "FULLSTACK/LOGISTICS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-94-03",
+          "title": "Sincronización y Corrección de Desfase de Invoices en Stripe (Actualización de invoice_number en PaymentIntents y script de conciliación)",
+          "status": "TODO",
+          "type": "INTEGRATION/STRIPE",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-94-04",
+          "title": "Bitácora de Auditoría Unificada para Administración y Clientes (Captura de eventos, visor /admin/audit-logs con filtros y pestaña en expediente)",
+          "status": "TODO",
+          "type": "FULLSTACK/AUDIT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-94-05",
+          "title": "Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción",
+          "status": "TODO",
+          "type": "TEST/DEVOPS",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 89,
+  "archived_sprints_count": 90,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S90",
-    "title": "Sprint S90: Cobertura Sin Límites de Millaje (Boston/MA y Multiestatal) y Gestión de Fletes Manuales",
+    "id": "S94",
+    "title": "Sprint S94: Control de Zelle, Flete Gratis Dual (Cliente y Pedido), Bitácora de Auditoría Unificada y Sincronización Stripe",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-90-01",
-        "title": "Desbloqueo Geográfico Multi-Estatal y Validación Ampliada (Soporte Boston / MA y Larga Distancia en AddressValidationService)",
+        "id": "TASK-94-01",
+        "title": "Modelo y Control de Zelle (zelle_enabled: false por default, migración condicional por Cheque/ACH, bloqueo en checkout y backend)",
         "status": "TODO",
-        "type": "BACKEND/ADDRESSES",
+        "type": "BACKEND/FINANCE",
         "veracity_hash": null
       },
       {
-        "id": "TASK-90-02",
-        "title": "Rutas de Larga Distancia (>250 mi) y Desacoplamiento de Límite Artificial de Flete ($150) en MileageFreightService y OrdersService",
+        "id": "TASK-94-02",
+        "title": "Motor de Flete Gratis Dual (Por Cliente permanente free_delivery_enabled y Por Pedido Puntual con recálculo de totales en Admin)",
         "status": "TODO",
-        "type": "BACKEND/LOGISTICS",
+        "type": "FULLSTACK/LOGISTICS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-90-03",
-        "title": "Gestión, Cotización y Asignación de Flete Manual en Panel de Administración (Clientes, Pedidos y Checkout)",
+        "id": "TASK-94-03",
+        "title": "Sincronización y Corrección de Desfase de Invoices en Stripe (Actualización de invoice_number en PaymentIntents y script de conciliación)",
         "status": "TODO",
-        "type": "FRONTEND/ADMIN",
+        "type": "INTEGRATION/STRIPE",
         "veracity_hash": null
       },
       {
-        "id": "TASK-90-04",
-        "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Producción",
+        "id": "TASK-94-04",
+        "title": "Bitácora de Auditoría Unificada para Administración y Clientes (Captura de eventos, visor /admin/audit-logs con filtros y pestaña en expediente)",
         "status": "TODO",
-        "type": "DEVOPS/TESTING",
+        "type": "FULLSTACK/AUDIT",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-94-05",
+        "title": "Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción",
+        "status": "TODO",
+        "type": "TEST/DEVOPS",
         "veracity_hash": null
       }
     ]
