@@ -2125,13 +2125,70 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     </div>
                                 )}
 
-                                <div className="pt-8 border-t-4 border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-6 px-4">
-                                    <div className="flex flex-col items-center sm:items-start">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-1">Impacto Fiscal</span>
-                                        <span className="text-4xl font-black text-slate-800 tracking-tighter">${(editMode ? calculateNewTotal() : Number(selectedOrder.total || 0)).toFixed(2)}</span>
+                                <div className="pt-8 border-t-4 border-slate-100 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 px-4">
+                                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                                        {/* Subtotal Productos */}
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Subtotal Productos</span>
+                                            <span className="text-lg font-black text-slate-700 font-mono">
+                                                ${((editMode ? editedItems : (selectedOrder.items || [])).reduce((sum, item) => sum + (Number(item.price_at_time || 0) * Number(item.quantity || 1)), 0)).toFixed(2)}
+                                            </span>
+                                        </div>
+
+                                        {/* Casilla Delivery Fee Destacada */}
+                                        <div className="flex items-center gap-3 bg-amber-50 px-4 py-2.5 rounded-2xl border-2 border-amber-200 shadow-sm">
+                                            <div className="w-8 h-8 rounded-xl bg-amber-200/80 flex items-center justify-center text-amber-800 shrink-0">
+                                                <Truck size={16} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-800">
+                                                    {selectedOrder.delivery_type === 'pickup' ? 'Retiro (Pickup)' : 'Delivery Fee'}
+                                                </span>
+                                                <div className="flex items-center gap-1.5">
+                                                    {editMode ? (
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-xs font-bold text-amber-900">$</span>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="0.5"
+                                                                value={editedDeliveryFee}
+                                                                onChange={(e) => {
+                                                                    const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                                                    setEditedDeliveryFee(Math.round(val * 100) / 100);
+                                                                }}
+                                                                className="w-20 px-2 py-0.5 bg-white border border-amber-400 rounded-lg text-right font-black font-mono text-sm"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <span className="text-lg font-black text-amber-950 font-mono">
+                                                                +${(Number(selectedOrder.delivery_fee_charged ?? selectedOrder.delivery_fee ?? 0)).toFixed(2)}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={toggleEditMode}
+                                                                className="text-[9px] font-black uppercase text-amber-800 hover:text-amber-950 bg-amber-200/60 hover:bg-amber-200 px-2 py-0.5 rounded-md transition-all ml-1 shadow-sm"
+                                                                title="Modificar tarifa de flete"
+                                                            >
+                                                                Ajustar
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Impacto Fiscal Total */}
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">Total / Impacto Fiscal</span>
+                                            <span className="text-3xl font-black text-slate-900 tracking-tight font-mono">
+                                                ${(editMode ? calculateNewTotal() : Number(selectedOrder.total || 0)).toFixed(2)}
+                                            </span>
+                                        </div>
                                     </div>
                                     {!editMode && (
-                                        <button onClick={() => setSelectedOrder(null)} className="w-full sm:w-64 py-5 bg-slate-800 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:bg-black transition-all active:scale-95">Archivar Cierre</button>
+                                        <button onClick={() => setSelectedOrder(null)} className="w-full lg:w-56 py-5 bg-slate-800 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:bg-black transition-all active:scale-95 shrink-0">Archivar Cierre</button>
                                     )}
                                 </div>
                             </section>

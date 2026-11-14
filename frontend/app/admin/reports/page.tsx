@@ -11,18 +11,19 @@ import {
     Calendar as CalendarIcon, 
     Printer, 
     Search, 
-    FileText,
-    ArrowRight,
-    Loader2,
-    X,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    MapPin,
-    Package,
-    ChevronUp,
-    FileSpreadsheet
+    FileText, 
+    ArrowRight, 
+    Loader2, 
+    X, 
+    ChevronDown, 
+    ChevronLeft, 
+    ChevronRight, 
+    MapPin, 
+    Package, 
+    ChevronUp, 
+    FileSpreadsheet 
 } from 'lucide-react';
+import { isCroissantCategory, resolveCroissantGroup, CROISSANT_GROUPS } from '@/lib/croissant-groups';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ interface ProductRow {
 
 interface CategoryBlock {
     name: string;
+    groupType?: 'croissant_g1' | 'croissant_g2' | 'croissant_g3' | 'standard';
     products: ProductRow[];
     clientTotals: Record<string, number>;
     grandTotal: number;
@@ -302,25 +304,55 @@ function ReportsPageContent() {
             }
 
             (order.items || []).forEach((item: any) => {
-                const cat = item.product?.category?.name || 'Sin Categoría';
+                const rawCat = item.product?.category?.name || 'Sin Categoría';
                 const prod = item.product?.name || 'Producto';
                 const qty = Number(item.quantity) || 0;
 
-                if (!catMap[cat]) catMap[cat] = { name: cat, products: [], clientTotals: {}, grandTotal: 0 };
-                let productRow = catMap[cat].products.find(p => p.name === prod);
+                let catKey = rawCat;
+                let groupType: 'croissant_g1' | 'croissant_g2' | 'croissant_g3' | 'standard' = 'standard';
+
+                if (isCroissantCategory(rawCat)) {
+                    const g = resolveCroissantGroup(prod, item.product?.production_group);
+                    const gInfo = CROISSANT_GROUPS[g];
+                    catKey = gInfo.name;
+                    groupType = g === '1' ? 'croissant_g1' : g === '2' ? 'croissant_g2' : 'croissant_g3';
+                }
+
+                if (!catMap[catKey]) catMap[catKey] = { name: catKey, groupType, products: [], clientTotals: {}, grandTotal: 0 };
+                let productRow = catMap[catKey].products.find(p => p.name === prod);
                 if (!productRow) {
-                    productRow = { name: prod, category: cat, price: Number(item.price_at_time) || 0, clientQtys: {}, total: 0 };
-                    catMap[cat].products.push(productRow);
+                    productRow = { name: prod, category: catKey, price: Number(item.price_at_time) || 0, clientQtys: {}, total: 0 };
+                    catMap[catKey].products.push(productRow);
                 }
 
                 productRow.clientQtys[colKey] = (productRow.clientQtys[colKey] || 0) + qty;
                 productRow.total += qty;
-                catMap[cat].clientTotals[colKey] = (catMap[cat].clientTotals[colKey] || 0) + qty;
-                catMap[cat].grandTotal += qty;
+                catMap[catKey].clientTotals[colKey] = (catMap[catKey].clientTotals[colKey] || 0) + qty;
+                catMap[catKey].grandTotal += qty;
             });
         });
 
-        return { categories: Object.values(catMap), columns };
+        // Orden canónico: Grupo 1 Plain primero, Grupo 2 Colores segundo, Grupo 3 Small tercero, luego el resto
+        const categoryOrderWeight = (cat: CategoryBlock) => {
+            if (cat.groupType === 'croissant_g1') return 1;
+            if (cat.groupType === 'croissant_g2') return 2;
+            if (cat.groupType === 'croissant_g3') return 3;
+            return 10;
+        };
+
+        const sortedCategories = Object.values(catMap).sort((a, b) => {
+            const wA = categoryOrderWeight(a);
+            const wB = categoryOrderWeight(b);
+            if (wA !== wB) return wA - wB;
+            return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
+        });
+
+        // Ordenar productos alfabéticamente A-Z dentro de cada categoría
+        sortedCategories.forEach(cat => {
+            cat.products.sort((pA, pB) => pA.name.localeCompare(pB.name, 'en', { sensitivity: 'base' }));
+        });
+
+        return { categories: sortedCategories, columns };
     }, [orders, viewMode, reportType, startDate, endDate]);
 
     const historyTable = useMemo(() => {
@@ -698,10 +730,30 @@ function ReportsPageContent() {
                         <div key={cat.name} className={`${catIdx > 0 ? 'mt-8 print:mt-1' : ''} report-category`}>
                             {/* Screen View (Normal scrollable table) */}
                             <div className="print:hidden">
-                                <div className="bg-yellow-400 text-black px-6 py-3 flex items-center gap-3 rounded-t-[2rem]">
-                                    <Package size={16} className="shrink-0" />
-                                    <span className="font-black text-sm uppercase tracking-widest">Categoría: {cat.name}</span>
-                                    <span className="ml-auto font-black text-sm">{cat.grandTotal} uds. totales</span>
+                                <div className={`px-6 py-3 flex flex-wrap items-center justify-between gap-3 rounded-t-[2rem] shadow-sm ${
+                                    cat.groupType === 'croissant_g1'
+                                        ? 'bg-yellow-400 text-slate-950 font-black'
+                                        : cat.groupType === 'croissant_g2'
+                                        ? 'bg-sky-500 text-white font-black'
+                                        : cat.groupType === 'croissant_g3'
+                                        ? 'bg-emerald-600 text-white font-black'
+                                        : 'bg-slate-800 text-white font-black'
+                                }`}>
+                                    <div className="flex items-center gap-3">
+                                        <Package size={18} className="shrink-0" />
+                                        <span className="font-black text-sm uppercase tracking-wider">{cat.name}</span>
+                                    </div>
+
+                                    {/* Bandejas Badge para Grupo 1 Plain (Factor 12) */}
+                                    {cat.groupType === 'croissant_g1' && (
+                                        <div className="flex items-center gap-2 bg-black/10 px-3 py-1 rounded-xl text-xs font-black">
+                                            <span>📦 {Math.floor(cat.grandTotal / 12)} Bandejas (12/bandeja)</span>
+                                            <span>•</span>
+                                            <span>➕ {cat.grandTotal % 12} Sueltos</span>
+                                        </div>
+                                    )}
+
+                                    <span className="font-black text-sm bg-black/10 px-3 py-1 rounded-xl">{cat.grandTotal} uds. totales</span>
                                 </div>
                                 <div className="overflow-x-auto border border-border rounded-b-[2rem] shadow-sm">
                                     <table className="w-full border-collapse text-left" style={{ minWidth: `${200 + reportData.columns.length * 90}px` }}>
@@ -743,9 +795,22 @@ function ReportsPageContent() {
                             <div className="hidden print:block">
                                 {columnGroups.map((groupCols, groupIdx) => (
                                     <div key={groupIdx} className={`mb-[4px] w-full print:w-[80%] print:mx-auto ${groupIdx > 0 ? 'page-break-before-auto' : ''}`}>
-                                        <div className="bg-yellow-300 px-3 py-1.5 flex items-center gap-2 border border-black border-b-0">
-                                            <span className="font-black text-[9pt] uppercase">Cat: {cat.name} {columnGroups.length > 1 ? `(${groupIdx + 1}/${columnGroups.length})` : ''}</span>
-                                            <span className="ml-auto font-black text-[9pt]">Pedido · {reportMeta?.start === reportMeta?.end ? formatDate(reportMeta.start) : 'Reporte'}</span>
+                                        <div className={`px-3 py-1.5 flex items-center gap-2 border border-black border-b-0 ${
+                                            cat.groupType === 'croissant_g1'
+                                                ? 'bg-yellow-300'
+                                                : cat.groupType === 'croissant_g2'
+                                                ? 'bg-sky-200'
+                                                : cat.groupType === 'croissant_g3'
+                                                ? 'bg-emerald-200'
+                                                : 'bg-gray-200'
+                                        }`}>
+                                            <span className="font-black text-[9pt] uppercase">{cat.name} {columnGroups.length > 1 ? `(${groupIdx + 1}/${columnGroups.length})` : ''}</span>
+                                            {cat.groupType === 'croissant_g1' && (
+                                                <span className="font-bold text-[8pt] ml-2 text-slate-800">
+                                                    [{Math.floor(cat.grandTotal / 12)} Band. + {cat.grandTotal % 12} Sueltos]
+                                                </span>
+                                            )}
+                                            <span className="ml-auto font-black text-[9pt]">{cat.grandTotal} uds</span>
                                         </div>
                                         <div className="border border-black print:overflow-visible">
                                             <table className="w-full table-fixed border-collapse text-left" style={{ width: '100%', minWidth: '100%' }}>

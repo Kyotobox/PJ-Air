@@ -424,6 +424,18 @@ let ExcelService = class ExcelService {
                             vertical: 'middle',
                         };
                     });
+                    if (gDef.id === '1') {
+                        const totalUnits = subGroupGrandTotal;
+                        const fullTrays = Math.floor(totalUnits / 12);
+                        const extraUnits = totalUnits % 12;
+                        const decimalTrays = (totalUnits / 12).toFixed(2);
+                        const trayRow1 = worksheet.addRow(['  📦 TOTAL BANDEJAS (12 UNID/BANDEJA):', `${fullTrays} bandejas (${decimalTrays})`]);
+                        trayRow1.getCell(1).font = { name: fontName, bold: true, size: 9, color: { argb: 'FF5C3D2E' } };
+                        trayRow1.getCell(2).font = { name: fontName, bold: true, size: 9, color: { argb: 'FF5C3D2E' } };
+                        const trayRow2 = worksheet.addRow(['  ➕ CROISSANTS ADICIONALES (SUELTOS):', `${extraUnits} unidades`]);
+                        trayRow2.getCell(1).font = { name: fontName, bold: true, size: 9, color: { argb: 'FF5C3D2E' } };
+                        trayRow2.getCell(2).font = { name: fontName, bold: true, size: 9, color: { argb: 'FF5C3D2E' } };
+                    }
                     worksheet.addRow([]);
                 }
                 const grandTotalsRowData = ['TOTAL GENERAL CROISSANTS'];

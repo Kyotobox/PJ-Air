@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S91",
-  "current_task": "TASK-91-01",
+  "current_sprint": "S92",
+  "current_task": "TASK-92-04",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -97,7 +97,7 @@
     {
       "id": "S91",
       "title": "Sprint S91: Creación y Gestión Manual de Pedidos B2B desde Administración (Late Invoicing, Bypass de Corte y Tarifas Especiales) en Testing",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-91-01",
@@ -125,6 +125,41 @@
           "title": "Pruebas Automatizadas con Sad Paths (§6), Certificación y Despliegue en Ambiente de Testing VPS",
           "status": "DONE",
           "type": "DEVOPS/TESTING",
+          "veracity_hash": null
+        }
+      ]
+    },
+    {
+      "id": "S92",
+      "title": "Sprint S92: Desglose de Delivery Fee en Expediente, Segmentación Canónica de Croissants (Grupo 1 vs 2) en Reportes y Despliegue",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-92-01",
+          "title": "Desglose visible y editable de Delivery Fee al final de la lista de productos en el Expediente del Pedido (Admin)",
+          "status": "DONE",
+          "type": "FRONTEND/ADMIN",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-92-02",
+          "title": "Segmentación canónica de Croissants en Reportes Consolidados (Grupo 1 Plain con cálculo de bandejas de 12 y sobrantes, Grupo 2 Colores y Grupo 3 Small) en vista web y Excel",
+          "status": "DONE",
+          "type": "FULLSTACK/REPORTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-92-03",
+          "title": "Suite de pruebas automatizadas con Sad Paths (§6) para cálculo de flete en expediente y segmentación de reportes",
+          "status": "DONE",
+          "type": "TEST/REPORTS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-92-04",
+          "title": "Certificación integral, despliegue en ambiente de testing VPS y sincronización a producción",
+          "status": "IN_PROGRESS",
+          "type": "DEVOPS/DEPLOY",
           "veracity_hash": null
         }
       ]

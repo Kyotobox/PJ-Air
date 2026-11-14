@@ -866,6 +866,42 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                             </div>
                         ))}
                     </div>
+
+                    {/* Financial Summary & Delivery Fee Box */}
+                    {(() => {
+                        const itemsSubtotal = (order.items || []).reduce(
+                            (sum, item) => sum + (Number(item.price_at_time || 0) * Number(item.quantity || 1)),
+                            0
+                        );
+                        const deliveryFee = Number(order.delivery_fee_charged || 0);
+                        const isPickup = order.delivery_type === 'pickup';
+
+                        return (
+                            <div className="pt-6 border-t-2 border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                                <div className="flex flex-wrap items-center gap-6">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Subtotal Productos</span>
+                                        <span className="text-base font-black text-slate-800 font-mono">${itemsSubtotal.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2.5 bg-amber-50 px-4 py-2 rounded-2xl border border-amber-200">
+                                        <Truck size={16} className="text-amber-700" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black uppercase tracking-wider text-amber-800">
+                                                {isPickup ? 'Retiro en Tienda' : 'Delivery Fee'}
+                                            </span>
+                                            <span className="text-base font-black text-amber-950 font-mono">
+                                                {isPickup ? '$0.00' : `+$${deliveryFee.toFixed(2)}`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col text-right">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Monto Facturado</span>
+                                    <span className="text-2xl font-black text-slate-900 font-mono">${Number(order.total || 0).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </section>
             </main>
 

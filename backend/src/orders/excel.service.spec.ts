@@ -236,6 +236,10 @@ describe('ExcelService', () => {
 
       // 3. Verify Final TOTAL GENERAL CROISSANTS
       expect(rowStrings.some((r) => r.includes('TOTAL GENERAL CROISSANTS'))).toBe(true);
+
+      // 4. Verify Bandejas calculation for Grupo 1 (TASK-92-02)
+      expect(rowStrings.some((r) => r.includes('TOTAL BANDEJAS (12 UNID/BANDEJA)'))).toBe(true);
+      expect(rowStrings.some((r) => r.includes('CROISSANTS ADICIONALES (SUELTOS)'))).toBe(true);
     });
 
     it('should correctly classify products in all 3 groups via canonical name fallback when production_group is null (sad path / fallback)', async () => {
