@@ -98,7 +98,7 @@
         {
           "id": "TASK-88-05",
           "title": "Suite de Pruebas Unitarias/E2E, Certificación y Despliegue en Testing VPS",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "DEVOPS/TESTING",
           "veracity_hash": null
         }

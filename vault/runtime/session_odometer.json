@@ -13,11 +13,11 @@
   "hwc_complete": true,
   "last_update": "2026-11-14T06:10:09.068943",
   "input_pressure": 0,
-  "degraded_ops_count": 1,
+  "degraded_ops_count": 2,
   "session_count": 4,
   "test_warning_count": 0,
   "takeover_bytes_offset": 0,
   "conversation_uuid": "a2d49bcd-96ff-426d-84e1-6de4d8d9d683",
   "peak_depth": 100.0,
-  "hwc_ts": "2026-11-14T06:33:59.714125"
+  "hwc_ts": "2026-11-14T06:39:38.579411"
 }
