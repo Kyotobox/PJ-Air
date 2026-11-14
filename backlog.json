@@ -3,8 +3,8 @@
   "version": "5.0.0",
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S90",
-  "current_task": "TASK-90-01",
+  "current_sprint": "S91",
+  "current_task": "TASK-91-01",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -24,48 +24,6 @@
     }
   ],
   "sprints": [
-    {
-      "id": "S88",
-      "title": "Sprint S88: Resiliencia Contable (Fallback y Alias Postfix), Blindaje de Recibos en Checkout, Validación Defensiva de Direcciones e Higiene",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-88-01",
-          "title": "Fallback Oficial y Resiliencia en Reportes Financieros (Cron y MailService hacia pedidos@jhoanes.com, alias Postfix y reenvío de Nov 13)",
-          "status": "DONE",
-          "type": "BACKEND/CRON",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-88-02",
-          "title": "Desacoplamiento de Recibos y Alertas en Carritos Abandonados (condicionar sendOrderReceipt y alertas a payment_status === 'paid' o crédito B2B)",
-          "status": "DONE",
-          "type": "BACKEND/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-88-03",
-          "title": "Validación Defensiva de Dirección de Entrega (address_id con 400 Bad Request controlado en OrdersService.create)",
-          "status": "DONE",
-          "type": "BACKEND/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-88-04",
-          "title": "Higiene de Procesos Residuales en VPS (kill zombie PID 292387 y limpieza)",
-          "status": "DONE",
-          "type": "DEVOPS/SYSADMIN",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-88-05",
-          "title": "Suite de Pruebas Unitarias/E2E, Certificación y Despliegue en Testing VPS",
-          "status": "DONE",
-          "type": "DEVOPS/TESTING",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S89",
       "title": "Sprint S89: Blindaje para Transferencias Bancarias / Depósitos (ACH / Wire) con Kitchen Shield y Aprobación Administrativa",
@@ -104,7 +62,7 @@
     {
       "id": "S90",
       "title": "Sprint S90: Cobertura Sin Límites de Millaje (Boston/MA y Multiestatal) y Gestión de Fletes Manuales",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-90-01",
@@ -135,9 +93,44 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S91",
+      "title": "Sprint S91: Creación y Gestión Manual de Pedidos B2B desde Administración (Late Invoicing, Bypass de Corte y Tarifas Especiales) en Testing",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-91-01",
+          "title": "Soporte en Backend para Pedidos Manuales de Administración (Bypass de Hora de Corte, Precios Personalizados y Borradores)",
+          "status": "IN_PROGRESS",
+          "type": "BACKEND/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-91-02",
+          "title": "Interfaz Administrativa de Nuevo Pedido (/admin/orders/new): Selección de Cliente B2B, Direcciones y Términos Comerciales",
+          "status": "TODO",
+          "type": "FRONTEND/ADMIN",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-91-03",
+          "title": "Selector de Catálogo de Productos, Descuentos Especiales, Flete Manual y Confirmación/Emisión de Factura o Borrador",
+          "status": "TODO",
+          "type": "FRONTEND/ADMIN",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-91-04",
+          "title": "Pruebas Automatizadas con Sad Paths (§6), Certificación y Despliegue en Ambiente de Testing VPS",
+          "status": "TODO",
+          "type": "DEVOPS/TESTING",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 87,
+  "archived_sprints_count": 88,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S90",
