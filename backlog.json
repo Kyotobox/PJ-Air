@@ -132,7 +132,7 @@
     {
       "id": "S92",
       "title": "Sprint S92: Desglose de Delivery Fee en Expediente, Segmentación Canónica de Croissants (Grupo 1 vs 2) en Reportes y Despliegue",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-92-01",
@@ -158,7 +158,7 @@
         {
           "id": "TASK-92-04",
           "title": "Certificación integral, despliegue en ambiente de testing VPS y sincronización a producción",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "DEVOPS/DEPLOY",
           "veracity_hash": null
         }
