@@ -8,7 +8,7 @@
   "technical_debt": [
     {
       "id": "DEBT-01",
-      "title": "Recuperación y Gestión Comercial de Carritos Abandonados (Botón de Reintento de Pago y Cron de Expiración 48h)",
+      "title": "Recuperaci\u00f3n y Gesti\u00f3n Comercial de Carritos Abandonados (Bot\u00f3n de Reintento de Pago y Cron de Expiraci\u00f3n 48h)",
       "category": "COMMERCIAL_RECOVERY",
       "status": "OPEN",
       "created_at": "2026-11-14",
@@ -16,7 +16,7 @@
     },
     {
       "id": "DEBT-02",
-      "title": "Ciclo de Vida y Renovación Preventiva del Certificado Fiscal NY Form ST-120",
+      "title": "Ciclo de Vida y Renovaci\u00f3n Preventiva del Certificado Fiscal NY Form ST-120",
       "category": "TAX_COMPLIANCE",
       "status": "OPEN",
       "created_at": "2026-11-14",
@@ -26,7 +26,7 @@
   "sprints": [
     {
       "id": "S92",
-      "title": "Sprint S92: Desglose de Delivery Fee en Expediente, Segmentación Canónica de Croissants (Grupo 1 vs 2) en Reportes y Despliegue",
+      "title": "Sprint S92: Desglose de Delivery Fee en Expediente, Segmentaci\u00f3n Can\u00f3nica de Croissants (Grupo 1 vs 2) en Reportes y Despliegue",
       "status": "COMPLETED",
       "tasks": [
         {
@@ -38,21 +38,21 @@
         },
         {
           "id": "TASK-92-02",
-          "title": "Segmentación canónica de Croissants en Reportes Consolidados (Grupo 1 Plain con cálculo de bandejas de 12 y sobrantes, Grupo 2 Colores y Grupo 3 Small) en vista web y Excel",
+          "title": "Segmentaci\u00f3n can\u00f3nica de Croissants en Reportes Consolidados (Grupo 1 Plain con c\u00e1lculo de bandejas de 12 y sobrantes, Grupo 2 Colores y Grupo 3 Small) en vista web y Excel",
           "status": "DONE",
           "type": "FULLSTACK/REPORTS",
           "veracity_hash": null
         },
         {
           "id": "TASK-92-03",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6) para cálculo de flete en expediente y segmentación de reportes",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76) para c\u00e1lculo de flete en expediente y segmentaci\u00f3n de reportes",
           "status": "DONE",
           "type": "TEST/REPORTS",
           "veracity_hash": null
         },
         {
           "id": "TASK-92-04",
-          "title": "Certificación integral, despliegue en ambiente de testing VPS y sincronización a producción",
+          "title": "Certificaci\u00f3n integral, despliegue en ambiente de testing VPS y sincronizaci\u00f3n a producci\u00f3n",
           "status": "DONE",
           "type": "DEVOPS/DEPLOY",
           "veracity_hash": null
@@ -61,26 +61,26 @@
     },
     {
       "id": "S93",
-      "title": "Sprint S93: Desbloqueo y auto-aprobación de cuentas comerciales B2B y clarificación de órdenes a Crédito B2B en panel administrativo",
+      "title": "Sprint S93: Desbloqueo y auto-aprobaci\u00f3n de cuentas comerciales B2B y clarificaci\u00f3n de \u00f3rdenes a Cr\u00e9dito B2B en panel administrativo",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-93-01",
-          "title": "Desbloqueo y Aprobación de Clientes B2B (account_status = 'APPROVED') y configuración de política de auto-aprobación en registro (auth.service.ts)",
+          "title": "Desbloqueo y Aprobaci\u00f3n de Clientes B2B (account_status = 'APPROVED') y configuraci\u00f3n de pol\u00edtica de auto-aprobaci\u00f3n en registro (auth.service.ts)",
           "status": "DONE",
           "type": "BACKEND/AUTH",
           "veracity_hash": null
         },
         {
           "id": "TASK-93-02",
-          "title": "Clarificación y Rediseño de Insignia de Pedidos a Crédito B2B (🏢 CRÉDITO B2B / Facturación) en listado y expediente de órdenes",
+          "title": "Clarificaci\u00f3n y Redise\u00f1o de Insignia de Pedidos a Cr\u00e9dito B2B (\ud83c\udfe2 CR\u00c9DITO B2B / Facturaci\u00f3n) en listado y expediente de \u00f3rdenes",
           "status": "DONE",
           "type": "FRONTEND/ADMIN",
           "veracity_hash": null
         },
         {
           "id": "TASK-93-03",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6), confirmación operativa de INV-1647 y despliegue a VPS (Testing y Producción)",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76), confirmaci\u00f3n operativa de INV-1647 y despliegue a VPS (Testing y Producci\u00f3n)",
           "status": "DONE",
           "type": "DEVOPS/DEPLOY",
           "veracity_hash": null
@@ -89,85 +89,94 @@
     },
     {
       "id": "S94",
-      "title": "Sprint S94: Control de Zelle, Flete Gratis Dual (Cliente y Pedido), Bitácora de Auditoría Unificada y Sincronización Stripe",
+      "title": "Sprint S94: Control de Zelle, Flete Gratis Dual (Cliente y Pedido), Bit\u00e1cora de Auditor\u00eda Unificada y Sincronizaci\u00f3n Stripe",
       "status": "IN_PROGRESS",
       "tasks": [
         {
           "id": "TASK-94-01",
-          "title": "Modelo y Control de Zelle (zelle_enabled: false por default, migración condicional por Cheque/ACH, bloqueo en checkout y backend)",
+          "title": "Modelo y Control de Zelle (zelle_enabled: false por default, migraci\u00f3n condicional por Cheque/ACH, bloqueo en checkout y backend)",
           "status": "TODO",
           "type": "BACKEND/FINANCE",
           "veracity_hash": null
         },
         {
           "id": "TASK-94-02",
-          "title": "Motor de Flete Gratis Dual (Por Cliente permanente free_delivery_enabled y Por Pedido Puntual con recálculo de totales en Admin)",
+          "title": "Motor de Flete Gratis Dual (Por Cliente permanente free_delivery_enabled y Por Pedido Puntual con rec\u00e1lculo de totales en Admin)",
           "status": "TODO",
           "type": "FULLSTACK/LOGISTICS",
           "veracity_hash": null
         },
         {
           "id": "TASK-94-03",
-          "title": "Sincronización y Corrección de Desfase de Invoices en Stripe (Actualización de invoice_number en PaymentIntents y script de conciliación)",
+          "title": "Sincronizaci\u00f3n y Correcci\u00f3n de Desfase de Invoices en Stripe (Actualizaci\u00f3n de invoice_number en PaymentIntents y script de conciliaci\u00f3n)",
           "status": "TODO",
           "type": "INTEGRATION/STRIPE",
           "veracity_hash": null
         },
         {
           "id": "TASK-94-04",
-          "title": "Bitácora de Auditoría Unificada para Administración y Clientes (Captura de eventos, visor /admin/audit-logs con filtros y pestaña en expediente)",
+          "title": "Bit\u00e1cora de Auditor\u00eda Unificada para Administraci\u00f3n y Clientes (Captura de eventos, visor /admin/audit-logs con filtros y pesta\u00f1a en expediente)",
           "status": "TODO",
           "type": "FULLSTACK/AUDIT",
           "veracity_hash": null
         },
         {
           "id": "TASK-94-05",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76), certificaci\u00f3n en testing VPS y despliegue a producci\u00f3n",
           "status": "TODO",
           "type": "TEST/DEVOPS",
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S90",
+      "name": "Sprint S90: [RECONCILED] Auto-reconciled from git history",
+      "dag_id": "SPRINT-S90-RECONCILED",
+      "status": "COMPLETED",
+      "reconciled_at": "2026-11-14T18:43:43.220429+00:00",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+      "tasks": []
     }
   ],
   "archived_sprints_count": 90,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S94",
-    "title": "Sprint S94: Control de Zelle, Flete Gratis Dual (Cliente y Pedido), Bitácora de Auditoría Unificada y Sincronización Stripe",
+    "title": "Sprint S94: Control de Zelle, Flete Gratis Dual (Cliente y Pedido), Bit\u00e1cora de Auditor\u00eda Unificada y Sincronizaci\u00f3n Stripe",
     "status": "IN_PROGRESS",
     "tasks": [
       {
         "id": "TASK-94-01",
-        "title": "Modelo y Control de Zelle (zelle_enabled: false por default, migración condicional por Cheque/ACH, bloqueo en checkout y backend)",
+        "title": "Modelo y Control de Zelle (zelle_enabled: false por default, migraci\u00f3n condicional por Cheque/ACH, bloqueo en checkout y backend)",
         "status": "TODO",
         "type": "BACKEND/FINANCE",
         "veracity_hash": null
       },
       {
         "id": "TASK-94-02",
-        "title": "Motor de Flete Gratis Dual (Por Cliente permanente free_delivery_enabled y Por Pedido Puntual con recálculo de totales en Admin)",
+        "title": "Motor de Flete Gratis Dual (Por Cliente permanente free_delivery_enabled y Por Pedido Puntual con rec\u00e1lculo de totales en Admin)",
         "status": "TODO",
         "type": "FULLSTACK/LOGISTICS",
         "veracity_hash": null
       },
       {
         "id": "TASK-94-03",
-        "title": "Sincronización y Corrección de Desfase de Invoices en Stripe (Actualización de invoice_number en PaymentIntents y script de conciliación)",
+        "title": "Sincronizaci\u00f3n y Correcci\u00f3n de Desfase de Invoices en Stripe (Actualizaci\u00f3n de invoice_number en PaymentIntents y script de conciliaci\u00f3n)",
         "status": "TODO",
         "type": "INTEGRATION/STRIPE",
         "veracity_hash": null
       },
       {
         "id": "TASK-94-04",
-        "title": "Bitácora de Auditoría Unificada para Administración y Clientes (Captura de eventos, visor /admin/audit-logs con filtros y pestaña en expediente)",
+        "title": "Bit\u00e1cora de Auditor\u00eda Unificada para Administraci\u00f3n y Clientes (Captura de eventos, visor /admin/audit-logs con filtros y pesta\u00f1a en expediente)",
         "status": "TODO",
         "type": "FULLSTACK/AUDIT",
         "veracity_hash": null
       },
       {
         "id": "TASK-94-05",
-        "title": "Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción",
+        "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76), certificaci\u00f3n en testing VPS y despliegue a producci\u00f3n",
         "status": "TODO",
         "type": "TEST/DEVOPS",
         "veracity_hash": null
