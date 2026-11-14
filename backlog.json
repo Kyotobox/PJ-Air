@@ -4,7 +4,7 @@
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S87",
-  "current_task": "TASK-87-02",
+  "current_task": "TASK-87-03",
   "sprints": [
     {
       "id": "S85",
@@ -77,14 +77,14 @@
         {
           "id": "TASK-87-02",
           "title": "Normalización de filtros de estados en panel Admin (Pedido Enviado en 'Pedido') y vistas segmentadas para Verificaciones Pendientes y Borradores",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "FRONTEND/ADMIN",
           "veracity_hash": null
         },
         {
           "id": "TASK-87-03",
           "title": "Suite E2E de validación y certificación en Testing VPS del ciclo completo de cheques, filtros y blindaje de producción",
-          "status": "PENDING",
+          "status": "IN_PROGRESS",
           "type": "DEVOPS/TESTING",
           "veracity_hash": null
         }
@@ -108,14 +108,14 @@
       {
         "id": "TASK-87-02",
         "title": "Normalización de filtros de estados en panel Admin (Pedido Enviado en 'Pedido') y vistas segmentadas para Verificaciones Pendientes y Borradores",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "FRONTEND/ADMIN",
         "veracity_hash": null
       },
       {
         "id": "TASK-87-03",
         "title": "Suite E2E de validación y certificación en Testing VPS del ciclo completo de cheques, filtros y blindaje de producción",
-        "status": "PENDING",
+        "status": "IN_PROGRESS",
         "type": "DEVOPS/TESTING",
         "veracity_hash": null
       }

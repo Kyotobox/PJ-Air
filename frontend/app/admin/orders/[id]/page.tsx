@@ -28,6 +28,11 @@ interface OrderDetail {
     payment_method?: string;
     zelle_reference?: string;
     zelle_receipt_url?: string;
+    check_number?: string;
+    check_bank?: string;
+    check_amount?: number;
+    check_image_url?: string;
+    check_verified?: boolean;
     pending_balance?: number;
     packaging_fee?: number;
     packaging_discount?: number;
@@ -218,6 +223,30 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
             showToast('⚠️ Referencia Zelle rechazada y pedido cancelado');
         } catch (err: any) {
             showToast(err?.message || 'Error al rechazar pago Zelle', 'error');
+        }
+    };
+
+    const handleApproveCheck = async () => {
+        if (!order) return;
+        try {
+            const updated = await api.patch(`/orders/${order.id}/approve-check`, {}) as any;
+            setOrder(prev => prev ? { ...prev, ...updated, payment_status: 'paid', status: 'Pedido Enviado' } : null);
+            showToast('✅ Pago con Cheque aprobado y factura generada');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al aprobar cheque', 'error');
+        }
+    };
+
+    const handleRejectCheck = async () => {
+        if (!order) return;
+        const reason = window.prompt('Indica el motivo del rechazo del cheque:', 'Foto ilegible o cheque sin fondos');
+        if (reason === null) return;
+        try {
+            const updated = await api.patch(`/orders/${order.id}/reject-check`, { reason }) as any;
+            setOrder(prev => prev ? { ...prev, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : null);
+            showToast('⚠️ Cheque rechazado y pedido cancelado');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al rechazar cheque', 'error');
         }
     };
 
@@ -554,6 +583,94 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                     className="w-full sm:flex-1 py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
                                 >
                                     <AlertCircle size={18} /> Rechazar Referencia
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* Check Audit & Approval Card (TASK-87-02) */}
+                {(order.payment_method === 'check' || order.check_image_url || order.payment_status === 'pending_check_verification') && (
+                    <section className="bg-purple-50/70 rounded-[2rem] p-6 lg:p-8 border-2 border-purple-200 shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-purple-700/30">
+                                    <Building2 size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-purple-950 uppercase tracking-wider">
+                                        Auditoría de Pago con Cheque Físico
+                                    </h3>
+                                    <p className="text-xs text-purple-700 font-medium">
+                                        Cheque #{' '}
+                                        <span className="font-mono font-black text-purple-950 px-2 py-0.5 bg-white rounded-lg border border-purple-300">
+                                            {order.check_number || 'S/N'}
+                                        </span>
+                                        {' · Banco: '}
+                                        <span className="font-bold text-purple-900">{order.check_bank || 'No especificado'}</span>
+                                        {order.check_amount ? ` · Monto: $${Number(order.check_amount).toFixed(2)}` : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
+                                order.payment_status === 'paid'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : order.payment_status === 'pending_check_verification'
+                                    ? 'bg-purple-100 text-purple-900 border-purple-300 animate-pulse'
+                                    : 'bg-red-100 text-red-800 border-red-300'
+                            }`}>
+                                {order.payment_status === 'paid' ? '✓ Cheque Aprobado / En Cartera' : order.payment_status === 'pending_check_verification' ? '⚠️ Verificación Pendiente' : 'No Pagado / Cancelado'}
+                            </span>
+                        </div>
+
+                        {/* Foto Frontal del Cheque */}
+                        {order.check_image_url && (
+                            <div className="p-4 bg-white rounded-2xl border border-purple-200 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                                        <Receipt size={14} className="text-purple-600" />
+                                        Foto Frontal del Cheque Adjunto
+                                    </span>
+                                    <a
+                                        href={order.check_image_url.startsWith('http') ? order.check_image_url : `${API_URL}${order.check_image_url}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[11px] font-black text-purple-700 hover:text-purple-900 underline flex items-center gap-1"
+                                    >
+                                        Abrir foto en alta resolución ↗
+                                    </a>
+                                </div>
+                                <div className="relative rounded-xl overflow-hidden border border-purple-100 max-h-64 bg-slate-50 flex items-center justify-center p-2">
+                                    {order.check_image_url.toLowerCase().endsWith('.pdf') ? (
+                                        <iframe
+                                            src={order.check_image_url.startsWith('http') ? order.check_image_url : `${API_URL}${order.check_image_url}`}
+                                            className="w-full h-56 border-0"
+                                            title="Foto Cheque PDF"
+                                        />
+                                    ) : (
+                                        <img
+                                            src={order.check_image_url.startsWith('http') ? order.check_image_url : `${API_URL}${order.check_image_url}`}
+                                            alt="Foto Frontal del Cheque"
+                                            className="object-contain max-h-60 rounded-lg shadow-sm"
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {order.payment_status === 'pending_check_verification' && (
+                            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                <button
+                                    onClick={handleApproveCheck}
+                                    className="w-full sm:flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <CheckCircle2 size={18} /> Aprobar Cheque y Emitir Factura
+                                </button>
+                                <button
+                                    onClick={handleRejectCheck}
+                                    className="w-full sm:flex-1 py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <AlertCircle size={18} /> Rechazar Cheque
                                 </button>
                             </div>
                         )}

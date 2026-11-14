@@ -32,6 +32,11 @@ interface Order {
     payment_method?: string;
     zelle_reference?: string;
     zelle_receipt_url?: string;
+    check_number?: string;
+    check_bank?: string;
+    check_amount?: number;
+    check_image_url?: string;
+    check_verified?: boolean;
     pending_balance?: number;
     packaging_fee?: number;
     packaging_discount?: number;
@@ -110,8 +115,8 @@ export default function AdminOrdersPage() {
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
-    // Check Reconciliation State (TASK-45-05)
-    type OrderViewTab = 'orders' | 'in_hand' | 'deposited' | 'bounced';
+    // Check & Segmented Views State (TASK-87-02)
+    type OrderViewTab = 'orders' | 'pending_verification' | 'drafts' | 'in_hand' | 'deposited' | 'bounced';
     const [activeTab, setActiveTab] = useState<OrderViewTab>('orders');
     const [checksReconciliation, setChecksReconciliation] = useState<{
         inHand: any[];
@@ -225,6 +230,41 @@ export default function AdminOrdersPage() {
             showToast('⚠️ Referencia Zelle rechazada y pedido cancelado');
         } catch (err: any) {
             showToast(err?.message || 'Error al rechazar pago Zelle', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleApproveCheck = async (orderId: string) => {
+        setSaving(true);
+        try {
+            const updated = await api.patch(`/orders/${orderId}/approve-check`, {}) as any;
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated, payment_status: 'paid', status: 'Pedido Enviado' } : o));
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder(prev => prev ? { ...prev, ...updated, payment_status: 'paid', status: 'Pedido Enviado' } : null);
+            }
+            await fetchChecksReconciliation();
+            showToast('✅ Pago con Cheque aprobado y factura generada');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al aprobar cheque', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRejectCheck = async (orderId: string) => {
+        const reason = window.prompt('Indica el motivo del rechazo del cheque:', 'Foto ilegible o cheque sin fondos');
+        if (reason === null) return;
+        setSaving(true);
+        try {
+            const updated = await api.patch(`/orders/${orderId}/reject-check`, { reason }) as any;
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : o));
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder(prev => prev ? { ...prev, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : null);
+            }
+            showToast('⚠️ Cheque rechazado y pedido cancelado');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al rechazar cheque', 'error');
         } finally {
             setSaving(false);
         }
@@ -498,6 +538,17 @@ export default function AdminOrdersPage() {
     };
 
     const filteredOrders = orders.filter(o => {
+        const normStatus = (o.status || '').toLowerCase().trim();
+
+        // TASK-87-02: Filtro por pestaña activa (Verificaciones Pendientes o Borradores)
+        if (activeTab === 'pending_verification') {
+            const isPendingVerif = o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification';
+            if (!isPendingVerif) return false;
+        } else if (activeTab === 'drafts') {
+            const isDraft = !o.invoice_number && (normStatus === 'pending' || normStatus === 'cancelled' || normStatus === 'cancelado') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification';
+            if (!isDraft) return false;
+        }
+
         const q = search.toLowerCase();
         const matchesSearch = !q ||
             (o.invoice_number && o.invoice_number.toLowerCase().includes(q)) ||
@@ -510,12 +561,16 @@ export default function AdminOrdersPage() {
                 const catName = typeof catObj === 'object' && catObj ? (catObj as { name: string }).name : (catObj || '');
                 return catName.toLowerCase().includes(q);
             });
+
+        // TASK-87-02: Normalización exhaustiva de estados de producción y testing
         const matchesStatus = statusFilter === 'Todos' ||
             o.status === statusFilter ||
-            (statusFilter === 'Cancelado' && o.status === 'cancelled') ||
-            (statusFilter === 'cancelled' && o.status === 'Cancelado') ||
-            (statusFilter === 'Pedido' && o.status === 'pending') ||
-            (statusFilter === 'pending' && o.status === 'Pedido');
+            (statusFilter === 'Pedido' && (normStatus === 'pedido' || normStatus === 'pedido enviado' || normStatus === 'confirmed' || normStatus === 'pending')) ||
+            (statusFilter === 'En Producción' && (normStatus === 'en producción' || normStatus === 'production')) ||
+            (statusFilter === 'En camino' && (normStatus === 'en camino' || normStatus === 'ready' || normStatus === 'en delivery' || normStatus === 'shipped')) ||
+            (statusFilter === 'Entregado' && (normStatus === 'entregado' || normStatus === 'delivered' || normStatus === 'pedido recibido')) ||
+            (statusFilter === 'Cancelado' && (normStatus === 'cancelado' || normStatus === 'cancelled'));
+
         const orderDispatchDate = o.delivery_date ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0]) : new Date(o.created_at).toISOString().split('T')[0];
         const matchesStart = !startDate || orderDispatchDate >= startDate;
         const matchesEnd = !endDate || orderDispatchDate <= endDate;
@@ -842,7 +897,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     </div>
                 </header>
 
-                {/* Check Reconciliation & Orders Tabs (TASK-45-05) */}
+                {/* Check Reconciliation & Segmented Orders Tabs (TASK-87-02) */}
                 <div data-testid="check-reconciliation-tabs" className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl mb-8 overflow-x-auto">
                     <button
                         data-testid="tab-orders"
@@ -853,7 +908,31 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 : 'text-slate-500 hover:text-slate-800'
                         }`}
                     >
-                        <ShoppingBag size={14} /> Todos los Pedidos ({orders.length})
+                        <ShoppingBag size={14} /> Todas las Órdenes ({orders.length})
+                    </button>
+                    <button
+                        data-testid="tab-pending-verifications"
+                        onClick={() => setActiveTab('pending_verification')}
+                        className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap ${
+                            activeTab === 'pending_verification'
+                                ? 'bg-white text-purple-700 shadow-sm ring-2 ring-purple-300'
+                                : 'text-slate-500 hover:text-purple-700'
+                        }`}
+                    >
+                        <Clock size={14} className="text-purple-600" />
+                        Verificaciones Pendientes ({orders.filter(o => o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification').length})
+                    </button>
+                    <button
+                        data-testid="tab-drafts"
+                        onClick={() => setActiveTab('drafts')}
+                        className={`px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 whitespace-nowrap ${
+                            activeTab === 'drafts'
+                                ? 'bg-white text-slate-800 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                    >
+                        <Receipt size={14} className="text-slate-400" />
+                        Borradores / Abandonados ({orders.filter(o => !o.invoice_number && ((o.status || '').toLowerCase().trim() === 'pending' || (o.status || '').toLowerCase().trim() === 'cancelled') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification').length})
                     </button>
                     <button
                         data-testid="tab-in-hand"
@@ -865,7 +944,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <Clock size={14} className="text-amber-500" />
-                        Por Depositar ({checksReconciliation.inHand.length})
+                        Cheques en Cartera ({checksReconciliation.inHand.length})
                     </button>
                     <button
                         data-testid="tab-deposited"
@@ -877,7 +956,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <CheckCircle2 size={14} className="text-emerald-500" />
-                        Depositados ({checksReconciliation.deposited.length})
+                        Cheques Depositados ({checksReconciliation.deposited.length})
                     </button>
                     <button
                         data-testid="tab-bounced"
@@ -889,11 +968,11 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <AlertCircle size={14} className="text-rose-500" />
-                        Rebotados / Consecuencias ({checksReconciliation.bounced.length})
+                        Cheques Rebotados ({checksReconciliation.bounced.length})
                     </button>
                 </div>
 
-                {activeTab !== 'orders' ? (
+                {(activeTab === 'in_hand' || activeTab === 'deposited' || activeTab === 'bounced') ? (
                     <div data-testid="checks-reconciliation-view" className="space-y-6">
                         {/* Search bar for checks */}
                         <div className="bg-white p-4 rounded-3xl border border-border shadow-sm flex items-center gap-3">
@@ -1209,7 +1288,23 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ⚠️ Verificación Pend.
                                                     </span>
                                                 )}
-                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && (
+                                                {(order.payment_method === 'check' || order.payment_status === 'pending_check_verification') && (
+                                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black border flex items-center gap-1 ${
+                                                        order.payment_status === 'paid'
+                                                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                                            : order.payment_status === 'pending_check_verification'
+                                                            ? 'bg-purple-100 text-purple-900 border-purple-300 animate-pulse'
+                                                            : 'bg-slate-50 text-slate-600 border-slate-200'
+                                                    }`}>
+                                                        🏦 Cheque #{order.check_number || 'S/N'}
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'pending_check_verification' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 text-[9px] font-black border border-purple-300">
+                                                        ⚠️ Verificación Cheque Pend.
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200">
                                                         ✓ Pagado
                                                     </span>
@@ -1224,9 +1319,14 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ↩ Reembolsado
                                                     </span>
                                                 )}
-                                                {order.payment_status === 'pending' && (
+                                                {order.payment_status === 'pending' && order.payment_method === 'credit' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">
                                                         ⏳ Crédito Pend.
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'pending' && order.payment_method !== 'credit' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[9px] font-bold border border-slate-300">
+                                                        🛒 Checkout Incompleto
                                                     </span>
                                                 )}
                                             </div>
@@ -1474,6 +1574,96 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                 className="w-full sm:flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                                             >
                                                 <X size={16} /> Rechazar Referencia
+                                            </button>
+                                        </div>
+                                    )}
+                                </section>
+                            )}
+
+                            {/* Check Audit & Approval Card (TASK-87-02) */}
+                            {(selectedOrder.payment_method === 'check' || selectedOrder.check_image_url || selectedOrder.payment_status === 'pending_check_verification') && (
+                                <section className="bg-purple-50/70 rounded-[2rem] p-6 border-2 border-purple-200 shadow-sm space-y-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-purple-700/30">
+                                                <Building2 size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-purple-950 uppercase tracking-wider">
+                                                    Auditoría de Pago con Cheque Físico
+                                                </h3>
+                                                <p className="text-xs text-purple-700 font-medium">
+                                                    Cheque #{' '}
+                                                    <span className="font-mono font-black text-purple-950 px-2 py-0.5 bg-white rounded-lg border border-purple-300">
+                                                        {selectedOrder.check_number || 'S/N'}
+                                                    </span>
+                                                    {' · Banco: '}
+                                                    <span className="font-bold text-purple-900">{selectedOrder.check_bank || 'No especificado'}</span>
+                                                    {selectedOrder.check_amount ? ` · Monto: $${Number(selectedOrder.check_amount).toFixed(2)}` : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
+                                            selectedOrder.payment_status === 'paid'
+                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                                : selectedOrder.payment_status === 'pending_check_verification'
+                                                ? 'bg-purple-100 text-purple-900 border-purple-300 animate-pulse'
+                                                : 'bg-red-100 text-red-800 border-red-300'
+                                        }`}>
+                                            {selectedOrder.payment_status === 'paid' ? '✓ Cheque Aprobado / En Cartera' : selectedOrder.payment_status === 'pending_check_verification' ? '⚠️ Verificación Pendiente' : 'No Pagado / Cancelado'}
+                                        </span>
+                                    </div>
+
+                                    {/* Foto Frontal del Cheque */}
+                                    {selectedOrder.check_image_url && (
+                                        <div className="p-4 bg-white rounded-2xl border border-purple-200 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                                                    <Receipt size={14} className="text-purple-600" />
+                                                    Foto Frontal del Cheque Adjunto
+                                                </span>
+                                                <a
+                                                    href={selectedOrder.check_image_url.startsWith('http') ? selectedOrder.check_image_url : `${API_URL}${selectedOrder.check_image_url}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[11px] font-black text-purple-700 hover:text-purple-900 underline flex items-center gap-1"
+                                                >
+                                                    Abrir foto en alta resolución ↗
+                                                </a>
+                                            </div>
+                                            <div className="relative rounded-xl overflow-hidden border border-purple-100 max-h-64 bg-slate-50 flex items-center justify-center p-2">
+                                                {selectedOrder.check_image_url.toLowerCase().endsWith('.pdf') ? (
+                                                    <iframe
+                                                        src={selectedOrder.check_image_url.startsWith('http') ? selectedOrder.check_image_url : `${API_URL}${selectedOrder.check_image_url}`}
+                                                        className="w-full h-56 border-0"
+                                                        title="Foto Cheque PDF"
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={selectedOrder.check_image_url.startsWith('http') ? selectedOrder.check_image_url : `${API_URL}${selectedOrder.check_image_url}`}
+                                                        alt="Foto Frontal del Cheque"
+                                                        className="object-contain max-h-60 rounded-lg shadow-sm"
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {selectedOrder.payment_status === 'pending_check_verification' && (
+                                        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                            <button
+                                                onClick={() => handleApproveCheck(selectedOrder.id)}
+                                                disabled={saving}
+                                                className="w-full sm:flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                            >
+                                                <CheckCircle2 size={16} /> Aprobar Cheque y Emitir Factura
+                                            </button>
+                                            <button
+                                                onClick={() => handleRejectCheck(selectedOrder.id)}
+                                                disabled={saving}
+                                                className="w-full sm:flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                            >
+                                                <X size={16} /> Rechazar Cheque
                                             </button>
                                         </div>
                                     )}
