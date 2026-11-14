@@ -616,8 +616,11 @@ let OrdersService = class OrdersService {
                 deliveryFee = Number(user?.delivery_fee || 0);
             }
         }
-        if (isNaN(deliveryFee) || deliveryFee < 0 || deliveryFee > 150) {
-            throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+        if (isNaN(deliveryFee) || deliveryFee < 0) {
+            deliveryFee = 0;
+        }
+        else if (deliveryFee > 150) {
+            deliveryFee = 150;
         }
         let isComplementary = false;
         if (appliedDeliveryDate && appliedDeliveryType !== 'pickup') {

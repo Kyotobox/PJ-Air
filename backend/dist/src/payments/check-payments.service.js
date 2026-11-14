@@ -20,6 +20,7 @@ const check_payment_entity_1 = require("./check-payment.entity");
 const order_entity_1 = require("../orders/order.entity");
 const user_entity_1 = require("../users/user.entity");
 const date_utils_1 = require("../common/utils/date.utils");
+const class_validator_1 = require("class-validator");
 class RegisterCheckDto {
     order_id;
     check_number;
@@ -31,6 +32,44 @@ class RegisterCheckDto {
     status;
 }
 exports.RegisterCheckDto = RegisterCheckDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], RegisterCheckDto.prototype, "order_id", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], RegisterCheckDto.prototype, "check_number", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], RegisterCheckDto.prototype, "bank_name", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], RegisterCheckDto.prototype, "amount", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], RegisterCheckDto.prototype, "received_date", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterCheckDto.prototype, "notes", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterCheckDto.prototype, "user_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], RegisterCheckDto.prototype, "status", void 0);
 let CheckPaymentsService = class CheckPaymentsService {
     checkPaymentRepository;
     orderRepository;

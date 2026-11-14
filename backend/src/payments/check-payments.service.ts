@@ -9,16 +9,38 @@ import { CheckPayment, CheckPaymentStatus } from './check-payment.entity';
 import { Order } from '../orders/order.entity';
 import { User } from '../users/user.entity';
 import { addBusinessDays } from '../common/utils/date.utils';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class RegisterCheckDto {
+  @IsString()
+  @IsNotEmpty()
   order_id: string;
+
+  @IsString()
+  @IsNotEmpty()
   check_number: string;
+
+  @IsString()
+  @IsNotEmpty()
   bank_name: string;
+
+  @IsNumber()
   amount: number;
+
+  @IsString()
+  @IsNotEmpty()
   received_date: string; // YYYY-MM-DD
+
+  @IsString()
+  @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
   user_id?: string;
-  status?: CheckPaymentStatus;
+
+  @IsOptional()
+  status?: string;
 }
 
 @Injectable()
@@ -65,7 +87,7 @@ export class CheckPaymentsService {
       amount: numAmount,
       received_date: dto.received_date,
       clearance_deadline,
-      status: dto.status || 'IN_HAND',
+      status: (dto.status as CheckPaymentStatus) || 'IN_HAND',
       notes: dto.notes || '',
     });
 

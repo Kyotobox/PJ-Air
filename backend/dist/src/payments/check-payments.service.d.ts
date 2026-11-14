@@ -10,7 +10,7 @@ export declare class RegisterCheckDto {
     received_date: string;
     notes?: string;
     user_id?: string;
-    status?: CheckPaymentStatus;
+    status?: string;
 }
 export declare class CheckPaymentsService {
     private readonly checkPaymentRepository;

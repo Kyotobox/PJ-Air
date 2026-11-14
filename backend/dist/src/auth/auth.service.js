@@ -319,7 +319,7 @@ let AuthService = AuthService_1 = class AuthService {
         const user = await this.usersService.findByEmail(cleanId) ||
             await this.usersService.findByIdentifier(cleanId);
         if (!user) {
-            throw new common_1.UnauthorizedException(`No hemos conseguido un usuario o email que coincida con: ${identifier}`);
+            throw new common_1.BadRequestException(`No hemos conseguido un usuario o email que coincida con: ${identifier}`);
         }
         const resetToken = crypto.randomBytes(32).toString('hex');
         const expires = new Date(Date.now() + 60 * 60 * 1000);
