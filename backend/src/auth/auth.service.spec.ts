@@ -747,6 +747,32 @@ describe('AuthService', () => {
       expect(res.user.email).toBe('admin@b2b.com');
       expect(res.user.user_metadata.role).toBe('admin');
     });
+
+    it('defaults new client registration to account_status APPROVED (TASK-93-01 Happy Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(null);
+      mockUsersService.create.mockImplementationOnce(async (data: any) => ({
+        id: 'new-client-auto-approved',
+        email: data.email,
+        role: data.role,
+        account_status: data.account_status,
+      }));
+      mockUsersService.createProfile.mockResolvedValueOnce({ id: 'new-client-auto-approved' });
+
+      await service.signup({
+        email: 'autoapproved@b2b.com',
+        password: 'password123',
+        fullName: 'Auto Approved User',
+        phone: '1234567890',
+        company_name: 'B2B Wholesale Cafe LLC',
+        tax_id: '12-3456789',
+      });
+
+      expect(mockUsersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          account_status: 'APPROVED',
+        }),
+      );
+    });
   });
 });
 

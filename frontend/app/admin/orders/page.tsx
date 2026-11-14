@@ -47,6 +47,7 @@ interface Order {
     stripe_payment_id?: string;
     created_at: string;
     delivery_date?: string;
+    payment_due_date?: string;
     notes?: string;
     user?: { email: string; profile?: { full_name?: string; phone?: string; nickname?: string; }; };
     delivery_user_id?: string;
@@ -1359,7 +1360,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ⚠️ Verificación Wire Pend.
                                                     </span>
                                                 )}
-                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && order.payment_method !== 'ach' && (
+                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && order.payment_method !== 'ach' && order.payment_method !== 'credit' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200">
                                                         ✓ Pagado
                                                     </span>
@@ -1374,12 +1375,16 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ↩ Reembolsado
                                                     </span>
                                                 )}
-                                                {order.payment_status === 'pending' && order.payment_method === 'credit' && (
-                                                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">
-                                                        ⏳ Crédito Pend.
+                                                {order.payment_method === 'credit' && (
+                                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black border flex items-center gap-1 ${
+                                                        order.payment_status === 'paid'
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                            : 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm'
+                                                    }`}>
+                                                        {order.payment_status === 'paid' ? '✓ Crédito Liquidado' : '🏢 Crédito B2B (Net-7)'}
                                                     </span>
                                                 )}
-                                                {order.payment_status === 'pending' && order.payment_method !== 'credit' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && (
+                                                {order.payment_status === 'pending' && order.payment_method !== 'credit' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && order.payment_method !== 'ach' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[9px] font-bold border border-slate-300">
                                                         🛒 Checkout Incompleto
                                                     </span>
@@ -1803,6 +1808,38 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                             </button>
                                         </div>
                                     )}
+                                </section>
+                            )}
+
+                            {/* Credit B2B Card */}
+                            {selectedOrder.payment_method === 'credit' && (
+                                <section className="bg-indigo-50/70 rounded-[2rem] p-6 border-2 border-indigo-200 shadow-sm space-y-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-2xl bg-indigo-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-indigo-700/30">
+                                                <Building2 size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-indigo-950 uppercase tracking-wider">
+                                                    Modalidad Comercial: Crédito B2B Corporativo
+                                                </h3>
+                                                <p className="text-xs text-indigo-700 font-medium">
+                                                    Términos de crédito: <span className="font-bold text-indigo-950">Net-7 (Línea de Crédito Autorizada)</span>
+                                                    {selectedOrder.payment_due_date ? ` — Vencimiento: ${selectedOrder.payment_due_date}` : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-[10px] font-black px-3.5 py-1.5 rounded-full border shadow-sm ${
+                                            selectedOrder.payment_status === 'paid'
+                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                                : 'bg-indigo-100 text-indigo-900 border-indigo-300'
+                                        }`}>
+                                            {selectedOrder.payment_status === 'paid' ? '✓ Crédito Liquidado / Cobrado' : '🏢 Cargo en Cuenta Corriente B2B'}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-indigo-900/80 leading-relaxed bg-white/70 p-3.5 rounded-xl border border-indigo-100">
+                                        Este pedido fue despachado bajo línea de crédito comercial autorizada. No requiere cobro con tarjeta en checkout; el balance se liquida mediante factura periódica.
+                                    </p>
                                 </section>
                             )}
 

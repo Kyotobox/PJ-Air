@@ -789,6 +789,38 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                     </section>
                 )}
 
+                {/* Credit B2B Card */}
+                {order.payment_method === 'credit' && (
+                    <section className="bg-indigo-50/70 rounded-[2rem] p-6 lg:p-8 border-2 border-indigo-200 shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-indigo-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-indigo-700/30">
+                                    <Building2 size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-indigo-950 uppercase tracking-wider">
+                                        Modalidad Comercial: Crédito B2B Corporativo
+                                    </h3>
+                                    <p className="text-xs text-indigo-700 font-medium">
+                                        Términos de crédito: <span className="font-bold text-indigo-950">Net-7 (Línea de Crédito Autorizada)</span>
+                                        {order.payment_due_date ? ` — Vencimiento: ${order.payment_due_date}` : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            <span className={`text-[10px] font-black px-3.5 py-1.5 rounded-full border shadow-sm ${
+                                order.payment_status === 'paid'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : 'bg-indigo-100 text-indigo-900 border-indigo-300'
+                            }`}>
+                                {order.payment_status === 'paid' ? '✓ Crédito Liquidado / Pagado' : '🏢 Cargo en Cuenta Corriente B2B'}
+                            </span>
+                        </div>
+                        <p className="text-xs text-indigo-900/80 leading-relaxed bg-white/70 p-3.5 rounded-xl border border-indigo-100">
+                            Este pedido fue despachado bajo línea de crédito comercial autorizada. No requiere cobro con tarjeta en checkout; el balance se liquida mediante factura periódica.
+                        </p>
+                    </section>
+                )}
+
                 {/* Details Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Customer Info */}
