@@ -3,37 +3,27 @@
   "version": "5.0.0",
   "kernel_version": "5.3.1",
   "status": "IN_PROGRESS",
-  "current_sprint": "S88",
-  "current_task": "TASK-88-01",
-  "sprints": [
+  "current_sprint": "S89",
+  "current_task": "TASK-89-01",
+  "technical_debt": [
     {
-      "id": "S86",
-      "title": "Sprint S86: Resilient Checkout Auth, Stale Session Recovery, Defensive Delivery Fee and Testing/Prod Deployment",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-86-01",
-          "title": "Resilient checkout authentication, stale session recovery, and NY timezone cutoff sync",
-          "status": "DONE",
-          "type": "FRONTEND/AUTH",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-86-02",
-          "title": "Defensive delivery fee calculation and payment method boundaries in checkout engine",
-          "status": "DONE",
-          "type": "BACKEND/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-86-03",
-          "title": "UI & E2E validation in testing environment, hot-deploy to testing and production VPS",
-          "status": "DONE",
-          "type": "DEVOPS/TESTING",
-          "veracity_hash": null
-        }
-      ]
+      "id": "DEBT-01",
+      "title": "Recuperación y Gestión Comercial de Carritos Abandonados (Botón de Reintento de Pago y Cron de Expiración 48h)",
+      "category": "COMMERCIAL_RECOVERY",
+      "status": "OPEN",
+      "created_at": "2026-11-14",
+      "priority": "MEDIUM"
     },
+    {
+      "id": "DEBT-02",
+      "title": "Ciclo de Vida y Renovación Preventiva del Certificado Fiscal NY Form ST-120",
+      "category": "TAX_COMPLIANCE",
+      "status": "OPEN",
+      "created_at": "2026-11-14",
+      "priority": "LOW"
+    }
+  ],
+  "sprints": [
     {
       "id": "S87",
       "title": "Sprint S87: Gestión de Cheques, Blindaje de Cocina, Aprobación Administrativa y Normalización de Estados",
@@ -65,7 +55,7 @@
     {
       "id": "S88",
       "title": "Sprint S88: Resiliencia Contable (Fallback y Alias Postfix), Blindaje de Recibos en Checkout, Validación Defensiva de Direcciones e Higiene",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-88-01",
@@ -103,46 +93,74 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S89",
+      "title": "Sprint S89: Blindaje para Transferencias Bancarias / Depósitos (ACH / Wire) con Kitchen Shield y Aprobación Administrativa",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-89-01",
+          "title": "Instrucciones Bancarias Oficiales y Carga de Comprobante ACH/Wire en Checkout",
+          "status": "IN_PROGRESS",
+          "type": "FRONTEND/CHECKOUT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-89-02",
+          "title": "Kitchen Shield y Late Invoicing para Transferencias Bancarias (exclusión en findInRange y estado pending_wire_verification)",
+          "status": "TODO",
+          "type": "BACKEND/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-89-03",
+          "title": "Panel Administrativo de Aprobación/Rechazo de Transferencias (endpoints approve-wire y reject-wire con alerta a cocina)",
+          "status": "TODO",
+          "type": "BACKEND/ADMIN",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-89-04",
+          "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Testing VPS",
+          "status": "TODO",
+          "type": "DEVOPS/TESTING",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
-  "archived_sprints_count": 85,
+  "archived_sprints_count": 86,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S88",
-    "title": "Sprint S88: Resiliencia Contable (Fallback y Alias Postfix), Blindaje de Recibos en Checkout, Validación Defensiva de Direcciones e Higiene",
+    "id": "S89",
+    "title": "Sprint S89: Blindaje para Transferencias Bancarias / Depósitos (ACH / Wire) con Kitchen Shield y Aprobación Administrativa",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-88-01",
-        "title": "Fallback Oficial y Resiliencia en Reportes Financieros (Cron y MailService hacia pedidos@jhoanes.com, alias Postfix y reenvío de Nov 13)",
+        "id": "TASK-89-01",
+        "title": "Instrucciones Bancarias Oficiales y Carga de Comprobante ACH/Wire en Checkout",
         "status": "IN_PROGRESS",
-        "type": "BACKEND/CRON",
+        "type": "FRONTEND/CHECKOUT",
         "veracity_hash": null
       },
       {
-        "id": "TASK-88-02",
-        "title": "Desacoplamiento de Recibos y Alertas en Carritos Abandonados (condicionar sendOrderReceipt y alertas a payment_status === 'paid' o crédito B2B)",
+        "id": "TASK-89-02",
+        "title": "Kitchen Shield y Late Invoicing para Transferencias Bancarias (exclusión en findInRange y estado pending_wire_verification)",
         "status": "PENDING",
         "type": "BACKEND/ORDERS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-88-03",
-        "title": "Validación Defensiva de Dirección de Entrega (address_id con 400 Bad Request controlado en OrdersService.create)",
+        "id": "TASK-89-03",
+        "title": "Panel Administrativo de Aprobación/Rechazo de Transferencias (endpoints approve-wire y reject-wire con alerta a cocina)",
         "status": "PENDING",
-        "type": "BACKEND/ORDERS",
+        "type": "BACKEND/ADMIN",
         "veracity_hash": null
       },
       {
-        "id": "TASK-88-04",
-        "title": "Higiene de Procesos Residuales en VPS (kill zombie PID 292387 y limpieza)",
-        "status": "PENDING",
-        "type": "DEVOPS/SYSADMIN",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-88-05",
-        "title": "Suite de Pruebas Unitarias/E2E, Certificación y Despliegue en Testing VPS",
+        "id": "TASK-89-04",
+        "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Testing VPS",
         "status": "PENDING",
         "type": "DEVOPS/TESTING",
         "veracity_hash": null
