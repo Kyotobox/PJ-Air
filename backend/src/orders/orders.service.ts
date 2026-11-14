@@ -602,14 +602,16 @@ export class OrdersService {
       }
     }
 
-    if (appliedAddressId && this.addressRepository && (!(orderData as any).dest_lat || !(orderData as any).dest_lng)) {
-      try {
-        const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
-        if (addr && addr.lat && addr.lng) {
-          (orderData as any).dest_lat = addr.refined_lat || addr.lat;
-          (orderData as any).dest_lng = addr.refined_lng || addr.lng;
-        }
-      } catch (_) {}
+    // TASK-88-03: Pre-validación defensiva de dirección de entrega (prevenir 500 SQLITE_CONSTRAINT)
+    if (appliedAddressId && this.addressRepository) {
+      const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
+      if (!addr) {
+        throw new BadRequestException('La dirección de entrega seleccionada no existe o fue eliminada. Por favor, selecciona una dirección válida o añade una nueva.');
+      }
+      if ((!(orderData as any).dest_lat || !(orderData as any).dest_lng) && addr.lat && addr.lng) {
+        (orderData as any).dest_lat = addr.refined_lat || addr.lat;
+        (orderData as any).dest_lng = addr.refined_lng || addr.lng;
+      }
     }
     let appliedPaymentStatus = paymentStatus || (rest as any).payment_status || 'pending';
 
@@ -737,7 +739,7 @@ export class OrdersService {
           delivery_date: appliedDeliveryDate,
         },
       });
-      const validExisting = activeSameDateOrders.filter(
+      const validExisting = (activeSameDateOrders || []).filter(
         o => o.status !== 'cancelled' && o.status !== 'Cancelado' && (!appliedAddressId || !o.address_id || o.address_id === appliedAddressId)
       );
       if (validExisting.length > 0 || (orderData as any).is_complementary === true) {
@@ -968,26 +970,36 @@ export class OrdersService {
 
     const createdOrder = await this.findOne(savedOrderId);
 
-    // TASK-37-01: Disparar recibo de compra al cliente de forma asíncrona no bloqueante
-    if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function' && user?.email) {
-      this.mailService.sendOrderReceipt(createdOrder, user.email).catch(err => {
-        console.error('[OrdersService] Error sending order receipt email:', err?.message || err);
-      });
-    }
+    // TASK-88-02: Solo despachar recibo al cliente y alerta a cocina si la orden está formalmente confirmada/pagada.
+    // Para órdenes con pago pendiente en pasarela externa (Stripe, Zelle no verificado, Cheques en revisión),
+    // los recibos y alertas se despachan exclusivamente tras confirmación vía webhook o aprobación administrativa.
+    const isConfirmedOrPaid = appliedPaymentStatus === 'paid' || 
+                              initialStatus === 'confirmed' || 
+                              appliedPaymentMethod === 'credit' ||
+                              appliedPaymentMethod === 'cash';
 
-    // TASK-63-05: Despachar factura en inglés si la orden se crea pagada
-    if (appliedPaymentStatus === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function' && user?.email) {
-      this.mailService.sendEnglishInvoice(createdOrder, user.email).catch(err => {
-        console.error('[OrdersService] Error sending initial English invoice:', err?.message || err);
-      });
-    }
+    if (isConfirmedOrPaid) {
+      // TASK-37-01: Disparar recibo de compra al cliente de forma asíncrona no bloqueante
+      if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function' && user?.email) {
+        this.mailService.sendOrderReceipt(createdOrder, user.email).catch(err => {
+          console.error('[OrdersService] Error sending order receipt email:', err?.message || err);
+        });
+      }
 
-    // TASK-37-02: Disparar alerta a producción y operaciones de forma asíncrona no bloqueante
-    if (this.mailService && typeof this.mailService.sendAdminNewOrderAlert === 'function') {
-      const clientName = user?.profile?.full_name || 'Cliente Mayorista';
-      this.mailService.sendAdminNewOrderAlert(createdOrder, user?.email, clientName).catch(err => {
-        console.error('[OrdersService] Error sending admin new order alert email:', err?.message || err);
-      });
+      // TASK-63-05: Despachar factura en inglés si la orden se crea pagada
+      if (appliedPaymentStatus === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function' && user?.email) {
+        this.mailService.sendEnglishInvoice(createdOrder, user.email).catch(err => {
+          console.error('[OrdersService] Error sending initial English invoice:', err?.message || err);
+        });
+      }
+
+      // TASK-37-02: Disparar alerta a producción y operaciones de forma asíncrona no bloqueante
+      if (this.mailService && typeof this.mailService.sendAdminNewOrderAlert === 'function') {
+        const clientName = user?.profile?.full_name || 'Cliente Mayorista';
+        this.mailService.sendAdminNewOrderAlert(createdOrder, user?.email, clientName).catch(err => {
+          console.error('[OrdersService] Error sending admin new order alert email:', err?.message || err);
+        });
+      }
     }
 
     if (shouldSendCreditAlert && this.mailService && user?.email) {
@@ -1195,7 +1207,15 @@ export class OrdersService {
     }
 
     if (delivery_date) order.delivery_date = delivery_date;
-    if (address_id) order.address_id = address_id;
+    if (address_id) {
+      if (this.addressRepository) {
+        const addr = await this.addressRepository.findOne({ where: { id: address_id } });
+        if (!addr) {
+          throw new BadRequestException('La dirección de entrega especificada no existe o fue eliminada');
+        }
+      }
+      order.address_id = address_id;
+    }
     
     if (items && Array.isArray(items)) {
       order.items = [];
@@ -1360,6 +1380,12 @@ export class OrdersService {
       if (typeof this.mailService.sendEnglishInvoice === 'function') {
         this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
           console.error('[OrdersService] Error sending English invoice on check approval:', err?.message || err);
+        });
+      }
+      if (typeof this.mailService.sendAdminNewOrderAlert === 'function') {
+        const clientName = user.profile?.full_name || 'Cliente Mayorista';
+        this.mailService.sendAdminNewOrderAlert(saved, user.email, clientName).catch(err => {
+          console.error('[OrdersService] Error sending admin order alert on check approval:', err?.message || err);
         });
       }
     }

@@ -25,6 +25,6 @@ export declare class MailService {
         createdAt?: Date | string;
     }): Promise<boolean>;
     sendZelleRejectionAlert(order: any, customerEmail: string, reason: string): Promise<boolean>;
-    sendFinancialReport(recipientEmails: string[], reportDate: string, excelBuffer: Buffer): Promise<boolean>;
+    sendFinancialReport(recipientEmails: string[], reportDate: string, excelBuffer: Buffer, isFallback?: boolean, fallbackReason?: string): Promise<boolean>;
     sendPasswordResetEmail(userEmail: string, resetToken: string, clientName?: string | null): Promise<boolean>;
 }

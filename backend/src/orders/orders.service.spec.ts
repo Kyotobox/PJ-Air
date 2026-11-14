@@ -36,7 +36,7 @@ describe('OrdersService', () => {
       create: jest.fn(),
       save: jest.fn(),
       findOne: jest.fn(),
-      find: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
     };
 
@@ -2616,6 +2616,126 @@ describe('OrdersService', () => {
       })).rejects.toThrow(
         new BadRequestException('Foto del cheque es obligatoria para pagos con cheque')
       );
+    });
+  });
+
+  describe('Sprint S88: Resiliencia en Checkout, Desacoplamiento de Recibos y Validación Defensiva de Dirección', () => {
+    it('TASK-88-02 Sad Path: should NOT dispatch order receipt or kitchen alert when cart is pending Stripe checkout', async () => {
+      jest.clearAllMocks();
+      userRepository.findOne.mockResolvedValueOnce({
+        id: 'user-stripe-pending',
+        email: 'abandoned-cart@example.com',
+        account_type: 'regular',
+        profile: { full_name: 'Stripe Cart Abandoner' },
+      });
+      productRepository.find.mockResolvedValueOnce([
+        { id: 1, name: 'Croissant', price: 5.0, status: 'active', is_active: true },
+      ]);
+      const createdOrder = { id: 'order-stripe-pending', user: { email: 'abandoned-cart@example.com' } };
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      const result = await service.create('user-stripe-pending', {
+        items: [{ product_id: 1, quantity: 2 }],
+        payment_method: 'stripe',
+        payment_status: 'pending',
+        status: 'pending',
+        delivery_date: '2026-11-20',
+      });
+
+      expect(result).toBeDefined();
+      expect(mockMailService.sendOrderReceipt).not.toHaveBeenCalled();
+      expect(mockMailService.sendAdminNewOrderAlert).not.toHaveBeenCalled();
+    });
+
+    it('TASK-88-02 Happy Path: should dispatch order receipt and admin alert when order is created via cash or confirmed', async () => {
+      jest.clearAllMocks();
+      userRepository.findOne.mockResolvedValue({
+        id: 'user-cash-confirmed',
+        email: 'cash-buyer@example.com',
+        account_type: 'regular',
+        orders: [],
+        profile: { full_name: 'B2B Cash Buyer' },
+      });
+      productRepository.find.mockResolvedValue([
+        { id: 1, name: 'Croissant', price: 5.0, status: 'active', is_active: true },
+      ]);
+      const createdOrder = { id: 'order-cash-confirmed', user: { email: 'cash-buyer@example.com' }, profile: { full_name: 'B2B Cash Buyer' } };
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      const result = await service.create('user-cash-confirmed', {
+        items: [{ product_id: 1, quantity: 2 }],
+        payment_method: 'cash',
+        delivery_date: '2026-11-20',
+      });
+
+      expect(result).toBeDefined();
+      expect(mockMailService.sendOrderReceipt).toHaveBeenCalled();
+      expect(mockMailService.sendAdminNewOrderAlert).toHaveBeenCalled();
+    });
+
+    it('TASK-88-03 Sad Path: should throw BadRequestException when address_id does not exist in addressRepository', async () => {
+      const mockAddressRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+      };
+      (service as any).addressRepository = mockAddressRepo;
+
+      userRepository.findOne.mockResolvedValueOnce({
+        id: 'user-bad-address',
+        email: 'bad-addr@example.com',
+        account_type: 'regular',
+      });
+      productRepository.find.mockResolvedValueOnce([
+        { id: 1, name: 'Croissant', price: 5.0, status: 'active', is_active: true },
+      ]);
+
+      await expect(service.create('user-bad-address', {
+        items: [{ product_id: 1, quantity: 2 }],
+        address_id: 'deleted-address-uuid-999',
+        delivery_date: '2026-11-20',
+      })).rejects.toThrow(
+        new BadRequestException('La dirección de entrega seleccionada no existe o fue eliminada. Por favor, selecciona una dirección válida o añade una nueva.')
+      );
+
+      expect(mockAddressRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'deleted-address-uuid-999' },
+      });
+    });
+
+    it('TASK-88-03 Happy Path: should accept existing address_id and inject lat/lng coordinates', async () => {
+      const mockAddressRepo = {
+        findOne: jest.fn().mockResolvedValue({
+          id: 'valid-address-uuid-123',
+          lat: 40.7128,
+          lng: -74.0060,
+          refined_lat: 40.7130,
+          refined_lng: -74.0062,
+        }),
+      };
+      (service as any).addressRepository = mockAddressRepo;
+
+      userRepository.findOne.mockResolvedValueOnce({
+        id: 'user-valid-address',
+        email: 'valid-addr@example.com',
+        account_type: 'regular',
+        orders: [],
+      });
+      productRepository.find.mockResolvedValueOnce([
+        { id: 1, name: 'Croissant', price: 5.0, status: 'active', is_active: true },
+      ]);
+      const createdOrder = { id: 'order-valid-address', user: { email: 'valid-addr@example.com' } };
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      const result = await service.create('user-valid-address', {
+        items: [{ product_id: 1, quantity: 2 }],
+        address_id: 'valid-address-uuid-123',
+        delivery_date: '2026-11-20',
+        payment_method: 'cash',
+      });
+
+      expect(result).toBeDefined();
+      expect(mockAddressRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'valid-address-uuid-123' },
+      });
     });
   });
 });

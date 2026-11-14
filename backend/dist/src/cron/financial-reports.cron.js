@@ -61,8 +61,16 @@ let FinancialReportsCron = FinancialReportsCron_1 = class FinancialReportsCron {
         if (recipients.length === 0) {
             recipients.push('accounting@jhoanes.com');
         }
-        const sent = await this.mailService.sendFinancialReport(recipients, todayNY, excelBuffer);
-        this.logger.log(`Despacho de reporte financiero ${todayNY} finalizado. Estado: ${sent ? 'EXITOSO' : 'FALLIDO'}`);
+        let sent = await this.mailService.sendFinancialReport(recipients, todayNY, excelBuffer);
+        let fallbackTriggered = false;
+        if (!sent) {
+            const fallbackEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_USER || 'pedidos@jhoanes.com';
+            this.logger.warn(`Despacho contable primario a ${recipients.join(', ')} no confirmado. Activando reintento defensivo hacia ${fallbackEmail}...`);
+            sent = await this.mailService.sendFinancialReport([fallbackEmail], todayNY, excelBuffer, true, `Reintento defensivo por falla en entrega a ${recipients.join(', ')}`);
+            if (sent)
+                fallbackTriggered = true;
+        }
+        this.logger.log(`Despacho de reporte financiero ${todayNY} finalizado. Estado: ${sent ? 'EXITOSO' : 'FALLIDO'} (Fallback: ${fallbackTriggered})`);
         return {
             sent,
             recipients,

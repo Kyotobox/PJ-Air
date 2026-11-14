@@ -726,6 +726,10 @@ export class PaymentsService {
               if (customerEmail) {
                 await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
               }
+              if (typeof mailSvc.sendAdminNewOrderAlert === 'function') {
+                const clientName = fullOrder.user?.profile?.full_name || 'Cliente Mayorista';
+                await mailSvc.sendAdminNewOrderAlert(fullOrder, customerEmail || undefined, clientName);
+              }
             } catch (err: any) {
               this.logger.warn(`Error sending order receipt from payment_intent.succeeded webhook: ${err?.message || err}`);
             }
@@ -765,6 +769,10 @@ export class PaymentsService {
               const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
               if (customerEmail) {
                 await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+              }
+              if (typeof mailSvc.sendAdminNewOrderAlert === 'function') {
+                const clientName = fullOrder.user?.profile?.full_name || 'Cliente Mayorista';
+                await mailSvc.sendAdminNewOrderAlert(fullOrder, customerEmail || undefined, clientName);
               }
             } catch (err: any) {
               this.logger.warn(`Error sending settlement receipt: ${err?.message || err}`);
@@ -818,6 +826,10 @@ export class PaymentsService {
               const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
               if (customerEmail) {
                 await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+              }
+              if (typeof mailSvc.sendAdminNewOrderAlert === 'function') {
+                const clientName = fullOrder.user?.profile?.full_name || 'Cliente Mayorista';
+                await mailSvc.sendAdminNewOrderAlert(fullOrder, customerEmail || undefined, clientName);
               }
             } catch (err: any) {
               this.logger.warn(`Error sending checkout session order receipt: ${err?.message || err}`);

@@ -1,39 +1,11 @@
 {
   "project": "pj-air",
   "version": "5.0.0",
-  "kernel_version": "5.0.0",
+  "kernel_version": "5.3.1",
   "status": "IN_PROGRESS",
-  "current_sprint": "S87",
-  "current_task": "TASK-87-03",
+  "current_sprint": "S88",
+  "current_task": "TASK-88-01",
   "sprints": [
-    {
-      "id": "S85",
-      "title": "Sprint S85: B2B Onboarding Approval Gate, Late Invoicing and Check OCR",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-85-01",
-          "title": "B2B wholesale pending approval state, login guard, and admin review panel",
-          "status": "DONE",
-          "type": "BACKEND/ONBOARDING",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-85-02",
-          "title": "Late invoicing engine (INV generation strictly on final checkout)",
-          "status": "DONE",
-          "type": "BACKEND/ORDERS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-85-03",
-          "title": "Mandatory check photo upload with OCR amount/MICR validation",
-          "status": "DONE",
-          "type": "BACKEND/PAYMENTS",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S86",
       "title": "Sprint S86: Resilient Checkout Auth, Stale Session Recovery, Defensive Delivery Fee and Testing/Prod Deployment",
@@ -89,33 +61,89 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S88",
+      "title": "Sprint S88: Resiliencia Contable (Fallback y Alias Postfix), Blindaje de Recibos en Checkout, Validación Defensiva de Direcciones e Higiene",
+      "status": "IN_PROGRESS",
+      "tasks": [
+        {
+          "id": "TASK-88-01",
+          "title": "Fallback Oficial y Resiliencia en Reportes Financieros (Cron y MailService hacia pedidos@jhoanes.com, alias Postfix y reenvío de Nov 13)",
+          "status": "DONE",
+          "type": "BACKEND/CRON",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-88-02",
+          "title": "Desacoplamiento de Recibos y Alertas en Carritos Abandonados (condicionar sendOrderReceipt y alertas a payment_status === 'paid' o crédito B2B)",
+          "status": "DONE",
+          "type": "BACKEND/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-88-03",
+          "title": "Validación Defensiva de Dirección de Entrega (address_id con 400 Bad Request controlado en OrdersService.create)",
+          "status": "DONE",
+          "type": "BACKEND/ORDERS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-88-04",
+          "title": "Higiene de Procesos Residuales en VPS (kill zombie PID 292387 y limpieza)",
+          "status": "DONE",
+          "type": "DEVOPS/SYSADMIN",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-88-05",
+          "title": "Suite de Pruebas Unitarias/E2E, Certificación y Despliegue en Testing VPS",
+          "status": "IN_PROGRESS",
+          "type": "DEVOPS/TESTING",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
   "archived_sprints_count": 85,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S87",
-    "title": "Sprint S87: Gestión de Cheques, Blindaje de Cocina, Aprobación Administrativa y Normalización de Estados",
-    "status": "COMPLETED",
+    "id": "S88",
+    "title": "Sprint S88: Resiliencia Contable (Fallback y Alias Postfix), Blindaje de Recibos en Checkout, Validación Defensiva de Direcciones e Higiene",
+    "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-87-01",
-        "title": "Kitchen Shield para Cheques (exclusión en findInRange) y endpoints atómicos approve-check y reject-check con Late Invoicing e inserción contable en check_payments",
-        "status": "DONE",
+        "id": "TASK-88-01",
+        "title": "Fallback Oficial y Resiliencia en Reportes Financieros (Cron y MailService hacia pedidos@jhoanes.com, alias Postfix y reenvío de Nov 13)",
+        "status": "IN_PROGRESS",
+        "type": "BACKEND/CRON",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-88-02",
+        "title": "Desacoplamiento de Recibos y Alertas en Carritos Abandonados (condicionar sendOrderReceipt y alertas a payment_status === 'paid' o crédito B2B)",
+        "status": "PENDING",
         "type": "BACKEND/ORDERS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-87-02",
-        "title": "Normalización de filtros de estados en panel Admin (Pedido Enviado en 'Pedido') y vistas segmentadas para Verificaciones Pendientes y Borradores",
-        "status": "DONE",
-        "type": "FRONTEND/ADMIN",
+        "id": "TASK-88-03",
+        "title": "Validación Defensiva de Dirección de Entrega (address_id con 400 Bad Request controlado en OrdersService.create)",
+        "status": "PENDING",
+        "type": "BACKEND/ORDERS",
         "veracity_hash": null
       },
       {
-        "id": "TASK-87-03",
-        "title": "Suite E2E de validación y certificación en Testing VPS del ciclo completo de cheques, filtros y blindaje de producción",
-        "status": "DONE",
+        "id": "TASK-88-04",
+        "title": "Higiene de Procesos Residuales en VPS (kill zombie PID 292387 y limpieza)",
+        "status": "PENDING",
+        "type": "DEVOPS/SYSADMIN",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-88-05",
+        "title": "Suite de Pruebas Unitarias/E2E, Certificación y Despliegue en Testing VPS",
+        "status": "PENDING",
         "type": "DEVOPS/TESTING",
         "veracity_hash": null
       }

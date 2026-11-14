@@ -106,6 +106,24 @@ describe('FinancialReportsCron', () => {
     expect(result.ordersCount).toBe(2);
   });
 
+  it('TASK-88-01: should trigger fallback to official admin email when primary accounting recipient fails', async () => {
+    mockMailService.sendFinancialReport
+      .mockResolvedValueOnce(false) // Primary fails
+      .mockResolvedValueOnce(true);  // Fallback succeeds
+
+    const result = await cron.handleDailyFinancialReportDispatch('2026-11-01');
+
+    expect(result.sent).toBe(true);
+    expect(mockMailService.sendFinancialReport).toHaveBeenCalledTimes(2);
+    expect(mockMailService.sendFinancialReport).toHaveBeenLastCalledWith(
+      ['pedidos@jhoanes.com'],
+      '2026-11-01',
+      expect.any(Buffer),
+      true,
+      expect.stringContaining('falla en entrega'),
+    );
+  });
+
   it('should throw error if query builder throws an internal database failure (sad path §6)', async () => {
     const brokenQueryBuilder = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),

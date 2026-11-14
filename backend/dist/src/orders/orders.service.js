@@ -522,15 +522,15 @@ let OrdersService = class OrdersService {
                     throw err;
             }
         }
-        if (appliedAddressId && this.addressRepository && (!orderData.dest_lat || !orderData.dest_lng)) {
-            try {
-                const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
-                if (addr && addr.lat && addr.lng) {
-                    orderData.dest_lat = addr.refined_lat || addr.lat;
-                    orderData.dest_lng = addr.refined_lng || addr.lng;
-                }
+        if (appliedAddressId && this.addressRepository) {
+            const addr = await this.addressRepository.findOne({ where: { id: appliedAddressId } });
+            if (!addr) {
+                throw new common_1.BadRequestException('La dirección de entrega seleccionada no existe o fue eliminada. Por favor, selecciona una dirección válida o añade una nueva.');
             }
-            catch (_) { }
+            if ((!orderData.dest_lat || !orderData.dest_lng) && addr.lat && addr.lng) {
+                orderData.dest_lat = addr.refined_lat || addr.lat;
+                orderData.dest_lng = addr.refined_lng || addr.lng;
+            }
         }
         let appliedPaymentStatus = paymentStatus || rest.payment_status || 'pending';
         let appliedPaymentMethod = rest.payment_method || orderData.payment_method || rest.paymentMethod || orderData.paymentMethod || (user?.account_type === 'credit' ? 'credit' : 'stripe');
@@ -635,7 +635,7 @@ let OrdersService = class OrdersService {
                     delivery_date: appliedDeliveryDate,
                 },
             });
-            const validExisting = activeSameDateOrders.filter(o => o.status !== 'cancelled' && o.status !== 'Cancelado' && (!appliedAddressId || !o.address_id || o.address_id === appliedAddressId));
+            const validExisting = (activeSameDateOrders || []).filter(o => o.status !== 'cancelled' && o.status !== 'Cancelado' && (!appliedAddressId || !o.address_id || o.address_id === appliedAddressId));
             if (validExisting.length > 0 || orderData.is_complementary === true) {
                 isComplementary = true;
                 deliveryFee = 0.00;
@@ -821,21 +821,27 @@ let OrdersService = class OrdersService {
             return savedOrder.id;
         });
         const createdOrder = await this.findOne(savedOrderId);
-        if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function' && user?.email) {
-            this.mailService.sendOrderReceipt(createdOrder, user.email).catch(err => {
-                console.error('[OrdersService] Error sending order receipt email:', err?.message || err);
-            });
-        }
-        if (appliedPaymentStatus === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function' && user?.email) {
-            this.mailService.sendEnglishInvoice(createdOrder, user.email).catch(err => {
-                console.error('[OrdersService] Error sending initial English invoice:', err?.message || err);
-            });
-        }
-        if (this.mailService && typeof this.mailService.sendAdminNewOrderAlert === 'function') {
-            const clientName = user?.profile?.full_name || 'Cliente Mayorista';
-            this.mailService.sendAdminNewOrderAlert(createdOrder, user?.email, clientName).catch(err => {
-                console.error('[OrdersService] Error sending admin new order alert email:', err?.message || err);
-            });
+        const isConfirmedOrPaid = appliedPaymentStatus === 'paid' ||
+            initialStatus === 'confirmed' ||
+            appliedPaymentMethod === 'credit' ||
+            appliedPaymentMethod === 'cash';
+        if (isConfirmedOrPaid) {
+            if (this.mailService && typeof this.mailService.sendOrderReceipt === 'function' && user?.email) {
+                this.mailService.sendOrderReceipt(createdOrder, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending order receipt email:', err?.message || err);
+                });
+            }
+            if (appliedPaymentStatus === 'paid' && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function' && user?.email) {
+                this.mailService.sendEnglishInvoice(createdOrder, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending initial English invoice:', err?.message || err);
+                });
+            }
+            if (this.mailService && typeof this.mailService.sendAdminNewOrderAlert === 'function') {
+                const clientName = user?.profile?.full_name || 'Cliente Mayorista';
+                this.mailService.sendAdminNewOrderAlert(createdOrder, user?.email, clientName).catch(err => {
+                    console.error('[OrdersService] Error sending admin new order alert email:', err?.message || err);
+                });
+            }
         }
         if (shouldSendCreditAlert && this.mailService && user?.email) {
             const clientName = user.profile?.full_name || 'Cliente B2B';
@@ -1003,8 +1009,15 @@ let OrdersService = class OrdersService {
         }
         if (delivery_date)
             order.delivery_date = delivery_date;
-        if (address_id)
+        if (address_id) {
+            if (this.addressRepository) {
+                const addr = await this.addressRepository.findOne({ where: { id: address_id } });
+                if (!addr) {
+                    throw new common_1.BadRequestException('La dirección de entrega especificada no existe o fue eliminada');
+                }
+            }
             order.address_id = address_id;
+        }
         if (items && Array.isArray(items)) {
             order.items = [];
             await this.orderItemRepository.delete({ order_id: id });
@@ -1150,6 +1163,12 @@ let OrdersService = class OrdersService {
             if (typeof this.mailService.sendEnglishInvoice === 'function') {
                 this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
                     console.error('[OrdersService] Error sending English invoice on check approval:', err?.message || err);
+                });
+            }
+            if (typeof this.mailService.sendAdminNewOrderAlert === 'function') {
+                const clientName = user.profile?.full_name || 'Cliente Mayorista';
+                this.mailService.sendAdminNewOrderAlert(saved, user.email, clientName).catch(err => {
+                    console.error('[OrdersService] Error sending admin order alert on check approval:', err?.message || err);
                 });
             }
         }

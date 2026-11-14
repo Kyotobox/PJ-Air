@@ -629,6 +629,10 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                             if (customerEmail) {
                                 await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
                             }
+                            if (typeof mailSvc.sendAdminNewOrderAlert === 'function') {
+                                const clientName = fullOrder.user?.profile?.full_name || 'Cliente Mayorista';
+                                await mailSvc.sendAdminNewOrderAlert(fullOrder, customerEmail || undefined, clientName);
+                            }
                         }
                         catch (err) {
                             this.logger.warn(`Error sending order receipt from payment_intent.succeeded webhook: ${err?.message || err}`);
@@ -667,6 +671,10 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                             const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
                             if (customerEmail) {
                                 await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+                            }
+                            if (typeof mailSvc.sendAdminNewOrderAlert === 'function') {
+                                const clientName = fullOrder.user?.profile?.full_name || 'Cliente Mayorista';
+                                await mailSvc.sendAdminNewOrderAlert(fullOrder, customerEmail || undefined, clientName);
                             }
                         }
                         catch (err) {
@@ -723,6 +731,10 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                             const customerEmail = fullOrder.user?.email || session.customer_details?.email || session.customer_email;
                             if (customerEmail) {
                                 await mailSvc.sendOrderReceipt(fullOrder, customerEmail);
+                            }
+                            if (typeof mailSvc.sendAdminNewOrderAlert === 'function') {
+                                const clientName = fullOrder.user?.profile?.full_name || 'Cliente Mayorista';
+                                await mailSvc.sendAdminNewOrderAlert(fullOrder, customerEmail || undefined, clientName);
                             }
                         }
                         catch (err) {

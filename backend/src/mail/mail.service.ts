@@ -853,12 +853,15 @@ export class MailService {
   }
 
   /**
-   * TASK-56-06 / TASK-57-04: Envío automático del reporte financiero consolidado en Excel.
+   * TASK-56-06 / TASK-57-04 / TASK-88-01: Envío automático del reporte financiero consolidado en Excel
+   * con soporte de fallback administrativo y notificación de contingencia ante rebotes.
    */
   async sendFinancialReport(
     recipientEmails: string[],
     reportDate: string,
     excelBuffer: Buffer,
+    isFallback = false,
+    fallbackReason?: string,
   ): Promise<boolean> {
     try {
       if (!recipientEmails || recipientEmails.length === 0) {
@@ -873,8 +876,21 @@ export class MailService {
       }
 
       const filename = `FINANCIAL_REPORT_${reportDate}.xlsx`;
+      const fallbackNoticeHtml = isFallback
+        ? `
+          <div style="background: #fef2f2; border: 1px solid #f87171; border-left: 4px solid #ef4444; padding: 14px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="margin: 0; color: #991b1b; font-weight: bold; font-size: 14px;">⚠️ AVISO DE CONTINGENCIA — REENVÍO POR FALLBACK</p>
+            <p style="margin: 6px 0 0 0; color: #b91c1c; font-size: 13px; line-height: 1.5;">
+              El despacho automático hacia el buzón contable principal no pudo completarse satisfactoriamente. Se reenvía este reporte oficial con su archivo Excel adjunto al correo oficial de respaldo administrativo para asegurar la continuidad de la conciliación diaria sin pérdida de datos.
+            </p>
+            ${fallbackReason ? `<p style="margin: 6px 0 0 0; color: #7f1d1d; font-size: 11px;"><em>Motivo técnico registrado: ${fallbackReason}</em></p>` : ''}
+          </div>
+        `
+        : '';
+
       const html = `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+          ${fallbackNoticeHtml}
           <div style="border-bottom: 2px solid #059669; padding-bottom: 16px; margin-bottom: 20px;">
             <h2 style="color: #065f46; margin: 0; font-size: 20px;">Daily Consolidated Financial Report</h2>
             <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Operations Close as of ${reportDate} (America/New_York)</p>
@@ -889,10 +905,14 @@ export class MailService {
         </div>
       `;
 
+      const subject = isFallback
+        ? `⚠️ [CONTINGENCY-FALLBACK] Daily Consolidated Financial Report — Jhoanes Wholesale — ${reportDate}`
+        : `📊 Daily Consolidated Financial Report — Jhoanes Wholesale — ${reportDate}`;
+
       await this.transporter.sendMail({
         from: SMTP_USER ? `"Jhoanes Bakery Accounting" <${SMTP_USER}>` : '"Jhoanes Bakery Accounting" <accounting@jhoanes.com>',
         to: validEmails.join(', '),
-        subject: `📊 Daily Consolidated Financial Report — Jhoanes Wholesale — ${reportDate}`,
+        subject,
         html,
         attachments: [
           {
@@ -903,10 +923,17 @@ export class MailService {
         ],
       });
 
-      this.logger.log(`Financial report sent to ${validEmails.join(', ')} for date ${reportDate}`);
+      this.logger.log(`Financial report sent to ${validEmails.join(', ')} for date ${reportDate} (isFallback: ${isFallback})`);
       return true;
     } catch (err: any) {
-      this.logger.error(`Error sending financial report: ${err.message}`);
+      this.logger.error(`Error sending financial report to ${recipientEmails.join(', ')}: ${err.message}`);
+      if (!isFallback) {
+        const fallbackEmail = ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_NOTIFICATION_EMAIL || SMTP_USER || 'pedidos@jhoanes.com';
+        if (fallbackEmail && !recipientEmails.includes(fallbackEmail)) {
+          this.logger.warn(`Triggering automatic fallback dispatch to official email: ${fallbackEmail}`);
+          return this.sendFinancialReport([fallbackEmail], reportDate, excelBuffer, true, err.message);
+        }
+      }
       return false;
     }
   }
