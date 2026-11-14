@@ -1,5 +1,5 @@
 # SPRINT S92 - Sprint Activo
-**Objetivo**: Desglose de Delivery Fee en Expediente del Pedido, Segmentación Canónica de Croissants (Grupo 1 vs Grupo 2 con cálculo de bandejas de 12) en Reportes Consolidados y Despliegue
+**Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-14
 
 - [x] **TASK-92-01** [TASK] Desglose visible y editable de Delivery Fee al final de la lista de productos en el Expediente del Pedido (Admin)
