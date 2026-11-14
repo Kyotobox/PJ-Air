@@ -48,9 +48,7 @@
 27. **Mandato Ineludible de Turno 1 (Turn-1 Constitutional Gate)**: En el primer turno de interacción de cualquier sesión de trabajo (sea interactiva con PO o desatendida vía supervisor/Aider/worker en host o VPS), el Agente queda **ESTRICTAMENTE INHABILITADO** para realizar modificaciones de código, ejecutar análisis o inspeccionar archivos sin antes ejecutar físicamente el diagnóstico de gobernanza:
 - En entornos Windows: `bin\logix check`
 - En entornos Linux / VPS: `bin/logix check` o `logix check`
-*Bifurcación Estricta de Estado*:
-- Si `logix check` retorna `exit code 0` (Zona Verde/Ámbar): Proceder inmediatamente a la vinculación de sesión: `bin/logix takeover --conversation-id="<ID>"`.
-- Si `logix check` retorna `exit code 2` (`[ZONA: ROJA | HANDOVER_OBLIGATORIO]`): El Agente DEBE ejecutar de forma mandatoria y exclusiva `bin/logix handover`, reportar el ID del Relay Atómico, y **PARALIZARSE DE INMEDIATO** sin llamar a `takeover` en el mismo hilo, exigiendo la apertura de un nuevo chat en el IDE (§53).
+Seguido inmediatamente de la vinculación de sesión: `bin/logix takeover --conversation-id="<ID>"`.
 Si el comando no existe o falla con error de sistema, el Agente DEBE declarar `[BLOQUEO_INFRAESTRUCTURA]` y no simular progreso. Queda prohibida la omisión de este paso por motivos de agilidad o complacencia.
 
 # VETO A MOCKS COGNITIVOS Y MENTIRAS COMPLACIENTES (§47)
@@ -64,14 +62,3 @@ Si el comando no existe o falla con error de sistema, el Agente DEBE declarar `[
 # DIRECTIVA DE RESOLUCIÓN EJECUTIVA Y ANTI-FRICCIÓN BUROCRÁTICA (§52)
 
 30. **Directiva de Resolución Ejecutiva y Anti-Fricción Burocrática (Bias to Action) (§52)**: Quedan proscritas las disertaciones teóricas extensas y las autopsias forenses no solicitadas. Toda interacción debe estructurarse en: Acción Ejecutada (física en disco), Resultado Empírico (tests, exit code, commit) y Siguiente Paso Inmediato. Las doctrinas de calidad (§4, §6, §12.b, §45) son compuertas de excelencia de ingeniería, jamás pretextos burocráticos para justificar inacción, parálisis o transferir fricción manual al usuario. Si una compuerta bloquea un flujo automatizado, el Agente debe diagnosticar y resolver técnicamente la compuerta.
-
-# PROSCRIPCIÓN DE AUTO-TAKEOVER Y PARÁLISIS FÍSICA POST-HANDOVER (§53)
-
-31. **Proscripción Absoluta de Auto-Takeover en el Mismo Hilo Conversacional y Parálisis Física Post-Handover (§53)**:
-1. **Separación Estricta de Relevos**: Queda terminantemente prohibido para el Agente ejecutar `logix handover` e inmediatamente `logix takeover` dentro del mismo turno o en el mismo hilo conversacional ante una señal de Zona Roja (`Odómetro > 50%` o `100.0%`) o compactación externa (`<CONTEXT_SUMMARY>`).
-2. **Parálisis Inescapable Post-Handover**: Una vez ejecutado `logix handover`, el Agente queda **ESTRICTAMENTE INHABILITADO** para realizar cualquier llamada adicional a herramientas (`call no more tools`). Debe detener su turno de forma inmediata, limitando su respuesta exclusivamente a 3 líneas de texto:
-   - Notificación de Sellado y Relay ID (`RELAY-XXXX`).
-   - Hash del commit en Git y estado limpio de disco.
-   - Mandato obligatorio: *"Sesión sellada por saturación cognitiva. Por favor abra un nuevo chat en Antigravity para continuar con mente limpia."*
-3. **Clasificación Doctrinal**: Cualquier intento de encadenar un auto-takeover para continuar la ejecución en el mismo hilo tras un handover de saturación será clasificado como **Fatal Drift de Nivel 1** (simulación de frescura cognitiva y violación gravísima de la Verdad Atómica).
-4. **Candado de Bloqueo Pre-Takeover (Lockfile Físico)**: El comando `handover` o su wrapper genera el cerrojo `vault/runtime/handover_halt.lock`. Si se detecta una invocación de `takeover` en el mismo ID de conversación sin reinicio formal de sesión, la operación fallará físicamente con código de error.
