@@ -1,7 +1,8 @@
-# SPRINT S93 - Sprint Activo
-**Objetivo**: Desbloqueo y auto-aprobación de cuentas comerciales B2B y clarificación de órdenes a Crédito B2B en panel administrativo
+# SPRINT S92 - Sprint Activo
+**Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-14
 
-- [x] **TASK-93-01** [TASK] Desbloqueo y Aprobación de Clientes B2B (`account_status = 'APPROVED'`) y configuración de política de auto-aprobación en registro (`auth.service.ts`)
-- [x] **TASK-93-02** [TASK] Clarificación y Rediseño de Insignia de Pedidos a Crédito B2B (`🏢 CRÉDITO B2B / Facturación`) en listado y expediente de órdenes
-- [x] **TASK-93-03** [TASK] Suite de pruebas automatizadas con Sad Paths (§6), confirmación operativa de INV-1647 y despliegue a VPS (Testing y Producción)
+- [x] **TASK-92-01** [TASK] Desglose visible y editable de Delivery Fee al final de la lista de productos en el Expediente del Pedido (Admin)
+- [x] **TASK-92-02** [TASK] Segmentación canónica de Croissants en Reportes Consolidados (Grupo 1 Plain con cálculo de bandejas de 12 y sobrantes, Grupo 2 Colores y Grupo 3 Small) en vista web y Excel
+- [x] **TASK-92-03** [TASK] Suite de pruebas automatizadas con Sad Paths (§6) para cálculo de flete en expediente y segmentación de reportes
+- [x] **TASK-92-04** [TASK] Certificación integral, despliegue en ambiente de testing VPS y sincronización a producción

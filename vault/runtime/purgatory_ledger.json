@@ -635,5 +635,33 @@
     "exile_name": "1794660795044_deploy-testing.sh",
     "hash": "F5F52B77C6A2919CEA7229E1863B877040F3EA3090B7C5D906D96B90FDB78AFE",
     "original_path": "/home/opc/code/pj-air/deploy-testing.sh"
+  },
+  {
+    "timestamp": "2026-11-14T17:50:05.854733",
+    "original_name": "ARCHITECTURE.md",
+    "exile_name": "1794678605852_ARCHITECTURE.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/ARCHITECTURE.md"
+  },
+  {
+    "timestamp": "2026-11-14T17:50:05.856547",
+    "original_name": "PO-Executive-Map.md",
+    "exile_name": "1794678605855_PO-Executive-Map.md",
+    "hash": "FFEA1AEC10C1F9933B58C4357E66434F72C4A2AC8A7CCBBCEFB5783AE4627C77",
+    "original_path": "/home/opc/code/pj-air/PO-Executive-Map.md"
+  },
+  {
+    "timestamp": "2026-11-14T17:50:05.858174",
+    "original_name": "deploy-testing.sh",
+    "exile_name": "1794678605857_deploy-testing.sh",
+    "hash": "F5F52B77C6A2919CEA7229E1863B877040F3EA3090B7C5D906D96B90FDB78AFE",
+    "original_path": "/home/opc/code/pj-air/deploy-testing.sh"
+  },
+  {
+    "timestamp": "2026-11-14T17:50:05.863409",
+    "original_name": "database.sqlite",
+    "exile_name": "1794678605859_database.sqlite",
+    "hash": "DD179365DD9ECB32D9BFAD9BE318110B205A713F7494BE962EF816BC666BB771",
+    "original_path": "/home/opc/code/pj-air/database.sqlite"
   }
 ]
