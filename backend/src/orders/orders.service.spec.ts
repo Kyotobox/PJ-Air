@@ -2738,5 +2738,174 @@ describe('OrdersService', () => {
       });
     });
   });
+
+  describe('Sprint S89: Blindaje para Transferencias Bancarias / Depósitos (ACH / Wire) con Kitchen Shield y Aprobación Administrativa', () => {
+    it('TASK-89-01 & TASK-89-02 Sad Path (§6): should throw BadRequestException when ACH order is submitted without wire voucher receipt', async () => {
+      userRepository.findOne.mockResolvedValueOnce({
+        id: 'user-wire-missing',
+        email: 'client@example.com',
+        account_type: 'regular',
+      });
+      productRepository.find.mockResolvedValueOnce([
+        { id: 1, name: 'Croissant', price: 5.0, status: 'active', is_active: true },
+      ]);
+
+      await expect(service.create('user-wire-missing', {
+        items: [{ product_id: 1, quantity: 2 }],
+        payment_method: 'ach',
+        wire_reference: 'WIRE-123456',
+        delivery_date: '2026-11-20',
+      })).rejects.toThrow(
+        new BadRequestException('Comprobante de transferencia bancaria es obligatorio para pagos ACH / Wire')
+      );
+    });
+
+    it('TASK-89-02 Happy Path: should create ACH order in pending_wire_verification with Late Invoicing (invoice_number null)', async () => {
+      let capturedOrderData: any = null;
+      mockManager.create.mockImplementation((entityClass: any, data: any) => {
+        if (entityClass === Order || entityClass.name === 'Order') {
+          capturedOrderData = { ...data, id: 'order-ach-verified-uuid' };
+          return capturedOrderData;
+        }
+        return data;
+      });
+      mockManager.save.mockImplementation(async (entityClass: any, data: any) => {
+        return Array.isArray(data) ? data : { ...data, id: data.id || 'order-ach-verified-uuid' };
+      });
+
+      userRepository.findOne.mockResolvedValueOnce({
+        id: 'user-wire-1',
+        email: 'wire-buyer@example.com',
+        account_type: 'regular',
+        orders: [],
+      });
+      productRepository.find.mockResolvedValueOnce([
+        { id: 10, name: 'Baguette', price: 4.0, status: 'active', is_active: true },
+      ]);
+      const createdOrder = {
+        id: 'order-ach-verified-uuid',
+        user: { email: 'wire-buyer@example.com' },
+        payment_method: 'ach',
+        payment_status: 'pending_wire_verification',
+        invoice_number: null,
+      };
+      service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+      const result = await service.create('user-wire-1', {
+        items: [{ product_id: 10, quantity: 5 }],
+        deliveryType: 'pickup',
+        payment_method: 'ach',
+        wire_receipt_url: 'https://storage.jhoanes.com/wire/voucher_987.pdf',
+        wire_reference: 'TRACE-987654321',
+      });
+
+      expect(result).toBeDefined();
+      expect(capturedOrderData.payment_status).toBe('pending_wire_verification');
+      expect(capturedOrderData.invoice_number).toBeNull();
+      expect(capturedOrderData.wire_receipt_url).toBe('https://storage.jhoanes.com/wire/voucher_987.pdf');
+      expect(capturedOrderData.wire_reference).toBe('TRACE-987654321');
+    });
+
+    it('TASK-89-02 Kitchen Shield: findInRange should exclude pending_wire_verification from kitchen production list', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([
+          {
+            id: 'order-confirmed-1',
+            delivery_date: '2026-11-20',
+            payment_status: 'paid',
+            status: 'confirmed',
+          },
+        ]),
+      };
+      orderRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+
+      const results = await service.findInRange('2026-11-20', '2026-11-20');
+
+      expect(results).toHaveLength(1);
+      expect(results[0].id).toBe('order-confirmed-1');
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'order.payment_status NOT IN (:...pendingVerifications)',
+        expect.objectContaining({
+          pendingVerifications: expect.arrayContaining(['pending_wire_verification']),
+        })
+      );
+    });
+
+    it('TASK-89-03 Happy Path: approveWirePayment should transition payment_status to paid, assign invoice_number and dispatch alerts', async () => {
+      const pendingOrder = {
+        id: 'order-wire-to-approve',
+        user_id: 'user-wire-approved',
+        status: 'pending',
+        payment_status: 'pending_wire_verification',
+        invoice_number: null,
+        notes: 'Initial notes',
+      };
+      service.findOne = jest.fn().mockResolvedValue(pendingOrder);
+      service.getNextInvoiceNumber = jest.fn().mockResolvedValue('INV-9999');
+      orderRepository.save.mockImplementation(async (order: any) => order);
+
+      userRepository.findOne.mockResolvedValueOnce({
+        id: 'user-wire-approved',
+        email: 'approved-wire@example.com',
+        profile: { full_name: 'Approved Wholesale Customer' },
+      });
+
+      const approved = await service.approveWirePayment('order-wire-to-approve', 'Deposit verified in Chase bank ledger');
+
+      expect(approved.payment_status).toBe('paid');
+      expect(approved.status).toBe('Pedido Enviado');
+      expect(approved.invoice_number).toBe('INV-9999');
+      expect(approved.notes).toContain('[Aprobación Transferencia ACH/Wire]: Deposit verified in Chase bank ledger');
+      expect(mockMailService.sendOrderReceipt).toHaveBeenCalledWith(approved, 'approved-wire@example.com');
+      expect(mockMailService.sendAdminNewOrderAlert).toHaveBeenCalled();
+    });
+
+    it('TASK-89-03 Sad Path (§6): approveWirePayment should throw BadRequestException if order is already cancelled', async () => {
+      const cancelledOrder = {
+        id: 'order-wire-cancelled',
+        user_id: 'user-wire-cancelled',
+        status: 'cancelled',
+        payment_status: 'pending_wire_verification',
+      };
+      service.findOne = jest.fn().mockResolvedValue(cancelledOrder);
+
+      await expect(service.approveWirePayment('order-wire-cancelled', 'Notes')).rejects.toThrow(
+        new BadRequestException('Cannot approve wire transfer for a cancelled order')
+      );
+    });
+
+    it('TASK-89-03 Sad Path (§6): approveWirePayment should throw NotFoundException if order does not exist', async () => {
+      service.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(service.approveWirePayment('non-existent-order', 'Notes')).rejects.toThrow(
+        new NotFoundException('Order not found')
+      );
+    });
+
+    it('TASK-89-03 Happy Path & Sad Path (§6): rejectWirePayment should cancel order and throw NotFoundException if missing', async () => {
+      const activeOrder = {
+        id: 'order-wire-to-reject',
+        status: 'pending',
+        payment_status: 'pending_wire_verification',
+        notes: 'Existing notes',
+      };
+      service.findOne = jest.fn().mockResolvedValueOnce(activeOrder);
+      orderRepository.save.mockImplementation(async (order: any) => order);
+
+      const rejected = await service.rejectWirePayment('order-wire-to-reject', 'Voucher is illegible / funds unverified');
+      expect(rejected.status).toBe('Cancelado');
+      expect(rejected.payment_status).toBe('unpaid');
+      expect(rejected.notes).toContain('[Rechazo Transferencia ACH/Wire]: Voucher is illegible / funds unverified');
+
+      service.findOne = jest.fn().mockResolvedValueOnce(null);
+      await expect(service.rejectWirePayment('non-existent-wire', 'Reason')).rejects.toThrow(
+        new NotFoundException('Order not found')
+      );
+    });
+  });
 });
 

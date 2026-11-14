@@ -51,6 +51,8 @@ export declare class OrdersService {
     rejectZellePayment(orderId: string, reason?: string): Promise<Order>;
     approveCheckPayment(orderId: string, notes?: string): Promise<Order>;
     rejectCheckPayment(orderId: string, reason?: string): Promise<Order>;
+    approveWirePayment(orderId: string, notes?: string): Promise<Order>;
+    rejectWirePayment(orderId: string, reason?: string): Promise<Order>;
     settleBatch(userId: string, userRole: string, dto: {
         order_ids: string[];
         payment_method: string;

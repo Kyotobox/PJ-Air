@@ -63,7 +63,7 @@ export class FeeCalculatorService {
       } else {
         feeAmount = Math.round((rawFee + Number.EPSILON) * 100) / 100;
       }
-    } else if (['zelle', 'check', 'cheque', 'cash', 'efectivo', 'credit', 'credito'].includes(method)) {
+    } else if (['zelle', 'check', 'cheque', 'cash', 'efectivo', 'credit', 'credito', 'wire'].includes(method)) {
       feePercentage = 0.0;
       feeAmount = 0.0;
     } else {

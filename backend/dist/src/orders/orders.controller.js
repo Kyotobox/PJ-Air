@@ -219,6 +219,12 @@ let OrdersController = class OrdersController {
     async rejectCheck(id, reason) {
         return this.ordersService.rejectCheckPayment(id, reason);
     }
+    async approveWire(id, notes) {
+        return this.ordersService.approveWirePayment(id, notes);
+    }
+    async rejectWire(id, reason) {
+        return this.ordersService.rejectWirePayment(id, reason);
+    }
     async assignDelivery(id, deliveryUserId) {
         return this.ordersService.assignDelivery(id, deliveryUserId);
     }
@@ -441,6 +447,26 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "rejectCheck", null);
+__decorate([
+    (0, common_1.Patch)(':id/approve-wire'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('notes')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "approveWire", null);
+__decorate([
+    (0, common_1.Patch)(':id/reject-wire'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('reason')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "rejectWire", null);
 __decorate([
     (0, common_1.Patch)(':id/assign'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),

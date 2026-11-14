@@ -46,6 +46,8 @@ export declare class OrdersController {
     rejectZelle(id: string, reason?: string): Promise<import("./order.entity").Order>;
     approveCheck(id: string, notes?: string): Promise<import("./order.entity").Order>;
     rejectCheck(id: string, reason?: string): Promise<import("./order.entity").Order>;
+    approveWire(id: string, notes?: string): Promise<import("./order.entity").Order>;
+    rejectWire(id: string, reason?: string): Promise<import("./order.entity").Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<import("./order.entity").Order>;
     uploadReceipt(file: Express.Multer.File): Promise<{
         url: string;

@@ -26,6 +26,8 @@ export declare class Order {
     check_amount: number;
     check_image_url: string;
     check_verified: boolean;
+    wire_reference: string;
+    wire_receipt_url: string;
     tax_amount: number;
     tax_rate: number;
     tax_exempt: boolean;

@@ -245,6 +245,12 @@ let AppModule = AppModule_1 = class AppModule {
             if (!orderColNames.includes('store_credit_applied')) {
                 await qr.query(`ALTER TABLE orders ADD COLUMN store_credit_applied DECIMAL(10,2) DEFAULT 0;`);
             }
+            if (!orderColNames.includes('wire_reference')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN wire_reference VARCHAR;`);
+            }
+            if (!orderColNames.includes('wire_receipt_url')) {
+                await qr.query(`ALTER TABLE orders ADD COLUMN wire_receipt_url TEXT;`);
+            }
             await qr.query(`DROP TABLE IF EXISTS scheduled_orders;`);
             await qr.query(`DROP TABLE IF EXISTS delivery_zones;`);
             await qr.query(`

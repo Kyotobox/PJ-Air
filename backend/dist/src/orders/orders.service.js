@@ -339,7 +339,7 @@ let OrdersService = class OrdersService {
             end: queryEnd,
         })
             .andWhere('order.payment_status NOT IN (:...pendingVerifications)', {
-            pendingVerifications: ['pending_zelle_verification', 'pending_check_verification'],
+            pendingVerifications: ['pending_zelle_verification', 'pending_check_verification', 'pending_wire_verification'],
         })
             .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] });
         if (userId) {
@@ -491,6 +491,14 @@ let OrdersService = class OrdersService {
         if (isEarlyCheck && (!earlyCheckPhoto || !String(earlyCheckPhoto).trim())) {
             throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
         }
+        const isEarlyWire = ['ACH', 'WIRE', 'BANK_TRANSFER'].includes(String(earlyMethod || '').trim().toUpperCase());
+        const earlyWirePhoto = orderData.wire_receipt_url ||
+            orderData.wireReceiptUrl ||
+            orderData.ach_receipt_url ||
+            orderData.achReceiptUrl;
+        if (isEarlyWire && (!earlyWirePhoto || !String(earlyWirePhoto).trim())) {
+            throw new common_1.BadRequestException('Comprobante de transferencia bancaria es obligatorio para pagos ACH / Wire');
+        }
         const { items, ...rest } = orderData;
         const { deliveryDate, paymentDueDate, addressId, deliveryType, deliveryAddressText, paymentStatus, ...otherData } = rest;
         let itemsTotal = 0;
@@ -554,6 +562,31 @@ let OrdersService = class OrdersService {
                 throw new common_1.BadRequestException('Foto del cheque es obligatoria para pagos con cheque');
             }
             appliedPaymentStatus = 'pending_check_verification';
+        }
+        const isWirePayment = ['ach', 'wire', 'bank_transfer'].includes(String(appliedPaymentMethod || '').trim().toLowerCase());
+        const rawWireReceipt = orderData.wire_receipt_url ||
+            orderData.wireReceiptUrl ||
+            orderData.ach_receipt_url ||
+            orderData.achReceiptUrl ||
+            rest.wire_receipt_url ||
+            rest.wireReceiptUrl ||
+            rest.ach_receipt_url ||
+            rest.achReceiptUrl;
+        const appliedWireReceiptUrl = rawWireReceipt ? String(rawWireReceipt).trim() : null;
+        const rawWireRef = orderData.wire_reference ||
+            orderData.wireReference ||
+            orderData.ach_reference ||
+            orderData.achReference ||
+            rest.wire_reference ||
+            rest.wireReference ||
+            rest.ach_reference ||
+            rest.achReference;
+        const appliedWireReference = rawWireRef ? String(rawWireRef).trim() : null;
+        if (isWirePayment) {
+            if (!appliedWireReceiptUrl) {
+                throw new common_1.BadRequestException('Comprobante de transferencia bancaria es obligatorio para pagos ACH / Wire');
+            }
+            appliedPaymentStatus = 'pending_wire_verification';
         }
         let appliedPaymentDueDate = null;
         if (appliedPaymentMethod === 'credit') {
@@ -786,6 +819,8 @@ let OrdersService = class OrdersService {
                 check_amount: orderData.check_amount !== undefined ? Number(orderData.check_amount) : orderData.checkAmount !== undefined ? Number(orderData.checkAmount) : null,
                 check_image_url: appliedCheckImageUrl,
                 check_verified: Boolean(orderData.check_verified || orderData.checkVerified || rest.check_verified || rest.checkVerified),
+                wire_reference: appliedWireReference,
+                wire_receipt_url: appliedWireReceiptUrl,
                 packaging_fee: packagingFee,
                 packaging_discount: packagingDiscount,
                 fee_amount: feeAmount,
@@ -1183,6 +1218,59 @@ let OrdersService = class OrdersService {
         order.status = 'Cancelado';
         if (reason) {
             order.notes = `[Rechazo Cheque]: ${reason}\n${order.notes || ''}`;
+        }
+        const saved = await this.orderRepository.save(order);
+        return saved;
+    }
+    async approveWirePayment(orderId, notes) {
+        const order = await this.findOne(orderId);
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        if (order.status === 'cancelled' || order.status === 'Cancelado') {
+            throw new common_1.BadRequestException('Cannot approve wire transfer for a cancelled order');
+        }
+        order.payment_status = 'paid';
+        if (this.normalizeStatus(order.status) === 'pending' || order.status === 'pending' || order.status === 'Pedido') {
+            order.status = 'Pedido Enviado';
+        }
+        if (!order.invoice_number) {
+            order.invoice_number = await this.getNextInvoiceNumber();
+        }
+        if (notes) {
+            order.notes = order.notes ? `${order.notes}\n[Aprobación Transferencia ACH/Wire]: ${notes}` : `[Aprobación Transferencia ACH/Wire]: ${notes}`;
+        }
+        const saved = await this.orderRepository.save(order);
+        const user = await this.userRepository.findOne({ where: { id: order.user_id } });
+        if (user?.email && this.mailService) {
+            if (typeof this.mailService.sendOrderReceipt === 'function') {
+                this.mailService.sendOrderReceipt(saved, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending wire approved receipt email:', err?.message || err);
+                });
+            }
+            if (typeof this.mailService.sendEnglishInvoice === 'function') {
+                this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending English invoice on wire approval:', err?.message || err);
+                });
+            }
+            if (typeof this.mailService.sendAdminNewOrderAlert === 'function') {
+                const clientName = user.profile?.full_name || 'Cliente Mayorista';
+                this.mailService.sendAdminNewOrderAlert(saved, user.email, clientName).catch(err => {
+                    console.error('[OrdersService] Error sending admin order alert on wire approval:', err?.message || err);
+                });
+            }
+        }
+        return saved;
+    }
+    async rejectWirePayment(orderId, reason) {
+        const order = await this.findOne(orderId);
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        order.payment_status = 'unpaid';
+        order.status = 'Cancelado';
+        if (reason) {
+            order.notes = `[Rechazo Transferencia ACH/Wire]: ${reason}\n${order.notes || ''}`;
         }
         const saved = await this.orderRepository.save(order);
         return saved;

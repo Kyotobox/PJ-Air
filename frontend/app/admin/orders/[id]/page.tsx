@@ -33,6 +33,8 @@ interface OrderDetail {
     check_amount?: number;
     check_image_url?: string;
     check_verified?: boolean;
+    wire_reference?: string;
+    wire_receipt_url?: string;
     pending_balance?: number;
     packaging_fee?: number;
     packaging_discount?: number;
@@ -247,6 +249,31 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
             showToast('⚠️ Cheque rechazado y pedido cancelado');
         } catch (err: any) {
             showToast(err?.message || 'Error al rechazar cheque', 'error');
+        }
+    };
+
+    // TASK-89-03: Handlers para Transferencias ACH/Wire
+    const handleApproveWire = async () => {
+        if (!order) return;
+        try {
+            const updated = await api.patch(`/orders/${order.id}/approve-wire`, {}) as any;
+            setOrder(prev => prev ? { ...prev, ...updated, payment_status: 'paid', status: 'Pedido Enviado' } : null);
+            showToast('✅ Transferencia ACH/Wire aprobada y enviada a cocina');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al aprobar transferencia ACH/Wire', 'error');
+        }
+    };
+
+    const handleRejectWire = async () => {
+        if (!order) return;
+        const reason = window.prompt('Indica el motivo del rechazo de la transferencia ACH/Wire:', 'Comprobante no coincide con depósito bancario');
+        if (reason === null) return;
+        try {
+            const updated = await api.patch(`/orders/${order.id}/reject-wire`, { reason }) as any;
+            setOrder(prev => prev ? { ...prev, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : null);
+            showToast('⚠️ Transferencia ACH/Wire rechazada y pedido cancelado');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al rechazar transferencia ACH/Wire', 'error');
         }
     };
 
@@ -671,6 +698,91 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                                     className="w-full sm:flex-1 py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
                                 >
                                     <AlertCircle size={18} /> Rechazar Cheque
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {/* Wire / ACH Audit & Approval Card (TASK-89-03) */}
+                {(order.payment_method === 'ach' || order.wire_receipt_url || order.payment_status === 'pending_wire_verification') && (
+                    <section className="bg-emerald-50/70 rounded-[2rem] p-6 lg:p-8 border-2 border-emerald-200 shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-emerald-700/30">
+                                    <Building2 size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-emerald-950 uppercase tracking-wider">
+                                        Auditoría de Transferencia ACH / Wire
+                                    </h3>
+                                    <p className="text-xs text-emerald-700 font-medium">
+                                        Ref / Confirmación:{' '}
+                                        <span className="font-mono font-black text-emerald-950 px-2 py-0.5 bg-white rounded-lg border border-emerald-300">
+                                            {order.wire_reference || 'S/N'}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
+                                order.payment_status === 'paid'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                    : order.payment_status === 'pending_wire_verification'
+                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300 animate-pulse'
+                                    : 'bg-red-100 text-red-800 border-red-300'
+                            }`}>
+                                {order.payment_status === 'paid' ? '✓ Transferencia Confirmada' : order.payment_status === 'pending_wire_verification' ? '⚠️ Verificación Pendiente' : 'No Pagado / Cancelado'}
+                            </span>
+                        </div>
+
+                        {/* Comprobante de Transferencia */}
+                        {order.wire_receipt_url && (
+                            <div className="p-4 bg-white rounded-2xl border border-emerald-200 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                                        <Receipt size={14} className="text-emerald-600" />
+                                        Voucher / Comprobante Bancario
+                                    </span>
+                                    <a
+                                        href={order.wire_receipt_url.startsWith('http') ? order.wire_receipt_url : `${API_URL}${order.wire_receipt_url}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[11px] font-black text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1"
+                                    >
+                                        Abrir comprobante en alta resolución ↗
+                                    </a>
+                                </div>
+                                <div className="relative rounded-xl overflow-hidden border border-emerald-100 max-h-64 bg-slate-50 flex items-center justify-center p-2">
+                                    {order.wire_receipt_url.toLowerCase().endsWith('.pdf') ? (
+                                        <iframe
+                                            src={order.wire_receipt_url.startsWith('http') ? order.wire_receipt_url : `${API_URL}${order.wire_receipt_url}`}
+                                            className="w-full h-56 border-0"
+                                            title="Comprobante Bancario PDF"
+                                        />
+                                    ) : (
+                                        <img
+                                            src={order.wire_receipt_url.startsWith('http') ? order.wire_receipt_url : `${API_URL}${order.wire_receipt_url}`}
+                                            alt="Comprobante Transferencia ACH / Wire"
+                                            className="object-contain max-h-60 rounded-lg shadow-sm"
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {order.payment_status === 'pending_wire_verification' && (
+                            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                <button
+                                    onClick={handleApproveWire}
+                                    className="w-full sm:flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <CheckCircle2 size={18} /> Aprobar Transferencia y Emitir Factura
+                                </button>
+                                <button
+                                    onClick={handleRejectWire}
+                                    className="w-full sm:flex-1 py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                >
+                                    <AlertCircle size={18} /> Rechazar Transferencia
                                 </button>
                             </div>
                         )}

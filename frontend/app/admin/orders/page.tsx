@@ -37,6 +37,8 @@ interface Order {
     check_amount?: number;
     check_image_url?: string;
     check_verified?: boolean;
+    wire_reference?: string;
+    wire_receipt_url?: string;
     pending_balance?: number;
     packaging_fee?: number;
     packaging_discount?: number;
@@ -265,6 +267,41 @@ export default function AdminOrdersPage() {
             showToast('⚠️ Cheque rechazado y pedido cancelado');
         } catch (err: any) {
             showToast(err?.message || 'Error al rechazar cheque', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // TASK-89-03: Handlers para Transferencias ACH/Wire
+    const handleApproveWire = async (orderId: string) => {
+        setSaving(true);
+        try {
+            const updated = await api.patch(`/orders/${orderId}/approve-wire`, {}) as any;
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated, payment_status: 'paid', status: 'Pedido Enviado' } : o));
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder(prev => prev ? { ...prev, ...updated, payment_status: 'paid', status: 'Pedido Enviado' } : null);
+            }
+            showToast('✅ Transferencia ACH/Wire aprobada y enviada a cocina');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al aprobar transferencia ACH/Wire', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRejectWire = async (orderId: string) => {
+        const reason = window.prompt('Motivo del rechazo de la transferencia ACH/Wire:', 'Comprobante no coincide con depósito bancario');
+        if (reason === null) return;
+        setSaving(true);
+        try {
+            const updated = await api.patch(`/orders/${orderId}/reject-wire`, { reason }) as any;
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : o));
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder(prev => prev ? { ...prev, ...updated, payment_status: 'unpaid', status: 'Cancelado' } : null);
+            }
+            showToast('⚠️ Transferencia ACH/Wire rechazada y pedido cancelado');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al rechazar transferencia ACH/Wire', 'error');
         } finally {
             setSaving(false);
         }
@@ -540,12 +577,12 @@ export default function AdminOrdersPage() {
     const filteredOrders = orders.filter(o => {
         const normStatus = (o.status || '').toLowerCase().trim();
 
-        // TASK-87-02: Filtro por pestaña activa (Verificaciones Pendientes o Borradores)
+        // TASK-87-02 & TASK-89-03: Filtro por pestaña activa (Verificaciones Pendientes o Borradores)
         if (activeTab === 'pending_verification') {
-            const isPendingVerif = o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification';
+            const isPendingVerif = o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification' || o.payment_status === 'pending_wire_verification';
             if (!isPendingVerif) return false;
         } else if (activeTab === 'drafts') {
-            const isDraft = !o.invoice_number && (normStatus === 'pending' || normStatus === 'cancelled' || normStatus === 'cancelado') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification';
+            const isDraft = !o.invoice_number && (normStatus === 'pending' || normStatus === 'cancelled' || normStatus === 'cancelado') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification' && o.payment_status !== 'pending_wire_verification';
             if (!isDraft) return false;
         }
 
@@ -920,7 +957,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <Clock size={14} className="text-purple-600" />
-                        Verificaciones Pendientes ({orders.filter(o => o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification').length})
+                        Verificaciones Pendientes ({orders.filter(o => o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification' || o.payment_status === 'pending_wire_verification').length})
                     </button>
                     <button
                         data-testid="tab-drafts"
@@ -932,7 +969,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <Receipt size={14} className="text-slate-400" />
-                        Borradores / Abandonados ({orders.filter(o => !o.invoice_number && ((o.status || '').toLowerCase().trim() === 'pending' || (o.status || '').toLowerCase().trim() === 'cancelled') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification').length})
+                        Borradores / Abandonados ({orders.filter(o => !o.invoice_number && ((o.status || '').toLowerCase().trim() === 'pending' || (o.status || '').toLowerCase().trim() === 'cancelled') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification' && o.payment_status !== 'pending_wire_verification').length})
                     </button>
                     <button
                         data-testid="tab-in-hand"
@@ -1304,7 +1341,23 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ⚠️ Verificación Cheque Pend.
                                                     </span>
                                                 )}
-                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && (
+                                                {(order.payment_method === 'ach' || order.wire_receipt_url || order.payment_status === 'pending_wire_verification') && (
+                                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black border flex items-center gap-1 ${
+                                                        order.payment_status === 'paid'
+                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                            : order.payment_status === 'pending_wire_verification'
+                                                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300 animate-pulse'
+                                                            : 'bg-slate-50 text-slate-600 border-slate-200'
+                                                    }`}>
+                                                        🏛️ ACH/Wire (Ref: {order.wire_reference || 'S/N'})
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'pending_wire_verification' && (
+                                                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[9px] font-black border border-emerald-300">
+                                                        ⚠️ Verificación Wire Pend.
+                                                    </span>
+                                                )}
+                                                {order.payment_status === 'paid' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && order.payment_method !== 'ach' && (
                                                     <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold border border-emerald-200">
                                                         ✓ Pagado
                                                     </span>
@@ -1664,6 +1717,87 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                 className="w-full sm:flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                                             >
                                                 <X size={16} /> Rechazar Cheque
+                                            </button>
+                                        </div>
+                                    )}
+                                </section>
+                            )}
+
+                            {/* Wire / ACH Audit & Approval Card (TASK-89-03) */}
+                            {(selectedOrder.payment_method === 'ach' || selectedOrder.wire_receipt_url || selectedOrder.payment_status === 'pending_wire_verification') && (
+                                <section className="bg-emerald-50/70 rounded-[2rem] p-6 border-2 border-emerald-200 shadow-sm space-y-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-emerald-700/30">
+                                                <Building2 size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-emerald-950 uppercase tracking-wider flex items-center gap-2">
+                                                    Transferencia ACH / Wire Bancario
+                                                </h3>
+                                                <p className="text-xs text-emerald-700 font-medium">
+                                                    Ref / Confirmación: <span className="font-mono font-bold text-emerald-950">{selectedOrder.wire_reference || 'N/A'}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full border ${
+                                            selectedOrder.payment_status === 'paid'
+                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                                : selectedOrder.payment_status === 'pending_wire_verification'
+                                                ? 'bg-emerald-100 text-emerald-900 border-emerald-300 animate-pulse'
+                                                : 'bg-red-100 text-red-800 border-red-300'
+                                        }`}>
+                                            {selectedOrder.payment_status === 'paid' ? '✓ Transferencia Confirmada' : selectedOrder.payment_status === 'pending_wire_verification' ? '⚠️ Verificación Pendiente' : 'No Pagado / Cancelado'}
+                                        </span>
+                                    </div>
+
+                                    {/* Voucher / Comprobante de Transferencia */}
+                                    {selectedOrder.wire_receipt_url && (
+                                        <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[11px] font-bold text-emerald-900">Voucher / Comprobante Bancario:</span>
+                                                <a
+                                                    href={selectedOrder.wire_receipt_url.startsWith('http') ? selectedOrder.wire_receipt_url : `${API_URL}${selectedOrder.wire_receipt_url}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-[11px] font-black text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1"
+                                                >
+                                                    Abrir comprobante completo ↗
+                                                </a>
+                                            </div>
+                                            <div className="relative rounded-xl overflow-hidden border border-emerald-100 max-h-64 bg-slate-50 flex items-center justify-center p-2">
+                                                {selectedOrder.wire_receipt_url.toLowerCase().endsWith('.pdf') ? (
+                                                    <iframe
+                                                        src={selectedOrder.wire_receipt_url.startsWith('http') ? selectedOrder.wire_receipt_url : `${API_URL}${selectedOrder.wire_receipt_url}`}
+                                                        className="w-full h-56 border-0"
+                                                        title="Comprobante Bancario PDF"
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={selectedOrder.wire_receipt_url.startsWith('http') ? selectedOrder.wire_receipt_url : `${API_URL}${selectedOrder.wire_receipt_url}`}
+                                                        alt="Comprobante Transferencia ACH / Wire"
+                                                        className="object-contain max-h-60 rounded-lg shadow-sm"
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {selectedOrder.payment_status === 'pending_wire_verification' && (
+                                        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                            <button
+                                                onClick={() => handleApproveWire(selectedOrder.id)}
+                                                disabled={saving}
+                                                className="w-full sm:flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                            >
+                                                <CheckCircle2 size={16} /> Aprobar Transferencia y Emitir Factura
+                                            </button>
+                                            <button
+                                                onClick={() => handleRejectWire(selectedOrder.id)}
+                                                disabled={saving}
+                                                className="w-full sm:flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-600/25 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                                            >
+                                                <X size={16} /> Rechazar Transferencia
                                             </button>
                                         </div>
                                     )}

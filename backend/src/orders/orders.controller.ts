@@ -265,6 +265,20 @@ export class OrdersController {
     return this.ordersService.rejectCheckPayment(id, reason);
   }
 
+  @Patch(':id/approve-wire')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async approveWire(@Param('id') id: string, @Body('notes') notes?: string) {
+    return this.ordersService.approveWirePayment(id, notes);
+  }
+
+  @Patch(':id/reject-wire')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async rejectWire(@Param('id') id: string, @Body('reason') reason?: string) {
+    return this.ordersService.rejectWirePayment(id, reason);
+  }
+
   @Patch(':id/assign')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'produccion')

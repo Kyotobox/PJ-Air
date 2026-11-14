@@ -637,6 +637,12 @@ export default function CheckoutPage() {
     const [zelleReceiptUrl, setZelleReceiptUrl] = useState<string | null>(null);
     const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
 
+    // Wire / ACH transfer state (TASK-89-01)
+    const [achReference, setAchReference] = useState('');
+    const [achReceiptFile, setAchReceiptFile] = useState<File | null>(null);
+    const [achReceiptUrl, setAchReceiptUrl] = useState<string | null>(null);
+    const [isUploadingAchReceipt, setIsUploadingAchReceipt] = useState(false);
+
     // Check payment state (TASK-60-05)
     const [checkNumber, setCheckNumber] = useState('');
     const [checkBank, setCheckBank] = useState('');
@@ -1114,6 +1120,28 @@ export default function CheckoutPage() {
         }
     };
 
+    // TASK-89-01: Manejador de comprobante ACH / Wire
+    const handleAchReceiptFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setAchReceiptFile(file);
+        setIsUploadingAchReceipt(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.upload('/orders/upload-receipt', formData) as any;
+            if (res?.url) {
+                setAchReceiptUrl(res.url);
+                showNotification(lbl('Comprobante ACH/Wire subido con éxito.', 'ACH/Wire receipt uploaded successfully.'), 'info');
+            }
+        } catch (err: any) {
+            console.error('Error uploading ACH receipt:', err);
+            showNotification(err?.message || lbl('Error al subir el comprobante de transferencia', 'Error uploading wire receipt'), 'error');
+        } finally {
+            setIsUploadingAchReceipt(false);
+        }
+    };
+
     // TASK-60-05: Manejador de foto de cheque con prellenado y simulación OCR asistida
     const handleCheckFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -1169,6 +1197,39 @@ export default function CheckoutPage() {
                 'error'
             );
             return;
+        }
+
+        if (!isPaidWithStoreCredit && paymentMethod === 'ach') {
+            if (isUploadingAchReceipt) {
+                showNotification(
+                    lbl(
+                        'El comprobante de transferencia bancaria se está subiendo. Por favor espera un momento.',
+                        'The bank transfer receipt is uploading. Please wait a moment.'
+                    ),
+                    'info'
+                );
+                return;
+            }
+            if (!achReceiptUrl) {
+                showNotification(
+                    lbl(
+                        'Es obligatorio adjuntar el comprobante o captura de la transferencia ACH / Wire.',
+                        'It is required to attach the receipt or screenshot of the ACH / Wire transfer.'
+                    ),
+                    'warning'
+                );
+                return;
+            }
+            if (!achReference.trim()) {
+                showNotification(
+                    lbl(
+                        'Por favor ingresa el número de referencia o confirmación bancaria.',
+                        'Please enter the bank confirmation or reference number.'
+                    ),
+                    'warning'
+                );
+                return;
+            }
         }
 
         if (!isPaidWithStoreCredit && paymentMethod === 'zelle') {
@@ -1363,6 +1424,8 @@ export default function CheckoutPage() {
                 check_amount: effectivePaymentMethod === 'check' ? (Number(checkAmount) || finalTotal) : null,
                 check_image_url: effectivePaymentMethod === 'check' ? checkImageUrl : null,
                 check_verified: effectivePaymentMethod === 'check' ? Boolean(checkVerified) : false,
+                wire_reference: effectivePaymentMethod === 'ach' ? achReference.trim() : null,
+                wire_receipt_url: effectivePaymentMethod === 'ach' ? achReceiptUrl : null,
                 items: cart.map(item => ({
                     productId: item.id,
                     quantity: item.quantity,
@@ -1374,10 +1437,10 @@ export default function CheckoutPage() {
             const orderTotal = Number(createdOrder?.total) > 0 ? Number(createdOrder.total) : finalTotal;
             trackMetaEvent('Purchase', { value: orderTotal, currency: 'USD', content_type: 'product', order_id: createdOrder.id });
 
-            if (isPaidWithStoreCredit || paymentMethod === 'zelle' || paymentMethod === 'check') {
+            if (isPaidWithStoreCredit || paymentMethod === 'zelle' || paymentMethod === 'check' || paymentMethod === 'ach') {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
-            } else if (paymentMethod === 'credit' || (isCreditAccount && paymentMethod !== 'stripe' && paymentMethod !== 'ach')) {
+            } else if (paymentMethod === 'credit' || (isCreditAccount && paymentMethod !== 'stripe')) {
                 clearCart();
                 window.location.href = `/orders/${order.id}`;
             } else {
@@ -1388,7 +1451,7 @@ export default function CheckoutPage() {
                         amount: authoritativeTotal,
                         orderId: order.id,
                         customerEmail: user.email,
-                        paymentMethodType: paymentMethod === 'ach' ? 'us_bank_account' : undefined,
+                        paymentMethodType: undefined,
                     }) as any;
 
                     if (intentRes && intentRes.clientSecret) {
@@ -1919,10 +1982,10 @@ export default function CheckoutPage() {
                                                 </div>
                                                 <div>
                                                     <span className="font-bold text-sm text-slate-800">
-                                                        {lbl('Transferencia ACH Direct Debit', 'ACH Direct Debit')}
+                                                        {lbl('Transferencia ACH / Wire Bancario', 'ACH / Bank Wire Transfer')}
                                                     </span>
                                                     <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full">
-                                                        0.8% (Tope $5.00)
+                                                        $0.00 Fee (0%)
                                                     </span>
                                                 </div>
                                             </div>
@@ -1933,7 +1996,7 @@ export default function CheckoutPage() {
                                             </div>
                                         </div>
                                         <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                            {lbl('Débito directo en cuenta bancaria comercial (Tarifa plana de 0.8%, tope máx $5.00).', 'Direct bank account debit (0.8% fee, maximum $5.00 cap).')}
+                                            {lbl('Transferencia bancaria directa (ACH / Depósito / Wire) a nuestra cuenta corporativa Chase.', 'Direct bank transfer (ACH / Deposit / Wire) to our Chase corporate account.')}
                                         </p>
                                     </div>
                                 )}
@@ -2015,6 +2078,126 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* ACH / Wire Instructions Box & Receipt Upload (TASK-89-01) */}
+                            {paymentMethod === 'ach' && (
+                                <div className="p-6 bg-emerald-50/80 rounded-2xl border border-emerald-200/90 space-y-4 animate-in fade-in duration-200">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 font-bold text-xs">
+                                            <Building2 size={16} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-emerald-950">
+                                                {lbl('Datos Bancarios Oficiales (Transferencia ACH / Wire / Depósito)', 'Official Bank Transfer Details (ACH / Wire / Deposit)')}
+                                            </h4>
+                                            <p className="text-xs text-emerald-800 mt-0.5">
+                                                {lbl('Realiza la transferencia desde la banca en línea de tu empresa a la siguiente cuenta:', 'Send transfer from your corporate online banking to the following account:')}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-xl border border-emerald-200 space-y-2 text-xs">
+                                        <div className="flex justify-between items-center py-1 border-b border-emerald-100">
+                                            <span className="text-emerald-700 font-medium">{lbl('Banco:', 'Bank:')}</span>
+                                            <span className="font-black text-emerald-950">JPMorgan Chase Bank, N.A.</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-1 border-b border-emerald-100">
+                                            <span className="text-emerald-700 font-medium">{lbl('Titular de Cuenta:', 'Account Holder / Payee:')}</span>
+                                            <span className="font-black text-emerald-950">Jhoanes Bakery Wholesale LLC</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-1 border-b border-emerald-100">
+                                            <span className="text-emerald-700 font-medium">{lbl('Tipo de Cuenta:', 'Account Type:')}</span>
+                                            <span className="font-black text-emerald-950">Business Checking</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-1 border-b border-emerald-100">
+                                            <span className="text-emerald-700 font-medium">{lbl('Routing Number (ACH / Wire):', 'Routing Number (ACH / Wire):')}</span>
+                                            <span className="font-mono font-black text-emerald-950 select-all">021000021</span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-1">
+                                            <span className="text-emerald-700 font-medium">{lbl('Número de Cuenta:', 'Account Number:')}</span>
+                                            <span className="font-mono font-black text-emerald-950 select-all">847291048</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5 pt-2">
+                                        <label className="text-xs font-bold text-emerald-950 block">
+                                            {lbl('Número de Confirmación / Referencia ACH / Wire *', 'ACH / Wire Confirmation or Reference Number *')}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder={lbl('Ej: Wire Ref # W-9876543 o Trace Number', 'E.g. Wire Ref # W-9876543 or Trace Number')}
+                                            value={achReference}
+                                            onChange={e => setAchReference(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white border border-emerald-300 rounded-xl font-bold text-slate-800 placeholder:text-emerald-300 outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                        />
+                                        <p className="text-[10px] text-emerald-700 italic">
+                                            {lbl(
+                                                'Este número será verificado por administración para confirmar los fondos y liberar el pedido a cocina.',
+                                                'This reference number will be verified by administration to confirm funds before releasing order to kitchen.'
+                                            )}
+                                        </p>
+                                    </div>
+
+                                    {/* Upload Screenshot / Comprobante ACH */}
+                                    <div className="space-y-2 pt-2 border-t border-emerald-200/70">
+                                        <label className="text-xs font-bold text-emerald-950 flex items-center justify-between">
+                                            <span>{lbl('Comprobante de Transferencia / Voucher (PDF o Imagen) *', 'Transfer Receipt / Voucher (PDF or Image) *')}</span>
+                                            {isUploadingAchReceipt && (
+                                                <span className="text-[10px] text-emerald-600 flex items-center gap-1 font-normal">
+                                                    <Loader2 size={12} className="animate-spin" /> {lbl('Subiendo...', 'Uploading...')}
+                                                </span>
+                                            )}
+                                        </label>
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                            <input
+                                                id="ach-receipt-upload"
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/webp,application/pdf"
+                                                onChange={handleAchReceiptFileChange}
+                                                className="hidden"
+                                            />
+                                            <label
+                                                htmlFor="ach-receipt-upload"
+                                                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                                                    achReceiptUrl
+                                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs'
+                                                        : 'bg-emerald-700 text-white hover:bg-emerald-800 shadow-xs'
+                                                }`}
+                                            >
+                                                {achReceiptUrl ? (
+                                                    <>
+                                                        <Check size={16} />
+                                                        <span>{lbl('Comprobante adjuntado', 'Receipt attached')}</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Upload size={16} />
+                                                        <span>{lbl('Seleccionar archivo...', 'Choose receipt file...')}</span>
+                                                    </>
+                                                )}
+                                            </label>
+                                            {achReceiptFile && (
+                                                <span className="text-xs text-emerald-900 font-medium truncate max-w-xs">
+                                                    {achReceiptFile.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {achReceiptUrl && (
+                                            <div className="flex items-center gap-2 p-2 bg-emerald-100/80 rounded-lg text-[11px] text-emerald-900 font-medium">
+                                                <Check size={14} className="text-emerald-600" />
+                                                <span>{lbl('Comprobante adjuntado correctamente', 'Receipt attached successfully')}</span>
+                                            </div>
+                                        )}
+                                        <p className="text-[10px] text-emerald-700 italic">
+                                            {lbl(
+                                                'Adjunta la confirmación bancaria o voucher de depósito para acelerar la aprobación de tu pedido.',
+                                                'Attach your banking confirmation or deposit voucher to expedite order approval.'
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Zelle Instructions Box & Reference Input */}
                             {paymentMethod === 'zelle' && (
@@ -2677,7 +2860,7 @@ export default function CheckoutPage() {
 
                             <button
                                 onClick={handleSubmit}
-                                disabled={isLoading || cart.length === 0 || (!isPaidWithStoreCredit && exceedsCreditLimit) || (!isPaidWithStoreCredit && paymentMethod === 'check' && (!checkImageUrl || !checkNumber.trim() || !checkBank.trim() || !checkVerified))}
+                                disabled={isLoading || cart.length === 0 || (!isPaidWithStoreCredit && exceedsCreditLimit) || (!isPaidWithStoreCredit && paymentMethod === 'check' && (!checkImageUrl || !checkNumber.trim() || !checkBank.trim() || !checkVerified)) || (!isPaidWithStoreCredit && paymentMethod === 'ach' && (!achReceiptUrl || !achReference.trim()))}
                                 className="w-full py-4 bg-[#111] hover:bg-[#222] text-white rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : (

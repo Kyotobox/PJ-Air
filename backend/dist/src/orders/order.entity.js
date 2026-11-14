@@ -39,6 +39,8 @@ let Order = class Order {
     check_amount;
     check_image_url;
     check_verified;
+    wire_reference;
+    wire_receipt_url;
     tax_amount;
     tax_rate;
     tax_exempt;
@@ -158,6 +160,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], Order.prototype, "check_verified", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Order.prototype, "wire_reference", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, type: 'text' }),
+    __metadata("design:type", String)
+], Order.prototype, "wire_receipt_url", void 0);
 __decorate([
     (0, typeorm_1.Column)('decimal', { precision: 10, scale: 2, default: 0 }),
     __metadata("design:type", Number)

@@ -77,6 +77,12 @@ export class Order {
   @Column({ type: 'boolean', default: false })
   check_verified: boolean;
 
+  @Column({ nullable: true })
+  wire_reference: string;
+
+  @Column({ nullable: true, type: 'text' })
+  wire_receipt_url: string;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   tax_amount: number;
 
