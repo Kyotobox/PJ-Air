@@ -251,6 +251,20 @@ export class OrdersController {
     return this.ordersService.rejectZellePayment(id, reason);
   }
 
+  @Patch(':id/approve-check')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async approveCheck(@Param('id') id: string, @Body('notes') notes?: string) {
+    return this.ordersService.approveCheckPayment(id, notes);
+  }
+
+  @Patch(':id/reject-check')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async rejectCheck(@Param('id') id: string, @Body('reason') reason?: string) {
+    return this.ordersService.rejectCheckPayment(id, reason);
+  }
+
   @Patch(':id/assign')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'produccion')

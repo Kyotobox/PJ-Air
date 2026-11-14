@@ -4,7 +4,7 @@
   "kernel_version": "5.0.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S87",
-  "current_task": "TASK-87-01",
+  "current_task": "TASK-87-02",
   "sprints": [
     {
       "id": "S85",
@@ -70,14 +70,14 @@
         {
           "id": "TASK-87-01",
           "title": "Kitchen Shield para Cheques (exclusión en findInRange) y endpoints atómicos approve-check y reject-check con Late Invoicing e inserción contable en check_payments",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "BACKEND/ORDERS",
           "veracity_hash": null
         },
         {
           "id": "TASK-87-02",
           "title": "Normalización de filtros de estados en panel Admin (Pedido Enviado en 'Pedido') y vistas segmentadas para Verificaciones Pendientes y Borradores",
-          "status": "PENDING",
+          "status": "IN_PROGRESS",
           "type": "FRONTEND/ADMIN",
           "veracity_hash": null
         },
@@ -101,14 +101,14 @@
       {
         "id": "TASK-87-01",
         "title": "Kitchen Shield para Cheques (exclusión en findInRange) y endpoints atómicos approve-check y reject-check con Late Invoicing e inserción contable en check_payments",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "BACKEND/ORDERS",
         "veracity_hash": null
       },
       {
         "id": "TASK-87-02",
         "title": "Normalización de filtros de estados en panel Admin (Pedido Enviado en 'Pedido') y vistas segmentadas para Verificaciones Pendientes y Borradores",
-        "status": "PENDING",
+        "status": "IN_PROGRESS",
         "type": "FRONTEND/ADMIN",
         "veracity_hash": null
       },

@@ -44,6 +44,8 @@ export declare class OrdersController {
     updatePaymentStatus(id: string, paymentStatus: string, stripePaymentId: string | undefined, req: any): Promise<import("./order.entity").Order>;
     approveZelle(id: string): Promise<import("./order.entity").Order>;
     rejectZelle(id: string, reason?: string): Promise<import("./order.entity").Order>;
+    approveCheck(id: string, notes?: string): Promise<import("./order.entity").Order>;
+    rejectCheck(id: string, reason?: string): Promise<import("./order.entity").Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<import("./order.entity").Order>;
     uploadReceipt(file: Express.Multer.File): Promise<{
         url: string;

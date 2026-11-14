@@ -12,6 +12,7 @@ import { CreditService } from '../credit/credit.service';
 import { FeeCalculatorService } from './fee-calculator.service';
 import { MileageFreightService } from '../logistics/mileage-freight.service';
 import { PaymentsService } from '../payments/payments.service';
+import { CheckPaymentsService } from '../payments/check-payments.service';
 import { AddressValidationService } from '../addresses/address-validation.service';
 import { SystemConfigsService } from '../system-configs/system-configs.service';
 
@@ -43,6 +44,9 @@ export class OrdersService {
     @Optional()
     @Inject(forwardRef(() => PaymentsService))
     private paymentsService?: PaymentsService,
+    @Optional()
+    @Inject(forwardRef(() => CheckPaymentsService))
+    private checkPaymentsService?: CheckPaymentsService,
     @Optional()
     private addressValidationService?: AddressValidationService,
     @Optional()
@@ -385,7 +389,9 @@ export class OrdersService {
           end: queryEnd,
         },
       )
-      .andWhere('order.payment_status != :pzStatus', { pzStatus: 'pending_zelle_verification' })
+      .andWhere('order.payment_status NOT IN (:...pendingVerifications)', {
+        pendingVerifications: ['pending_zelle_verification', 'pending_check_verification'],
+      })
       .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] });
 
     if (userId) {
@@ -1300,6 +1306,78 @@ export class OrdersService {
       }
     }
 
+    return saved;
+  }
+
+  async approveCheckPayment(orderId: string, notes?: string): Promise<Order> {
+    const order = await this.findOne(orderId);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    if (order.status === 'cancelled' || order.status === 'Cancelado') {
+      throw new BadRequestException('Cannot approve checkout for a cancelled order');
+    }
+    order.payment_status = 'paid';
+    if (this.normalizeStatus(order.status) === 'pending' || order.status === 'pending' || order.status === 'Pedido') {
+      order.status = 'Pedido Enviado';
+    }
+    if (!order.invoice_number) {
+      order.invoice_number = await this.getNextInvoiceNumber();
+    }
+    if (notes) {
+      order.notes = order.notes ? `${order.notes}\n[Aprobación Cheque]: ${notes}` : `[Aprobación Cheque]: ${notes}`;
+    }
+    const saved = await this.orderRepository.save(order);
+
+    if (this.checkPaymentsService) {
+      try {
+        const existing = await this.checkPaymentsService.findByOrder(saved.id);
+        if (!existing || existing.length === 0) {
+          const today = new Date().toISOString().split('T')[0];
+          await this.checkPaymentsService.registerCheck({
+            order_id: saved.id,
+            check_number: saved.check_number || `CHK-${saved.invoice_number || saved.id.slice(0, 8)}`,
+            bank_name: saved.check_bank || 'Banco Verificado',
+            amount: Number(saved.check_amount) || Number(saved.total) || 0,
+            received_date: today,
+            notes: notes || 'Aprobado desde panel de administración',
+            user_id: saved.user_id,
+            status: 'IN_HAND',
+          });
+        }
+      } catch (checkErr: any) {
+        console.error('[OrdersService] Error registering check payment in reconciliation:', checkErr?.message || checkErr);
+      }
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: order.user_id } });
+    if (user?.email && this.mailService) {
+      if (typeof this.mailService.sendOrderReceipt === 'function') {
+        this.mailService.sendOrderReceipt(saved, user.email).catch(err => {
+          console.error('[OrdersService] Error sending check approved receipt email:', err?.message || err);
+        });
+      }
+      if (typeof this.mailService.sendEnglishInvoice === 'function') {
+        this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
+          console.error('[OrdersService] Error sending English invoice on check approval:', err?.message || err);
+        });
+      }
+    }
+
+    return saved;
+  }
+
+  async rejectCheckPayment(orderId: string, reason?: string): Promise<Order> {
+    const order = await this.findOne(orderId);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    order.payment_status = 'unpaid';
+    order.status = 'Cancelado';
+    if (reason) {
+      order.notes = `[Rechazo Cheque]: ${reason}\n${order.notes || ''}`;
+    }
+    const saved = await this.orderRepository.save(order);
     return saved;
   }
 

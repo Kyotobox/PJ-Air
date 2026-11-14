@@ -10,6 +10,7 @@ import { CreditService } from '../credit/credit.service';
 import { FeeCalculatorService } from './fee-calculator.service';
 import { MileageFreightService } from '../logistics/mileage-freight.service';
 import { PaymentsService } from '../payments/payments.service';
+import { CheckPaymentsService } from '../payments/check-payments.service';
 import { AddressValidationService } from '../addresses/address-validation.service';
 import { SystemConfigsService } from '../system-configs/system-configs.service';
 export declare class OrdersService {
@@ -25,9 +26,10 @@ export declare class OrdersService {
     private feeCalculatorService?;
     private mileageFreightService?;
     private paymentsService?;
+    private checkPaymentsService?;
     private addressValidationService?;
     private systemConfigsService?;
-    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined, paymentsService?: PaymentsService | undefined, addressValidationService?: AddressValidationService | undefined, systemConfigsService?: SystemConfigsService | undefined);
+    constructor(orderRepository: Repository<Order>, orderItemRepository: Repository<OrderItem>, userRepository: Repository<User>, productRepository: Repository<Product>, dataSource: DataSource, addressRepository?: Repository<Address> | undefined, zonesService?: ZonesService | undefined, mailService?: MailService | undefined, creditService?: CreditService | undefined, feeCalculatorService?: FeeCalculatorService | undefined, mileageFreightService?: MileageFreightService | undefined, paymentsService?: PaymentsService | undefined, checkPaymentsService?: CheckPaymentsService | undefined, addressValidationService?: AddressValidationService | undefined, systemConfigsService?: SystemConfigsService | undefined);
     calculateMinDeliveryDate(referenceDate?: Date, cutoffHour?: number, scheduleConfig?: any): string;
     validateCutoffTime(deliveryDateStr?: string, referenceDate?: Date, cutoffHour?: number, scheduleConfig?: any): void;
     normalizeStatus(status: string): string;
@@ -47,6 +49,8 @@ export declare class OrdersService {
     getPaymentsService(): PaymentsService | undefined;
     approveZellePayment(orderId: string): Promise<Order>;
     rejectZellePayment(orderId: string, reason?: string): Promise<Order>;
+    approveCheckPayment(orderId: string, notes?: string): Promise<Order>;
+    rejectCheckPayment(orderId: string, reason?: string): Promise<Order>;
     settleBatch(userId: string, userRole: string, dto: {
         order_ids: string[];
         payment_method: string;

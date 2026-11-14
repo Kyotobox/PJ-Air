@@ -9,6 +9,7 @@ import { MailService } from '../mail/mail.service';
 import { DataSource } from 'typeorm';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PaymentsService } from '../payments/payments.service';
+import { CheckPaymentsService } from '../payments/check-payments.service';
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -19,6 +20,7 @@ describe('OrdersService', () => {
   let dataSource: any;
   let mockManager: any;
   let mockMailService: any;
+  let mockCheckPaymentsService: any;
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -75,6 +77,11 @@ describe('OrdersService', () => {
       createRefund: jest.fn().mockResolvedValue({ success: true, refundedAmount: 20 }),
     };
 
+    mockCheckPaymentsService = {
+      findByOrder: jest.fn().mockResolvedValue([]),
+      registerCheck: jest.fn().mockResolvedValue({ id: 'chk-reg-1' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
@@ -85,6 +92,7 @@ describe('OrdersService', () => {
         { provide: DataSource, useValue: dataSource },
         { provide: MailService, useValue: mockMailService },
         { provide: PaymentsService, useValue: mockPaymentsService },
+        { provide: CheckPaymentsService, useValue: mockCheckPaymentsService },
       ],
     }).compile();
 
@@ -520,6 +528,78 @@ describe('OrdersService', () => {
     it('rejectZellePayment sad path: should throw NotFoundException if order does not exist (§6)', async () => {
       jest.spyOn(service, 'findOne').mockResolvedValueOnce(null as any);
       await expect(service.rejectZellePayment('non-existent-order', 'Reason')).rejects.toThrow(NotFoundException);
+    });
+
+    it('TASK-87-01 Happy Path: should approve check payment, assign invoice number, register check in reconciliation and send receipt', async () => {
+      const existingOrder = {
+        id: 'order-check-appr',
+        user_id: 'user-check-appr',
+        payment_status: 'pending_check_verification',
+        status: 'pending',
+        check_number: 'CHK-7788',
+        check_bank: 'Chase Bank',
+        check_amount: 250.50,
+        total: 250.50,
+      };
+      service.findOne = jest.fn().mockResolvedValue(existingOrder);
+      service.getNextInvoiceNumber = jest.fn().mockResolvedValue('INV-9999');
+      orderRepository.save = jest.fn().mockImplementation(o => Promise.resolve(o));
+      userRepository.findOne.mockResolvedValue({ id: 'user-check-appr', email: 'check-client@test.com' });
+
+      const updated = await service.approveCheckPayment('order-check-appr', 'Cheque validado y fondos confirmados');
+      expect(updated.payment_status).toBe('paid');
+      expect(updated.status).toBe('Pedido Enviado');
+      expect(updated.invoice_number).toBe('INV-9999');
+      expect(updated.notes).toContain('Aprobación Cheque');
+      expect(mockCheckPaymentsService.registerCheck).toHaveBeenCalledWith(expect.objectContaining({
+        order_id: 'order-check-appr',
+        check_number: 'CHK-7788',
+        bank_name: 'Chase Bank',
+        amount: 250.50,
+        status: 'IN_HAND',
+      }));
+      expect(mockMailService.sendOrderReceipt).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_status: 'paid', invoice_number: 'INV-9999' }),
+        'check-client@test.com',
+      );
+    });
+
+    it('TASK-87-01 Sad Path 1: should throw NotFoundException if order does not exist on approveCheckPayment (§6)', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValueOnce(null as any);
+      await expect(service.approveCheckPayment('non-existent-order')).rejects.toThrow(NotFoundException);
+    });
+
+    it('TASK-87-01 Sad Path 2: should throw BadRequestException if order is cancelled on approveCheckPayment (§6)', async () => {
+      const cancelledOrder = {
+        id: 'order-cancelled-chk',
+        status: 'cancelled',
+        payment_status: 'unpaid',
+      };
+      service.findOne = jest.fn().mockResolvedValue(cancelledOrder);
+      await expect(service.approveCheckPayment('order-cancelled-chk')).rejects.toThrow(BadRequestException);
+    });
+
+    it('TASK-87-01 Happy Path: should reject check payment and mark order Cancelado without burning invoice number', async () => {
+      const existingOrder = {
+        id: 'order-check-rej',
+        user_id: 'user-check-rej',
+        payment_status: 'pending_check_verification',
+        status: 'pending',
+        invoice_number: null,
+      };
+      service.findOne = jest.fn().mockResolvedValue(existingOrder);
+      orderRepository.save = jest.fn().mockImplementation(o => Promise.resolve(o));
+
+      const updated = await service.rejectCheckPayment('order-check-rej', 'Firma ilegible o cuenta sin fondos');
+      expect(updated.payment_status).toBe('unpaid');
+      expect(updated.status).toBe('Cancelado');
+      expect(updated.invoice_number).toBeNull();
+      expect(updated.notes).toContain('Firma ilegible');
+    });
+
+    it('TASK-87-01 Sad Path 3: should throw NotFoundException if order does not exist on rejectCheckPayment (§6)', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValueOnce(null as any);
+      await expect(service.rejectCheckPayment('non-existent-order', 'Reason')).rejects.toThrow(NotFoundException);
     });
 
     it('should assign a formal consecutive credit_note_number (NC-YYYY-XXXX) when refunded_amount > 0', async () => {

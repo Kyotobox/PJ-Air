@@ -27,6 +27,7 @@ const credit_service_1 = require("../credit/credit.service");
 const fee_calculator_service_1 = require("./fee-calculator.service");
 const mileage_freight_service_1 = require("../logistics/mileage-freight.service");
 const payments_service_1 = require("../payments/payments.service");
+const check_payments_service_1 = require("../payments/check-payments.service");
 const address_validation_service_1 = require("../addresses/address-validation.service");
 const system_configs_service_1 = require("../system-configs/system-configs.service");
 let OrdersService = class OrdersService {
@@ -42,9 +43,10 @@ let OrdersService = class OrdersService {
     feeCalculatorService;
     mileageFreightService;
     paymentsService;
+    checkPaymentsService;
     addressValidationService;
     systemConfigsService;
-    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService, paymentsService, addressValidationService, systemConfigsService) {
+    constructor(orderRepository, orderItemRepository, userRepository, productRepository, dataSource, addressRepository, zonesService, mailService, creditService, feeCalculatorService, mileageFreightService, paymentsService, checkPaymentsService, addressValidationService, systemConfigsService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -57,6 +59,7 @@ let OrdersService = class OrdersService {
         this.feeCalculatorService = feeCalculatorService;
         this.mileageFreightService = mileageFreightService;
         this.paymentsService = paymentsService;
+        this.checkPaymentsService = checkPaymentsService;
         this.addressValidationService = addressValidationService;
         this.systemConfigsService = systemConfigsService;
     }
@@ -335,7 +338,9 @@ let OrdersService = class OrdersService {
             start: queryStart,
             end: queryEnd,
         })
-            .andWhere('order.payment_status != :pzStatus', { pzStatus: 'pending_zelle_verification' })
+            .andWhere('order.payment_status NOT IN (:...pendingVerifications)', {
+            pendingVerifications: ['pending_zelle_verification', 'pending_check_verification'],
+        })
             .andWhere('order.status NOT IN (:...cancelled)', { cancelled: ['cancelled', 'Cancelado'] });
         if (userId) {
             qb.andWhere('order.user_id = :userId', { userId });
@@ -1095,6 +1100,74 @@ let OrdersService = class OrdersService {
         }
         return saved;
     }
+    async approveCheckPayment(orderId, notes) {
+        const order = await this.findOne(orderId);
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        if (order.status === 'cancelled' || order.status === 'Cancelado') {
+            throw new common_1.BadRequestException('Cannot approve checkout for a cancelled order');
+        }
+        order.payment_status = 'paid';
+        if (this.normalizeStatus(order.status) === 'pending' || order.status === 'pending' || order.status === 'Pedido') {
+            order.status = 'Pedido Enviado';
+        }
+        if (!order.invoice_number) {
+            order.invoice_number = await this.getNextInvoiceNumber();
+        }
+        if (notes) {
+            order.notes = order.notes ? `${order.notes}\n[Aprobación Cheque]: ${notes}` : `[Aprobación Cheque]: ${notes}`;
+        }
+        const saved = await this.orderRepository.save(order);
+        if (this.checkPaymentsService) {
+            try {
+                const existing = await this.checkPaymentsService.findByOrder(saved.id);
+                if (!existing || existing.length === 0) {
+                    const today = new Date().toISOString().split('T')[0];
+                    await this.checkPaymentsService.registerCheck({
+                        order_id: saved.id,
+                        check_number: saved.check_number || `CHK-${saved.invoice_number || saved.id.slice(0, 8)}`,
+                        bank_name: saved.check_bank || 'Banco Verificado',
+                        amount: Number(saved.check_amount) || Number(saved.total) || 0,
+                        received_date: today,
+                        notes: notes || 'Aprobado desde panel de administración',
+                        user_id: saved.user_id,
+                        status: 'IN_HAND',
+                    });
+                }
+            }
+            catch (checkErr) {
+                console.error('[OrdersService] Error registering check payment in reconciliation:', checkErr?.message || checkErr);
+            }
+        }
+        const user = await this.userRepository.findOne({ where: { id: order.user_id } });
+        if (user?.email && this.mailService) {
+            if (typeof this.mailService.sendOrderReceipt === 'function') {
+                this.mailService.sendOrderReceipt(saved, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending check approved receipt email:', err?.message || err);
+                });
+            }
+            if (typeof this.mailService.sendEnglishInvoice === 'function') {
+                this.mailService.sendEnglishInvoice(saved, user.email).catch(err => {
+                    console.error('[OrdersService] Error sending English invoice on check approval:', err?.message || err);
+                });
+            }
+        }
+        return saved;
+    }
+    async rejectCheckPayment(orderId, reason) {
+        const order = await this.findOne(orderId);
+        if (!order) {
+            throw new common_1.NotFoundException('Order not found');
+        }
+        order.payment_status = 'unpaid';
+        order.status = 'Cancelado';
+        if (reason) {
+            order.notes = `[Rechazo Cheque]: ${reason}\n${order.notes || ''}`;
+        }
+        const saved = await this.orderRepository.save(order);
+        return saved;
+    }
     async settleBatch(userId, userRole, dto) {
         if (!dto || !Array.isArray(dto.order_ids) || dto.order_ids.length === 0) {
             throw new common_1.BadRequestException('Debe proporcionar una lista no vacía de order_ids');
@@ -1456,7 +1529,9 @@ exports.OrdersService = OrdersService = __decorate([
     __param(11, (0, common_1.Optional)()),
     __param(11, (0, common_1.Inject)((0, common_1.forwardRef)(() => payments_service_1.PaymentsService))),
     __param(12, (0, common_1.Optional)()),
+    __param(12, (0, common_1.Inject)((0, common_1.forwardRef)(() => check_payments_service_1.CheckPaymentsService))),
     __param(13, (0, common_1.Optional)()),
+    __param(14, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -1469,6 +1544,7 @@ exports.OrdersService = OrdersService = __decorate([
         fee_calculator_service_1.FeeCalculatorService,
         mileage_freight_service_1.MileageFreightService,
         payments_service_1.PaymentsService,
+        check_payments_service_1.CheckPaymentsService,
         address_validation_service_1.AddressValidationService,
         system_configs_service_1.SystemConfigsService])
 ], OrdersService);

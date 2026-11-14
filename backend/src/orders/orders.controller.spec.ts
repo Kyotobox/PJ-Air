@@ -18,6 +18,8 @@ describe('OrdersController', () => {
     update: jest.fn(),
     approveZellePayment: jest.fn(),
     rejectZellePayment: jest.fn(),
+    approveCheckPayment: jest.fn(),
+    rejectCheckPayment: jest.fn(),
     mutateOrderItems: jest.fn(),
     disableOrder: jest.fn(),
     bulkDisableOrders: jest.fn(),
@@ -135,6 +137,20 @@ describe('OrdersController', () => {
       const result = await controller.rejectZelle('order-123', 'Monto incorrecto');
       expect(service.rejectZellePayment).toHaveBeenCalledWith('order-123', 'Monto incorrecto');
       expect(result).toEqual({ id: 'order-123', payment_status: 'unpaid', status: 'Cancelado' });
+    });
+
+    it('TASK-87-01: should call service.approveCheckPayment when approveCheck is invoked', async () => {
+      mockOrdersService.approveCheckPayment.mockResolvedValue({ id: 'order-chk-1', payment_status: 'paid', invoice_number: 'INV-1647' });
+      const result = await controller.approveCheck('order-chk-1', 'Aprobado');
+      expect(service.approveCheckPayment).toHaveBeenCalledWith('order-chk-1', 'Aprobado');
+      expect(result).toEqual({ id: 'order-chk-1', payment_status: 'paid', invoice_number: 'INV-1647' });
+    });
+
+    it('TASK-87-01: should call service.rejectCheckPayment when rejectCheck is invoked', async () => {
+      mockOrdersService.rejectCheckPayment.mockResolvedValue({ id: 'order-chk-2', payment_status: 'unpaid', status: 'Cancelado' });
+      const result = await controller.rejectCheck('order-chk-2', 'Cheque sin fondos');
+      expect(service.rejectCheckPayment).toHaveBeenCalledWith('order-chk-2', 'Cheque sin fondos');
+      expect(result).toEqual({ id: 'order-chk-2', payment_status: 'unpaid', status: 'Cancelado' });
     });
 
     it('should upload Zelle receipt screenshot successfully', async () => {
