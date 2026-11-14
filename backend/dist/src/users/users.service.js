@@ -159,8 +159,8 @@ let UsersService = class UsersService {
     }
     async updateDeliveryFee(userId, fee) {
         const parsed = Number(fee);
-        if (isNaN(parsed) || parsed < 0 || parsed > 150) {
-            throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+        if (isNaN(parsed) || parsed < 0 || parsed > 1500) {
+            throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00');
         }
         await this.userRepository.update(userId, { delivery_fee: parsed });
     }
@@ -256,7 +256,11 @@ let UsersService = class UsersService {
         }
         user.account_status = body?.account_status || 'APPROVED';
         if (body?.delivery_fee !== undefined) {
-            user.delivery_fee = Number(body.delivery_fee);
+            const parsed = Number(body.delivery_fee);
+            if (isNaN(parsed) || parsed < 0 || parsed > 1500) {
+                throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00');
+            }
+            user.delivery_fee = parsed;
         }
         if (body?.payment_terms) {
             user.account_type = (body.payment_terms === 'NET15' || body.payment_terms === 'NET30') ? 'credit' : 'cash';

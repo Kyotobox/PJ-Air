@@ -537,13 +537,14 @@ export class OrdersService {
 
   async create(userId: string, orderData: any): Promise<Order> {
     // TASK-83-04: Boundary Validation for Delivery Fee (§6)
+    // TASK-83-04 & TASK-90-02: Boundary Validation for Delivery Fee (desacoplado para rutas de larga distancia)
     const rawDeliveryFee = (orderData as any).delivery_fee_charged !== undefined 
       ? (orderData as any).delivery_fee_charged 
       : (orderData as any).delivery_fee;
     if (rawDeliveryFee !== undefined && rawDeliveryFee !== null) {
       const parsedFee = Number(rawDeliveryFee);
-      if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 150) {
-        throw new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+      if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 1500) {
+        throw new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00');
       }
     }
 
@@ -737,16 +738,19 @@ export class OrdersService {
       appliedPaymentStatus = 'pending_zelle_verification';
     }
 
-    // Precedence Matrix for Delivery Fee:
+    // Precedence Matrix for Delivery Fee (TASK-78-03 & TASK-90-02):
     // 1. Pickup: always $0.00.
     // 2. VIP special fee set on user profile (user.delivery_fee > 0): takes absolute precedence over distance/mileage.
-    // 3. Dynamic Calculation: EXCLUSIVELY via MileageFreightService (Zones eliminated to prevent fee noise/conflicts).
-    // 4. Contingency fallback: orderData.delivery_fee or user.delivery_fee or 0.
+    // 3. Manual delivery fee explicitly provided in orderData (delivery_fee_charged / delivery_fee)
+    // 4. Dynamic Calculation: EXCLUSIVELY via MileageFreightService (Zones eliminated to prevent fee noise/conflicts).
+    // 5. Contingency fallback: orderData.delivery_fee or user.delivery_fee or 0.
     let deliveryFee = 0;
     if (appliedDeliveryType === 'pickup') {
       deliveryFee = 0;
     } else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
       deliveryFee = Number(user.delivery_fee);
+    } else if ((orderData as any).delivery_fee_charged !== undefined && (orderData as any).delivery_fee_charged !== null) {
+      deliveryFee = Number((orderData as any).delivery_fee_charged);
     } else {
       if (this.mileageFreightService && ((orderData as any).miles !== undefined || (orderData as any).dest_lat !== undefined)) {
         const miles = (orderData as any).miles !== undefined
@@ -764,8 +768,8 @@ export class OrdersService {
 
     if (isNaN(deliveryFee) || deliveryFee < 0) {
       deliveryFee = 0;
-    } else if (deliveryFee > 150) {
-      deliveryFee = 150;
+    } else if (deliveryFee > 1500) {
+      deliveryFee = 1500;
     }
 
     // TASK-63-04: Complementary Orders Rule ($0 delivery fee if active order exists for same date)
@@ -1151,8 +1155,8 @@ export class OrdersService {
     if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
       const rawFee = updateData.delivery_fee_charged !== undefined ? updateData.delivery_fee_charged : updateData.delivery_fee;
       const parsedFee = Number(rawFee);
-      if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 150) {
-        throw new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+      if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 1500) {
+        throw new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00');
       }
       order.delivery_fee_charged = parsedFee;
     }

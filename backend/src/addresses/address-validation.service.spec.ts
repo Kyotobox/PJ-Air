@@ -88,6 +88,26 @@ describe('AddressValidationService', () => {
       expect(result.state).toBe('CT');
       expect(result.city).toBe('Stamford');
     });
+
+    it('should recognize Massachusetts / Boston addresses for extended routes (TASK-90-01)', async () => {
+      mockGeocacheRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.validateAndGeocode('100 King St, Boston, MA 02108');
+      expect(result.state).toBe('MA');
+      expect(result.city).toBe('Boston');
+      expect(result.lat).toBeCloseTo(42.3601, 1);
+      expect(result.lng).toBeCloseTo(-71.0589, 1);
+    });
+
+    it('should recognize Somerville MA addresses for client routes (TASK-90-01)', async () => {
+      mockGeocacheRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.validateAndGeocode('250 Elm St, Somerville, MA 02144');
+      expect(result.state).toBe('MA');
+      expect(result.city).toBe('Somerville');
+      expect(result.lat).toBeCloseTo(42.3876, 1);
+      expect(result.lng).toBeCloseTo(-71.0995, 1);
+    });
   });
 
   describe('Validation & Geocoding - Sad Paths (§6)', () => {

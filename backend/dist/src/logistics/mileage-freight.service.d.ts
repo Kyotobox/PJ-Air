@@ -17,6 +17,7 @@ export interface FreightQuoteResult {
     serviceType: DeliveryServiceType;
     miles: number;
     cost: number;
+    estimatedCost?: number;
     requiresSpecialQuote: boolean;
     notes?: string;
 }

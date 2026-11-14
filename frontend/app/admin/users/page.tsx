@@ -28,6 +28,8 @@ interface UserRecord {
     utm_campaign?: string | null;
     utm_content?: string | null;
     account_status?: string;
+    delivery_fee?: number;
+    general_discount?: number;
 }
 
 const ROLES = ['client', 'admin', 'delivery', 'produccion'];
@@ -71,6 +73,7 @@ export default function AdminUsersPage() {
     const [pdPrice, setPdPrice] = useState<string>('');
     const [isSavingDiscount, setIsSavingDiscount] = useState(false);
     const [deliveryFee, setDeliveryFee] = useState<number>(0);
+    const [approvalFee, setApprovalFee] = useState<number>(0);
     const [isSavingFee, setIsSavingFee] = useState(false);
 
     // Password reset & New Staff states
@@ -177,6 +180,7 @@ export default function AdminUsersPage() {
             setSelectedUser(detail);
             setGeneralDiscount(Number(detail.general_discount) || 0);
             setDeliveryFee(Number(detail.delivery_fee) || 0);
+            setApprovalFee(Number(detail.delivery_fee) || 0);
             
             // Get product discounts
             const discounts = await api.get(`/users/${user.id}/product-discounts`) as any[];
@@ -506,12 +510,37 @@ export default function AdminUsersPage() {
                                     <p className="text-xs text-amber-900/80 leading-relaxed">
                                         Este cliente comercial está a la espera de autorización para habilitar el acceso a pedidos.
                                     </p>
+                                    <div className="flex items-center justify-between gap-3 bg-white/80 p-3 rounded-xl border border-amber-200">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-amber-900 uppercase">Flete Acordado / Larga Distancia</span>
+                                            <span className="text-[9px] text-muted-foreground font-medium">Asignar flete manual si aplica ruta especial (ej. $250 Boston)</span>
+                                        </div>
+                                        <div className="relative w-28 shrink-0">
+                                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-600">$</span>
+                                            <input
+                                                type="number"
+                                                value={approvalFee || ''}
+                                                onChange={e => setApprovalFee(Number(e.target.value))}
+                                                placeholder="0.00"
+                                                className="w-full pl-6 pr-2 py-1.5 text-xs font-bold border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500/20 bg-white text-slate-800"
+                                            />
+                                        </div>
+                                    </div>
                                     <button
                                         onClick={async () => {
                                             try {
-                                                await api.patch(`/users/${selectedUser.id}/approve`, { account_status: 'APPROVED' });
-                                                setSelectedUser({ ...selectedUser, account_status: 'APPROVED' });
-                                                setUsers(users.map(u => u.id === selectedUser.id ? { ...u, account_status: 'APPROVED' } : u));
+                                                const payload: any = { account_status: 'APPROVED' };
+                                                if (approvalFee > 0) payload.delivery_fee = approvalFee;
+                                                await api.patch(`/users/${selectedUser.id}/approve`, payload);
+                                                const updatedUser = { 
+                                                    ...selectedUser, 
+                                                    account_status: 'APPROVED',
+                                                    delivery_fee: approvalFee > 0 ? approvalFee : selectedUser.delivery_fee 
+                                                };
+                                                setSelectedUser(updatedUser);
+                                                if (approvalFee > 0) setDeliveryFee(approvalFee);
+                                                setUsers(users.map(u => u.id === selectedUser.id ? updatedUser : u));
+                                                showToast('✅ Cuenta aprobada con éxito');
                                             } catch (e: any) {
                                                 alert('Error aprobando cuenta: ' + e.message);
                                             }
@@ -772,7 +801,9 @@ export default function AdminUsersPage() {
                                                 {isSavingFee ? <Loader2 size={16} className="animate-spin" /> : 'Establecer'}
                                             </button>
                                         </div>
-                                        <p className="text-[9px] text-amber-600/70 mt-3 font-medium italic">Este monto se sumará al total en cada pedido de este cliente.</p>
+                                        <p className="text-[9px] text-amber-600/70 mt-3 font-medium italic">
+                                            Este monto prevalecerá de forma absoluta sobre cualquier cálculo automático de millaje en cada pedido de este cliente (ideal para tarifas fijas interestatales o rutas a Boston).
+                                        </p>
                                     </div>
 
                                     {/* Product Specific Discounts */}

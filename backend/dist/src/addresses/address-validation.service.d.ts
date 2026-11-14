@@ -10,12 +10,14 @@ export interface ValidatedAddressResult {
     zip?: string;
     cached: boolean;
 }
+export declare const ALLOWED_STATES: Set<string>;
 export declare class AddressValidationService {
     private readonly geocacheRepo?;
     private readonly logger;
     constructor(geocacheRepo?: Repository<AddressGeocache> | undefined);
     computeHash(rawAddress: string): string;
     extractZip(text: string): string | undefined;
+    isAllowedState(state?: string): boolean;
     isTriState(state?: string): boolean;
     validateAndGeocode(rawAddress: string, providedLat?: number, providedLng?: number): Promise<ValidatedAddressResult>;
     private fetchGoogleGeocode;

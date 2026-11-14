@@ -109,28 +109,28 @@
         {
           "id": "TASK-90-01",
           "title": "Desbloqueo Geográfico Multi-Estatal y Validación Ampliada (Soporte Boston / MA y Larga Distancia en AddressValidationService)",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/ADDRESSES",
           "veracity_hash": null
         },
         {
           "id": "TASK-90-02",
           "title": "Rutas de Larga Distancia (>250 mi) y Desacoplamiento de Límite Artificial de Flete ($150) en MileageFreightService y OrdersService",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/LOGISTICS",
           "veracity_hash": null
         },
         {
           "id": "TASK-90-03",
           "title": "Gestión, Cotización y Asignación de Flete Manual en Panel de Administración (Clientes, Pedidos y Checkout)",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/ADMIN",
           "veracity_hash": null
         },
         {
           "id": "TASK-90-04",
           "title": "Suite de Pruebas Unitarias/Integración con Sad Paths (§6), Certificación y Despliegue en Producción",
-          "status": "TODO",
+          "status": "DONE",
           "type": "DEVOPS/TESTING",
           "veracity_hash": null
         }

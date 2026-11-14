@@ -469,8 +469,8 @@ let OrdersService = class OrdersService {
             : orderData.delivery_fee;
         if (rawDeliveryFee !== undefined && rawDeliveryFee !== null) {
             const parsedFee = Number(rawDeliveryFee);
-            if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 150) {
-                throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+            if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 1500) {
+                throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00');
             }
         }
         const rawDiscount = orderData.discount_percentage !== undefined
@@ -638,6 +638,9 @@ let OrdersService = class OrdersService {
         else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
             deliveryFee = Number(user.delivery_fee);
         }
+        else if (orderData.delivery_fee_charged !== undefined && orderData.delivery_fee_charged !== null) {
+            deliveryFee = Number(orderData.delivery_fee_charged);
+        }
         else {
             if (this.mileageFreightService && (orderData.miles !== undefined || orderData.dest_lat !== undefined)) {
                 const miles = orderData.miles !== undefined
@@ -657,8 +660,8 @@ let OrdersService = class OrdersService {
         if (isNaN(deliveryFee) || deliveryFee < 0) {
             deliveryFee = 0;
         }
-        else if (deliveryFee > 150) {
-            deliveryFee = 150;
+        else if (deliveryFee > 1500) {
+            deliveryFee = 1500;
         }
         let isComplementary = false;
         if (appliedDeliveryDate && appliedDeliveryType !== 'pickup') {
@@ -956,8 +959,8 @@ let OrdersService = class OrdersService {
         if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
             const rawFee = updateData.delivery_fee_charged !== undefined ? updateData.delivery_fee_charged : updateData.delivery_fee;
             const parsedFee = Number(rawFee);
-            if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 150) {
-                throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00');
+            if (isNaN(parsedFee) || parsedFee < 0 || parsedFee > 1500) {
+                throw new common_1.BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00');
             }
             order.delivery_fee_charged = parsedFee;
         }

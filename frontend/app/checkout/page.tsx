@@ -949,6 +949,8 @@ export default function CheckoutPage() {
         deliveryFee = 0;
     } else if (hasVipFee) {
         deliveryFee = userCustomFee;
+    } else if (logisticsQuote && logisticsQuote.requiresSpecialQuote) {
+        deliveryFee = Number(logisticsQuote.cost || 0);
     } else if (logisticsQuote && typeof logisticsQuote.cost === 'number') {
         deliveryFee = Number(logisticsQuote.cost);
     } else {
@@ -2643,7 +2645,11 @@ export default function CheckoutPage() {
                                         <div className="flex justify-between items-center text-xs mb-1">
                                             <div className="flex flex-col">
                                                 <span className="text-muted-foreground">{lbl('Cargo por Delivery', 'Delivery Fee')}</span>
-                                                <span className="text-[10px] text-primary font-bold">{lbl('⭐ Tarifa Fija Asignada', '⭐ Assigned Client Rate')}</span>
+                                                <span className="text-[10px] text-primary font-bold">
+                                                    {logisticsQuote?.requiresSpecialQuote 
+                                                        ? lbl('⭐ Tarifa Acordada (Ruta Larga Distancia)', '⭐ Agreed Rate (Long Distance Route)')
+                                                        : lbl('⭐ Tarifa Fija Asignada', '⭐ Assigned Client Rate')}
+                                                </span>
                                             </div>
                                             <span className="font-bold text-amber-600 font-mono">+${deliveryFee.toFixed(2)}</span>
                                         </div>
@@ -2652,10 +2658,16 @@ export default function CheckoutPage() {
                                             <div className="flex flex-col">
                                                 <span className="text-muted-foreground">{lbl('Delivery Fee (Por Millaje)', 'Delivery Fee (By Mileage)')}</span>
                                                 <span className="text-[10px] text-muted-foreground font-semibold">
-                                                    {lbl(`Distancia: ${logisticsQuote.miles} mi desde Astoria`, `Distance: ${logisticsQuote.miles} mi from Astoria`)}
+                                                    {logisticsQuote.requiresSpecialQuote
+                                                        ? lbl(`⚠️ Ruta Larga Distancia (${logisticsQuote.miles} mi) • Flete a Coordinar`, `⚠️ Long Distance (${logisticsQuote.miles} mi) • To Coordinate`)
+                                                        : lbl(`Distancia: ${logisticsQuote.miles} mi desde Astoria`, `Distance: ${logisticsQuote.miles} mi from Astoria`)}
                                                 </span>
                                             </div>
-                                            <span className="font-bold text-amber-600 font-mono">+${deliveryFee.toFixed(2)}</span>
+                                            <span className="font-bold text-amber-600 font-mono">
+                                                {logisticsQuote.requiresSpecialQuote && deliveryFee === 0
+                                                    ? lbl('Por Cotizar', 'To Quote')
+                                                    : `+$${deliveryFee.toFixed(2)}`}
+                                            </span>
                                         </div>
                                     ) : (
                                         <div className="flex justify-between items-center text-xs mb-1">

@@ -16,10 +16,16 @@ export interface ValidatedAddressResult {
   cached: boolean;
 }
 
-const ALLOWED_STATES = new Set([
+export const ALLOWED_STATES = new Set([
   'NY', 'NEW YORK',
   'NJ', 'NEW JERSEY',
   'CT', 'CONNECTICUT',
+  'MA', 'MASSACHUSETTS',
+  'RI', 'RHODE ISLAND',
+  'PA', 'PENNSYLVANIA',
+  'NH', 'NEW HAMPSHIRE',
+  'VT', 'VERMONT',
+  'ME', 'MAINE',
 ]);
 
 const KNOWN_INVALID_PATTERNS = [
@@ -63,11 +69,18 @@ export class AddressValidationService {
   }
 
   /**
-   * Valida si un estado o nombre de estado pertenece al área tri-estatal (NY, NJ, CT)
+   * Valida si un estado o nombre de estado pertenece al área de servicio autorizada (NY, NJ, CT, MA, RI, PA, etc.)
    */
-  isTriState(state?: string): boolean {
+  isAllowedState(state?: string): boolean {
     if (!state) return false;
     return ALLOWED_STATES.has(state.trim().toUpperCase());
+  }
+
+  /**
+   * Alias de compatibilidad hacia atrás
+   */
+  isTriState(state?: string): boolean {
+    return this.isAllowedState(state);
   }
 
   /**
@@ -224,10 +237,10 @@ export class AddressValidationService {
       }
     }
 
-    // Validación de área tri-estatal
-    if (stateCode && !this.isTriState(stateCode)) {
+    // Validación de área autorizada de servicio
+    if (stateCode && !this.isAllowedState(stateCode)) {
       throw new BadRequestException(
-        `La dirección (${stateCode}) está fuera del área de servicio autorizada (NY, NJ, CT).`,
+        `La dirección (${stateCode}) está fuera del área de servicio autorizada (NY, NJ, CT, MA, RI, PA).`,
       );
     }
 
@@ -260,34 +273,34 @@ export class AddressValidationService {
     const zip = this.extractZip(address);
     const upper = address.toUpperCase();
 
-    const hasTriStateMention =
-      upper.includes('NY') ||
-      upper.includes('NEW YORK') ||
-      upper.includes('NJ') ||
-      upper.includes('NEW JERSEY') ||
-      upper.includes('CT') ||
-      upper.includes('CONNECTICUT') ||
+    const hasServiceAreaMention =
+      /\b(NY|NEW YORK|NJ|NEW JERSEY|CT|CONNECTICUT|MA|MASS|MASSACHUSETTS|RI|RHODE ISLAND|PA|PENNSYLVANIA)\b/i.test(upper) ||
       upper.includes('ASTORIA') ||
       upper.includes('QUEENS') ||
       upper.includes('BROOKLYN') ||
       upper.includes('MANHATTAN') ||
       upper.includes('BRONX') ||
-      upper.includes('STATEN ISLAND');
+      upper.includes('STATEN ISLAND') ||
+      upper.includes('BOSTON') ||
+      upper.includes('SOMERVILLE') ||
+      upper.includes('CAMBRIDGE') ||
+      upper.includes('PHILADELPHIA') ||
+      upper.includes('PROVIDENCE');
 
-    const hasTriStateZip = zip && /^(10|11|12|13|14|07|08|06)/.test(zip);
+    const hasServiceAreaZip = zip && /^(10|11|12|13|14|07|08|06|01|02|03|15|16|17|18|19)/.test(zip);
 
-    // Si tiene coordenadas provistas válidas en el área tri-estatal (lat: 39-43, lng: -76 a -71)
+    // Coordenadas válidas en el corredor noreste extendido (lat: 38.0 a 45.0, lng: -80.5 a -69.0)
     const hasValidCoords =
       typeof providedLat === 'number' &&
       typeof providedLng === 'number' &&
-      providedLat >= 39.0 &&
-      providedLat <= 43.5 &&
-      providedLng >= -76.0 &&
-      providedLng <= -71.0;
+      providedLat >= 38.0 &&
+      providedLat <= 45.0 &&
+      providedLng >= -80.5 &&
+      providedLng <= -69.0;
 
-    if (!hasTriStateMention && !hasTriStateZip && !hasValidCoords) {
+    if (!hasServiceAreaMention && !hasServiceAreaZip && !hasValidCoords) {
       throw new BadRequestException(
-        'La dirección ingresada no es válida o no pudo ser localizada en el área de servicio (NY, NJ, CT). Verifique calle, ciudad y código postal.',
+        'La dirección ingresada no es válida o no pudo ser localizada en el área de servicio autorizada (NY, NJ, CT, MA, RI, PA). Verifique calle, ciudad y código postal.',
       );
     }
 
@@ -299,14 +312,36 @@ export class AddressValidationService {
     if (hasValidCoords) {
       lat = providedLat!;
       lng = providedLng!;
-    } else if (upper.includes('NJ') || upper.includes('NEW JERSEY') || (zip && /^(07|08)/.test(zip))) {
+    } else if (/\b(NJ|NEW JERSEY)\b/i.test(upper) || (zip && /^(07|08)/.test(zip))) {
       lat = 40.7282; // Jersey City
       lng = -74.0776;
       state = 'NJ';
-    } else if (upper.includes('CT') || upper.includes('CONNECTICUT') || (zip && /^06/.test(zip))) {
+    } else if (/\b(CT|CONNECTICUT)\b/i.test(upper) || (zip && /^06/.test(zip))) {
       lat = 41.0534; // Stamford CT
       lng = -73.5387;
       state = 'CT';
+    } else if (
+      /\b(MA|MASS|MASSACHUSETTS)\b/i.test(upper) ||
+      upper.includes('BOSTON') ||
+      upper.includes('SOMERVILLE') ||
+      upper.includes('CAMBRIDGE') ||
+      (zip && /^(01|02)/.test(zip))
+    ) {
+      lat = 42.3601; // Boston MA
+      lng = -71.0589;
+      state = 'MA';
+      if (upper.includes('SOMERVILLE')) {
+        lat = 42.3876;
+        lng = -71.0995;
+      }
+    } else if (/\b(RI|RHODE ISLAND)\b/i.test(upper) || (zip && /^028|^029/.test(zip))) {
+      lat = 41.8240; // Providence RI
+      lng = -71.4128;
+      state = 'RI';
+    } else if (/\b(PA|PENNSYLVANIA)\b/i.test(upper) || (zip && /^1[5-9]/.test(zip))) {
+      lat = 39.9526; // Philadelphia PA
+      lng = -75.1652;
+      state = 'PA';
     } else if (upper.includes('BUFFALO')) {
       lat = 42.8864; // Buffalo, NY (> 350 mi para Sad Path 3)
       lng = -78.8784;
@@ -319,8 +354,16 @@ export class AddressValidationService {
     else if (upper.includes('QUEENS')) city = 'Queens';
     else if (upper.includes('BRONX')) city = 'Bronx';
     else if (upper.includes('BUFFALO')) city = 'Buffalo';
+    else if (upper.includes('SOMERVILLE')) city = 'Somerville';
+    else if (upper.includes('CAMBRIDGE')) city = 'Cambridge';
+    else if (upper.includes('BOSTON')) city = 'Boston';
+    else if (upper.includes('PHILADELPHIA')) city = 'Philadelphia';
+    else if (upper.includes('PROVIDENCE')) city = 'Providence';
     else if (state === 'NJ') city = 'Jersey City';
     else if (state === 'CT') city = 'Stamford';
+    else if (state === 'MA') city = 'Boston';
+    else if (state === 'RI') city = 'Providence';
+    else if (state === 'PA') city = 'Philadelphia';
 
     let formatted_address = address;
     if (!upper.includes(city.toUpperCase())) {

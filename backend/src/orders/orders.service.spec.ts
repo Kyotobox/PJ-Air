@@ -2244,6 +2244,23 @@ describe('OrdersService', () => {
     });
 
     describe('Capa de Validación de Rangos Seguros (§6)', () => {
+      it('Happy Path: Flete de larga distancia (ej. Boston $250.00) aceptado y aplicado (TASK-90-02)', async () => {
+        const orderData = {
+          items: [{ productId: 10, quantity: 1 }],
+          deliveryType: 'other',
+          delivery_fee_charged: 250.00,
+        };
+
+        const createdOrder = { id: 'order-boston-250', total: 350.00, delivery_fee_charged: 250.00 };
+        mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+        mockManager.save.mockResolvedValue(createdOrder);
+        service.findOne = jest.fn().mockResolvedValue(createdOrder);
+
+        const result = await service.create('user-s83c', orderData);
+        expect(result.delivery_fee_charged).toBe(250.00);
+        expect(result.total).toBe(350.00); // 100 item + 250 flete
+      });
+
       it('Sad Path: Flete negativo rechazado con BadRequestException', async () => {
         const orderData = {
           items: [{ productId: 10, quantity: 1 }],
@@ -2253,19 +2270,19 @@ describe('OrdersService', () => {
 
         await expect(service.create('user-s83c', orderData))
           .rejects
-          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00'));
+          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00'));
       });
 
-      it('Sad Path: Flete mayor a $150.00 rechazado con BadRequestException', async () => {
+      it('Sad Path: Flete mayor a $1500.00 rechazado con BadRequestException (TASK-90-02)', async () => {
         const orderData = {
           items: [{ productId: 10, quantity: 1 }],
           deliveryType: 'other',
-          delivery_fee_charged: 150.01,
+          delivery_fee_charged: 1500.01,
         };
 
         await expect(service.create('user-s83c', orderData))
           .rejects
-          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00'));
+          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00'));
       });
 
       it('Sad Path: Flete NaN rechazado con BadRequestException', async () => {
@@ -2277,7 +2294,7 @@ describe('OrdersService', () => {
 
         await expect(service.create('user-s83c', orderData))
           .rejects
-          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $150.00'));
+          .toThrow(new BadRequestException('La tarifa de entrega debe ser un monto válido entre $0.00 y $1500.00'));
       });
 
       it('Sad Path: Descuento > 50% rechazado con BadRequestException', async () => {

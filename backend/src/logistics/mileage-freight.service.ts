@@ -27,6 +27,7 @@ export interface FreightQuoteResult {
   serviceType: DeliveryServiceType;
   miles: number;
   cost: number;
+  estimatedCost?: number;
   requiresSpecialQuote: boolean;
   notes?: string;
 }
@@ -187,15 +188,21 @@ export class MileageFreightService {
       };
     }
 
-    // 2. Distancia superior a 250 millas: cotización especial
+    // 2. Distancia superior a 250 millas: cotización especial / flete manual (TASK-90-02)
     if (miles > 250) {
+      const extraBrackets = Math.ceil((miles - 50) / 10);
+      const estimatedCost = type === 'exclusive'
+        ? 300 + extraBrackets * 25
+        : 125 + extraBrackets * 25;
+
       return {
         origin: this.origin,
         serviceType: type,
         miles,
         cost: 0,
+        estimatedCost,
         requiresSpecialQuote: true,
-        notes: 'Distancia superior a 250 millas: requiere cotización especial de ruta personalizada.',
+        notes: `Distancia superior a 250 millas (${miles} mi): flete manual a ser asignado desde administración (Estimado orientativo: $${estimatedCost}).`,
       };
     }
 
