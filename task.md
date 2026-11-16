@@ -1,6 +1,6 @@
 # SPRINT S94 - Sprint Activo
 **Objetivo**: Sin objetivo especificado
-**Fecha**: 2026-11-14
+**Fecha**: 2026-11-16
 
 - [x] **TASK-94-01** [TASK] Modelo y Control de Zelle (zelle_enabled: false por default, migración condicional por Cheque/ACH, bloqueo en checkout y backend)
 - [x] **TASK-94-02** [TASK] Motor de Flete Gratis Dual (Por Cliente permanente free_delivery_enabled y Por Pedido Puntual con recálculo de totales en Admin)
