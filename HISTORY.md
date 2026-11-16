@@ -1,9 +1,5 @@
 | Timestamp | Role | SessionID | PrevHash | Type | Task | Detail |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-  - TASK-73-06: TODO -> DONE
-  - TASK-73-07: TODO -> IN_PROGRESS |
-| 2026-11-11 04:48 | AI | BACKLOG_SYNC | c9cc0c2 | STATE_MUTATION | SYNC | Mutations applied:
-  - TASK-73-07: IN_PROGRESS -> DONE |
 | 2026-11-11 05:04 | AI | GATE | b285e5d | WARNING | Handover con Drift | Handover ejecutado con drift del 100.0%. warm_start_eligible será false. |
 | 2026-11-11 05:04 | AI | 1794373456863 | 35375ab | HANDOVER | Session Transfer | Automated Fast-Handover completed. Status: DNA-DRIFTED. |
 | 2026-11-11 05:14 | AGENT | 617e2090041717fcd02ce9f008323d23 | 45c939c | ODOMETER_RESET | TAKEOVER | Odómetro reiniciado. Nueva sesión UUID: 617e2090041717fcd02ce9f008323d23 |
@@ -200,3 +196,7 @@
   - TASK-94-05: IN_PROGRESS -> DONE |
 | 2026-11-14 19:31 | AI | 1794684684598 | efdc637 | HANDOVER | Session Transfer | Automated Fast-Handover completed. Status: DNA-DRIFTED. |
 | 2026-11-14 19:32 | AI | 1794684738054 | 3f865f1 | HANDOVER | Session Transfer | Automated Fast-Handover completed. Status: DNA-DRIFTED. |
+| 2026-11-14 19:32 | AGENT | 617e2090041717fcd02ce9f008323d23 | b79347e | ODOMETER_RESET | TAKEOVER | Odómetro reiniciado. Nueva sesión UUID: 617e2090041717fcd02ce9f008323d23 |
+| 2026-11-14 19:32 | AI | S94 | a50d645 | SNAP | HOOKS | Git Hooks (pre-commit, pre-push) instalados exitosamente. |
+| 2026-11-16 03:35 | AI | DOCTRINAL_DRIFT_HALT | 0963162 | SECURITY_HALT | Handover Check | Handover bloqueado por deriva doctrinal en AGENTS.md. |
+| 2026-11-16 03:36 | AI | DOCTRINAL_DRIFT_HALT | 2113bdc | SECURITY_HALT | Handover Check | Handover bloqueado por deriva doctrinal en AGENTS.md. |
