@@ -41,6 +41,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExcelService = void 0;
 exports.resolveCroissantProductionGroup = resolveCroissantProductionGroup;
+exports.resolveOrderClientBusinessName = resolveOrderClientBusinessName;
 const common_1 = require("@nestjs/common");
 const ExcelJS = __importStar(require("exceljs"));
 function resolveCroissantProductionGroup(product) {
@@ -69,6 +70,15 @@ function resolveCroissantProductionGroup(product) {
     }
     return '1';
 }
+function resolveOrderClientBusinessName(order) {
+    return (order?.user?.profile?.nickname ||
+        order?.user?.dba ||
+        order?.user?.profile?.company_name ||
+        order?.user?.legal_business_name ||
+        order?.user?.profile?.full_name ||
+        order?.user?.email ||
+        'Anónimo');
+}
 let ExcelService = class ExcelService {
     async generateProductionReport(orders) {
         return this.exportConsolidated(orders);
@@ -78,7 +88,7 @@ let ExcelService = class ExcelService {
         const usedSheetNames = new Set();
         const clientOrders = {};
         orders.forEach(order => {
-            const name = order?.user?.profile?.nickname || order?.user?.profile?.full_name || order?.user?.email || 'Anónimo';
+            const name = resolveOrderClientBusinessName(order);
             if (!clientOrders[name])
                 clientOrders[name] = [];
             clientOrders[name].push(order);
@@ -237,10 +247,10 @@ let ExcelService = class ExcelService {
     async exportConsolidated(orders) {
         const workbook = new ExcelJS.Workbook();
         const usedSheetNames = new Set();
-        const clientNames = Array.from(new Set(orders.map(o => o?.user?.profile?.nickname || o?.user?.profile?.full_name || o?.user?.email || 'Anónimo'))).sort();
+        const clientNames = Array.from(new Set(orders.map(o => resolveOrderClientBusinessName(o)))).sort();
         const dataStructure = {};
         orders.forEach(order => {
-            const client = order?.user?.profile?.nickname || order?.user?.profile?.full_name || order?.user?.email || 'Anónimo';
+            const client = resolveOrderClientBusinessName(order);
             (order.items || []).forEach(item => {
                 const cat = item.product?.category?.name || 'Sin categoría';
                 const prod = item.product?.name || `Producto #${item.product_id || 'Desconocido'}`;

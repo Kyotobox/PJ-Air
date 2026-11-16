@@ -34,6 +34,29 @@ export function resolveCroissantProductionGroup(product?: { name?: string; produ
   return '1';
 }
 
+/**
+ * Resuelve el nombre comercial canónico del cliente para rotulación y exportaciones Excel B2B.
+ * Precedencia:
+ * 1. order?.user?.profile?.nickname
+ * 2. order?.user?.dba
+ * 3. order?.user?.profile?.company_name
+ * 4. order?.user?.legal_business_name
+ * 5. order?.user?.profile?.full_name
+ * 6. order?.user?.email
+ * 7. 'Anónimo'
+ */
+export function resolveOrderClientBusinessName(order?: any): string {
+  return (
+    order?.user?.profile?.nickname ||
+    order?.user?.dba ||
+    order?.user?.profile?.company_name ||
+    order?.user?.legal_business_name ||
+    order?.user?.profile?.full_name ||
+    order?.user?.email ||
+    'Anónimo'
+  );
+}
+
 @Injectable()
 export class ExcelService {
   async generateProductionReport(orders: Order[]): Promise<Buffer> {
@@ -47,7 +70,7 @@ export class ExcelService {
     // Group orders by client (user)
     const clientOrders: Record<string, Order[]> = {};
     orders.forEach(order => {
-      const name = order?.user?.profile?.nickname || order?.user?.profile?.full_name || order?.user?.email || 'Anónimo';
+      const name = resolveOrderClientBusinessName(order);
       if (!clientOrders[name]) clientOrders[name] = [];
       clientOrders[name].push(order);
     });
@@ -239,7 +262,7 @@ export class ExcelService {
 
     // 1. Get all unique client names (stores)
     const clientNames = Array.from(new Set(orders.map(o => 
-      o?.user?.profile?.nickname || o?.user?.profile?.full_name || o?.user?.email || 'Anónimo'
+      resolveOrderClientBusinessName(o)
     ))).sort();
 
     // 2. Group items by product category, then product name, then client name
@@ -250,7 +273,7 @@ export class ExcelService {
     const dataStructure: Record<string, Record<string, ProductRecord>> = {};
     
     orders.forEach(order => {
-      const client = order?.user?.profile?.nickname || order?.user?.profile?.full_name || order?.user?.email || 'Anónimo';
+      const client = resolveOrderClientBusinessName(order);
       (order.items || []).forEach(item => {
         const cat = item.product?.category?.name || 'Sin categoría';
         const prod = item.product?.name || `Producto #${item.product_id || 'Desconocido'}`;

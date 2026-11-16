@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExcelService } from './excel.service';
+import { ExcelService, resolveOrderClientBusinessName } from './excel.service';
 import { Order } from './order.entity';
 import * as ExcelJS from 'exceljs';
 
@@ -56,6 +56,131 @@ describe('ExcelService', () => {
       // The sheet should not be named after full_name or email
       expect(workbook.getWorksheet('John Doe')).toBeUndefined();
       expect(workbook.getWorksheet('client@test.com')).toBeUndefined();
+    });
+
+    it('should label sheet and CLIENTE cell with commercial business name (Carmen Bakery LLC over Carmen Rodriguez)', async () => {
+      const mockOrders = [
+        {
+          id: 'order-carmen-1',
+          user: {
+            legal_business_name: 'Carmen Bakery LLC',
+            email: 'carmen@bakery.com',
+            profile: {
+              full_name: 'Carmen Rodriguez',
+              phone: '555-9876',
+            },
+          },
+          items: [
+            {
+              product: {
+                name: 'Artisanal Croissant',
+                category: { name: 'Croissants' },
+              },
+              quantity: 12,
+              price_at_time: 4.5,
+            },
+          ],
+        } as unknown as Order,
+      ];
+
+      const buffer = await service.exportIndividual(mockOrders);
+      expect(buffer).toBeDefined();
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as any);
+
+      // Sheet name MUST be based on legal_business_name 'Carmen Bakery LLC'
+      const sheet = workbook.getWorksheet('Carmen Bakery LLC');
+      expect(sheet).toBeDefined();
+
+      // The sheet must NOT be named after contact personal name
+      expect(workbook.getWorksheet('Carmen Rodriguez')).toBeUndefined();
+
+      // Check CLIENTE: cell contains CARMEN BAKERY LLC
+      const rows: string[][] = [];
+      sheet?.eachRow((row) => {
+        rows.push(row.values as string[]);
+      });
+
+      const clientRow = rows.find(
+        (r) => Array.isArray(r) && r.some((c) => String(c).includes('CLIENTE:')),
+      );
+      expect(clientRow).toBeDefined();
+      expect(clientRow?.some((c) => String(c).includes('CARMEN BAKERY LLC'))).toBe(true);
+      expect(clientRow?.some((c) => String(c).includes('CARMEN RODRIGUEZ'))).toBe(false);
+    });
+
+    it('should follow canonical precedence for business name: nickname > dba > company_name > legal_business_name > full_name > email > Anónimo', async () => {
+      // 1. Nickname highest
+      expect(
+        resolveOrderClientBusinessName({
+          user: {
+            profile: { nickname: 'NickStore', company_name: 'CompName', full_name: 'Full Name' },
+            dba: 'DBA Store',
+            legal_business_name: 'Legal LLC',
+            email: 'test@email.com',
+          },
+        }),
+      ).toBe('NickStore');
+
+      // 2. DBA over company_name and legal_business_name
+      expect(
+        resolveOrderClientBusinessName({
+          user: {
+            profile: { company_name: 'CompName', full_name: 'Full Name' },
+            dba: 'DBA Store',
+            legal_business_name: 'Legal LLC',
+            email: 'test@email.com',
+          },
+        }),
+      ).toBe('DBA Store');
+
+      // 3. Company name over legal_business_name
+      expect(
+        resolveOrderClientBusinessName({
+          user: {
+            profile: { company_name: 'CompName', full_name: 'Full Name' },
+            legal_business_name: 'Legal LLC',
+            email: 'test@email.com',
+          },
+        }),
+      ).toBe('CompName');
+
+      // 4. Legal business name over full_name
+      expect(
+        resolveOrderClientBusinessName({
+          user: {
+            profile: { full_name: 'Carmen Rodriguez' },
+            legal_business_name: 'Carmen Bakery LLC',
+            email: 'carmen@bakery.com',
+          },
+        }),
+      ).toBe('Carmen Bakery LLC');
+
+      // 5. Full name fallback if no business fields
+      expect(
+        resolveOrderClientBusinessName({
+          user: {
+            profile: { full_name: 'Solo Persona' },
+            email: 'solo@email.com',
+          },
+        }),
+      ).toBe('Solo Persona');
+
+      // 6. Email fallback
+      expect(
+        resolveOrderClientBusinessName({
+          user: {
+            email: 'solo@email.com',
+          },
+        }),
+      ).toBe('solo@email.com');
+
+      // 7. Anónimo fallback (sad path boundary)
+      expect(resolveOrderClientBusinessName(null)).toBe('Anónimo');
+      expect(resolveOrderClientBusinessName({})).toBe('Anónimo');
+      expect(resolveOrderClientBusinessName({ user: null })).toBe('Anónimo');
+      expect(resolveOrderClientBusinessName({ user: { profile: null } })).toBe('Anónimo');
     });
 
     it('should include FECHA DE DESPACHO / ENTREGA and FECHA DE REGISTRO / PEDIDO in headers', async () => {
@@ -285,6 +410,99 @@ describe('ExcelService', () => {
       ];
 
       await expect(service.exportConsolidated(emptyCroissantOrders)).resolves.toBeDefined();
+    });
+
+    it('should label column headers with commercial business names (Carmen Bakery LLC instead of Carmen Rodriguez)', async () => {
+      const mockOrders = [
+        {
+          id: 'order-carmen',
+          user: {
+            legal_business_name: 'Carmen Bakery LLC',
+            profile: { full_name: 'Carmen Rodriguez' },
+          },
+          items: [
+            {
+              product: { name: 'Baguette', category: { name: 'Panes' } },
+              quantity: 10,
+            },
+          ],
+        } as unknown as Order,
+        {
+          id: 'order-mario',
+          user: {
+            dba: 'Sweet Corner Store',
+            profile: { full_name: 'Mario Rossi' },
+          },
+          items: [
+            {
+              product: { name: 'Baguette', category: { name: 'Panes' } },
+              quantity: 5,
+            },
+          ],
+        } as unknown as Order,
+      ];
+
+      const buffer = await service.exportConsolidated(mockOrders);
+      expect(buffer).toBeDefined();
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as any);
+
+      const sheet = workbook.getWorksheet('PANES');
+      expect(sheet).toBeDefined();
+
+      const allRows: any[][] = [];
+      sheet?.eachRow((row) => {
+        allRows.push(row.values as any[]);
+      });
+
+      // Find header row containing PRODUCTO
+      const headerRow = allRows.find(
+        (r) => Array.isArray(r) && r.includes('PRODUCTO'),
+      );
+      expect(headerRow).toBeDefined();
+
+      // Headers should contain business names in UPPERCASE
+      expect(headerRow).toContain('CARMEN BAKERY LLC');
+      expect(headerRow).toContain('SWEET CORNER STORE');
+
+      // Headers should NOT contain personal contact names
+      expect(headerRow).not.toContain('CARMEN RODRIGUEZ');
+      expect(headerRow).not.toContain('MARIO ROSSI');
+    });
+
+    it('should handle orders with null/undefined user in exportConsolidated without throwing (sad path)', async () => {
+      const nullUserOrders = [
+        {
+          id: 'order-no-user',
+          user: null,
+          items: [
+            {
+              product: { name: 'Ciabatta', category: { name: 'Panes' } },
+              quantity: 3,
+            },
+          ],
+        } as unknown as Order,
+      ];
+
+      const buffer = await service.exportConsolidated(nullUserOrders);
+      expect(buffer).toBeDefined();
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as any);
+      const sheet = workbook.getWorksheet('PANES');
+      expect(sheet).toBeDefined();
+
+      const allRows: any[][] = [];
+      sheet?.eachRow((row) => {
+        allRows.push(row.values as any[]);
+      });
+
+      const headerRow = allRows.find(
+        (r) => Array.isArray(r) && r.includes('PRODUCTO'),
+      );
+      expect(headerRow).toBeDefined();
+      expect(headerRow).toContain('ANÓNIMO');
     });
   });
 

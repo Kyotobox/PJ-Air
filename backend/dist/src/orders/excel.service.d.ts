@@ -3,6 +3,7 @@ export declare function resolveCroissantProductionGroup(product?: {
     name?: string;
     production_group?: string | null;
 } | null): '1' | '2' | '3';
+export declare function resolveOrderClientBusinessName(order?: any): string;
 export declare class ExcelService {
     generateProductionReport(orders: Order[]): Promise<Buffer>;
     exportIndividual(orders: Order[]): Promise<Buffer>;

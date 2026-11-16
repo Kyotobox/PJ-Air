@@ -13,6 +13,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
 import { calculateProcessingFee } from '@/lib/fee-calculator';
 import { API_URL } from '@/lib/config';
+import { getClientBusinessName, getClientContactName } from '@/lib/client-identity';
 
 // TASK-85-02: Late Invoicing Engine helper
 const isOrderConfirmed = (ord: any): boolean => {
@@ -91,8 +92,9 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
 
     const handlePrintInvoice = () => {
         if (!order) return;
-        const clientName = order.user?.profile?.full_name || order.user?.name || order.user?.email || 'Valued Customer';
-        const clientPhone = order.user?.profile?.phone || '';
+        const customerName = getClientBusinessName(order.user);
+        const attnName = getClientContactName(order.user);
+        const clientPhone = order.user?.profile?.phone || order.user?.phone || order.delivery_phone || order.phone || '';
         const orderDate = new Date(order.created_at || Date.now()).toLocaleDateString('en-US', {
             year: 'numeric', month: 'long', day: 'numeric'
         });
@@ -195,7 +197,8 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
         </div>
         <div class="party">
             <h3>Bill To / Customer Details:</h3>
-            <p><b>Customer:</b> ${clientName}</p>
+            <p><b>Customer:</b> ${customerName}</p>
+            ${attnName ? `<p><b>Attn:</b> ${attnName}</p>` : ''}
             ${clientPhone ? `<p><b>Phone:</b> ${clientPhone}</p>` : ''}
             <p><b>Delivery Address:</b> ${deliveryAddress}</p>
             <p><b>Delivery Date:</b> ${deliveryDateStr}</p>

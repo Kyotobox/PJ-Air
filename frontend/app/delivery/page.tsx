@@ -5,12 +5,13 @@ import DeliverySidebar from '@/components/layout/DeliverySidebar';
 import { 
     Truck, MapPin, Camera, CheckCircle2, Navigation, 
     Clock, Phone, ChevronRight, Map as MapIcon, Loader2,
-    Package, ShoppingBag, X, AlertCircle, Eye, Info, User as UserIcon
+    Package, ShoppingBag, X, AlertCircle, Eye, Info, User as UserIcon, Building2
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/lib/config';
 import StreetViewFacadeCard from '@/components/delivery/StreetViewFacadeCard';
+import { getClientBusinessName, getClientContactName } from '@/lib/client-identity';
 
 interface OrderItem {
     id: string;
@@ -40,9 +41,10 @@ interface Order {
     created_at: string;
     notes?: string;
     delivery_user_id?: string;
-    user?: { profile?: { full_name?: string; phone?: string; }; };
+    user?: any;
     address?: DeliveryAddress;
     items?: OrderItem[];
+    [key: string]: any;
 }
 
 export default function DeliveryPage() {
@@ -171,10 +173,32 @@ export default function DeliveryPage() {
                                 <div className="bg-slate-50 rounded-3xl border border-slate-100 p-6 mb-8 group-hover:bg-white transition-all">
                                     <div className="flex items-center gap-6">
                                         <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm border border-slate-100 shrink-0">
-                                            <UserIcon size={28} />
+                                            <Building2 size={28} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-lg font-black text-slate-800 truncate">{order.user?.profile?.full_name || 'Cliente sin nombre'}</p>
+                                            <p className="text-lg font-black text-slate-800 truncate" title={getClientBusinessName(order.user)}>
+                                                {getClientBusinessName(order.user)}
+                                            </p>
+                                            {(getClientContactName(order.user) || order.user?.profile?.phone || order.user?.phone || order.delivery_phone) && (
+                                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 mt-0.5">
+                                                    {getClientContactName(order.user) && (
+                                                        <span className="truncate">Contacto: {getClientContactName(order.user)}</span>
+                                                    )}
+                                                    {getClientContactName(order.user) && (order.user?.profile?.phone || order.user?.phone || order.delivery_phone) && (
+                                                        <span>•</span>
+                                                    )}
+                                                    {(order.user?.profile?.phone || order.user?.phone || order.delivery_phone) && (
+                                                        <a 
+                                                            href={`tel:${order.user?.profile?.phone || order.user?.phone || order.delivery_phone}`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="text-primary hover:underline flex items-center gap-1 font-bold shrink-0"
+                                                            title="Llamar al contacto"
+                                                        >
+                                                            <Phone size={12} /> {order.user?.profile?.phone || order.user?.phone || order.delivery_phone}
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            )}
                                             <div className="flex items-center gap-2 text-slate-500 mt-1">
                                                 <MapPin size={14} className="shrink-0" />
                                                 <p className="text-sm font-bold truncate">{order.address?.address}, {order.address?.city}</p>
@@ -222,21 +246,49 @@ export default function DeliveryPage() {
                                 <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
                                     <div className="flex items-start gap-4 mb-6">
                                         <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-xl text-primary shrink-0 border border-slate-100">
-                                            <MapPin size={28} />
+                                            <Building2 size={28} />
                                         </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-2 tracking-widest">Dirección del Cliente</p>
-                                            <p className="text-xl font-bold leading-tight text-slate-800">{activeDelivery.address?.address}</p>
-                                            <p className="text-xs font-bold text-primary mt-1">{activeDelivery.address?.city}, {activeDelivery.address?.state}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-1 tracking-widest">Establecimiento / Cliente</p>
+                                            <p className="text-xl font-bold leading-tight text-slate-800 truncate">{getClientBusinessName(activeDelivery.user)}</p>
+                                            {(getClientContactName(activeDelivery.user) || activeDelivery.user?.profile?.phone || activeDelivery.user?.phone || activeDelivery.delivery_phone) && (
+                                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 mt-1">
+                                                    {getClientContactName(activeDelivery.user) && (
+                                                        <span className="truncate">Contacto: {getClientContactName(activeDelivery.user)}</span>
+                                                    )}
+                                                    {getClientContactName(activeDelivery.user) && (activeDelivery.user?.profile?.phone || activeDelivery.user?.phone || activeDelivery.delivery_phone) && (
+                                                        <span>•</span>
+                                                    )}
+                                                    {(activeDelivery.user?.profile?.phone || activeDelivery.user?.phone || activeDelivery.delivery_phone) && (
+                                                        <a 
+                                                            href={`tel:${activeDelivery.user?.profile?.phone || activeDelivery.user?.phone || activeDelivery.delivery_phone}`}
+                                                            className="text-primary hover:underline flex items-center gap-1 font-bold"
+                                                        >
+                                                            <Phone size={12} /> {activeDelivery.user?.profile?.phone || activeDelivery.user?.phone || activeDelivery.delivery_phone}
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <div className="mt-3 pt-3 border-t border-slate-200">
+                                                <p className="text-[10px] font-black text-muted-foreground uppercase mb-1 tracking-widest">Dirección de Entrega</p>
+                                                <p className="text-base font-bold leading-tight text-slate-800">{activeDelivery.address?.address}</p>
+                                                <p className="text-xs font-bold text-primary mt-0.5">{activeDelivery.address?.city}, {activeDelivery.address?.state}</p>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <button className="flex items-center justify-center gap-2 py-4 bg-white border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all shadow-sm">
+                                        <button 
+                                            onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((activeDelivery.address?.address || '') + ', ' + (activeDelivery.address?.city || ''))}`, '_blank')}
+                                            className="flex items-center justify-center gap-2 py-4 bg-white border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
+                                        >
                                             <MapIcon size={16} /> Abrir Mapa
                                         </button>
-                                        <button className="flex items-center justify-center gap-2 py-4 bg-white border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all shadow-sm">
+                                        <a 
+                                            href={(activeDelivery.user?.profile?.phone || activeDelivery.user?.phone || activeDelivery.delivery_phone) ? `tel:${activeDelivery.user?.profile?.phone || activeDelivery.user?.phone || activeDelivery.delivery_phone}` : '#'}
+                                            className="flex items-center justify-center gap-2 py-4 bg-white border border-border rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-600 hover:bg-slate-100 transition-all shadow-sm"
+                                        >
                                             <Phone size={16} /> Llamar Cliente
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
 
@@ -337,17 +389,36 @@ export default function DeliveryPage() {
 
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm shrink-0 border border-slate-100">
-                                                <UserIcon size={24} />
+                                                <Building2 size={24} />
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Cliente</p>
-                                                <p className="text-base font-bold text-slate-800 truncate">{selectedOrder.user?.profile?.full_name}</p>
-                                                <p className="text-xs font-bold text-slate-500">{selectedOrder.user?.profile?.phone || 'Sin teléfono'}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Establecimiento / Negocio</p>
+                                                <p className="text-base font-bold text-slate-800 truncate" title={getClientBusinessName(selectedOrder.user)}>
+                                                    {getClientBusinessName(selectedOrder.user)}
+                                                </p>
+                                                {(getClientContactName(selectedOrder.user) || selectedOrder.user?.profile?.phone || selectedOrder.user?.phone || selectedOrder.delivery_phone) && (
+                                                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 mt-0.5">
+                                                        {getClientContactName(selectedOrder.user) && (
+                                                            <span className="truncate">Contacto: {getClientContactName(selectedOrder.user)}</span>
+                                                        )}
+                                                        {getClientContactName(selectedOrder.user) && (selectedOrder.user?.profile?.phone || selectedOrder.user?.phone || selectedOrder.delivery_phone) && (
+                                                            <span>•</span>
+                                                        )}
+                                                        {(selectedOrder.user?.profile?.phone || selectedOrder.user?.phone || selectedOrder.delivery_phone) && (
+                                                            <a 
+                                                                href={`tel:${selectedOrder.user?.profile?.phone || selectedOrder.user?.phone || selectedOrder.delivery_phone}`}
+                                                                className="text-primary hover:underline flex items-center gap-1 font-bold shrink-0"
+                                                            >
+                                                                <Phone size={12} /> {selectedOrder.user?.profile?.phone || selectedOrder.user?.phone || selectedOrder.delivery_phone}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
-                                            {selectedOrder.user?.profile?.phone && (
+                                            {(selectedOrder.user?.profile?.phone || selectedOrder.user?.phone || selectedOrder.delivery_phone) && (
                                                 <a 
-                                                    href={`tel:${selectedOrder.user.profile.phone}`}
-                                                    className="p-3 bg-primary text-white rounded-xl hover:opacity-90 transition-all shadow-md"
+                                                    href={`tel:${selectedOrder.user?.profile?.phone || selectedOrder.user?.phone || selectedOrder.delivery_phone}`}
+                                                    className="p-3 bg-primary text-white rounded-xl hover:opacity-90 transition-all shadow-md shrink-0"
                                                     title="Llamar al cliente"
                                                 >
                                                     <Phone size={20} />

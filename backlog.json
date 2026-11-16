@@ -4,7 +4,7 @@
   "kernel_version": "5.4.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S95",
-  "current_task": "TASK-95-02",
+  "current_task": "TASK-95-04",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -97,7 +97,7 @@
     {
       "id": "S95",
       "title": "Sprint S95: Normalización de Identidad Comercial B2B: Precedencia y Visualización de Nombre del Negocio vs Contacto en Reportes, Impresiones y Despacho",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-95-01",
@@ -116,14 +116,14 @@
         {
           "id": "TASK-95-03",
           "title": "Exportación de Reportes Excel por Negocio en Backend (ExcelJS) y Visualización Comercial en Pantalla de Despacho/Chofer",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/EXCEL-LOGISTICS",
           "veracity_hash": null
         },
         {
           "id": "TASK-95-04",
           "title": "Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción",
-          "status": "TODO",
+          "status": "DONE",
           "type": "TEST/DEVOPS",
           "veracity_hash": null
         }
@@ -135,7 +135,7 @@
   "active_sprint": {
     "id": "S95",
     "title": "Sprint S95: Normalización de Identidad Comercial B2B: Precedencia y Visualización de Nombre del Negocio vs Contacto en Reportes, Impresiones y Despacho",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-95-01",
@@ -147,21 +147,21 @@
       {
         "id": "TASK-95-02",
         "title": "Unificación en Reportes Matriciales en Pantalla e Impresos (Admin y Producción) e Impresión de Hoja de Cocina e Invoices",
-        "status": "TODO",
+        "status": "DONE",
         "type": "FRONTEND/REPORTS",
         "veracity_hash": null
       },
       {
         "id": "TASK-95-03",
         "title": "Exportación de Reportes Excel por Negocio en Backend (ExcelJS) y Visualización Comercial en Pantalla de Despacho/Chofer",
-        "status": "TODO",
+        "status": "DONE",
         "type": "BACKEND/EXCEL-LOGISTICS",
         "veracity_hash": null
       },
       {
         "id": "TASK-95-04",
         "title": "Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción",
-        "status": "TODO",
+        "status": "DONE",
         "type": "TEST/DEVOPS",
         "veracity_hash": null
       }
