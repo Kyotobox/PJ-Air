@@ -13,6 +13,7 @@ import {
     resolveKitchenDeliveryAddress,
     KitchenPrintOptions
 } from '@/lib/kitchen-dispatch';
+import { getClientBusinessName } from '@/lib/client-identity';
 
 interface PrintKitchenModalProps {
     isOpen: boolean;
@@ -58,7 +59,7 @@ export default function PrintKitchenModal({ isOpen, onClose, order }: PrintKitch
 
     if (!isOpen || !order) return null;
 
-    const clientName = order.user?.profile?.full_name || order.user?.profile?.nickname || 'Cliente Anónimo';
+    const clientName = getClientBusinessName(order.user);
     const shortOrderId = order.id ? order.id.slice(0, 8).toUpperCase() : 'N/A';
     const deliveryDateStr = order.delivery_date 
         ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])

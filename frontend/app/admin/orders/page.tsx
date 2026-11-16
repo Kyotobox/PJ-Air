@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { calculateOrderFinancials } from '@/lib/order-finance';
 import PrintKitchenModal from '@/components/modals/PrintKitchenModal';
+import { getClientBusinessName, getClientContactName } from '@/lib/client-identity';
 
 interface OrderItem {
     id: string;
@@ -639,7 +640,8 @@ export default function AdminOrdersPage() {
 
         if (!isKitchen) {
             // Customer Invoice / Receipt in strict English
-            const clientName = order.user?.profile?.full_name || order.user?.email || 'Valued Customer';
+            const clientName = getClientBusinessName(order.user);
+            const contactName = getClientContactName(order.user);
             const clientPhone = order.user?.profile?.phone || '';
             const orderDate = new Date(order.created_at || Date.now()).toLocaleDateString('en-US', {
                 year: 'numeric', month: 'long', day: 'numeric'
@@ -734,6 +736,7 @@ table.items-table th:nth-child(3), table.items-table th:nth-child(4) { text-alig
     <div class="party">
         <h3>Bill To / Customer Details:</h3>
         <p><b>Customer:</b> ${clientName}</p>
+        ${contactName ? `<p><b>Attn:</b> ${contactName}</p>` : ''}
         ${clientPhone ? `<p><b>Phone:</b> ${clientPhone}</p>` : ''}
         <p><b>Delivery Address:</b> ${deliveryAddress}</p>
         <p><b>Delivery Date:</b> ${deliveryDateStr}</p>
@@ -821,7 +824,7 @@ table.items-table th:nth-child(3), table.items-table th:nth-child(4) { text-alig
             return `${idx > 0 ? '<tr style="height:6px"><td colspan="2" style="border:none"></td></tr>' : ''}<tr class="cat"><td colspan="2">${cat}</td></tr>${rows}`;
         }).join('');
         const fecha = new Date(order.created_at).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        const clientName = order.user?.profile?.full_name || 'Anónimo';
+        const clientName = getClientBusinessName(order.user);
         const clientPhone = order.user?.profile?.phone || '';
         const addr = order.address?.address || '';
         const deliveryDateStr = order.delivery_date 
@@ -1304,7 +1307,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <p className="font-bold text-slate-800 leading-none mb-1 group-hover:text-primary transition-colors">{order.user?.profile?.nickname || order.user?.profile?.full_name || 'Anónimo'}</p>
+                                            <p className="font-bold text-slate-800 leading-none mb-1 group-hover:text-primary transition-colors">{getClientBusinessName(order.user)}</p>
                                             <p className="text-xs text-muted-foreground font-medium truncate max-w-[180px]">{order.user?.email}</p>
                                         </td>
                                         <td className="px-8 py-5">

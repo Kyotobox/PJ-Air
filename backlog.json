@@ -109,7 +109,7 @@
         {
           "id": "TASK-95-02",
           "title": "Unificación en Reportes Matriciales en Pantalla e Impresos (Admin y Producción) e Impresión de Hoja de Cocina e Invoices",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/REPORTS",
           "veracity_hash": null
         },

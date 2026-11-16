@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { getClientBusinessName } from './client-identity';
 
 export interface KitchenItem {
     name: string;
@@ -22,7 +23,7 @@ export interface GroupedKitchenResult {
 
 export interface KitchenPrintOptions {
     orderId: string;
-    clientName: string;
+    clientName?: string;
     deliveryDateStr?: string;
     driverName: string;
     deliveryAddress: string;
@@ -30,6 +31,8 @@ export interface KitchenPrintOptions {
     items: any[];
     orderNotes?: string;
     locale?: string;
+    order?: any;
+    user?: any;
 }
 
 const SPANISH_DAYS = ['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'];
@@ -367,7 +370,6 @@ export function sanitizeFileNamePart(text: string): string {
 export function generateKitchenPrintHtml(options: KitchenPrintOptions): string {
     const {
         orderId,
-        clientName,
         deliveryDateStr,
         driverName,
         deliveryAddress,
@@ -376,6 +378,11 @@ export function generateKitchenPrintHtml(options: KitchenPrintOptions): string {
         orderNotes,
         locale = 'en',
     } = options;
+
+    const userOrOrder = options.order?.user || options.order || options.user;
+    const clientName = userOrOrder
+        ? getClientBusinessName(userOrOrder)
+        : (options.clientName && options.clientName.trim() ? options.clientName.trim() : 'CLIENTE');
 
     const formattedDate = formatDeliveryDateUpper(deliveryDateStr, locale);
     const shortOrderId = orderId ? orderId.slice(0, 8).toUpperCase() : 'N/A';
@@ -710,7 +717,6 @@ export function generateKitchenExcelWorkbook(options: KitchenPrintOptions): {
 } {
     const {
         orderId,
-        clientName,
         deliveryDateStr,
         driverName,
         deliveryAddress,
@@ -719,6 +725,11 @@ export function generateKitchenExcelWorkbook(options: KitchenPrintOptions): {
         orderNotes,
         locale = 'en',
     } = options;
+
+    const userOrOrder = options.order?.user || options.order || options.user;
+    const clientName = userOrOrder
+        ? getClientBusinessName(userOrOrder)
+        : (options.clientName && options.clientName.trim() ? options.clientName.trim() : 'CLIENTE');
 
     const formattedDate = formatDeliveryDateUpper(deliveryDateStr, locale);
     const shortOrderId = orderId ? orderId.slice(0, 8).toUpperCase() : 'ORDEN';

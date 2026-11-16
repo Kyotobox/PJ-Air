@@ -21,6 +21,7 @@ import {
     Package,
     ChevronUp
 } from 'lucide-react';
+import { getClientBusinessName } from '@/lib/client-identity';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -255,7 +256,7 @@ function ReportsPageContent() {
                 }
             } else {
                 const cid = order.user_id;
-                const name = order.user?.profile?.full_name || order.user?.email || 'Unknown';
+                const name = getClientBusinessName(order.user);
                 const dType = order.delivery_type || 'pickup';
                 const addressLabel = order.address?.alias || order.delivery_address_text || '';
                 key = `${cid}__${dType}__${addressLabel}`;
@@ -425,10 +426,20 @@ function ReportsPageContent() {
         fetchReportData(start, end, '');
     };
 
-    const filteredClients = clients.filter(c =>
-        (c.profile?.full_name || '').toLowerCase().includes(clientSearch.toLowerCase()) ||
-        (c.email || '').toLowerCase().includes(clientSearch.toLowerCase())
-    );
+    const filteredClients = clients.filter(c => {
+        const query = clientSearch.toLowerCase();
+        const bizName = getClientBusinessName(c).toLowerCase();
+        return (
+            bizName.includes(query) ||
+            (c.profile?.nickname || '').toLowerCase().includes(query) ||
+            (c.profile?.full_name || '').toLowerCase().includes(query) ||
+            (c.profile?.company_name || '').toLowerCase().includes(query) ||
+            (c.company_name || '').toLowerCase().includes(query) ||
+            (c.legal_business_name || '').toLowerCase().includes(query) ||
+            (c.dba || '').toLowerCase().includes(query) ||
+            (c.email || '').toLowerCase().includes(query)
+        );
+    });
 
     const deliveryLabel = (type: string) => {
         if (type === 'pickup') return 'Pickup';
@@ -539,18 +550,26 @@ function ReportsPageContent() {
                                     className="w-full h-14 pl-11 pr-10 bg-muted/30 border border-border rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all" />
                                 {clientSearch && !selectedClientId && filteredClients.length > 0 && (
                                     <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-2xl z-50 max-h-56 overflow-y-auto">
-                                        {filteredClients.map(c => (
-                                            <button key={c.id} onClick={() => { setSelectedClientId(c.id); setClientSearch(c.profile?.full_name || c.email); if (viewMode !== 'specific-client') setViewMode('specific-client'); }}
-                                                className="w-full px-5 py-3 text-left text-sm hover:bg-muted transition-colors flex items-center gap-3 border-b border-border last:border-0">
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
-                                                    {(c.profile?.full_name || c.email)?.[0]?.toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold">{c.profile?.full_name || c.email}</p>
-                                                    {c.profile?.company_name && <p className="text-[10px] text-primary font-black uppercase">{c.profile.company_name}</p>}
-                                                </div>
-                                            </button>
-                                        ))}
+                                        {filteredClients.map(c => {
+                                            const bizName = getClientBusinessName(c);
+                                            return (
+                                                <button key={c.id} onClick={() => { setSelectedClientId(c.id); setClientSearch(bizName); if (viewMode !== 'specific-client') setViewMode('specific-client'); }}
+                                                    className="w-full px-5 py-3 text-left text-sm hover:bg-muted transition-colors flex items-center gap-3 border-b border-border last:border-0">
+                                                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
+                                                        {bizName[0]?.toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold">{bizName}</p>
+                                                        {c.profile?.full_name && c.profile?.full_name !== bizName && (
+                                                            <p className="text-[10px] text-muted-foreground">{c.profile.full_name}</p>
+                                                        )}
+                                                        {c.profile?.company_name && c.profile?.company_name !== bizName && (
+                                                            <p className="text-[10px] text-primary font-black uppercase">{c.profile.company_name}</p>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 )}
                                 {selectedClientId && (

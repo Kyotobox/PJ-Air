@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { resolveCroissantGroup, isCroissantCategory, CROISSANT_GROUPS } from './croissant-groups';
 
 describe('Canonical Croissant Groups Classification (TASK-92-02 & TASK-92-03)', () => {
