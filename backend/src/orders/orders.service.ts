@@ -375,6 +375,10 @@ export class OrdersService {
     };
   }
 
+  /**
+   * S95A: Carga órdenes en rango de fechas con contrato normalizado de identidad comercial.
+   * Garantiza leftJoinAndSelect sobre order.user (legal_business_name, dba) y user.profile (company_name, nickname, full_name).
+   */
   async findInRange(startDate: string, endDate: string, userId?: string): Promise<Order[]> {
     console.log('findInRange called with:', { startDate, endDate, userId });
     
@@ -455,6 +459,10 @@ export class OrdersService {
     return filtered;
   }
 
+  /**
+   * S95A: Carga órdenes recientes con contrato normalizado de identidad comercial.
+   * Carga relaciones 'user' (legal_business_name, dba) y 'user.profile' (company_name, nickname, full_name).
+   */
   async findAll(): Promise<Order[]> {
     return this.orderRepository.find({ 
       relations: ['items', 'items.product', 'user', 'user.profile', 'delivery_user', 'delivery_user.profile', 'address'],
@@ -471,6 +479,10 @@ export class OrdersService {
     });
   }
 
+  /**
+   * S95A: Carga orden por ID con contrato normalizado de identidad comercial.
+   * Carga relaciones 'user' (legal_business_name, dba) y 'user.profile' (company_name, nickname, full_name).
+   */
   async findOne(id: string): Promise<Order> {
     const order = await this.orderRepository.findOne({ 
       where: { id },

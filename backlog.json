@@ -4,7 +4,7 @@
   "kernel_version": "5.4.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S95",
-  "current_task": "TASK-95-01",
+  "current_task": "TASK-95-02",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -102,7 +102,7 @@
         {
           "id": "TASK-95-01",
           "title": "Helper canónico universal de identidad comercial (client-identity.ts) y normalización de contratos TypeORM/API",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FULLSTACK/CORE-IDENTITY",
           "veracity_hash": null
         },
@@ -140,7 +140,7 @@
       {
         "id": "TASK-95-01",
         "title": "Helper canónico universal de identidad comercial (client-identity.ts) y normalización de contratos TypeORM/API",
-        "status": "TODO",
+        "status": "DONE",
         "type": "FULLSTACK/CORE-IDENTITY",
         "veracity_hash": null
       },

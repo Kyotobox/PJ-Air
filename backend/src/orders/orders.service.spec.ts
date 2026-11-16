@@ -3172,5 +3172,227 @@ describe('OrdersService', () => {
       expect(mockMailService.sendOrderReceipt).not.toHaveBeenCalledWith(mockDraftOrder, expect.anything());
     });
   });
+
+  describe('Sprint S95: TASK-95-01 Normalización de Contratos e Identidad Comercial B2B en Órdenes', () => {
+    describe('findAll', () => {
+      it('Happy Path: loads orders with full commercial business data (user.legal_business_name, dba, profile.nickname, company_name)', async () => {
+        const mockOrders = [
+          {
+            id: 'ord-s95-1',
+            invoice_number: 'INV-1651',
+            user: {
+              id: 'usr-b2b-1',
+              email: 'client@bakerynyc.com',
+              legal_business_name: 'Bakery Group LLC',
+              dba: 'Bakery NYC',
+              profile: {
+                nickname: 'Bakery Express',
+                company_name: 'Bakery Group Co',
+                full_name: 'Jean Dupont',
+              },
+            },
+            items: [],
+          },
+        ];
+        orderRepository.find.mockResolvedValue(mockOrders);
+
+        const result = await service.findAll();
+        expect(result).toEqual(mockOrders);
+        expect(orderRepository.find).toHaveBeenCalledWith(
+          expect.objectContaining({
+            relations: expect.arrayContaining(['user', 'user.profile']),
+          })
+        );
+      });
+
+      it('Sad Path (§6): handles orders with users without business data or null profile without throwing', async () => {
+        const mockOrdersWithoutBusinessData = [
+          {
+            id: 'ord-s95-2',
+            invoice_number: 'INV-1652',
+            user: {
+              id: 'usr-personal-1',
+              email: 'personal@client.com',
+              legal_business_name: null,
+              dba: null,
+              profile: null,
+            },
+            items: [],
+          },
+          {
+            id: 'ord-s95-3',
+            invoice_number: 'INV-1653',
+            user: null, // anonymous or legacy
+            items: [],
+          },
+        ];
+        orderRepository.find.mockResolvedValue(mockOrdersWithoutBusinessData);
+
+        const result = await service.findAll();
+        expect(result).toHaveLength(2);
+        expect(result[0].user?.profile).toBeNull();
+        expect(result[1].user).toBeNull();
+      });
+    });
+
+    describe('findOne', () => {
+      it('Happy Path: retrieves order with full commercial business data and verified relations', async () => {
+        const mockOrder = {
+          id: 'ord-s95-findone-1',
+          invoice_number: 'INV-1654',
+          user: {
+            id: 'usr-b2b-2',
+            email: 'admin@cafehub.com',
+            legal_business_name: 'Manhattan Hospitality LLC',
+            dba: 'Café Central',
+            profile: {
+              nickname: 'Central Midtown',
+              company_name: 'Manhattan Hospitality',
+              full_name: 'Emily Rose',
+            },
+          },
+        };
+        orderRepository.findOne.mockResolvedValue(mockOrder);
+
+        const result = await service.findOne('ord-s95-findone-1');
+        expect(result).toBeDefined();
+        expect(result.user.legal_business_name).toBe('Manhattan Hospitality LLC');
+        expect(result.user.dba).toBe('Café Central');
+        expect(result.user.profile.nickname).toBe('Central Midtown');
+        expect(orderRepository.findOne).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { id: 'ord-s95-findone-1' },
+            relations: expect.arrayContaining(['user', 'user.profile']),
+          })
+        );
+      });
+
+      it('Sad Path (§6): retrieves order when user has no business data (only personal info or empty profile)', async () => {
+        const mockOrder = {
+          id: 'ord-s95-findone-2',
+          invoice_number: 'INV-1655',
+          user: {
+            id: 'usr-client-simple',
+            email: 'simple@client.com',
+            legal_business_name: undefined,
+            dba: undefined,
+            profile: {
+              full_name: 'John Simple',
+              nickname: null,
+              company_name: null,
+            },
+          },
+        };
+        orderRepository.findOne.mockResolvedValue(mockOrder);
+
+        const result = await service.findOne('ord-s95-findone-2');
+        expect(result).toBeDefined();
+        expect(result.user.legal_business_name).toBeUndefined();
+        expect(result.user.profile.nickname).toBeNull();
+      });
+
+      it('Sad Path (§6 throwsA): throws NotFoundException when order does not exist', async () => {
+        orderRepository.findOne.mockResolvedValue(null);
+
+        await expect(service.findOne('non-existent-s95')).rejects.toThrow(
+          new NotFoundException('Order not found')
+        );
+      });
+    });
+
+    describe('findInRange', () => {
+      it('Happy Path: loads orders within range with user and user.profile joined and populated with commercial data', async () => {
+        const mockOrders = [
+          {
+            id: 'ord-s95-range-1',
+            delivery_date: '2026-11-18',
+            created_at: new Date('2026-11-17T10:00:00Z'),
+            status: 'confirmed',
+            payment_status: 'paid',
+            user: {
+              id: 'usr-range-b2b',
+              email: 'orders@sohocafe.com',
+              legal_business_name: 'SoHo Specialty Roasters Corp',
+              dba: 'SoHo Coffee',
+              profile: {
+                nickname: 'SoHo Main Branch',
+                company_name: 'SoHo Roasters',
+                full_name: 'Carlos Perez',
+              },
+            },
+          },
+        ];
+
+        const mockQb = {
+          leftJoinAndSelect: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue(mockOrders),
+        };
+        orderRepository.createQueryBuilder.mockReturnValue(mockQb);
+
+        const result = await service.findInRange('2026-11-18', '2026-11-18');
+        expect(result).toHaveLength(1);
+        expect(result[0].user.dba).toBe('SoHo Coffee');
+        expect(result[0].user.profile.nickname).toBe('SoHo Main Branch');
+        expect(mockQb.leftJoinAndSelect).toHaveBeenCalledWith('order.user', 'user');
+        expect(mockQb.leftJoinAndSelect).toHaveBeenCalledWith('user.profile', 'profile');
+      });
+
+      it('Sad Path (§6): processes orders within range with missing or empty user business data without throwing', async () => {
+        const mockOrdersWithoutBiz = [
+          {
+            id: 'ord-s95-range-2',
+            delivery_date: '2026-11-18',
+            created_at: new Date('2026-11-17T10:00:00Z'),
+            status: 'confirmed',
+            payment_status: 'paid',
+            user: {
+              id: 'usr-empty-profile',
+              email: 'empty@test.com',
+              profile: null,
+            },
+          },
+          {
+            id: 'ord-s95-range-3',
+            delivery_date: '2026-11-18',
+            created_at: new Date('2026-11-17T10:00:00Z'),
+            status: 'confirmed',
+            payment_status: 'paid',
+            user: null,
+          },
+        ];
+
+        const mockQb = {
+          leftJoinAndSelect: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue(mockOrdersWithoutBiz),
+        };
+        orderRepository.createQueryBuilder.mockReturnValue(mockQb);
+
+        const result = await service.findInRange('2026-11-18', '2026-11-18');
+        expect(result).toHaveLength(2);
+        expect(result[0].user?.profile).toBeNull();
+        expect(result[1].user).toBeNull();
+      });
+
+      it('Sad Path (§6): returns empty array when query builder returns empty results', async () => {
+        const mockQb = {
+          leftJoinAndSelect: jest.fn().mockReturnThis(),
+          where: jest.fn().mockReturnThis(),
+          andWhere: jest.fn().mockReturnThis(),
+          orderBy: jest.fn().mockReturnThis(),
+          getMany: jest.fn().mockResolvedValue([]),
+        };
+        orderRepository.createQueryBuilder.mockReturnValue(mockQb);
+
+        const result = await service.findInRange('2026-11-01', '2026-11-02');
+        expect(result).toEqual([]);
+      });
+    });
+  });
 });
 

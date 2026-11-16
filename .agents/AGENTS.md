@@ -62,3 +62,7 @@ Si el comando no existe o falla con error de sistema, el Agente DEBE declarar `[
 # DIRECTIVA DE RESOLUCIÓN EJECUTIVA Y ANTI-FRICCIÓN BUROCRÁTICA (§52)
 
 30. **Directiva de Resolución Ejecutiva y Anti-Fricción Burocrática (Bias to Action) (§52)**: Quedan proscritas las disertaciones teóricas extensas y las autopsias forenses no solicitadas. Toda interacción debe estructurarse en: Acción Ejecutada (física en disco), Resultado Empírico (tests, exit code, commit) y Siguiente Paso Inmediato. Las doctrinas de calidad (§4, §6, §12.b, §45) son compuertas de excelencia de ingeniería, jamás pretextos burocráticos para justificar inacción, parálisis o transferir fricción manual al usuario. Si una compuerta bloquea un flujo automatizado, el Agente debe diagnosticar y resolver técnicamente la compuerta.
+
+# VETO A RECOMENDACIÓN DE /COMPACT Y MANDATO DE HANDOVER (§50.b)
+
+31. **Veto Constitucional a la Recomendación de /compact y Mandato de Handover (§50.b)**: Queda terminantemente prohibido para el Agente sugerir, recomendar o invocar el comando `/compact`. Ante cualquier señal de saturación u odómetro telemétrico >= 50%, la única acción autorizada es exigir el cierre de sesión mediante `bin/logix handover` y la apertura de una nueva sesión limpia (`bin/logix takeover`). Recomendar `/compact` se clasifica como Fatal Drift por inducción a pérdida de verdad atómica y amnesia técnica.
