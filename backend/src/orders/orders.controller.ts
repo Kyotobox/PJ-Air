@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Patch, Query, Res, UseGuards, Req, ForbiddenException, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Patch, Query, Res, UseGuards, Req, ForbiddenException, UseInterceptors, UploadedFile, BadRequestException, Optional } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, resolve } from 'path';
@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { UPLOAD_PATH } from '../config';
 import { OrdersService } from './orders.service';
 import { ExcelService } from './excel.service';
+import { FinanceExportService } from './finance-export.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -16,6 +17,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly excelService: ExcelService,
+    @Optional() private readonly financeExportService?: FinanceExportService,
   ) {}
 
   @Post()
@@ -137,6 +139,28 @@ export class OrdersController {
     res.set({
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="REPORTE_CONTABLE_${startDate}_${endDate}.xlsx"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Get('finance/export')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin', 'auditor')
+  async exportFinance(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Res() res: any,
+  ) {
+    if (!this.financeExportService) {
+      throw new BadRequestException('FinanceExportService not available');
+    }
+    const buffer = await this.financeExportService.exportTaxAndSalesLedger(startDate, endDate);
+    const startStr = startDate ? startDate.split('T')[0] : 'ALL';
+    const endStr = endDate ? endDate.split('T')[0] : 'ALL';
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="LIBRO_VENTAS_FISCAL_${startStr}_${endStr}.xlsx"`,
       'Content-Length': buffer.length,
     });
     res.end(buffer);

@@ -6,6 +6,7 @@ import { DeliveryIncidentsService } from './delivery-incidents.service';
 import { DeliveryIncidentsController } from './delivery-incidents.controller';
 import { ExcelService } from './excel.service';
 import { FeeCalculatorService } from './fee-calculator.service';
+import { FinanceExportService } from './finance-export.service';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import { DeliveryIncident } from './entities/delivery-incident.entity';
@@ -33,9 +34,9 @@ import { AdminActionsModule } from '../admin-actions/admin-actions.module';
     forwardRef(() => PaymentsModule),
     forwardRef(() => AddressesModule),
   ],
-  providers: [OrdersService, ExcelService, FeeCalculatorService, DeliveryIncidentsService],
+  providers: [OrdersService, ExcelService, FeeCalculatorService, DeliveryIncidentsService, FinanceExportService],
   controllers: [DeliveryIncidentsController, OrdersController],
-  exports: [OrdersService, ExcelService, FeeCalculatorService, DeliveryIncidentsService],
+  exports: [OrdersService, ExcelService, FeeCalculatorService, DeliveryIncidentsService, FinanceExportService],
 })
 export class OrdersModule {}
 

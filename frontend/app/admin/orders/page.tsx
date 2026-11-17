@@ -16,6 +16,7 @@ import { calculateOrderFinancials } from '@/lib/order-finance';
 import PrintKitchenModal from '@/components/modals/PrintKitchenModal';
 import StoreCreditModal from '@/components/modals/StoreCreditModal';
 import { getClientBusinessName, getClientContactName } from '@/lib/client-identity';
+import { useAuth } from '@/context/AuthContext';
 
 interface OrderItem {
     id: string;
@@ -50,8 +51,31 @@ interface Order {
     created_at: string;
     delivery_date?: string;
     payment_due_date?: string;
+    tax_amount?: number;
+    tax_rate?: number;
+    tax_exempt?: boolean;
+    tax_legend?: string;
+    store_credit_applied?: number;
     notes?: string;
-    user?: { email: string; profile?: { full_name?: string; phone?: string; nickname?: string; }; };
+    user?: {
+        id?: string;
+        email: string;
+        account_type?: string;
+        tax_exempt?: boolean;
+        st120_status?: string;
+        st120_document_url?: string;
+        legal_business_name?: string;
+        dba?: string;
+        profile?: {
+            full_name?: string;
+            phone?: string;
+            nickname?: string;
+            company_name?: string;
+            tax_exempt?: boolean;
+            st120_status?: string;
+            st120_document_url?: string;
+        };
+    };
     delivery_user_id?: string;
     delivery_user?: { id: string; profile?: { full_name?: string; }; };
     address?: { address: string; city: string; };
@@ -100,6 +124,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminOrdersPage() {
+    const { user, profile } = useAuth();
+    const userRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
+    const isAuditor = userRole === 'auditor' || (typeof window !== 'undefined' && document.cookie.includes('session_role=auditor'));
+
     const [orders, setOrders] = useState<Order[]>([]);
     const [deliveryUsers, setDeliveryUsers] = useState<DeliveryUser[]>([]);
     const [loading, setLoading] = useState(true);
@@ -108,6 +136,7 @@ export default function AdminOrdersPage() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+    const [exportingFinance, setExportingFinance] = useState(false);
     
     // Modal state
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -118,6 +147,24 @@ export default function AdminOrdersPage() {
     const [motivo, setMotivo] = useState('');
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+    const handleExportFinanceLedger = async () => {
+        try {
+            setExportingFinance(true);
+            const queryStart = startDate ? `startDate=${encodeURIComponent(startDate)}` : '';
+            const queryEnd = endDate ? `endDate=${encodeURIComponent(endDate)}` : '';
+            const queryParams = [queryStart, queryEnd].filter(Boolean).join('&');
+            const url = `/orders/finance/export${queryParams ? `?${queryParams}` : ''}`;
+            const fileName = `LIBRO_VENTAS_FISCAL_${startDate || 'TODAS'}_${endDate || 'TODAS'}.xlsx`;
+            await api.download(url, fileName);
+            showToast('✅ Libro de ventas fiscal descargado con éxito');
+        } catch (err: any) {
+            console.error('Error downloading finance export:', err);
+            showToast(err.message || 'Error al exportar el libro contable', 'error');
+        } finally {
+            setExportingFinance(false);
+        }
+    };
 
     // Check & Segmented Views State (TASK-87-02)
     type OrderViewTab = 'orders' | 'pending_verification' | 'drafts' | 'in_hand' | 'deposited' | 'bounced';
@@ -957,16 +1004,56 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         <p className="text-muted-foreground font-medium">Supervisión y control de ventas en tiempo real</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link
-                            href="/admin/orders/new"
-                            data-testid="btn-create-manual-order"
-                            className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-black text-sm px-5 py-3 rounded-2xl shadow-lg shadow-amber-600/25 transition-all active:scale-95 hover:shadow-amber-600/40"
+                        {!isAuditor && (
+                            <Link
+                                href="/admin/orders/new"
+                                data-testid="btn-create-manual-order"
+                                className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-black text-sm px-5 py-3 rounded-2xl shadow-lg shadow-amber-600/25 transition-all active:scale-95 hover:shadow-amber-600/40"
+                            >
+                                <Plus size={18} className="stroke-[3]" />
+                                <span>Crear Pedido Manual</span>
+                            </Link>
+                        )}
+                        <button
+                            data-testid="btn-export-finance-ledger"
+                            onClick={handleExportFinanceLedger}
+                            disabled={exportingFinance}
+                            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-black text-sm px-5 py-3 rounded-2xl shadow-lg shadow-slate-900/25 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                            title="Exportar Libro de Ventas y Conciliación Fiscal (Excel)"
                         >
-                            <Plus size={18} className="stroke-[3]" />
-                            <span>Crear Pedido Manual</span>
-                        </Link>
+                            {exportingFinance ? <Loader2 size={16} className="animate-spin text-amber-400" /> : <Receipt size={16} className="text-amber-400" />}
+                            <span>Exportar Libro Fiscal (Excel)</span>
+                        </button>
                     </div>
                 </header>
+
+                {/* Banner de Modo Auditor Read-Only (TASK-97-03 / S97B) */}
+                {isAuditor && (
+                    <div data-testid="auditor-banner" className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 mb-8 flex items-center justify-between flex-wrap gap-4 shadow-sm animate-in fade-in">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black shadow-md shadow-amber-500/20 shrink-0">
+                                <ShieldCheck size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-2">
+                                    <span>Modo Auditor Contable Activo (Read-Only SoD)</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] bg-amber-200 text-amber-900 font-mono font-black">SEGREGATION OF DUTIES</span>
+                                </h3>
+                                <p className="text-xs text-amber-800 font-medium mt-0.5">
+                                    Modo de sólo lectura: Visualización contable, conciliación fiscal ST-120, cheques, Zelle y vouchers. Acciones mutativas inhabilitadas.
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleExportFinanceLedger}
+                            disabled={exportingFinance}
+                            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                            <Receipt size={14} className="text-amber-400" />
+                            Descargar Libro Fiscal (Excel)
+                        </button>
+                    </div>
+                )}
 
                 {/* Check Reconciliation & Segmented Orders Tabs (TASK-87-02) */}
                 <div data-testid="check-reconciliation-tabs" className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl mb-8 overflow-x-auto">
@@ -1149,22 +1236,26 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                 </td>
                                                 <td className="px-8 py-5 text-right">
                                                     {(chk.status === 'IN_HAND' || chk.status === 'PENDING_RECEIPT') ? (
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                data-testid={`deposit-btn-${chk.id}`}
-                                                                onClick={() => handleDepositCheck(chk.id)}
-                                                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-all"
-                                                            >
-                                                                Depositar
-                                                            </button>
-                                                            <button
-                                                                data-testid={`bounce-btn-${chk.id}`}
-                                                                onClick={() => handleBounceCheck(chk.id)}
-                                                                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider transition-all"
-                                                            >
-                                                                Rebotar
-                                                            </button>
-                                                        </div>
+                                                        !isAuditor ? (
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <button
+                                                                    data-testid={`deposit-btn-${chk.id}`}
+                                                                    onClick={() => handleDepositCheck(chk.id)}
+                                                                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider transition-all"
+                                                                >
+                                                                    Depositar
+                                                                </button>
+                                                                <button
+                                                                    data-testid={`bounce-btn-${chk.id}`}
+                                                                    onClick={() => handleBounceCheck(chk.id)}
+                                                                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider transition-all"
+                                                                >
+                                                                    Rebotar
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-[11px] font-bold text-slate-400 italic">En Cartera (Read-Only)</span>
+                                                        )
                                                     ) : (
                                                         <Link
                                                             href={`/admin/orders/${chk.order_id}`}
@@ -1233,7 +1324,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     </div>
                 ) : (
                     <>
-                    {selectedOrderIds.length > 0 && (
+                    {!isAuditor && selectedOrderIds.length > 0 && (
                         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4 flex items-center justify-between flex-wrap gap-3 shadow-sm animate-in fade-in">
                             <div className="flex items-center gap-3">
                                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
@@ -1263,25 +1354,27 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         <table className="w-full text-left">
                             <thead className="bg-slate-50/80 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 border-b border-border">
                                 <tr>
-                                    <th className="px-4 py-5 w-12 text-center" onClick={e => e.stopPropagation()}>
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
-                                            checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id))}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    const ids = filteredOrders.map(o => o.id);
-                                                    setSelectedOrderIds(prev => Array.from(new Set([...prev, ...ids])));
-                                                } else {
-                                                    const currentFilteredIds = new Set(filteredOrders.map(o => o.id));
-                                                    setSelectedOrderIds(prev => prev.filter(id => !currentFilteredIds.has(id)));
-                                                }
-                                            }}
-                                        />
-                                    </th>
+                                    {!isAuditor && (
+                                        <th className="px-4 py-5 w-12 text-center" onClick={e => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                                checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id))}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        const ids = filteredOrders.map(o => o.id);
+                                                        setSelectedOrderIds(prev => Array.from(new Set([...prev, ...ids])));
+                                                    } else {
+                                                        const currentFilteredIds = new Set(filteredOrders.map(o => o.id));
+                                                        setSelectedOrderIds(prev => prev.filter(id => !currentFilteredIds.has(id)));
+                                                    }
+                                                }}
+                                            />
+                                        </th>
+                                    )}
                                     <th className="px-8 py-5">Orden</th>
                                     <th className="px-8 py-5">Cliente</th>
-                                    <th className="px-8 py-5">Estado</th>
+                                    <th className="px-8 py-5">Estado / Fiscal</th>
                                     <th className="px-8 py-5">Repartidor</th>
                                     <th className="px-8 py-5 text-right">Total</th>
                                     <th className="px-8 py-5 text-right">Acciones</th>
@@ -1294,21 +1387,23 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         className="hover:bg-primary/[0.02] transition-colors cursor-pointer group"
                                         onClick={() => openOrderDetail(order)}
                                     >
-                                        <td className="px-4 py-5 w-12 text-center" onClick={e => e.stopPropagation()}>
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
-                                                checked={selectedOrderIds.includes(order.id)}
-                                                onChange={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedOrderIds(prev =>
-                                                        prev.includes(order.id)
-                                                            ? prev.filter(id => id !== order.id)
-                                                            : [...prev, order.id]
-                                                    );
-                                                }}
-                                            />
-                                        </td>
+                                        {!isAuditor && (
+                                            <td className="px-4 py-5 w-12 text-center" onClick={e => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                                    checked={selectedOrderIds.includes(order.id)}
+                                                    onChange={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedOrderIds(prev =>
+                                                            prev.includes(order.id)
+                                                                ? prev.filter(id => id !== order.id)
+                                                                : [...prev, order.id]
+                                                        );
+                                                    }}
+                                                />
+                                            </td>
+                                        )}
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-mono text-xs font-bold text-primary">{isOrderConfirmed(order) ? order.invoice_number : `#${order.id.slice(0, 8)}`}</span>
@@ -1420,6 +1515,28 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         🛒 Checkout Incompleto
                                                     </span>
                                                 )}
+                                                {/* Status ST-120 & Accounting Indicators (TASK-97-03) */}
+                                                <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                                    {Boolean(order.tax_exempt || order.user?.tax_exempt || order.user?.st120_status === 'APPROVED' || (order.user as any)?.profile?.tax_exempt || (order.user as any)?.profile?.st120_status === 'APPROVED') ? (
+                                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                                            ✓ ST-120 Exento
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-200">
+                                                            ⚖ Gravable NY
+                                                        </span>
+                                                    )}
+                                                    {Number(order.tax_amount || 0) > 0 && (
+                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold text-slate-500 bg-slate-50 border border-slate-200">
+                                                            Tax: ${Number(order.tax_amount).toFixed(2)}
+                                                        </span>
+                                                    )}
+                                                    {Number(order.store_credit_applied || 0) > 0 && (
+                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                                            SC: -${Number(order.store_credit_applied).toFixed(2)}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
@@ -1441,21 +1558,23 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </td>
                                         <td className="px-8 py-5 text-right" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleQuickDisable(order);
-                                                    }}
-                                                    disabled={saving || order.status === 'cancelled' || order.status === 'Cancelado'}
-                                                    className={`p-2 rounded-xl transition-all ${
-                                                        order.status === 'cancelled' || order.status === 'Cancelado'
-                                                            ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400'
-                                                            : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                                                    }`}
-                                                    title={order.status === 'cancelled' || order.status === 'Cancelado' ? 'Pedido inhabilitado' : 'Inhabilitar pedido'}
-                                                >
-                                                    🚫
-                                                </button>
+                                                {!isAuditor && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleQuickDisable(order);
+                                                        }}
+                                                        disabled={saving || order.status === 'cancelled' || order.status === 'Cancelado'}
+                                                        className={`p-2 rounded-xl transition-all ${
+                                                            order.status === 'cancelled' || order.status === 'Cancelado'
+                                                                ? 'opacity-40 cursor-not-allowed bg-slate-100 text-slate-400'
+                                                                : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                                                        }`}
+                                                        title={order.status === 'cancelled' || order.status === 'Cancelado' ? 'Pedido inhabilitado' : 'Inhabilitar pedido'}
+                                                    >
+                                                        🚫
+                                                    </button>
+                                                )}
                                                 <Link
                                                     href={`/admin/orders/${order.id}`}
                                                     className="p-2 bg-slate-100 text-slate-400 hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
@@ -1515,17 +1634,28 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 <p className="font-mono text-xs text-slate-400 font-bold tracking-widest">TRANSMISIÓN: #{selectedOrder.id}</p>
                             </div>
                             <div className="flex items-center gap-3">
-                                <button
-                                    data-testid="emit-store-credit-btn"
-                                    onClick={() => {
-                                        setSelectedIncidentForReview(null);
-                                        setStoreCreditModalOpen(true);
-                                    }}
-                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                                    title="Emitir Saldo a Favor compensatorio (Store Credit) al cliente"
-                                >
-                                    <CreditCard size={14} /> Emitir Saldo a Favor (Store Credit)
-                                </button>
+                                {!isAuditor && (
+                                    <button
+                                        data-testid="emit-store-credit-btn"
+                                        onClick={() => {
+                                            setSelectedIncidentForReview(null);
+                                            setStoreCreditModalOpen(true);
+                                        }}
+                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                        title="Emitir Saldo a Favor compensatorio (Store Credit) al cliente"
+                                    >
+                                        <CreditCard size={14} /> Emitir Saldo a Favor (Store Credit)
+                                    </button>
+                                )}
+                                {!isAuditor && maxRefundable > 0 && (
+                                    <button
+                                        onClick={handleOpenRefundModal}
+                                        className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
+                                        title="Emitir Reembolso"
+                                    >
+                                        <RefreshCcw size={14} /> Emitir Reembolso
+                                    </button>
+                                )}
                                 <Link
                                     href={`/admin/orders/${selectedOrder.id}`}
                                     className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
@@ -1569,26 +1699,176 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         {selectedOrder.status}
                                     </span>
                                 </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    {STATUS_OPTIONS.map(status => {
-                                        const isSelected = selectedOrder.status === status ||
-                                            (status === 'Cancelado' && selectedOrder.status === 'cancelled') ||
-                                            (status === 'cancelled' && selectedOrder.status === 'Cancelado') ||
-                                            (status === 'Pedido' && selectedOrder.status === 'pending') ||
-                                            (status === 'pending' && selectedOrder.status === 'Pedido');
-                                        return (
-                                            <button 
-                                                key={status}
-                                                onClick={() => handleUpdateStatus(status)}
-                                                disabled={saving}
-                                                className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all border ${isSelected ? 'bg-primary text-white border-primary shadow-xl scale-105 active:scale-95' : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200 hover:text-slate-600'}`}
-                                            >
-                                                {status}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                {isAuditor ? (
+                                    <div data-testid="auditor-readonly-status-notice" className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between flex-wrap gap-2">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                            <ShieldCheck size={16} className="text-amber-600" />
+                                            <span>Modo Auditor Contable (SoD): Los botones de cambio de estado operativo están inhabilitados.</span>
+                                        </div>
+                                        <span className="text-[10px] font-black px-3 py-1 bg-amber-100 text-amber-900 rounded-full border border-amber-300 font-mono">
+                                            READ-ONLY
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        {STATUS_OPTIONS.map(status => {
+                                            const isSelected = selectedOrder.status === status ||
+                                                (status === 'Cancelado' && selectedOrder.status === 'cancelled') ||
+                                                (status === 'cancelled' && selectedOrder.status === 'Cancelado') ||
+                                                (status === 'Pedido' && selectedOrder.status === 'pending') ||
+                                                (status === 'pending' && selectedOrder.status === 'Pedido');
+                                            return (
+                                                <button 
+                                                    key={status}
+                                                    onClick={() => handleUpdateStatus(status)}
+                                                    disabled={saving}
+                                                    className={`px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all border ${isSelected ? 'bg-primary text-white border-primary shadow-xl scale-105 active:scale-95' : 'bg-slate-50 text-slate-400 border-transparent hover:border-slate-200 hover:text-slate-600'}`}
+                                                >
+                                                    {status}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </section>
+
+                            {/* Panel de Auditoría Contable y Conciliación Fiscal NY (TASK-97-03 / S97B) */}
+                            {(() => {
+                                const isExempt = Boolean(
+                                    selectedOrder.tax_exempt ||
+                                    selectedOrder.user?.tax_exempt ||
+                                    (selectedOrder.user as any)?.profile?.tax_exempt ||
+                                    selectedOrder.user?.st120_status === 'APPROVED' ||
+                                    (selectedOrder.user as any)?.profile?.st120_status === 'APPROVED'
+                                );
+                                const taxRate = Number(selectedOrder.tax_rate ?? 8.875);
+                                const taxAmount = Number(selectedOrder.tax_amount || 0);
+                                const activeItems = editMode ? editedItems : (selectedOrder.items || []);
+                                const itemsSubtotal = activeItems.reduce((acc, it) => acc + (Number(it.quantity || 0) * Number(it.price_at_time || 0)), 0);
+                                const discount = Number(selectedOrder.global_discount_amount || selectedOrder.packaging_discount || 0);
+                                const baseGravable = isExempt ? 0 : (taxAmount > 0 && taxRate > 0 ? (taxAmount / (taxRate / 100)) : Math.max(0, itemsSubtotal - discount));
+                                const storeCreditApplied = Number(selectedOrder.store_credit_applied || 0);
+                                const st120DocUrl = selectedOrder.user?.st120_document_url || (selectedOrder.user as any)?.profile?.st120_document_url;
+
+                                return (
+                                    <section
+                                        data-testid="accounting-audit-panel"
+                                        className="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 text-white rounded-[2rem] p-8 shadow-xl border border-slate-700/80 space-y-6"
+                                    >
+                                        <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-700/80 pb-5">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-400 flex items-center justify-center font-black">
+                                                    <Receipt size={24} />
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="text-sm font-black uppercase tracking-wider text-white">
+                                                            Conciliación Fiscal Contable y Desglose NYS DTF
+                                                        </h3>
+                                                        {isAuditor && (
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-amber-400 text-slate-950 tracking-wider">
+                                                                AUDITOR READ-ONLY
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-slate-300 font-medium mt-0.5">
+                                                        Facturación legal, régimen de Sales Tax NY, validación ST-120 y vouchers de compensación
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Badge ST-120 Status */}
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    data-testid="st120-status-badge"
+                                                    className={`px-3.5 py-1.5 rounded-full text-[11px] font-black tracking-wider uppercase border flex items-center gap-1.5 shadow-sm ${
+                                                        isExempt
+                                                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                                    }`}
+                                                >
+                                                    <ShieldCheck size={14} />
+                                                    {isExempt ? 'ST-120 EXENTO (0% TAX)' : 'GRAVABLE NY (8.875% TAX)'}
+                                                </span>
+                                                {st120DocUrl && (
+                                                    <a
+                                                        href={st120DocUrl.startsWith('http') ? st120DocUrl : `${API_URL}${st120DocUrl}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="px-3 py-1.5 bg-slate-700/80 hover:bg-slate-700 text-amber-300 rounded-xl text-[10px] font-black uppercase tracking-wider border border-amber-400/20 flex items-center gap-1 transition-all"
+                                                        title="Ver Certificado de Reventa ST-120 en archivo"
+                                                    >
+                                                        <ExternalLink size={12} /> Certificado ST-120
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Grid 4 Columnas de Métricas Contables */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {/* 1. Base Imponible */}
+                                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">
+                                                    Base Imponible Gravable
+                                                </span>
+                                                <span data-testid="accounting-taxable-base" className="text-2xl font-black font-mono text-white tracking-tight">
+                                                    ${baseGravable.toFixed(2)}
+                                                </span>
+                                                <p className="text-[10px] text-slate-400 font-bold mt-1">
+                                                    {isExempt ? '100% Exento bajo Formulario ST-120' : 'Monto neto sujeto a retención fiscal'}
+                                                </p>
+                                            </div>
+
+                                            {/* 2. Sales Tax NY Recaudado */}
+                                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block mb-1">
+                                                    Sales Tax NY ({isExempt ? '0.000%' : `${taxRate}%`})
+                                                </span>
+                                                <span data-testid="accounting-sales-tax" className="text-2xl font-black font-mono text-amber-300 tracking-tight">
+                                                    ${taxAmount.toFixed(2)}
+                                                </span>
+                                                <p className="text-[10px] text-slate-400 font-bold mt-1">
+                                                    {taxAmount > 0 ? 'Recaudado para declaración NYS DTF' : 'Exención fiscal verificada en orden'}
+                                                </p>
+                                            </div>
+
+                                            {/* 3. Vouchers Store Credit SC-YYYY-XXXX */}
+                                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block mb-1">
+                                                    Store Credit Aplicado
+                                                </span>
+                                                <span data-testid="accounting-store-credit" className="text-2xl font-black font-mono text-purple-300 tracking-tight">
+                                                    {storeCreditApplied > 0 ? `-$${storeCreditApplied.toFixed(2)}` : '$0.00'}
+                                                </span>
+                                                <p className="text-[10px] text-slate-400 font-bold mt-1">
+                                                    {storeCreditApplied > 0 ? 'Vouchers compensatorios deducidos' : 'Sin saldo a favor aplicado'}
+                                                </p>
+                                            </div>
+
+                                            {/* 4. Total Facturado Final */}
+                                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block mb-1">
+                                                    Total Facturado
+                                                </span>
+                                                <span data-testid="accounting-total-billed" className="text-2xl font-black font-mono text-emerald-300 tracking-tight">
+                                                    ${Number(selectedOrder.total || 0).toFixed(2)}
+                                                </span>
+                                                <p className="text-[10px] text-slate-400 font-bold mt-1">
+                                                    Impacto contable consolidado
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Leyenda Fiscal ST-120 si es exento */}
+                                        {isExempt && (
+                                            <div data-testid="st120-legal-legend" className="p-3.5 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-xs text-emerald-200/90 leading-relaxed font-mono">
+                                                <span className="font-bold text-emerald-400">Leyenda Legal NYS DTF: </span>
+                                                {selectedOrder.tax_legend || 'Exempt from NY State and Local Sales and Use Tax under NYS DTF Form ST-120 (Resale Certificate) - Purchases are exclusively for resale in the regular course of business.'}
+                                            </div>
+                                        )}
+                                    </section>
+                                );
+                            })()}
 
                             {/* Zelle Audit & Approval Card */}
                             {selectedOrder.payment_method === 'zelle' && (
@@ -1653,7 +1933,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </div>
                                     )}
 
-                                    {selectedOrder.payment_status === 'pending_zelle_verification' && (
+                                    {!isAuditor && selectedOrder.payment_status === 'pending_zelle_verification' && (
                                         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                                             <button
                                                 onClick={() => handleApproveZelle(selectedOrder.id)}
@@ -1743,7 +2023,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </div>
                                     )}
 
-                                    {selectedOrder.payment_status === 'pending_check_verification' && (
+                                    {!isAuditor && selectedOrder.payment_status === 'pending_check_verification' && (
                                         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                                             <button
                                                 onClick={() => handleApproveCheck(selectedOrder.id)}
@@ -1824,7 +2104,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </div>
                                     )}
 
-                                    {selectedOrder.payment_status === 'pending_wire_verification' && (
+                                    {!isAuditor && selectedOrder.payment_status === 'pending_wire_verification' && (
                                         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                                             <button
                                                 onClick={() => handleApproveWire(selectedOrder.id)}
@@ -1902,17 +2182,19 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </div>
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        data-testid="add-incident-btn"
-                                        onClick={() => {
-                                            setSelectedIncidentForReview(null);
-                                            setStoreCreditModalOpen(true);
-                                        }}
-                                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                                    >
-                                        <Plus size={13} /> Emitir Saldo
-                                    </button>
+                                    {!isAuditor && (
+                                        <button
+                                            type="button"
+                                            data-testid="add-incident-btn"
+                                            onClick={() => {
+                                                setSelectedIncidentForReview(null);
+                                                setStoreCreditModalOpen(true);
+                                            }}
+                                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                        >
+                                            <Plus size={13} /> Emitir Saldo
+                                        </button>
+                                    )}
                                 </div>
 
                                 {loadingIncidents ? (
@@ -1967,7 +2249,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                                     data-testid={`incident-voucher-code-${inc.id}`}
                                                                     className="font-mono text-xs font-black text-amber-950 px-2.5 py-0.5 bg-amber-100 rounded-lg border border-amber-300 shadow-2xs tracking-wider"
                                                                 >
-                                                                    {inc.voucher_code || 'SC-PENDING'}
+                                                                    {inc.voucher_code || `SC-${new Date().getFullYear()}-${String(inc.id || '0001').slice(0, 4).toUpperCase()}`}
                                                                 </span>
                                                                 <span
                                                                     className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
@@ -2013,12 +2295,12 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                                 setStoreCreditModalOpen(true);
                                                             }}
                                                             className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                                                                isApproved
+                                                                isApproved || isAuditor
                                                                     ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                                                                     : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
                                                             }`}
                                                         >
-                                                            {isApproved ? 'Ver Detalle' : 'Revisar y Aprobar'}
+                                                            {isApproved || isAuditor ? 'Ver Detalle' : 'Revisar y Aprobar'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -2075,51 +2357,64 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         </button>
                                     </div>
                                     <div className="space-y-3 max-h-[280px] overflow-y-auto pr-3 custom-scrollbar">
-                                        <button 
-                                            onClick={() => handleAssignDelivery('')}
-                                            className={`w-full text-left p-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.15em] border transition-all ${!selectedOrder.delivery_user_id ? 'bg-slate-800 text-white border-slate-800 shadow-xl' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100'}`}
-                                        >
-                                            Anular Asignación de Chofer
-                                        </button>
-                                        {deliveryUsers.length === 0 ? (
-                                            <div className="p-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                                                <p className="text-xs font-bold text-slate-500">No hay choferes disponibles con rol delivery.</p>
-                                                <button 
-                                                    type="button" 
-                                                    onClick={fetchDeliveryUsers}
-                                                    className="mt-2 text-[10px] font-black uppercase tracking-wider text-primary hover:underline"
-                                                >
-                                                    ↻ Reintentar Carga de Choferes
-                                                </button>
+                                        {isAuditor ? (
+                                            <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-200">
+                                                <p className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                                    {selectedOrder.delivery_user ? `Chofer Asignado: ${selectedOrder.delivery_user.profile?.full_name || 'Chofer'}` : 'Sin chofer asignado'}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 font-medium mt-1">
+                                                    Modo Auditor: La asignación de choferes es de sólo lectura (SoD).
+                                                </p>
                                             </div>
                                         ) : (
-                                            deliveryUsers.map(delivery => {
-                                                const driverName = delivery.profile?.full_name || delivery.email || `Chofer #${delivery.id.slice(0, 4)}`;
-                                                const driverInitial = (delivery.profile?.full_name || delivery.email || 'D').charAt(0).toUpperCase();
-                                                const isAssigned = selectedOrder.delivery_user_id === delivery.id;
+                                            <>
+                                                <button 
+                                                    onClick={() => handleAssignDelivery('')}
+                                                    className={`w-full text-left p-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.15em] border transition-all ${!selectedOrder.delivery_user_id ? 'bg-slate-800 text-white border-slate-800 shadow-xl' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100'}`}
+                                                >
+                                                    Anular Asignación de Chofer
+                                                </button>
+                                                {deliveryUsers.length === 0 ? (
+                                                    <div className="p-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                                        <p className="text-xs font-bold text-slate-500">No hay choferes disponibles con rol delivery.</p>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={fetchDeliveryUsers}
+                                                            className="mt-2 text-[10px] font-black uppercase tracking-wider text-primary hover:underline"
+                                                        >
+                                                            ↻ Reintentar Carga de Choferes
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    deliveryUsers.map(delivery => {
+                                                        const driverName = delivery.profile?.full_name || delivery.email || `Chofer #${delivery.id.slice(0, 4)}`;
+                                                        const driverInitial = (delivery.profile?.full_name || delivery.email || 'D').charAt(0).toUpperCase();
+                                                        const isAssigned = selectedOrder.delivery_user_id === delivery.id;
 
-                                                return (
-                                                    <button 
-                                                        key={delivery.id}
-                                                        disabled={saving}
-                                                        onClick={() => handleAssignDelivery(delivery.id)}
-                                                        className={`w-full text-left p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group h-20 ${isAssigned ? 'bg-primary border-primary shadow-xl shadow-primary/20' : 'bg-white border-slate-100 hover:border-primary/40'}`}
-                                                    >
-                                                        <div className="flex items-center gap-4">
-                                                            <div className={`w-10 h-10 rounded-[1rem] flex items-center justify-center font-black text-xs ${isAssigned ? 'bg-white text-primary ring-4 ring-white/20' : 'bg-slate-100 text-slate-400'}`}>
-                                                                {driverInitial}
-                                                            </div>
-                                                            <div>
-                                                                <p className={`text-sm font-black leading-tight ${isAssigned ? 'text-white' : 'text-slate-700'}`}>{driverName}</p>
-                                                                <p className={`text-[10px] font-bold mt-0.5 ${isAssigned ? 'text-white/90' : 'text-primary'}`}>
-                                                                    {isAssigned ? '● ASIGNADO' : 'Disponible para asignación'}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <ChevronRight size={18} className={isAssigned ? 'text-white' : 'text-slate-300 group-hover:translate-x-1 group-hover:text-primary transition-all'} />
-                                                    </button>
-                                                );
-                                            })
+                                                        return (
+                                                            <button 
+                                                                key={delivery.id}
+                                                                disabled={saving}
+                                                                onClick={() => handleAssignDelivery(delivery.id)}
+                                                                className={`w-full text-left p-4 rounded-[1.5rem] border-2 transition-all flex items-center justify-between group h-20 ${isAssigned ? 'bg-primary border-primary shadow-xl shadow-primary/20' : 'bg-white border-slate-100 hover:border-primary/40'}`}
+                                                            >
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`w-10 h-10 rounded-[1rem] flex items-center justify-center font-black text-xs ${isAssigned ? 'bg-white text-primary ring-4 ring-white/20' : 'bg-slate-100 text-slate-400'}`}>
+                                                                        {driverInitial}
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className={`text-sm font-black leading-tight ${isAssigned ? 'text-white' : 'text-slate-700'}`}>{driverName}</p>
+                                                                        <p className={`text-[10px] font-bold mt-0.5 ${isAssigned ? 'text-white/90' : 'text-primary'}`}>
+                                                                            {isAssigned ? '● ASIGNADO' : 'Disponible para asignación'}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <ChevronRight size={18} className={isAssigned ? 'text-white' : 'text-slate-300 group-hover:translate-x-1 group-hover:text-primary transition-all'} />
+                                                            </button>
+                                                        );
+                                                    })
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </section>
@@ -2131,13 +2426,15 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                                         <ShoppingBag size={16} className="text-primary" /> Líneas de Productos
                                     </h3>
-                                    <button 
-                                        onClick={toggleEditMode}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all ${editMode ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'}`}
-                                    >
-                                        {editMode ? <History size={14} /> : <Edit size={14} />}
-                                        {editMode ? 'No Cancelar' : 'Modificar Pedido'}
-                                    </button>
+                                    {!isAuditor && (
+                                        <button 
+                                            onClick={toggleEditMode}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm transition-all ${editMode ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'}`}
+                                        >
+                                            {editMode ? <History size={14} /> : <Edit size={14} />}
+                                            {editMode ? 'No Cancelar' : 'Modificar Pedido'}
+                                        </button>
+                                    )}
                                 </div>
                                 
                                 <div className="space-y-4">
@@ -2366,26 +2663,29 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                                         <StickyNote size={16} className="text-primary" /> Notas Operativas del Pedido (Hoja de Cocina)
                                     </h3>
-                                    <button 
-                                        type="button"
-                                        onClick={handleSaveNotes}
-                                        disabled={savingNotes}
-                                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-primary transition-all disabled:opacity-50 shadow-sm"
-                                    >
-                                        {savingNotes ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                                        Guardar Notas
-                                    </button>
+                                    {!isAuditor && (
+                                        <button 
+                                            type="button"
+                                            onClick={handleSaveNotes}
+                                            disabled={savingNotes}
+                                            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-primary transition-all disabled:opacity-50 shadow-sm"
+                                        >
+                                            {savingNotes ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                                            Guardar Notas
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="bg-slate-50 rounded-[2rem] p-5 border border-slate-200">
                                     <textarea
                                         value={orderNotes}
                                         onChange={(e) => setOrderNotes(e.target.value)}
+                                        readOnly={isAuditor}
                                         rows={3}
                                         placeholder="Escribe notas operativas especiales (ej. 'Hornear bien dorado', 'Llamar antes de llegar', 'Separar en cajas de 12'). Estas notas se transfieren a la Hoja de Cocina y al comprobante..."
-                                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-slate-800 placeholder:text-slate-400 outline-none focus:border-primary transition-all font-medium text-xs resize-none"
+                                        className={`w-full bg-white border border-slate-200 rounded-2xl p-4 text-slate-800 placeholder:text-slate-400 outline-none focus:border-primary transition-all font-medium text-xs resize-none ${isAuditor ? 'bg-slate-100 cursor-not-allowed' : ''}`}
                                     />
                                     <p className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1.5">
-                                        <span>ℹ️ Visibles para el personal operativo y transferibles directamente a la Hoja de Cocina.</span>
+                                        <span>{isAuditor ? '🔒 Modo Auditor: Notas operativas en modo sólo lectura (SoD).' : 'ℹ️ Visibles para el personal operativo y transferibles directamente a la Hoja de Cocina.'}</span>
                                     </p>
                                 </div>
                             </section>
@@ -2414,7 +2714,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
             )}
 
             {/* Refund Modal */}
-            {refundModalOpen && selectedOrder && (
+            {!isAuditor && refundModalOpen && selectedOrder && (
                 <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="relative bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200 space-y-6">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-4">

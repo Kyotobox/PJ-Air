@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ExcelService } from './excel.service';
+import { FinanceExportService } from './finance-export.service';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -33,6 +34,10 @@ describe('OrdersController', () => {
     exportConsolidated: jest.fn(),
   };
 
+  const mockFinanceExportService = {
+    exportTaxAndSalesLedger: jest.fn().mockResolvedValue(Buffer.from('excel-bytes-content')),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
@@ -44,6 +49,10 @@ describe('OrdersController', () => {
         {
           provide: ExcelService,
           useValue: mockExcelService,
+        },
+        {
+          provide: FinanceExportService,
+          useValue: mockFinanceExportService,
         },
       ],
     }).compile();
@@ -395,6 +404,33 @@ describe('OrdersController', () => {
 
       await expect(controller.completeCheckoutPost('ord-other', req as any))
         .rejects.toThrow('Cannot modify this order');
+    });
+  });
+
+  describe('exportFinance (TASK-97-04 / S97B)', () => {
+    it('Happy path: should call financeExportService.exportTaxAndSalesLedger and set HTTP headers', async () => {
+      const mockRes = {
+        set: jest.fn(),
+        end: jest.fn(),
+      };
+
+      await controller.exportFinance('2026-11-01', '2026-11-17', mockRes as any);
+
+      expect(mockFinanceExportService.exportTaxAndSalesLedger).toHaveBeenCalledWith('2026-11-01', '2026-11-17');
+      expect(mockRes.set).toHaveBeenCalledWith({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="LIBRO_VENTAS_FISCAL_2026-11-01_2026-11-17.xlsx"',
+        'Content-Length': Buffer.from('excel-bytes-content').length,
+      });
+      expect(mockRes.end).toHaveBeenCalledWith(Buffer.from('excel-bytes-content'));
+    });
+
+    it('Sad path (§6): should throw BadRequestException if financeExportService is missing', async () => {
+      const controllerWithoutService = new OrdersController(mockOrdersService as any, mockExcelService as any, undefined);
+      const mockRes = { set: jest.fn(), end: jest.fn() };
+
+      await expect(controllerWithoutService.exportFinance('2026-11-01', '2026-11-17', mockRes as any))
+        .rejects.toThrow(BadRequestException);
     });
   });
 });

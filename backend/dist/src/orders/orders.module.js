@@ -15,6 +15,7 @@ const delivery_incidents_service_1 = require("./delivery-incidents.service");
 const delivery_incidents_controller_1 = require("./delivery-incidents.controller");
 const excel_service_1 = require("./excel.service");
 const fee_calculator_service_1 = require("./fee-calculator.service");
+const finance_export_service_1 = require("./finance-export.service");
 const order_entity_1 = require("./order.entity");
 const order_item_entity_1 = require("./order-item.entity");
 const delivery_incident_entity_1 = require("./entities/delivery-incident.entity");
@@ -45,9 +46,9 @@ exports.OrdersModule = OrdersModule = __decorate([
             (0, common_1.forwardRef)(() => payments_module_1.PaymentsModule),
             (0, common_1.forwardRef)(() => addresses_module_1.AddressesModule),
         ],
-        providers: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService, delivery_incidents_service_1.DeliveryIncidentsService],
+        providers: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService, delivery_incidents_service_1.DeliveryIncidentsService, finance_export_service_1.FinanceExportService],
         controllers: [delivery_incidents_controller_1.DeliveryIncidentsController, orders_controller_1.OrdersController],
-        exports: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService, delivery_incidents_service_1.DeliveryIncidentsService],
+        exports: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService, delivery_incidents_service_1.DeliveryIncidentsService, finance_export_service_1.FinanceExportService],
     })
 ], OrdersModule);
 //# sourceMappingURL=orders.module.js.map

@@ -54,6 +54,7 @@ const fs = __importStar(require("fs"));
 const config_1 = require("../config");
 const orders_service_1 = require("./orders.service");
 const excel_service_1 = require("./excel.service");
+const finance_export_service_1 = require("./finance-export.service");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
@@ -61,9 +62,11 @@ const resource_ownership_guard_1 = require("../auth/resource-ownership.guard");
 let OrdersController = class OrdersController {
     ordersService;
     excelService;
-    constructor(ordersService, excelService) {
+    financeExportService;
+    constructor(ordersService, excelService, financeExportService) {
         this.ordersService = ordersService;
         this.excelService = excelService;
+        this.financeExportService = financeExportService;
     }
     async create(body, req) {
         if (req.user?.role === 'auditor') {
@@ -136,6 +139,20 @@ let OrdersController = class OrdersController {
         res.set({
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition': `attachment; filename="REPORTE_CONTABLE_${startDate}_${endDate}.xlsx"`,
+            'Content-Length': buffer.length,
+        });
+        res.end(buffer);
+    }
+    async exportFinance(startDate, endDate, res) {
+        if (!this.financeExportService) {
+            throw new common_1.BadRequestException('FinanceExportService not available');
+        }
+        const buffer = await this.financeExportService.exportTaxAndSalesLedger(startDate, endDate);
+        const startStr = startDate ? startDate.split('T')[0] : 'ALL';
+        const endStr = endDate ? endDate.split('T')[0] : 'ALL';
+        res.set({
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition': `attachment; filename="LIBRO_VENTAS_FISCAL_${startStr}_${endStr}.xlsx"`,
             'Content-Length': buffer.length,
         });
         res.end(buffer);
@@ -382,6 +399,17 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "exportAccounting", null);
 __decorate([
+    (0, common_1.Get)('finance/export'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin', 'auditor'),
+    __param(0, (0, common_1.Query)('startDate')),
+    __param(1, (0, common_1.Query)('endDate')),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], OrdersController.prototype, "exportFinance", null);
+__decorate([
     (0, common_1.Post)('reports/backfill-invoices'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)('admin'),
@@ -580,7 +608,9 @@ __decorate([
 ], OrdersController.prototype, "update", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.Controller)('orders'),
+    __param(2, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [orders_service_1.OrdersService,
-        excel_service_1.ExcelService])
+        excel_service_1.ExcelService,
+        finance_export_service_1.FinanceExportService])
 ], OrdersController);
 //# sourceMappingURL=orders.controller.js.map

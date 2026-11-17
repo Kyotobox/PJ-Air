@@ -1,9 +1,11 @@
 import { OrdersService } from './orders.service';
 import { ExcelService } from './excel.service';
+import { FinanceExportService } from './finance-export.service';
 export declare class OrdersController {
     private readonly ordersService;
     private readonly excelService;
-    constructor(ordersService: OrdersService, excelService: ExcelService);
+    private readonly financeExportService?;
+    constructor(ordersService: OrdersService, excelService: ExcelService, financeExportService?: FinanceExportService | undefined);
     create(body: any, req: any): Promise<import("./order.entity").Order>;
     settleBatch(body: {
         order_ids: string[];
@@ -34,6 +36,7 @@ export declare class OrdersController {
     exportIndividual(startDate: string, endDate: string, res: any): Promise<void>;
     exportConsolidated(startDate: string, endDate: string, res: any): Promise<void>;
     exportAccounting(startDate: string, endDate: string, res: any): Promise<void>;
+    exportFinance(startDate: string, endDate: string, res: any): Promise<void>;
     backfillInvoices(): Promise<{
         success: boolean;
         updatedCount: number;
