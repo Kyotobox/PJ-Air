@@ -10,7 +10,7 @@
   "turns": 0,
   "peak_bytes": 0,
   "strike_count": 0,
-  "hwc_complete": false,
+  "hwc_complete": true,
   "last_update": "2026-11-16T04:57:40.342294",
   "input_pressure": 0,
   "degraded_ops_count": 0,
@@ -21,5 +21,6 @@
   "transcript_status": "RESOLVED",
   "transcript_degraded": false,
   "transcript_path": "/home/opc/.gemini/antigravity-cli/brain/bbc4b9e0-25d4-4c13-8555-274176ed3f92/.system_generated/logs/transcript.jsonl",
-  "peak_depth": 8.816264166666667
+  "peak_depth": 8.816264166666667,
+  "hwc_ts": "2026-11-17T02:31:16.917194"
 }
