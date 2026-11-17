@@ -900,8 +900,9 @@ let OrdersService = class OrdersService {
             const savedResult = await manager.save(order_entity_1.Order, orderToCreate);
             const savedOrder = Array.isArray(savedResult) ? savedResult[0] : savedResult;
             if (!isDraft && storeCreditApplied > 0 && user) {
-                user.credit_balance = Math.max(0, Math.round((userCreditBalance - storeCreditApplied) * 100) / 100);
-                await manager.save(user_entity_1.User, user);
+                const newCreditBalance = Math.max(0, Math.round((userCreditBalance - storeCreditApplied) * 100) / 100);
+                user.credit_balance = newCreditBalance;
+                await manager.update(user_entity_1.User, { id: user.id }, { credit_balance: newCreditBalance });
             }
             if (validatedItems.length > 0) {
                 const orderItems = validatedItems.map((item) => manager.create(order_item_entity_1.OrderItem, {

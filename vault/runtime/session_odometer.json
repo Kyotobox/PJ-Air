@@ -1,6 +1,6 @@
 {
   "session_uuid": "099997ce7c594636fac34d115106b3a9",
-  "session_start_ts": "2026-11-17T04:09:30.702263",
+  "session_start_ts": "2026-11-17T04:19:36.348613",
   "total_bytes": 0,
   "total_bytes_out": 0,
   "context_base_bytes": 0,
@@ -11,15 +11,15 @@
   "peak_bytes": 0,
   "strike_count": 0,
   "hwc_complete": false,
-  "last_update": "2026-11-17T04:09:30.702277",
+  "last_update": "2026-11-17T04:19:36.348629",
   "input_pressure": 0,
   "degraded_ops_count": 0,
-  "session_count": 9,
+  "session_count": 10,
   "test_warning_count": 0,
-  "takeover_bytes_offset": 5069,
-  "conversation_uuid": "9668306f-cfc1-45a8-80af-af44b60e1df8",
+  "takeover_bytes_offset": 3822,
+  "conversation_uuid": "2bff1d6a-fa5a-4ba6-b426-0462925cb681",
   "transcript_status": "RESOLVED",
   "transcript_degraded": false,
-  "transcript_path": "/home/opc/.gemini/antigravity-cli/brain/9668306f-cfc1-45a8-80af-af44b60e1df8/.system_generated/logs/transcript.jsonl",
-  "peak_depth": 54.554705
+  "transcript_path": "/home/opc/.gemini/antigravity-cli/brain/2bff1d6a-fa5a-4ba6-b426-0462925cb681/.system_generated/logs/transcript.jsonl",
+  "peak_depth": 57.908935
 }

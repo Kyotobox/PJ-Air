@@ -344,3 +344,64 @@ export function sumApprovedStoreCredits(incidents: Array<Partial<StoreCreditInci
 
   return Math.round((total + Number.EPSILON) * 100) / 100;
 }
+
+export interface CheckoutPaymentSummaryInput {
+  subtotal: number;
+  deliveryFee?: number;
+  processingFee?: number;
+  salesTax?: number;
+  storeCreditBalance: number;
+  applyStoreCredit: boolean;
+}
+
+export interface CheckoutPaymentSummaryResult {
+  grossTotal: number;
+  storeCreditApplied: number;
+  finalTotal: number;
+  remainingCreditBalance: number;
+  isPaidWithStoreCredit: boolean;
+}
+
+/**
+ * Calcula el desglose y descuento de Store Credit en el resumen de pago de checkout.
+ * Garantiza determinismo financiero, redondeo a 2 decimales y previene sobregiros (§4, §6).
+ */
+export function calculateCheckoutStoreCreditDiscount(
+  input: CheckoutPaymentSummaryInput,
+): CheckoutPaymentSummaryResult {
+  if (!input) {
+    throw new Error('Parámetros de resumen de pago requeridos');
+  }
+
+  if (typeof input.subtotal !== 'number' || isNaN(input.subtotal) || input.subtotal < 0) {
+    throw new Error('El subtotal debe ser un número no negativo');
+  }
+
+  const deliveryFee = typeof input.deliveryFee === 'number' && !isNaN(input.deliveryFee) ? Math.max(0, input.deliveryFee) : 0;
+  const processingFee = typeof input.processingFee === 'number' && !isNaN(input.processingFee) ? Math.max(0, input.processingFee) : 0;
+  const salesTax = typeof input.salesTax === 'number' && !isNaN(input.salesTax) ? Math.max(0, input.salesTax) : 0;
+
+  const grossTotal = Math.round((input.subtotal + deliveryFee + processingFee + salesTax + Number.EPSILON) * 100) / 100;
+
+  const rawCredit = typeof input.storeCreditBalance === 'number' && !isNaN(input.storeCreditBalance)
+    ? Math.max(0, input.storeCreditBalance)
+    : 0;
+  const safeCredit = Math.round((rawCredit + Number.EPSILON) * 100) / 100;
+
+  const storeCreditApplied = input.applyStoreCredit && safeCredit > 0
+    ? Math.min(safeCredit, grossTotal)
+    : 0;
+
+  const roundedApplied = Math.round((storeCreditApplied + Number.EPSILON) * 100) / 100;
+  const finalTotal = Math.max(0, Math.round((grossTotal - roundedApplied + Number.EPSILON) * 100) / 100);
+  const remainingCreditBalance = Math.max(0, Math.round((safeCredit - roundedApplied + Number.EPSILON) * 100) / 100);
+  const isPaidWithStoreCredit = roundedApplied > 0 && finalTotal === 0;
+
+  return {
+    grossTotal,
+    storeCreditApplied: roundedApplied,
+    finalTotal,
+    remainingCreditBalance,
+    isPaidWithStoreCredit,
+  };
+}
