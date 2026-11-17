@@ -19,7 +19,8 @@ export const AUDITOR_MENU_ITEMS = [
  * Para el rol auditor, restringe la visualización exclusivamente a módulos contables/financieros.
  */
 export function filterSidebarNavItems<T = any>(role: string | undefined | null, fullMenuItems: T[]): T[] {
-    if (role === 'auditor') {
+    const normalizedRole = role ? String(role).trim().toLowerCase() : '';
+    if (normalizedRole === 'auditor') {
         return AUDITOR_MENU_ITEMS as unknown as T[];
     }
     return fullMenuItems;
@@ -32,7 +33,8 @@ export default function AdminSidebar() {
     const { t, locale } = useLanguage();
     const [collapsed, setCollapsed] = useState(false);
 
-    const userRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
+    const rawRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
+    const userRole = rawRole ? String(rawRole).trim().toLowerCase() : '';
     const isAuditor = userRole === 'auditor';
 
     useEffect(() => {

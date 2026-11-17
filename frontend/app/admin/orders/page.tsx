@@ -125,8 +125,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminOrdersPage() {
     const { user, profile } = useAuth();
-    const userRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
-    const isAuditor = userRole === 'auditor' || (typeof window !== 'undefined' && document.cookie.includes('session_role=auditor'));
+    const rawRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
+    const userRole = rawRole ? String(rawRole).trim().toLowerCase() : '';
+    const isAuditor = userRole === 'auditor' || (typeof window !== 'undefined' && document.cookie.toLowerCase().includes('session_role=auditor'));
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [deliveryUsers, setDeliveryUsers] = useState<DeliveryUser[]>([]);

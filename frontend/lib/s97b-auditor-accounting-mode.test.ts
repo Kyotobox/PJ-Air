@@ -92,11 +92,12 @@ export function formatStoreCreditVoucherCode(voucherCode?: string | null, incide
  * Validador de permisos de mutación según rol (Read-Only SoD)
  */
 export function isActionAllowed(action: 'cancel' | 'change_status' | 'refund' | 'edit_items' | 'view_ledger', role: string): boolean {
-  if (role === 'auditor') {
+  const normalizedRole = role ? String(role).trim().toLowerCase() : '';
+  if (normalizedRole === 'auditor') {
     // El auditor solo tiene permiso para visualización y exportación contable
     return action === 'view_ledger';
   }
-  if (role === 'admin') {
+  if (normalizedRole === 'admin') {
     return true;
   }
   return false;

@@ -38,7 +38,8 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  const role = jwtPayload?.role || cookieRole || 'client';
+  const rawRole = jwtPayload?.role || cookieRole || 'client';
+  const role = String(rawRole).trim().toLowerCase();
 
   // Role-based access control para 'auditor'
   if (role === 'auditor') {

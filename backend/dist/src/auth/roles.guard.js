@@ -30,7 +30,8 @@ let RolesGuard = class RolesGuard {
         const request = context.switchToHttp().getRequest();
         const user = request?.user;
         const method = (request?.method || 'GET').toUpperCase();
-        if (user?.role === 'auditor') {
+        const userRole = user?.role ? String(user.role).trim().toLowerCase() : '';
+        if (userRole === 'auditor') {
             const mutativeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
             if (mutativeMethods.includes(method)) {
                 throw new common_1.ForbiddenException('Access denied: auditor role is strictly read-only (SoD). Mutations are forbidden.');
@@ -41,10 +42,10 @@ let RolesGuard = class RolesGuard {
         }
         if (!roles || roles.length === 0)
             return true;
-        if (!user || !user.role) {
+        if (!user || !userRole) {
             throw new common_1.ForbiddenException('Access denied: insufficient permissions');
         }
-        if (user.role === 'auditor') {
+        if (userRole === 'auditor') {
             if (roles.includes('auditor')) {
                 return true;
             }

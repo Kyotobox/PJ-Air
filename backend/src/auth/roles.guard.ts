@@ -21,11 +21,13 @@ export class RolesGuard implements CanActivate {
     const user = request?.user;
     const method = (request?.method || 'GET').toUpperCase();
 
+    const userRole = user?.role ? String(user.role).trim().toLowerCase() : '';
+
     // Regla de oro de seguridad (Read-Only SoD - Segregación de Funciones):
     // Un usuario con rol 'auditor' queda terminantemente bloqueado para peticiones
     // HTTP POST, PUT, PATCH, DELETE en endpoints operativos (retornar 403 Forbidden).
     // Solo tiene permitido GET a consultas contables y de auditoría.
-    if (user?.role === 'auditor') {
+    if (userRole === 'auditor') {
       const mutativeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
       if (mutativeMethods.includes(method)) {
         throw new ForbiddenException('Access denied: auditor role is strictly read-only (SoD). Mutations are forbidden.');
@@ -38,12 +40,12 @@ export class RolesGuard implements CanActivate {
 
     if (!roles || roles.length === 0) return true;
 
-    if (!user || !user.role) {
+    if (!user || !userRole) {
       throw new ForbiddenException('Access denied: insufficient permissions');
     }
 
     // Soporte nativo para rol 'auditor' en consultas GET contables y de auditoría
-    if (user.role === 'auditor') {
+    if (userRole === 'auditor') {
       if (roles.includes('auditor')) {
         return true;
       }
