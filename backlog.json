@@ -4,7 +4,7 @@
   "kernel_version": "5.4.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S96",
-  "current_task": "TASK-96-01",
+  "current_task": "TASK-96-03",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -116,7 +116,7 @@
         {
           "id": "TASK-96-02",
           "title": "Módulo de autoservicio B2B en /orders/[id] para reporte de incidencias con selector de productos, evidencia fotográfica y ventana 10:00 AM",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/CLIENT",
           "veracity_hash": null
         },

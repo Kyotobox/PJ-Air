@@ -5,12 +5,13 @@ import Navbar from '@/components/layout/Navbar';
 import {
     CheckCircle2, Package, Calendar, Clock, MapPin,
     ChevronRight, ShoppingBag, Receipt, Loader2, CreditCard,
-    RefreshCcw, AlertCircle, Printer, Building2, X
+    RefreshCcw, AlertCircle, Printer, Building2, X, AlertTriangle, Camera
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import StripePaymentModal from '@/components/checkout/StripePaymentModal';
+import ReportIncidentModal from '@/components/orders/ReportIncidentModal';
 import { calculateProcessingFee } from '@/lib/fee-calculator';
 import { API_URL } from '@/lib/config';
 import { getClientBusinessName, getClientContactName } from '@/lib/client-identity';
@@ -42,6 +43,22 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
     const [settlementAmount, setSettlementAmount] = useState<number>(0);
     const [paymentToast, setPaymentToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
+    // Delivery Incidents states (S96)
+    const [incidentModalOpen, setIncidentModalOpen] = useState(false);
+    const [incidents, setIncidents] = useState<any[]>([]);
+    const [incidentToast, setIncidentToast] = useState<string | null>(null);
+
+    const fetchIncidents = async () => {
+        try {
+            const incidentsData = await api.get(`/orders/${orderId}/incidents`) as any;
+            if (Array.isArray(incidentsData)) {
+                setIncidents(incidentsData);
+            }
+        } catch (err) {
+            console.warn('Could not fetch incidents for order:', err);
+        }
+    };
+
     useEffect(() => {
         const fetchOrderDetails = async () => {
             setIsLoading(true);
@@ -56,6 +73,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
             }
         };
         fetchOrderDetails();
+        fetchIncidents();
     }, [orderId]);
 
     const handlePayOnline = () => {
@@ -339,6 +357,18 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
     const currentStepIndex = steps.findIndex(s => s.key === order.status);
     const displayIndex = currentStepIndex === -1 ? 0 : currentStepIndex;
 
+    const isDeliveredOrDelivering = Boolean(
+        order && (
+            order.status === 'Entregado' ||
+            order.status === 'En Delivery' ||
+            order.status?.toLowerCase().includes('entreg') ||
+            order.status?.toLowerCase().includes('deliver') ||
+            order.status?.toLowerCase().includes('enviado') ||
+            order.status === 'shipped' ||
+            order.status === 'delivered'
+        )
+    );
+
     return (
         <div className="min-h-screen bg-[#fafafa]">
             <Navbar />
@@ -424,6 +454,101 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                 <p className="text-2xl font-bold text-foreground font-serif">{order.delivery_date}</p>
                             </div>
                         </section>
+
+                        {/* Reported Incidents Card (Sprint S96 - TASK-96-02) */}
+                        {incidents && incidents.length > 0 && (
+                            <section data-testid="order-incidents-section" className="bg-card rounded-[32px] border border-amber-200 p-8 shadow-sm space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-bold flex items-center gap-2 font-serif text-slate-900">
+                                        <AlertTriangle className="text-amber-600" size={22} />
+                                        {locale === 'en' ? 'Reported Delivery Incidents' : 'Incidencias de Entrega Reportadas'}
+                                    </h2>
+                                    <span className="text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
+                                        {incidents.length} {incidents.length === 1 ? (locale === 'en' ? 'incident' : 'incidencia') : (locale === 'en' ? 'incidents' : 'incidencias')}
+                                    </span>
+                                </div>
+
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {locale === 'en'
+                                        ? 'Below is the status of your reported delivery discrepancies. Approved items are credited to your Store Credit.'
+                                        : 'A continuación se muestra el estado de tus reportes de faltantes o averías. Los reportes aprobados se acreditan a tu Saldo a Favor.'}
+                                </p>
+
+                                <div className="space-y-3 pt-2">
+                                    {incidents.map((incident: any) => {
+                                        const itemMatch = items.find((it) => Number(it.product_id ?? it.product?.id) === Number(incident.product_id));
+                                        const productName = itemMatch?.product?.name || `Producto #${incident.product_id}`;
+                                        const isApproved = incident.status === 'approved';
+                                        const isRejected = incident.status === 'rejected';
+
+                                        return (
+                                            <div
+                                                key={incident.id}
+                                                data-testid={`incident-card-${incident.id}`}
+                                                className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                                            >
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono font-black text-slate-900 bg-white border border-slate-200 px-2 py-0.5 rounded-md text-[11px]">
+                                                            {incident.voucher_code || 'SC-PENDING'}
+                                                        </span>
+                                                        <span
+                                                            data-testid={`incident-status-badge-${incident.id}`}
+                                                            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                                isApproved
+                                                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                                                    : isRejected
+                                                                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                                                    : 'bg-amber-100 text-amber-900 border border-amber-200'
+                                                            }`}
+                                                        >
+                                                            {isApproved
+                                                                ? (locale === 'en' ? 'Approved' : 'Aprobado')
+                                                                : isRejected
+                                                                ? (locale === 'en' ? 'Rejected' : 'Rechazado')
+                                                                : (locale === 'en' ? 'Under Review' : 'En revisión')}
+                                                        </span>
+                                                    </div>
+
+                                                    <p className="font-bold text-slate-900">
+                                                        {incident.quantity}x {productName}
+                                                    </p>
+
+                                                    <p className="text-[11px] text-muted-foreground">
+                                                        {incident.reason_category === 'missing_kitchen' && (locale === 'en' ? 'Missing from delivery' : 'Faltante en entrega')}
+                                                        {incident.reason_category === 'transit_damage' && (locale === 'en' ? 'Broken / crushed product' : 'Producto quebrado / aplastado')}
+                                                        {incident.reason_category === 'quality_defect' && (locale === 'en' ? 'Quality defect' : 'Problema de calidad / horneado')}
+                                                        {incident.reason_category === 'wrong_item' && (locale === 'en' ? 'Wrong item received' : 'Producto incorrecto')}
+                                                        {!['missing_kitchen', 'transit_damage', 'quality_defect', 'wrong_item'].includes(incident.reason_category) && incident.reason_category}
+                                                        {incident.description ? ` • "${incident.description}"` : ''}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 self-end sm:self-center">
+                                                    {incident.amount !== undefined && (
+                                                        <span className="font-mono font-black text-sm text-amber-700">
+                                                            ${Number(incident.amount).toFixed(2)}
+                                                        </span>
+                                                    )}
+                                                    {incident.photo_url && (
+                                                        <a
+                                                            href={incident.photo_url.startsWith('http') || incident.photo_url.startsWith('data:') ? incident.photo_url : `${API_URL}${incident.photo_url}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors text-slate-600 flex items-center gap-1 shadow-sm"
+                                                            title={locale === 'en' ? 'View evidence photo' : 'Ver fotografía de evidencia'}
+                                                        >
+                                                            <Camera size={14} />
+                                                            <span className="text-[10px] font-bold">Foto</span>
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
                     </div>
 
                     {/* Order Summary */}
@@ -657,6 +782,17 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                             </div>
 
                             <div className="space-y-4">
+                                {isDeliveredOrDelivering && (
+                                    <button
+                                        data-testid="report-incident-btn"
+                                        onClick={() => setIncidentModalOpen(true)}
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+                                    >
+                                        <AlertTriangle size={16} />
+                                        {locale === 'en' ? 'Report Missing or Damaged Items' : 'Reportar Faltante o Daño'}
+                                    </button>
+                                )}
+
                                 <Link href="/" className="w-full flex items-center justify-center gap-2 py-4 bg-primary text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-black transition-all group">
                                     {t.orders.continueShopping} <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                 </Link>
@@ -802,6 +938,39 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                     onCancel={() => setSettlementModalOpen(false)}
                     locale={locale}
                 />
+            )}
+
+            {/* Delivery Incident Reporting Modal (TASK-96-02) */}
+            {incidentModalOpen && (
+                <ReportIncidentModal
+                    isOpen={incidentModalOpen}
+                    onClose={() => setIncidentModalOpen(false)}
+                    orderId={order.id}
+                    deliveryDate={order.delivery_date}
+                    items={items}
+                    locale={locale}
+                    onSuccess={() => {
+                        fetchIncidents();
+                        setIncidentToast(
+                            locale === 'en'
+                                ? 'Report received. It will be evaluated to credit your Store Credit balance.'
+                                : 'Reporte recibido. Se evaluará para acreditar tu Saldo a Favor (Store Credit)'
+                        );
+                        setTimeout(() => setIncidentToast(null), 6000);
+                    }}
+                />
+            )}
+
+            {/* Incident Toast Notification */}
+            {incidentToast && (
+                <div
+                    role="alert"
+                    data-testid="order-incident-toast"
+                    className="fixed bottom-8 left-8 z-[140] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl bg-amber-600 text-white font-black text-xs animate-in slide-in-from-bottom duration-300 shadow-amber-600/30"
+                >
+                    <CheckCircle2 size={18} />
+                    {incidentToast}
+                </div>
             )}
 
             {/* Floating Toast Notification */}
