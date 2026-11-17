@@ -276,4 +276,120 @@ describe('MailService', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('TASK-96-04: Digital Gift Card / Store Credit Email Notification', () => {
+    it('should send digital gift card store credit email with voucher, formatted amounts, breakdown, photo thumbnail, and redemption link', async () => {
+      const mockData = {
+        clientName: 'Café París Downtown',
+        voucherCode: 'SC-2026-0042',
+        amount: 45.5,
+        newTotalBalance: 150.0,
+        productName: 'Croissant de Mantequilla',
+        quantity: 5,
+        reasonLabel: 'Producto quebrado / aplastado',
+        photoUrl: 'https://cdn.jhoanes.com/incidents/sc-broken-croissant.jpg',
+      };
+
+      const result = await service.sendStoreCreditCard('b2b-client@jhoanes.com', mockData);
+      expect(result).toBe(true);
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
+
+      const mailOptions = sendMailSpy.mock.calls[0][0];
+      expect(mailOptions.to).toBe('b2b-client@jhoanes.com');
+      expect(mailOptions.subject).toContain('🎉 Tienes $45.50 de Saldo a Favor disponible para tu próxima orden');
+      expect(mailOptions.html).toContain('Jhoanes Bakery');
+      expect(mailOptions.html).toContain('Hola <strong>Café París Downtown</strong>');
+      expect(mailOptions.html).toContain('🎉 Tienes $45.50 de Saldo a Favor disponible para tu próxima orden');
+      expect(mailOptions.html).toContain('+$45.50 USD');
+      expect(mailOptions.html).toContain('SC-2026-0042');
+      expect(mailOptions.html).toContain('Abonado por 5x Croissant de Mantequilla (Producto quebrado / aplastado)');
+      expect(mailOptions.html).toContain('Saldo total disponible en cuenta: <strong>$150.00 USD</strong>');
+      expect(mailOptions.html).toContain('https://cdn.jhoanes.com/incidents/sc-broken-croissant.jpg');
+      expect(mailOptions.html).toContain('Fotografía de respaldo adjunta:');
+      expect(mailOptions.html).toContain('Hacer mi próximo pedido con descuento');
+      expect(mailOptions.html).toContain('/orders');
+      expect(mailOptions.html).toContain('Este saldo no caduca y se aplicará automáticamente en el resumen de tu próxima compra.');
+    });
+
+    it('should render store credit gift card without photo thumbnail when photoUrl is omitted', async () => {
+      const mockDataWithoutPhoto = {
+        clientName: 'Bistro Central',
+        voucherCode: 'SC-2026-0043',
+        amount: 25.0,
+        newTotalBalance: 75.0,
+        productName: 'Baguette Rústica',
+        quantity: 10,
+        reasonLabel: 'Faltante en entrega',
+      };
+
+      const result = await service.sendStoreCreditCard('bistro@example.com', mockDataWithoutPhoto);
+      expect(result).toBe(true);
+
+      const mailOptions = sendMailSpy.mock.calls[0][0];
+      expect(mailOptions.to).toBe('bistro@example.com');
+      expect(mailOptions.html).toContain('SC-2026-0043');
+      expect(mailOptions.html).toContain('Abonado por 10x Baguette Rústica (Faltante en entrega)');
+      expect(mailOptions.html).toContain('Saldo total disponible en cuenta: <strong>$75.00 USD</strong>');
+      expect(mailOptions.html).not.toContain('Fotografía de respaldo adjunta:');
+      expect(mailOptions.html).not.toContain('<img src=');
+    });
+
+    describe('Sad Paths (§6)', () => {
+      it('should return false when clientEmail is empty or missing', async () => {
+        const mockData = {
+          clientName: 'Test Client',
+          voucherCode: 'SC-2026-0099',
+          amount: 20.0,
+          newTotalBalance: 40.0,
+          productName: 'Pan de Masa Madre',
+          quantity: 2,
+          reasonLabel: 'Defecto de horneado',
+        };
+
+        const result = await service.sendStoreCreditCard('', mockData);
+        expect(result).toBe(false);
+        expect(sendMailSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return false when data payload is missing or invalid', async () => {
+        const result = await service.sendStoreCreditCard('client@example.com', null as any);
+        expect(result).toBe(false);
+        expect(sendMailSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return false when transporter is not initialized', async () => {
+        const originalTransporter = (service as any).transporter;
+        (service as any).transporter = null;
+
+        const result = await service.sendStoreCreditCard('client@example.com', {
+          clientName: 'Client',
+          voucherCode: 'SC-2026-0001',
+          amount: 10,
+          newTotalBalance: 20,
+          productName: 'Item',
+          quantity: 1,
+          reasonLabel: 'Reason',
+        });
+
+        expect(result).toBe(false);
+        (service as any).transporter = originalTransporter;
+      });
+
+      it('should catch error, log, and return false when sendMail fails with exception', async () => {
+        sendMailSpy.mockRejectedValueOnce(new Error('SMTP connection refused / timeout'));
+
+        const result = await service.sendStoreCreditCard('client@example.com', {
+          clientName: 'Client',
+          voucherCode: 'SC-2026-0001',
+          amount: 10,
+          newTotalBalance: 20,
+          productName: 'Item',
+          quantity: 1,
+          reasonLabel: 'Reason',
+        });
+
+        expect(result).toBe(false);
+      });
+    });
+  });
 });

@@ -3,18 +3,23 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { DeliveryIncident } from './entities/delivery-incident.entity';
 import { Order } from './order.entity';
 import { User } from '../users/user.entity';
+import { MailService } from '../mail/mail.service';
 import { CreateDeliveryIncidentDto } from './dto/create-delivery-incident.dto';
 
 export { CreateDeliveryIncidentDto };
 
 @Injectable()
 export class DeliveryIncidentsService {
+  private readonly logger = new Logger(DeliveryIncidentsService.name);
+
   constructor(
     @InjectRepository(DeliveryIncident)
     private readonly incidentRepository: Repository<DeliveryIncident>,
@@ -22,6 +27,8 @@ export class DeliveryIncidentsService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @Optional()
+    private readonly mailService?: MailService,
   ) {}
 
   /**
@@ -173,7 +180,81 @@ export class DeliveryIncidentsService {
     incident.reviewed_by = adminId;
     incident.updated_at = new Date();
 
-    return await this.incidentRepository.save(incident);
+    const savedIncident = await this.incidentRepository.save(incident);
+
+    // Asynchronous non-blocking dispatch of Store Credit Digital Gift Card notification (§45)
+    if (this.mailService && user.email) {
+      this.dispatchStoreCreditNotification(user, savedIncident, newBalance).catch((err) => {
+        this.logger.error(
+          `Error en despacho asíncrono de Store Credit Card para incidencia ${savedIncident.id}: ${err.message}`,
+        );
+      });
+    }
+
+    return savedIncident;
+  }
+
+  /**
+   * Despacha de forma no bloqueante la tarjeta digital de Store Credit al cliente.
+   */
+  private async dispatchStoreCreditNotification(
+    user: User,
+    incident: DeliveryIncident,
+    newBalance: number,
+  ): Promise<void> {
+    if (!this.mailService || !user.email) return;
+
+    const reasonLabels: Record<string, string> = {
+      missing_kitchen: 'Faltante en entrega',
+      transit_damage: 'Producto quebrado / aplastado',
+      quality_defect: 'Problema de calidad / horneado',
+      wrong_item: 'Producto incorrecto',
+    };
+    const reasonLabel =
+      reasonLabels[incident.reason_category] ||
+      incident.reason_category ||
+      'Incidencia de entrega';
+
+    let productName = `Producto #${incident.product_id}`;
+    try {
+      const order = await this.orderRepository.findOne({
+        where: { id: incident.order_id },
+        relations: ['items', 'items.product'],
+      });
+      const matchedItem = order?.items?.find(
+        (i) => Number(i.product_id) === Number(incident.product_id),
+      );
+      if (matchedItem?.product?.name) {
+        productName = matchedItem.product.name;
+      } else if ((matchedItem as any)?.product_name) {
+        productName = (matchedItem as any).product_name;
+      } else if ((matchedItem as any)?.name) {
+        productName = (matchedItem as any).name;
+      }
+    } catch (err: any) {
+      this.logger.warn(
+        `No se pudo resolver el nombre del producto para la orden ${incident.order_id}: ${err.message}`,
+      );
+    }
+
+    const clientName =
+      user.profile?.company_name ||
+      user.profile?.full_name ||
+      user.legal_business_name ||
+      user.dba ||
+      (user as any).name ||
+      'Estimado Cliente';
+
+    await this.mailService.sendStoreCreditCard(user.email, {
+      clientName,
+      voucherCode: incident.voucher_code,
+      amount: Number(incident.amount),
+      newTotalBalance: newBalance,
+      productName,
+      quantity: Number(incident.quantity),
+      reasonLabel,
+      photoUrl: incident.photo_url || undefined,
+    });
   }
 
   /**

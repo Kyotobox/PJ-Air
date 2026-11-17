@@ -27,4 +27,14 @@ export declare class MailService {
     sendZelleRejectionAlert(order: any, customerEmail: string, reason: string): Promise<boolean>;
     sendFinancialReport(recipientEmails: string[], reportDate: string, excelBuffer: Buffer, isFallback?: boolean, fallbackReason?: string): Promise<boolean>;
     sendPasswordResetEmail(userEmail: string, resetToken: string, clientName?: string | null): Promise<boolean>;
+    sendStoreCreditCard(clientEmail: string, data: {
+        clientName: string;
+        voucherCode: string;
+        amount: number;
+        newTotalBalance: number;
+        productName: string;
+        quantity: number;
+        reasonLabel: string;
+        photoUrl?: string;
+    }): Promise<boolean>;
 }

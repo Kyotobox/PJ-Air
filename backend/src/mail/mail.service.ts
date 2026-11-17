@@ -1005,4 +1005,127 @@ export class MailService {
       return false;
     }
   }
+
+  /**
+   * TASK-96-04: Digital gift card / store credit email notification
+   * Despacha notificación por saldo a favor con formato visual de Tarjeta Digital / Gift Card,
+   * código de voucher destacado SC-YYYY-XXXX, miniatura de foto de respaldo (si aplica)
+   * y enlace directo de redención hacia el checkout.
+   */
+  async sendStoreCreditCard(
+    clientEmail: string,
+    data: {
+      clientName: string;
+      voucherCode: string;
+      amount: number;
+      newTotalBalance: number;
+      productName: string;
+      quantity: number;
+      reasonLabel: string;
+      photoUrl?: string;
+    },
+  ): Promise<boolean> {
+    if (!this.transporter || !clientEmail || !data) return false;
+
+    try {
+      const amountFormatted = Number(data.amount || 0).toFixed(2);
+      const newTotalFormatted = Number(data.newTotalBalance || 0).toFixed(2);
+      const recipientName = data.clientName || 'Cliente';
+      const redemptionUrl = `${SITE_URL}/orders`;
+
+      const photoHtml = data.photoUrl
+        ? `
+          <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed #cbd5e1; text-align: center;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; font-weight: 600;">Fotografía de respaldo adjunta:</p>
+            <img src="${data.photoUrl}" alt="Evidencia de incidencia" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" />
+          </div>
+        `
+        : '';
+
+      const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 32px 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; color: #1e293b;">
+          <!-- Encabezado Corporativo -->
+          <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #b8860b; padding-bottom: 16px;">
+            <h2 style="color: #b8860b; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Jhoanes Bakery</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Wholesale & B2B Orders</p>
+          </div>
+
+          <!-- Saludo y Titular -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <p style="font-size: 15px; color: #334155; margin: 0 0 10px 0;">
+              Hola <strong>${recipientName}</strong>,
+            </p>
+            <h1 style="color: #b8860b; font-size: 20px; line-height: 1.4; margin: 0; font-weight: 800;">
+              🎉 Tienes $${amountFormatted} de Saldo a Favor disponible para tu próxima orden
+            </h1>
+          </div>
+
+          <!-- Tarjeta Gráfica / Gift Card Digital -->
+          <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 50%, #fde68a 100%); border: 2px solid #b8860b; border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 8px 16px -2px rgba(184, 134, 11, 0.15); margin-bottom: 24px;">
+            <div style="text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #92400e; margin-bottom: 6px;">
+              Tarjeta Digital • Saldo a Favor
+            </div>
+            <div style="font-size: 34px; font-weight: 900; color: #78350f; margin: 6px 0;">
+              +$${amountFormatted} USD
+            </div>
+            <div style="margin: 14px auto 0 auto; display: inline-block; background: #ffffff; border: 2px dashed #b8860b; border-radius: 8px; padding: 10px 20px;">
+              <span style="font-size: 11px; color: #78350f; display: block; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px;">VOUCHER DE REDENCIÓN</span>
+              <span style="font-family: 'Courier New', Courier, monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: #b8860b;">
+                ${data.voucherCode}
+              </span>
+            </div>
+          </div>
+
+          <!-- Desglose Amigable y Saldo Total -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Detalle del Movimiento</h3>
+            <p style="margin: 0 0 10px 0; font-size: 14px; color: #334155; line-height: 1.5;">
+              Abonado por ${data.quantity}x ${data.productName} (${data.reasonLabel})
+            </p>
+            <p style="margin: 0; font-size: 14px; color: #0f172a; line-height: 1.5;">
+              Saldo total disponible en cuenta: <strong>$${newTotalFormatted} USD</strong>
+            </p>
+            ${photoHtml}
+          </div>
+
+          <!-- Botón Destacado (CTA) -->
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${redemptionUrl}" 
+               style="display: inline-block; background-color: #b8860b; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; box-shadow: 0 4px 6px -1px rgba(184, 134, 11, 0.25);">
+              Hacer mi próximo pedido con descuento
+            </a>
+          </div>
+
+          <!-- Nota Aclaratoria -->
+          <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 4px; margin-bottom: 24px;">
+            <p style="color: #1e40af; font-size: 13px; margin: 0; line-height: 1.5;">
+              Este saldo no caduca y se aplicará automáticamente en el resumen de tu próxima compra.
+            </p>
+          </div>
+
+          <!-- Pie de Página -->
+          <div style="border-top: 1px solid #f1f5f9; margin-top: 24px; padding-top: 16px; text-align: center;">
+            <p style="color: #94a3b8; font-size: 11px; margin: 0;">
+              © ${new Date().getFullYear()} Jhoanes Bakery Wholesale. All rights reserved.
+            </p>
+          </div>
+        </div>
+      `;
+
+      const subject = `🎉 Tienes $${amountFormatted} de Saldo a Favor disponible para tu próxima orden — Jhoanes Bakery`;
+
+      await this.transporter.sendMail({
+        from: SMTP_USER ? `"Jhoanes Bakery Wholesale" <${SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <orders@jhoanes.com>',
+        to: clientEmail,
+        subject,
+        html,
+      });
+
+      this.logger.log(`Store credit card email sent to ${clientEmail} (Voucher: ${data.voucherCode}, Amount: $${amountFormatted})`);
+      return true;
+    } catch (err: any) {
+      this.logger.error(`Error sending store credit card email to ${clientEmail}: ${err.message}`);
+      return false;
+    }
+  }
 }

@@ -10,12 +10,14 @@ import { DeliveryIncidentsService } from './delivery-incidents.service';
 import { DeliveryIncident } from './entities/delivery-incident.entity';
 import { Order } from './order.entity';
 import { User } from '../users/user.entity';
+import { MailService } from '../mail/mail.service';
 
 describe('DeliveryIncidentsService', () => {
   let service: DeliveryIncidentsService;
   let incidentRepo: jest.Mocked<Repository<DeliveryIncident>>;
   let orderRepo: jest.Mocked<Repository<Order>>;
   let userRepo: jest.Mocked<Repository<User>>;
+  let mailService: jest.Mocked<MailService>;
 
   beforeEach(async () => {
     const mockIncidentRepo = {
@@ -37,6 +39,10 @@ describe('DeliveryIncidentsService', () => {
       save: jest.fn((entity) => Promise.resolve(entity)),
     };
 
+    const mockMailService = {
+      sendStoreCreditCard: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeliveryIncidentsService,
@@ -52,6 +58,10 @@ describe('DeliveryIncidentsService', () => {
           provide: getRepositoryToken(User),
           useValue: mockUserRepo,
         },
+        {
+          provide: MailService,
+          useValue: mockMailService,
+        },
       ],
     }).compile();
 
@@ -59,6 +69,7 @@ describe('DeliveryIncidentsService', () => {
     incidentRepo = module.get(getRepositoryToken(DeliveryIncident));
     orderRepo = module.get(getRepositoryToken(Order));
     userRepo = module.get(getRepositoryToken(User));
+    mailService = module.get(MailService);
   });
 
   afterEach(() => {
@@ -285,6 +296,68 @@ describe('DeliveryIncidentsService', () => {
 
       expect(approved.status).toBe('approved');
       expect(approved.reviewed_by).toBe('admin-super-id');
+    });
+
+    it('should invoke sendStoreCreditCard asynchronously when incident is approved and user has email', async () => {
+      const userWithEmail = {
+        ...mockUser,
+        email: 'b2b-customer@example.com',
+        profile: { company_name: 'Boulangerie Gourmet' },
+      };
+
+      const mockOrderWithProduct = {
+        id: 'order-uuid-1',
+        items: [
+          {
+            product_id: 101,
+            product: { name: 'Pain au Chocolat' },
+          },
+        ],
+      };
+
+      incidentRepo.findOne.mockResolvedValue({
+        ...mockIncident,
+        photo_url: 'https://cdn.jhoanes.com/photos/sc-evidence.jpg',
+      });
+      userRepo.findOne.mockResolvedValue(userWithEmail);
+      orderRepo.findOne.mockResolvedValue(mockOrderWithProduct as any);
+
+      const result = await service.approveIncident('incident-uuid-1', 'admin-id-123');
+
+      expect(result.status).toBe('approved');
+
+      // Wait a tick for non-blocking async dispatch
+      await new Promise((r) => setImmediate(r));
+
+      expect(mailService.sendStoreCreditCard).toHaveBeenCalledWith(
+        'b2b-customer@example.com',
+        expect.objectContaining({
+          clientName: 'Boulangerie Gourmet',
+          voucherCode: 'SC-2026-0001',
+          amount: 50.0,
+          newTotalBalance: 150.0,
+          productName: 'Pain au Chocolat',
+          quantity: 2,
+          reasonLabel: 'Incidencia de entrega',
+          photoUrl: 'https://cdn.jhoanes.com/photos/sc-evidence.jpg',
+        }),
+      );
+    });
+
+    it('should handle non-blocking error gracefully if mailService.sendStoreCreditCard rejects', async () => {
+      const userWithEmail = {
+        ...mockUser,
+        email: 'b2b-customer@example.com',
+      };
+
+      incidentRepo.findOne.mockResolvedValue({ ...mockIncident });
+      userRepo.findOne.mockResolvedValue(userWithEmail);
+      mailService.sendStoreCreditCard.mockRejectedValueOnce(new Error('SMTP Network Offline'));
+
+      const result = await service.approveIncident('incident-uuid-1', 'admin-id-123');
+
+      expect(result).toBeDefined();
+      expect(result.status).toBe('approved');
     });
 
     describe('Sad Paths (§6) & Idempotencia', () => {

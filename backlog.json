@@ -123,14 +123,14 @@
         {
           "id": "TASK-96-03",
           "title": "Panel de gestión en /admin/orders y /admin/clients para revisión de fotos, aprobación y acreditación atómica a user.credit_balance",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/ADMIN",
           "veracity_hash": null
         },
         {
           "id": "TASK-96-04",
           "title": "Plantilla y servicio de correo transaccional en MailService estilo Gift Card Digital con miniatura de foto y enlace de redención",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/NOTIFICATIONS",
           "veracity_hash": null
         },
