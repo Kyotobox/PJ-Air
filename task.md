@@ -1,5 +1,5 @@
 # SPRINT S96 - Sprint Activo
-**Objetivo**: Motor de Incidencias de Entrega y Saldo a Favor No Fiscal (Store Credit SC) con Notificación Digital y Autoservicio B2B
+**Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-17
 
 - [/] **TASK-96-01** [TASK] Modelo de datos TypeORM, DDL y API para incidencias de entrega (delivery_incidents) y vouchers de Store Credit con prefijo SC-YYYY-XXXX

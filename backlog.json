@@ -25,34 +25,6 @@
   ],
   "sprints": [
     {
-      "id": "S93",
-      "title": "Sprint S93: Desbloqueo y auto-aprobación de cuentas comerciales B2B y clarificación de órdenes a Crédito B2B en panel administrativo",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-93-01",
-          "title": "Desbloqueo y Aprobación de Clientes B2B (account_status = 'APPROVED') y configuración de política de auto-aprobación en registro (auth.service.ts)",
-          "status": "DONE",
-          "type": "BACKEND/AUTH",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-93-02",
-          "title": "Clarificación y Rediseño de Insignia de Pedidos a Crédito B2B (🏢 CRÉDITO B2B / Facturación) en listado y expediente de órdenes",
-          "status": "DONE",
-          "type": "FRONTEND/ADMIN",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-93-03",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6), confirmación operativa de INV-1647 y despliegue a VPS (Testing y Producción)",
-          "status": "DONE",
-          "type": "DEVOPS/DEPLOY",
-          "veracity_hash": null
-        }
-      ]
-    },
-    {
       "id": "S94",
       "title": "Sprint S94: Control de Zelle, Flete Gratis Dual (Cliente y Pedido), Bitácora de Auditoría Unificada y Sincronización Stripe",
       "status": "COMPLETED",
@@ -214,7 +186,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 93,
+  "archived_sprints_count": 94,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S96",
