@@ -1,8 +1,9 @@
-# SPRINT S95 - Sprint Activo
-**Objetivo**: Sin objetivo especificado
+# SPRINT S96 - Sprint Activo
+**Objetivo**: Motor de Incidencias de Entrega y Saldo a Favor No Fiscal (Store Credit SC) con Notificación Digital y Autoservicio B2B
 **Fecha**: 2026-11-17
 
-- [x] **TASK-95-01** [TASK] Helper canónico universal de identidad comercial (client-identity.ts) y normalización de contratos TypeORM/API
-- [x] **TASK-95-02** [TASK] Unificación en Reportes Matriciales en Pantalla e Impresos (Admin y Producción) e Impresión de Hoja de Cocina e Invoices
-- [x] **TASK-95-03** [TASK] Exportación de Reportes Excel por Negocio en Backend (ExcelJS) y Visualización Comercial en Pantalla de Despacho/Chofer
-- [x] **TASK-95-04** [TASK] Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción
+- [/] **TASK-96-01** [TASK] Modelo de datos TypeORM, DDL y API para incidencias de entrega (delivery_incidents) y vouchers de Store Credit con prefijo SC-YYYY-XXXX
+- [ ] **TASK-96-02** [TASK] Módulo de autoservicio B2B en /orders/[id] para reporte de incidencias con selector de productos, evidencia fotográfica y ventana 10:00 AM
+- [ ] **TASK-96-03** [TASK] Panel de gestión en /admin/orders y /admin/clients para revisión de fotos, aprobación y acreditación atómica a user.credit_balance
+- [ ] **TASK-96-04** [TASK] Plantilla y servicio de correo transaccional en MailService estilo Gift Card Digital con miniatura de foto y enlace de redención
+- [ ] **TASK-96-05** [TASK] Suite de pruebas automatizadas con Sad Paths (§6), verificación en ambiente testing y despliegue a producción
