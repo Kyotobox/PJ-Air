@@ -66,6 +66,9 @@ let OrdersController = class OrdersController {
         this.excelService = excelService;
     }
     async create(body, req) {
+        if (req.user?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+        }
         const isAdmin = req.user?.role === 'admin';
         const targetUserId = (isAdmin && body.userId) ? body.userId : req.user.id;
         if (isAdmin && (body.manual_entry || body.admin_created) && !body.userId) {
@@ -75,6 +78,9 @@ let OrdersController = class OrdersController {
         return this.ordersService.create(targetUserId, orderData, { isAdmin });
     }
     async settleBatch(body, req) {
+        if (req.user?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+        }
         return this.ordersService.settleBatch(req.user.id, req.user.role, body);
     }
     async bulkDisable(body) {
@@ -85,21 +91,21 @@ let OrdersController = class OrdersController {
     }
     async getUserFrequentProducts(userId, req) {
         const role = req.user?.role;
-        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && req.user.id !== userId) {
+        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && role !== 'auditor' && req.user.id !== userId) {
             throw new common_1.ForbiddenException('Cannot access other user frequent products');
         }
         return this.ordersService.getFrequentProducts(userId);
     }
     async findAll(req) {
         const role = req.user?.role;
-        if (role === 'admin' || role === 'delivery' || role === 'produccion') {
+        if (role === 'admin' || role === 'delivery' || role === 'produccion' || role === 'auditor') {
             return this.ordersService.findAll();
         }
         return this.ordersService.findByUser(req.user.id);
     }
     async findByUser(userId, req) {
         const role = req.user?.role;
-        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && req.user.id !== userId) {
+        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && role !== 'auditor' && req.user.id !== userId) {
             throw new common_1.ForbiddenException('Cannot access other user orders');
         }
         return this.ordersService.findByUser(userId);
@@ -144,7 +150,7 @@ let OrdersController = class OrdersController {
     async findOne(id, req) {
         const order = await this.ordersService.findOne(id);
         const role = req.user?.role;
-        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+        if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && role !== 'auditor' && order.user_id !== req.user.id) {
             throw new common_1.ForbiddenException('Cannot access this order');
         }
         return order;
@@ -152,6 +158,9 @@ let OrdersController = class OrdersController {
     async updateStatus(id, status, req) {
         const order = await this.ordersService.findOne(id);
         const role = req.user?.role;
+        if (role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+        }
         if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
             throw new common_1.ForbiddenException('Cannot modify this order status');
         }
@@ -244,24 +253,33 @@ let OrdersController = class OrdersController {
         return this.ordersService.disableOrder(id, body?.reason);
     }
     async completeCheckoutPost(id, req) {
-        const order = await this.ordersService.findOne(id);
         const role = req.user?.role;
+        if (role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+        }
+        const order = await this.ordersService.findOne(id);
         if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
             throw new common_1.ForbiddenException('Cannot modify this order');
         }
         return this.ordersService.completeCheckout(id, role);
     }
     async completeCheckoutPatch(id, req) {
-        const order = await this.ordersService.findOne(id);
         const role = req.user?.role;
+        if (role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+        }
+        const order = await this.ordersService.findOne(id);
         if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
             throw new common_1.ForbiddenException('Cannot modify this order');
         }
         return this.ordersService.completeCheckout(id, role);
     }
     async update(id, body, req) {
-        const order = await this.ordersService.findOne(id);
         const role = req.user?.role;
+        if (role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+        }
+        const order = await this.ordersService.findOne(id);
         if (role !== 'admin' && role !== 'produccion' && order.user_id !== req.user.id) {
             throw new common_1.ForbiddenException('Cannot modify this order');
         }

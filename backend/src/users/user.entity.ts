@@ -4,6 +4,8 @@ import { Order } from '../orders/order.entity';
 import { ProductDiscount } from './product-discount.entity';
 import { Profile } from './profile.entity';
 
+export type UserRole = 'client' | 'admin' | 'delivery' | 'produccion' | 'auditor';
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -16,7 +18,7 @@ export class User {
   password: string;
 
   @Column({ default: 'client' })
-  role: string;
+  role: 'client' | 'admin' | 'delivery' | 'produccion' | 'auditor';
 
   @OneToOne(() => Profile, (profile) => profile.user, { cascade: true })
   profile: Profile;

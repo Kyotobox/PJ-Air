@@ -121,7 +121,7 @@ export class UsersService {
 
   async updateRole(id: string, role: string): Promise<User> {
     const user = await this.findOne(id);
-    user.role = role;
+    user.role = role as any;
     const result = await this.userRepository.save(user);
     return Array.isArray(result) ? result[0] : result;
   }
@@ -250,7 +250,7 @@ export class UsersService {
       user.credit_balance = Number(data.credit_balance);
     }
     if (data.role !== undefined) {
-      user.role = data.role;
+      user.role = data.role as any;
     }
     if (data.account_type !== undefined) {
       user.account_type = data.account_type;

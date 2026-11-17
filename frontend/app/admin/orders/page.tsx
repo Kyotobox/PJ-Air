@@ -332,6 +332,13 @@ export default function AdminOrdersPage() {
         fetchOrders();
         fetchDeliveryUsers();
         fetchChecksReconciliation();
+
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('notice') === 'unauthorized_auditor_route' || params.get('warning')) {
+                showToast('⚠️ Acceso restringido: El rol de auditor solo tiene autorización para consultas contables y de facturación.', 'error');
+            }
+        }
     }, []);
 
     const fetchChecksReconciliation = async () => {

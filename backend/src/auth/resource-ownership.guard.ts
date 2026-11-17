@@ -10,8 +10,8 @@ export class ResourceOwnershipGuard implements CanActivate {
       throw new ForbiddenException('User context missing');
     }
 
-    // Admins have universal access
-    if (user.role === 'admin') {
+    // Admins have universal access; auditors have read-only access for GET queries
+    if (user.role === 'admin' || (user.role === 'auditor' && (request.method || 'GET').toUpperCase() === 'GET')) {
       return true;
     }
 

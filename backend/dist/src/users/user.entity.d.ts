@@ -2,11 +2,12 @@ import { Address } from '../addresses/address.entity';
 import { Order } from '../orders/order.entity';
 import { ProductDiscount } from './product-discount.entity';
 import { Profile } from './profile.entity';
+export type UserRole = 'client' | 'admin' | 'delivery' | 'produccion' | 'auditor';
 export declare class User {
     id: string;
     email: string;
     password: string;
-    role: string;
+    role: 'client' | 'admin' | 'delivery' | 'produccion' | 'auditor';
     profile: Profile;
     addresses: Address[];
     orders: Order[];

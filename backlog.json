@@ -3,8 +3,8 @@
   "version": "5.4.0",
   "kernel_version": "5.4.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S96",
-  "current_task": "TASK-96-05",
+  "current_sprint": "S97",
+  "current_task": "TASK-97-01",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -104,19 +104,19 @@
     {
       "id": "S97",
       "title": "Sprint S97: Rol de Auditor Contable y Financiero (RBAC Read-Only SoD) con Aislamiento Operativo, Libro de Ventas y Conciliación Fiscal",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "tasks": [
         {
           "id": "TASK-97-01",
           "title": "Extensión de RBAC para rol \"auditor\" en User Entity, TypeORM, RolesGuard y JwtPayload con bloqueo estricto en endpoints mutativos",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/RBAC",
           "veracity_hash": null
         },
         {
           "id": "TASK-97-02",
           "title": "Aislamiento de rutas en Next.js middleware y Sidebar: acceso exclusivo a finanzas/reportes con bloqueo de /produccion, /delivery y configuración",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/ROUTING-RBAC",
           "veracity_hash": null
         },
@@ -147,42 +147,42 @@
   "archived_sprints_count": 1,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S96",
-    "title": "Sprint S96: Motor de Incidencias de Entrega y Saldo a Favor No Fiscal (Store Credit SC) con Notificación Digital y Autoservicio B2B",
-    "status": "COMPLETED",
+    "id": "S97",
+    "title": "Sprint S97: Rol de Auditor Contable y Financiero (RBAC Read-Only SoD) con Aislamiento Operativo, Libro de Ventas y Conciliación Fiscal",
+    "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-96-01",
-        "title": "Modelo de datos TypeORM, DDL y API para incidencias de entrega (delivery_incidents) y vouchers de Store Credit con prefijo SC-YYYY-XXXX",
+        "id": "TASK-97-01",
+        "title": "Extensión de RBAC para rol \"auditor\" en User Entity, TypeORM, RolesGuard y JwtPayload con bloqueo estricto en endpoints mutativos",
         "status": "DONE",
-        "type": "BACKEND/CORE",
+        "type": "BACKEND/RBAC",
         "veracity_hash": null
       },
       {
-        "id": "TASK-96-02",
-        "title": "Módulo de autoservicio B2B en /orders/[id] para reporte de incidencias con selector de productos, evidencia fotográfica y ventana 10:00 AM",
+        "id": "TASK-97-02",
+        "title": "Aislamiento de rutas en Next.js middleware y Sidebar: acceso exclusivo a finanzas/reportes con bloqueo de /produccion, /delivery y configuración",
         "status": "DONE",
-        "type": "FRONTEND/CLIENT",
+        "type": "FRONTEND/ROUTING-RBAC",
         "veracity_hash": null
       },
       {
-        "id": "TASK-96-03",
-        "title": "Panel de gestión en /admin/orders y /admin/clients para revisión de fotos, aprobación y acreditación atómica a user.credit_balance",
-        "status": "DONE",
-        "type": "FRONTEND/ADMIN",
+        "id": "TASK-97-03",
+        "title": "Modo Read-Only Contable en panel de órdenes: ocultamiento de botones de acción y visualización de desglose fiscal (Sales Tax NY), Zelle, cheques y Store Credit",
+        "status": "TODO",
+        "type": "FRONTEND/FINANCE-UI",
         "veracity_hash": null
       },
       {
-        "id": "TASK-96-04",
-        "title": "Plantilla y servicio de correo transaccional en MailService estilo Gift Card Digital con miniatura de foto y enlace de redención",
-        "status": "DONE",
-        "type": "BACKEND/NOTIFICATIONS",
+        "id": "TASK-97-04",
+        "title": "Motor de exportación contable masiva en Excel/CSV (Libro de Ventas y Cobranzas) con filtros de rango de fechas para conciliación fiscal",
+        "status": "TODO",
+        "type": "BACKEND/EXCEL-FINANCE",
         "veracity_hash": null
       },
       {
-        "id": "TASK-96-05",
-        "title": "Suite de pruebas automatizadas con Sad Paths (§6), verificación en ambiente testing y despliegue a producción",
-        "status": "DONE",
+        "id": "TASK-97-05",
+        "title": "Suite de pruebas automatizadas con Sad Paths (§6) para verificar rechazo 403 Forbidden ante cualquier mutación del rol auditor y despliegue certificado",
+        "status": "TODO",
         "type": "TEST/DEVOPS",
         "veracity_hash": null
       }

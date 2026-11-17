@@ -27,11 +27,65 @@ let RolesGuard = class RolesGuard {
         if (!roles) {
             roles = this.reflector.get('roles', handler);
         }
+        const request = context.switchToHttp().getRequest();
+        const user = request?.user;
+        const method = (request?.method || 'GET').toUpperCase();
+        if (user?.role === 'auditor') {
+            const mutativeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+            if (mutativeMethods.includes(method)) {
+                throw new common_1.ForbiddenException('Access denied: auditor role is strictly read-only (SoD). Mutations are forbidden.');
+            }
+            if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+                throw new common_1.ForbiddenException('Access denied: auditor role is strictly read-only.');
+            }
+        }
         if (!roles || roles.length === 0)
             return true;
-        const request = context.switchToHttp().getRequest();
-        const user = request.user;
-        if (!user || !user.role || !roles.includes(user.role)) {
+        if (!user || !user.role) {
+            throw new common_1.ForbiddenException('Access denied: insufficient permissions');
+        }
+        if (user.role === 'auditor') {
+            if (roles.includes('auditor')) {
+                return true;
+            }
+            if (roles.includes('admin')) {
+                const url = (request.originalUrl || request.url || '').toLowerCase();
+                const blockedPatterns = [
+                    '/zones',
+                    '/banners',
+                    '/settings',
+                    '/produccion',
+                    '/delivery',
+                    '/routes',
+                    '/dispatch',
+                    '/categories',
+                ];
+                const isBlocked = blockedPatterns.some((pattern) => url.includes(pattern));
+                if (isBlocked) {
+                    throw new common_1.ForbiddenException('Access denied: auditor role cannot access operational or configuration endpoints');
+                }
+                const allowedPatterns = [
+                    '/orders',
+                    '/reports',
+                    '/finance',
+                    '/tax',
+                    '/payments',
+                    '/check-payments',
+                    '/delivery-incidents',
+                    '/admin-actions',
+                    '/audit',
+                    '/clients',
+                    '/users',
+                ];
+                const isAllowed = allowedPatterns.length === 0 || allowedPatterns.some((pattern) => url.includes(pattern));
+                if (isAllowed) {
+                    return true;
+                }
+                throw new common_1.ForbiddenException('Access denied: auditor role is restricted to accounting and audit queries');
+            }
+            throw new common_1.ForbiddenException('Access denied: insufficient permissions');
+        }
+        if (!roles.includes(user.role)) {
             throw new common_1.ForbiddenException('Access denied: insufficient permissions');
         }
         return true;

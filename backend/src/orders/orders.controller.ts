@@ -21,6 +21,9 @@ export class OrdersController {
   @Post()
   @UseGuards(AuthGuard)
   async create(@Body() body: any, @Req() req: any) {
+    if (req.user?.role === 'auditor') {
+      throw new ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+    }
     const isAdmin = req.user?.role === 'admin';
     const targetUserId = (isAdmin && body.userId) ? body.userId : req.user.id;
     if (isAdmin && (body.manual_entry || body.admin_created) && !body.userId) {
@@ -36,6 +39,9 @@ export class OrdersController {
     @Body() body: { order_ids: string[]; payment_method: string; payment_reference?: string },
     @Req() req: any,
   ) {
+    if (req.user?.role === 'auditor') {
+      throw new ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+    }
     return this.ordersService.settleBatch(req.user.id, req.user.role, body);
   }
 
@@ -56,7 +62,7 @@ export class OrdersController {
   @UseGuards(AuthGuard, ResourceOwnershipGuard)
   async getUserFrequentProducts(@Param('userId') userId: string, @Req() req: any) {
     const role = req.user?.role;
-    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && req.user.id !== userId) {
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && role !== 'auditor' && req.user.id !== userId) {
       throw new ForbiddenException('Cannot access other user frequent products');
     }
     return this.ordersService.getFrequentProducts(userId);
@@ -66,7 +72,7 @@ export class OrdersController {
   @UseGuards(AuthGuard)
   async findAll(@Req() req: any) {
     const role = req.user?.role;
-    if (role === 'admin' || role === 'delivery' || role === 'produccion') {
+    if (role === 'admin' || role === 'delivery' || role === 'produccion' || role === 'auditor') {
       return this.ordersService.findAll();
     }
     return this.ordersService.findByUser(req.user.id);
@@ -76,7 +82,7 @@ export class OrdersController {
   @UseGuards(AuthGuard, ResourceOwnershipGuard)
   async findByUser(@Param('userId') userId: string, @Req() req: any) {
     const role = req.user?.role;
-    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && req.user.id !== userId) {
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && role !== 'auditor' && req.user.id !== userId) {
       throw new ForbiddenException('Cannot access other user orders');
     }
     return this.ordersService.findByUser(userId);
@@ -160,7 +166,7 @@ export class OrdersController {
   async findOne(@Param('id') id: string, @Req() req: any) {
     const order = await this.ordersService.findOne(id);
     const role = req.user?.role;
-    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
+    if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && role !== 'auditor' && order.user_id !== req.user.id) {
       throw new ForbiddenException('Cannot access this order');
     }
     return order;
@@ -171,6 +177,9 @@ export class OrdersController {
   async updateStatus(@Param('id') id: string, @Body('status') status: string, @Req() req: any) {
     const order = await this.ordersService.findOne(id);
     const role = req.user?.role;
+    if (role === 'auditor') {
+      throw new ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+    }
     if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
       throw new ForbiddenException('Cannot modify this order status');
     }
@@ -338,8 +347,11 @@ export class OrdersController {
   @Post(':id/complete-checkout')
   @UseGuards(AuthGuard)
   async completeCheckoutPost(@Param('id') id: string, @Req() req: any) {
-    const order = await this.ordersService.findOne(id);
     const role = req.user?.role;
+    if (role === 'auditor') {
+      throw new ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+    }
+    const order = await this.ordersService.findOne(id);
     if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
       throw new ForbiddenException('Cannot modify this order');
     }
@@ -349,8 +361,11 @@ export class OrdersController {
   @Patch(':id/complete-checkout')
   @UseGuards(AuthGuard)
   async completeCheckoutPatch(@Param('id') id: string, @Req() req: any) {
-    const order = await this.ordersService.findOne(id);
     const role = req.user?.role;
+    if (role === 'auditor') {
+      throw new ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+    }
+    const order = await this.ordersService.findOne(id);
     if (role !== 'admin' && role !== 'delivery' && role !== 'produccion' && order.user_id !== req.user.id) {
       throw new ForbiddenException('Cannot modify this order');
     }
@@ -360,8 +375,11 @@ export class OrdersController {
   @Patch(':id')
   @UseGuards(AuthGuard)
   async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
-    const order = await this.ordersService.findOne(id);
     const role = req.user?.role;
+    if (role === 'auditor') {
+      throw new ForbiddenException('Auditor role is read-only (SoD). Mutations are strictly forbidden.');
+    }
+    const order = await this.ordersService.findOne(id);
     if (role !== 'admin' && role !== 'produccion' && order.user_id !== req.user.id) {
       throw new ForbiddenException('Cannot modify this order');
     }

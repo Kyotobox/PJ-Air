@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3, MapPin, MessageSquare, Sparkles, Calendar, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, ChevronLeft, ChevronRight, BarChart3, MapPin, MessageSquare, Sparkles, Calendar, ShieldCheck, Tag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -14,12 +14,15 @@ export default function AdminSidebar() {
     const { t, locale } = useLanguage();
     const [collapsed, setCollapsed] = useState(false);
 
+    const userRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
+    const isAuditor = userRole === 'auditor';
+
     useEffect(() => {
         if (!isLoading) {
             const localSession = localStorage.getItem('local_session');
             if (!user && !localSession) {
                 router.push('/auth/login');
-            } else if (profile && profile.role !== 'admin') {
+            } else if (profile && profile.role !== 'admin' && profile.role !== 'auditor') {
                 router.push('/');
             }
         }
@@ -41,6 +44,15 @@ export default function AdminSidebar() {
         { name: locale === 'en' ? 'Audit Trail' : 'Bitácora Forense', icon: ShieldCheck, href: '/admin/audit-logs' },
         { name: t.adminSidebar.settings,    icon: Settings,         href: '/admin/settings' },
     ];
+
+    // Enlaces exclusivos para rol auditor (Read-Only SoD)
+    const AUDITOR_MENU_ITEMS = [
+        { name: '📊 Facturación y Ventas', icon: ShoppingBag, href: '/admin/orders' },
+        { name: '📈 Reportes Fiscales', icon: BarChart3, href: '/admin/reports' },
+        { name: '🏷️ Libro de Store Credit', icon: Tag, href: '/admin/finance' },
+    ];
+
+    const navItems = isAuditor ? AUDITOR_MENU_ITEMS : MENU_ITEMS;
 
     const handleLogout = async () => {
         await signOut();
@@ -75,11 +87,28 @@ export default function AdminSidebar() {
                 </button>
             </div>
 
+            {/* Insignia de perfil para rol Auditor */}
+            {isAuditor && (
+                <div
+                    data-testid="auditor-profile-badge"
+                    className={`mx-3 my-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}
+                    title="🛡️ Auditor Contable / Finanzas"
+                >
+                    {!collapsed ? (
+                        <span className="text-xs font-bold tracking-tight truncate">
+                            🛡️ Auditor Contable / Finanzas
+                        </span>
+                    ) : (
+                        <span className="text-base leading-none" title="🛡️ Auditor Contable / Finanzas">🛡️</span>
+                    )}
+                </div>
+            )}
+
             {/* Nav */}
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                {MENU_ITEMS.map(item => {
+                {navItems.map(item => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href;
+                    const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
                     return (
                         <Link
                             key={item.href}

@@ -40,7 +40,26 @@ export function middleware(request: NextRequest) {
 
   const role = jwtPayload?.role || cookieRole || 'client';
 
-  // Role-based access control
+  // Role-based access control para 'auditor'
+  if (role === 'auditor') {
+    // Rutas permitidas: /admin/orders (modo solo lectura contable), /admin/reports, /admin/finance
+    const isAllowedAuditorPath =
+      pathname.startsWith('/admin/orders') ||
+      pathname.startsWith('/admin/reports') ||
+      pathname.startsWith('/admin/finance');
+
+    // Rutas terminantemente bloqueadas (/produccion/*, /delivery/*, /admin/zones, /admin/banners, /admin/settings, etc.)
+    if (!isAllowedAuditorPath) {
+      const redirectUrl = new URL('/admin/orders', request.url);
+      redirectUrl.searchParams.set('notice', 'unauthorized_auditor_route');
+      redirectUrl.searchParams.set('warning', 'Acceso no autorizado para el perfil de auditor.');
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    return NextResponse.next();
+  }
+
+  // Role-based access control para resto de roles
   if (pathname.startsWith('/admin')) {
     if (role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url));

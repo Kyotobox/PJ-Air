@@ -15,7 +15,7 @@ let ResourceOwnershipGuard = class ResourceOwnershipGuard {
         if (!user) {
             throw new common_1.ForbiddenException('User context missing');
         }
-        if (user.role === 'admin') {
+        if (user.role === 'admin' || (user.role === 'auditor' && (request.method || 'GET').toUpperCase() === 'GET')) {
             return true;
         }
         if (request.params && request.params.userId) {
