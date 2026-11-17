@@ -108,6 +108,10 @@ if (isDryRun || (!sshPassword && !sshKeyPath)) {
         console.log(`  ${idx + 1}. ${cmd}`);
     });
     console.log('\n[PASS] Certificación de seguridad completada. Aislamiento de producción garantizado.');
+    if (isDryRun) {
+        console.log('\n[INFO] Simulación completada (Dry-Run). Despliegue remoto no ejecutado.');
+        process.exit(0);
+    }
     if (!sshPassword && !sshKeyPath) {
         console.log('\n[INFO] Para ejecutar remotamente, suministra REMOTE_SSH_PASSWORD o REMOTE_SSH_KEY_PATH.');
         process.exit(0);
