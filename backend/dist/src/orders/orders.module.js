@@ -11,10 +11,13 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const orders_service_1 = require("./orders.service");
 const orders_controller_1 = require("./orders.controller");
+const delivery_incidents_service_1 = require("./delivery-incidents.service");
+const delivery_incidents_controller_1 = require("./delivery-incidents.controller");
 const excel_service_1 = require("./excel.service");
 const fee_calculator_service_1 = require("./fee-calculator.service");
 const order_entity_1 = require("./order.entity");
 const order_item_entity_1 = require("./order-item.entity");
+const delivery_incident_entity_1 = require("./entities/delivery-incident.entity");
 const user_entity_1 = require("../users/user.entity");
 const product_entity_1 = require("../products/product.entity");
 const address_entity_1 = require("../addresses/address.entity");
@@ -32,7 +35,7 @@ exports.OrdersModule = OrdersModule;
 exports.OrdersModule = OrdersModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, order_item_entity_1.OrderItem, user_entity_1.User, product_entity_1.Product, address_entity_1.Address]),
+            typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, order_item_entity_1.OrderItem, user_entity_1.User, product_entity_1.Product, address_entity_1.Address, delivery_incident_entity_1.DeliveryIncident]),
             mail_module_1.MailModule,
             zones_module_1.ZonesModule,
             credit_module_1.CreditModule,
@@ -42,9 +45,9 @@ exports.OrdersModule = OrdersModule = __decorate([
             (0, common_1.forwardRef)(() => payments_module_1.PaymentsModule),
             (0, common_1.forwardRef)(() => addresses_module_1.AddressesModule),
         ],
-        providers: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService],
-        controllers: [orders_controller_1.OrdersController],
-        exports: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService],
+        providers: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService, delivery_incidents_service_1.DeliveryIncidentsService],
+        controllers: [delivery_incidents_controller_1.DeliveryIncidentsController, orders_controller_1.OrdersController],
+        exports: [orders_service_1.OrdersService, excel_service_1.ExcelService, fee_calculator_service_1.FeeCalculatorService, delivery_incidents_service_1.DeliveryIncidentsService],
     })
 ], OrdersModule);
 //# sourceMappingURL=orders.module.js.map

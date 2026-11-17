@@ -2,10 +2,13 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
+import { DeliveryIncidentsService } from './delivery-incidents.service';
+import { DeliveryIncidentsController } from './delivery-incidents.controller';
 import { ExcelService } from './excel.service';
 import { FeeCalculatorService } from './fee-calculator.service';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
+import { DeliveryIncident } from './entities/delivery-incident.entity';
 import { User } from '../users/user.entity';
 import { Product } from '../products/product.entity';
 import { Address } from '../addresses/address.entity';
@@ -20,7 +23,7 @@ import { AdminActionsModule } from '../admin-actions/admin-actions.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, User, Product, Address]),
+    TypeOrmModule.forFeature([Order, OrderItem, User, Product, Address, DeliveryIncident]),
     MailModule,
     ZonesModule,
     CreditModule,
@@ -30,9 +33,9 @@ import { AdminActionsModule } from '../admin-actions/admin-actions.module';
     forwardRef(() => PaymentsModule),
     forwardRef(() => AddressesModule),
   ],
-  providers: [OrdersService, ExcelService, FeeCalculatorService],
-  controllers: [OrdersController],
-  exports: [OrdersService, ExcelService, FeeCalculatorService],
+  providers: [OrdersService, ExcelService, FeeCalculatorService, DeliveryIncidentsService],
+  controllers: [DeliveryIncidentsController, OrdersController],
+  exports: [OrdersService, ExcelService, FeeCalculatorService, DeliveryIncidentsService],
 })
 export class OrdersModule {}
 

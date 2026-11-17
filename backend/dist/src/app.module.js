@@ -51,6 +51,7 @@ const feedback_entity_1 = require("./feedback/feedback.entity");
 const banner_entity_1 = require("./banners/banner.entity");
 const address_geocache_entity_1 = require("./addresses/address-geocache.entity");
 const admin_audit_log_entity_1 = require("./admin-actions/admin-audit-log.entity");
+const delivery_incident_entity_1 = require("./orders/entities/delivery-incident.entity");
 let AppModule = AppModule_1 = class AppModule {
     dataSource;
     logger = new common_1.Logger(AppModule_1.name);
@@ -332,6 +333,27 @@ let AppModule = AppModule_1 = class AppModule {
             if (!auditColNames.includes('actor_role')) {
                 await qr.query(`ALTER TABLE admin_audit_logs ADD COLUMN actor_role VARCHAR(20) DEFAULT 'admin';`);
             }
+            await qr.query(`
+        CREATE TABLE IF NOT EXISTS delivery_incidents (
+          id VARCHAR PRIMARY KEY NOT NULL,
+          order_id VARCHAR NOT NULL,
+          user_id VARCHAR NOT NULL,
+          product_id INTEGER NOT NULL,
+          quantity INTEGER NOT NULL,
+          reason_category VARCHAR(50) NOT NULL,
+          description TEXT,
+          photo_url VARCHAR,
+          amount DECIMAL(10,2) NOT NULL,
+          voucher_code VARCHAR(50) NOT NULL UNIQUE,
+          status VARCHAR(30) NOT NULL DEFAULT 'pending_review',
+          reviewed_by VARCHAR,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+            await qr.query(`CREATE INDEX IF NOT EXISTS idx_delivery_incidents_order_id ON delivery_incidents(order_id);`);
+            await qr.query(`CREATE INDEX IF NOT EXISTS idx_delivery_incidents_user_id ON delivery_incidents(user_id);`);
+            await qr.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_delivery_incidents_voucher_code ON delivery_incidents(voucher_code);`);
             await qr.release();
             this.logger.log('Schema verification completed successfully.');
         }
@@ -347,7 +369,7 @@ exports.AppModule = AppModule = AppModule_1 = __decorate([
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'sqlite',
                 database: config_1.DATABASE_PATH,
-                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, address_geocache_entity_1.AddressGeocache, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment, feedback_entity_1.Feedback, banner_entity_1.Banner, admin_audit_log_entity_1.AdminAuditLog],
+                entities: [product_entity_1.Product, category_entity_1.Category, user_entity_1.User, profile_entity_1.Profile, address_entity_1.Address, address_geocache_entity_1.AddressGeocache, order_entity_1.Order, order_item_entity_1.OrderItem, product_discount_entity_1.ProductDiscount, system_config_entity_1.SystemConfig, delivery_zone_entity_1.DeliveryZone, check_payment_entity_1.CheckPayment, feedback_entity_1.Feedback, banner_entity_1.Banner, admin_audit_log_entity_1.AdminAuditLog, delivery_incident_entity_1.DeliveryIncident],
                 synchronize: config_1.NODE_ENV !== 'production',
                 logging: false,
             }),

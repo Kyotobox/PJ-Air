@@ -109,7 +109,7 @@
         {
           "id": "TASK-96-01",
           "title": "Modelo de datos TypeORM, DDL y API para incidencias de entrega (delivery_incidents) y vouchers de Store Credit con prefijo SC-YYYY-XXXX",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "BACKEND/CORE",
           "veracity_hash": null
         },
