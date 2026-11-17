@@ -4,7 +4,7 @@
   "kernel_version": "5.4.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S96",
-  "current_task": "TASK-96-03",
+  "current_task": "TASK-96-04",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -196,21 +196,21 @@
       {
         "id": "TASK-96-01",
         "title": "Modelo de datos TypeORM, DDL y API para incidencias de entrega (delivery_incidents) y vouchers de Store Credit con prefijo SC-YYYY-XXXX",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "BACKEND/CORE",
         "veracity_hash": null
       },
       {
         "id": "TASK-96-02",
         "title": "Módulo de autoservicio B2B en /orders/[id] para reporte de incidencias con selector de productos, evidencia fotográfica y ventana 10:00 AM",
-        "status": "TODO",
+        "status": "DONE",
         "type": "FRONTEND/CLIENT",
         "veracity_hash": null
       },
       {
         "id": "TASK-96-03",
         "title": "Panel de gestión en /admin/orders y /admin/clients para revisión de fotos, aprobación y acreditación atómica a user.credit_balance",
-        "status": "TODO",
+        "status": "DONE",
         "type": "FRONTEND/ADMIN",
         "veracity_hash": null
       },

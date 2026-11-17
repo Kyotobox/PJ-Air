@@ -8,11 +8,12 @@ import {
     CheckCircle2, X, MapPin, ShoppingBag, ChevronRight, Clock, Edit, Trash2,
     ChevronLeft, ListFilter, Percent, Tag, DollarSign, CreditCard, ShieldCheck, ShieldAlert,
     ExternalLink, FileText, Activity, TrendingUp, Sparkles, AlertTriangle, Key, Truck, Heart, Calendar,
-    Camera, Building2, Navigation, Snowflake
+    Camera, Building2, Navigation, Snowflake, History, Plus
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { ST120AuditModal } from '@/components/admin/ST120AuditModal';
+import StoreCreditModal from '@/components/modals/StoreCreditModal';
 
 interface Address { 
     id: string; 
@@ -219,6 +220,25 @@ export default function AdminClientsPage() {
     const [clientAuditLogs, setClientAuditLogs] = useState<any[]>([]);
     const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
 
+    // Store Credit & Incidents State (TASK-96-03)
+    const [storeCreditModalOpen, setStoreCreditModalOpen] = useState(false);
+    const [clientIncidents, setClientIncidents] = useState<any[]>([]);
+    const [loadingClientIncidents, setLoadingClientIncidents] = useState(false);
+    const [selectedIncidentForReview, setSelectedIncidentForReview] = useState<any | null>(null);
+
+    const fetchClientIncidents = async (clientId: string) => {
+        try {
+            setLoadingClientIncidents(true);
+            const data = await api.get(`/orders/incidents/user/${clientId}`) as any[];
+            setClientIncidents(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.warn('Could not fetch client incidents directly:', err);
+            setClientIncidents([]);
+        } finally {
+            setLoadingClientIncidents(false);
+        }
+    };
+
     // TASK-65-05: Selected Client Primary Address, Facade Photo & Google Maps URL
     const selectedUserPrimaryAddress = useMemo(() => {
         if (!selectedUser) return null;
@@ -379,6 +399,9 @@ export default function AdminClientsPage() {
             } finally {
                 setLoadingAuditLogs(false);
             }
+
+            // Get store credit incidents for client (TASK-96-03)
+            fetchClientIncidents(detail.id);
         } catch (err) {
             console.error("Error loading user details", err);
         } finally {
@@ -960,6 +983,16 @@ export default function AdminClientsPage() {
                                             {u.free_delivery_enabled && (
                                                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-teal-100 text-teal-800 border border-teal-200" title="Flete Gratis Permanente">
                                                     Flete Gratis
+                                                </span>
+                                            )}
+                                            {Number(u.credit_balance || 0) > 0 && (
+                                                <span
+                                                    data-testid={`client-store-credit-badge-${u.id}`}
+                                                    className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1"
+                                                    title="Saldo a Favor (Store Credit) disponible"
+                                                >
+                                                    <span>SC:</span>
+                                                    <span>${Number(u.credit_balance).toFixed(2)}</span>
                                                 </span>
                                             )}
                                         </div>
@@ -1812,6 +1845,166 @@ export default function AdminClientsPage() {
                                 </div>
 
                                 <div className="bg-slate-50/80 rounded-[2.5rem] p-8 border border-slate-200 space-y-6">
+                                    {/* Saldo a Favor (Store Credit SC) - TASK-96-03 */}
+                                    <div
+                                        data-testid="client-store-credit-card"
+                                        className="bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/60 rounded-3xl p-6 border-2 border-emerald-200/90 shadow-sm space-y-4"
+                                    >
+                                        <div className="flex items-center justify-between flex-wrap gap-4">
+                                            <div className="flex items-center gap-3.5">
+                                                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-emerald-600/30">
+                                                    <CreditCard size={22} />
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                                                            Billetera No Fiscal
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="text-sm font-black text-slate-900 tracking-tight mt-0.5">
+                                                        Saldo a Favor (Store Credit)
+                                                    </h4>
+                                                    <p className="text-[11px] text-slate-500 font-medium">
+                                                        Saldo compensatorio acreditado aplicable en pedidos futuros
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-right">
+                                                    <span
+                                                        data-testid="client-store-credit-balance-display"
+                                                        className="text-2xl font-black text-emerald-700 tracking-tight font-mono"
+                                                    >
+                                                        ${Number(selectedUser.credit_balance ?? creditSummary?.credit_balance ?? 0).toFixed(2)}
+                                                    </span>
+                                                    <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                                        Saldo a Favor Disponible
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    data-testid="emit-client-store-credit-btn"
+                                                    onClick={() => {
+                                                        setSelectedIncidentForReview(null);
+                                                        setStoreCreditModalOpen(true);
+                                                    }}
+                                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                                >
+                                                    <Plus size={14} /> Emitir Saldo
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Historial de saldos emitidos y consumidos */}
+                                        <div className="pt-4 border-t border-emerald-100/80 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                                                    <History size={13} className="text-emerald-600" />
+                                                    Historial de Saldos Emitidos y Consumidos
+                                                </p>
+                                                {loadingClientIncidents && <Loader2 size={12} className="animate-spin text-emerald-600" />}
+                                            </div>
+
+                                            {(() => {
+                                                const issuedTransactions = clientIncidents.map(inc => ({
+                                                    id: `inc-${inc.id}`,
+                                                    type: 'credit' as const,
+                                                    date: inc.created_at,
+                                                    code: inc.voucher_code || 'SC-EMITIDO',
+                                                    amount: Number(inc.amount) || 0,
+                                                    status: inc.status,
+                                                    description: `${inc.quantity}x ${inc.reason_category}${inc.description ? ` (${inc.description})` : ''}`,
+                                                    raw: inc,
+                                                }));
+
+                                                const consumedTransactions = (selectedUser.orders || [])
+                                                    .filter(o => Number((o as any).store_credit_applied || 0) > 0)
+                                                    .map(o => ({
+                                                        id: `ord-${o.id}`,
+                                                        type: 'debit' as const,
+                                                        date: o.created_at,
+                                                        code: `ORD-${o.id.slice(0, 8)}`,
+                                                        amount: Number((o as any).store_credit_applied) || 0,
+                                                        status: 'applied',
+                                                        description: `Redimido en checkout orden #${o.id.slice(0, 8)}`,
+                                                        raw: null,
+                                                    }));
+
+                                                const allTransactions = [...issuedTransactions, ...consumedTransactions].sort(
+                                                    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+                                                );
+
+                                                if (allTransactions.length === 0) {
+                                                    return (
+                                                        <div className="p-4 bg-white/70 rounded-2xl border border-dashed border-emerald-200 text-center text-xs text-slate-400 font-medium italic">
+                                                            No hay registros de saldos a favor emitidos ni consumidos para este cliente.
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                                        {allTransactions.map(tx => (
+                                                            <div
+                                                                key={tx.id}
+                                                                data-testid={`client-store-credit-tx-${tx.id}`}
+                                                                className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs hover:border-emerald-300 transition-colors"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className={`font-mono text-[11px] font-black px-2 py-0.5 rounded-md border ${
+                                                                        tx.type === 'credit'
+                                                                            ? 'bg-amber-50 text-amber-900 border-amber-200'
+                                                                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                                                                    }`}>
+                                                                        {tx.code}
+                                                                    </span>
+                                                                    <div>
+                                                                        <p className="font-bold text-slate-800">
+                                                                            {tx.description}
+                                                                        </p>
+                                                                        <p className="text-[10px] text-slate-400 font-medium">
+                                                                            {new Date(tx.date).toLocaleDateString()} {new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className={`font-mono font-black text-sm ${
+                                                                        tx.type === 'credit' ? 'text-emerald-700' : 'text-slate-700'
+                                                                    }`}>
+                                                                        {tx.type === 'credit' ? `+$${tx.amount.toFixed(2)}` : `-$${tx.amount.toFixed(2)}`}
+                                                                    </span>
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                                        tx.type === 'debit'
+                                                                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                                                            : tx.status === 'approved'
+                                                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                                                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                                                    }`}>
+                                                                        {tx.type === 'debit' ? 'Consumido' : tx.status === 'approved' ? 'Acreditado' : 'Pendiente'}
+                                                                    </span>
+                                                                    {tx.raw && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setSelectedIncidentForReview(tx.raw);
+                                                                                setStoreCreditModalOpen(true);
+                                                                            }}
+                                                                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold cursor-pointer"
+                                                                        >
+                                                                            Ver
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+
                                     {/* Account Type Selector */}
                                     <div>
                                         <label className="text-[10px] font-black text-slate-400 uppercase mb-3 block">
@@ -2720,6 +2913,28 @@ export default function AdminClientsPage() {
                             } : null);
                         }
                         showToast(`ST-120 ${newStatus === 'APPROVED' ? 'Aprobado (0% Exento)' : newStatus === 'PENDING' ? 'Documento Actualizado (Pendiente)' : 'Rechazado'}`);
+                    }}
+                />
+            )}
+
+            {/* Store Credit Modal (TASK-96-03) */}
+            {storeCreditModalOpen && selectedUser && (
+                <StoreCreditModal
+                    isOpen={storeCreditModalOpen}
+                    onClose={() => {
+                        setStoreCreditModalOpen(false);
+                        setSelectedIncidentForReview(null);
+                    }}
+                    incident={selectedIncidentForReview}
+                    userId={selectedUser.id}
+                    userName={selectedUser.profile?.nickname || selectedUser.profile?.full_name || selectedUser.email}
+                    currentClientBalance={Number(selectedUser.credit_balance || 0)}
+                    onSuccess={({ amountCredited, message, newBalance }) => {
+                        showToast(message || `Saldo a favor acreditado ($${amountCredited.toFixed(2)})`);
+                        const updatedBal = newBalance !== undefined ? newBalance : ((Number(selectedUser.credit_balance) || 0) + amountCredited);
+                        setSelectedUser(prev => prev ? { ...prev, credit_balance: updatedBal } : null);
+                        setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, credit_balance: updatedBal } : u));
+                        fetchClientIncidents(selectedUser.id);
                     }}
                 />
             )}

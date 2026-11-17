@@ -7,13 +7,14 @@ import {
     CheckCircle2, X, User, ChevronRight, Loader2, Save,
     AlertCircle, MapPin, Phone, MessageSquare, History,
     Plus, Minus, Trash2, CalendarDays, Printer, RefreshCcw, ExternalLink,
-    Building2, Hash, DollarSign, Receipt, StickyNote
+    Building2, Hash, DollarSign, Receipt, StickyNote, CreditCard, Camera, ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { calculateOrderFinancials } from '@/lib/order-finance';
 import PrintKitchenModal from '@/components/modals/PrintKitchenModal';
+import StoreCreditModal from '@/components/modals/StoreCreditModal';
 import { getClientBusinessName, getClientContactName } from '@/lib/client-identity';
 
 interface OrderItem {
@@ -131,6 +132,25 @@ export default function AdminOrdersPage() {
     // Print Kitchen Modal State (TASK-59-01)
     const [printKitchenModalOpen, setPrintKitchenModalOpen] = useState(false);
     const [orderToPrintKitchen, setOrderToPrintKitchen] = useState<Order | null>(null);
+
+    // Store Credit & Incidents State (TASK-96-03)
+    const [storeCreditModalOpen, setStoreCreditModalOpen] = useState(false);
+    const [orderIncidents, setOrderIncidents] = useState<any[]>([]);
+    const [loadingIncidents, setLoadingIncidents] = useState(false);
+    const [selectedIncidentForReview, setSelectedIncidentForReview] = useState<any | null>(null);
+
+    const fetchOrderIncidents = async (orderId: string) => {
+        try {
+            setLoadingIncidents(true);
+            const data = await api.get(`/orders/${orderId}/incidents`) as any[];
+            setOrderIncidents(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.warn('Error fetching order incidents:', err);
+            setOrderIncidents([]);
+        } finally {
+            setLoadingIncidents(false);
+        }
+    };
 
     // Refund Modal State
     const [refundModalOpen, setRefundModalOpen] = useState(false);
@@ -385,6 +405,7 @@ export default function AdminOrdersPage() {
         setOrderNotes(order.notes || '');
         setMotivo('');
         fetchDeliveryUsers();
+        fetchOrderIncidents(order.id);
     };
 
     const toggleEditMode = () => {
@@ -1487,14 +1508,17 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 <p className="font-mono text-xs text-slate-400 font-bold tracking-widest">TRANSMISIÓN: #{selectedOrder.id}</p>
                             </div>
                             <div className="flex items-center gap-3">
-                                {(selectedOrder.payment_status === 'paid' || selectedOrder.payment_status === 'partially_refunded') && maxRefundable > 0 && (
-                                    <button
-                                        onClick={handleOpenRefundModal}
-                                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all active:scale-95"
-                                    >
-                                        <RefreshCcw size={14} /> Emitir Reembolso
-                                    </button>
-                                )}
+                                <button
+                                    data-testid="emit-store-credit-btn"
+                                    onClick={() => {
+                                        setSelectedIncidentForReview(null);
+                                        setStoreCreditModalOpen(true);
+                                    }}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                    title="Emitir Saldo a Favor compensatorio (Store Credit) al cliente"
+                                >
+                                    <CreditCard size={14} /> Emitir Saldo a Favor (Store Credit)
+                                </button>
                                 <Link
                                     href={`/admin/orders/${selectedOrder.id}`}
                                     className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
@@ -1845,6 +1869,157 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     </p>
                                 </section>
                             )}
+
+                            {/* Incidencias de Entrega y Vouchers de Store Credit SC (TASK-96-03) */}
+                            <section
+                                data-testid="admin-order-incidents-section"
+                                className="bg-gradient-to-br from-amber-50/70 via-white to-orange-50/40 rounded-[2rem] p-6 border-2 border-amber-200/80 shadow-sm space-y-4"
+                            >
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-md shadow-amber-500/30">
+                                            <CreditCard size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black text-amber-950 uppercase tracking-wider flex items-center gap-2">
+                                                <span>Incidencias y Saldo a Favor (Store Credit)</span>
+                                                {orderIncidents.length > 0 && (
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-900">
+                                                        {orderIncidents.length}
+                                                    </span>
+                                                )}
+                                            </h3>
+                                            <p className="text-xs text-amber-800 font-medium">
+                                                Compensación comercial no fiscal acreditada atómicamente a la cuenta del cliente
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        data-testid="add-incident-btn"
+                                        onClick={() => {
+                                            setSelectedIncidentForReview(null);
+                                            setStoreCreditModalOpen(true);
+                                        }}
+                                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                                    >
+                                        <Plus size={13} /> Emitir Saldo
+                                    </button>
+                                </div>
+
+                                {loadingIncidents ? (
+                                    <div className="py-6 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                                        <Loader2 size={16} className="animate-spin text-amber-600" />
+                                        <span>Cargando incidencias de la orden...</span>
+                                    </div>
+                                ) : orderIncidents.length === 0 ? (
+                                    <div className="p-4 bg-white/80 rounded-2xl border border-dashed border-amber-200 text-center text-xs text-slate-500 font-medium">
+                                        No hay incidencias registradas en este pedido. Puede emitir un saldo compensatorio con el botón superior.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {orderIncidents.map((inc) => {
+                                            const itemMatch = (selectedOrder.items || []).find(
+                                                (it) => Number(it.product_id) === Number(inc.product_id)
+                                            );
+                                            const prodName = itemMatch?.product?.name || `Producto #${inc.product_id}`;
+                                            const isApproved = inc.status === 'approved';
+                                            const photoSrc = inc.photo_url
+                                                ? (inc.photo_url.startsWith('http') || inc.photo_url.startsWith('data:')
+                                                    ? inc.photo_url
+                                                    : `${API_URL || ''}${inc.photo_url}`)
+                                                : null;
+
+                                            return (
+                                                <div
+                                                    key={inc.id}
+                                                    data-testid={`admin-incident-card-${inc.id}`}
+                                                    className="p-4 bg-white rounded-2xl border border-amber-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+                                                >
+                                                    <div className="flex items-start gap-3.5">
+                                                        {photoSrc ? (
+                                                            <div className="relative group shrink-0">
+                                                                <img
+                                                                    src={photoSrc}
+                                                                    alt="Evidencia incidencia"
+                                                                    className="w-14 h-14 object-cover rounded-xl border border-amber-200 shadow-xs"
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center text-white">
+                                                                    <Camera size={14} />
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="w-14 h-14 bg-amber-100/70 text-amber-700 rounded-xl flex items-center justify-center shrink-0 border border-amber-200">
+                                                                <CreditCard size={20} />
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span
+                                                                    data-testid={`incident-voucher-code-${inc.id}`}
+                                                                    className="font-mono text-xs font-black text-amber-950 px-2.5 py-0.5 bg-amber-100 rounded-lg border border-amber-300 shadow-2xs tracking-wider"
+                                                                >
+                                                                    {inc.voucher_code || 'SC-PENDING'}
+                                                                </span>
+                                                                <span
+                                                                    className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                                        isApproved
+                                                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                                                            : inc.status === 'rejected'
+                                                                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                                                            : 'bg-amber-100 text-amber-900 border border-amber-300'
+                                                                    }`}
+                                                                >
+                                                                    {isApproved
+                                                                        ? '✓ Acreditado al Saldo'
+                                                                        : inc.status === 'rejected'
+                                                                        ? 'Rechazado'
+                                                                        : '⚠️ Pendiente de Aprobación'}
+                                                                </span>
+                                                            </div>
+                                                            <p className="font-bold text-slate-800 text-xs mt-1">
+                                                                {inc.quantity}x {prodName} • <span className="text-amber-800 font-semibold">{inc.reason_category}</span>
+                                                            </p>
+                                                            {inc.description && (
+                                                                <p className="text-[11px] text-slate-500 italic mt-0.5">
+                                                                    &ldquo;{inc.description}&rdquo;
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                                                        <div className="text-right">
+                                                            <span className="text-base font-black text-emerald-700 font-mono">
+                                                                +${Number(inc.amount).toFixed(2)}
+                                                            </span>
+                                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                                                Store Credit
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            data-testid={`review-incident-btn-${inc.id}`}
+                                                            onClick={() => {
+                                                                setSelectedIncidentForReview(inc);
+                                                                setStoreCreditModalOpen(true);
+                                                            }}
+                                                            className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                                                                isApproved
+                                                                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                                                            }`}
+                                                        >
+                                                            {isApproved ? 'Ver Detalle' : 'Revisar y Aprobar'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </section>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Customer Insight */}
@@ -2358,6 +2533,40 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                 onClose={() => setPrintKitchenModalOpen(false)}
                 order={orderToPrintKitchen}
             />
+
+            {/* Store Credit Issuance & Review Modal (TASK-96-03) */}
+            {storeCreditModalOpen && selectedOrder && (
+                <StoreCreditModal
+                    isOpen={storeCreditModalOpen}
+                    onClose={() => {
+                        setStoreCreditModalOpen(false);
+                        setSelectedIncidentForReview(null);
+                    }}
+                    incident={selectedIncidentForReview}
+                    orderId={selectedOrder.id}
+                    orderNumber={selectedOrder.invoice_number || selectedOrder.id}
+                    userId={(selectedOrder as any).user_id || selectedOrder.user?.email}
+                    userName={selectedOrder.user?.profile?.nickname || selectedOrder.user?.profile?.full_name || selectedOrder.user?.email}
+                    orderTotal={Number(selectedOrder.total) || 0}
+                    alreadyCreditedAmount={orderIncidents.reduce((sum, inc) => inc.status === 'approved' ? sum + Number(inc.amount || 0) : sum, 0)}
+                    items={(selectedOrder.items || []).map(i => ({
+                        id: i.id,
+                        product_id: Number(i.product_id),
+                        quantity: i.quantity,
+                        price_at_time: i.price_at_time,
+                        product: i.product ? {
+                            id: Number(i.product_id || 0),
+                            name: i.product.name,
+                            image: i.product.image,
+                            price: i.price_at_time,
+                        } : undefined,
+                    }))}
+                    onSuccess={({ amountCredited, message }) => {
+                        showToast(message || `Saldo a favor acreditado con éxito ($${amountCredited.toFixed(2)})`);
+                        fetchOrderIncidents(selectedOrder.id);
+                    }}
+                />
+            )}
 
             {/* Notification Toast */}
             {toast && (

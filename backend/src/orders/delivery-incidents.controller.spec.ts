@@ -77,6 +77,18 @@ describe('DeliveryIncidentsController', () => {
     });
   });
 
+  describe('getIncidentsByUser (GET /orders/incidents/user/:userId)', () => {
+    it('should delegate to service.findByUser with userId', async () => {
+      const expectedIncidents = [{ id: 'incident-1', user_id: 'user-123' }];
+      service.findByUser.mockResolvedValue(expectedIncidents as any);
+
+      const result = await controller.getIncidentsByUser('user-123');
+
+      expect(service.findByUser).toHaveBeenCalledWith('user-123');
+      expect(result).toBe(expectedIncidents);
+    });
+  });
+
   describe('getIncidentsByOrder (GET /orders/:id/incidents)', () => {
     it('should delegate to service.findByOrder with orderId and user context', async () => {
       const req = { user: { id: 'client-1', role: 'client' } };

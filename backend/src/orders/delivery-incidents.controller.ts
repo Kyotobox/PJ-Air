@@ -54,6 +54,19 @@ export class DeliveryIncidentsController {
   }
 
   /**
+   * GET /orders/incidents/user/:userId
+   * Consulta el historial de incidencias de un cliente.
+   */
+  @Get('incidents/user/:userId')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
+  async getIncidentsByUser(
+    @Param('userId') userId: string,
+  ) {
+    return this.deliveryIncidentsService.findByUser(userId);
+  }
+
+  /**
    * GET /orders/:id/incidents
    * Consulta las incidencias de una orden.
    */
