@@ -21,5 +21,5 @@
   "transcript_status": "RESOLVED",
   "transcript_degraded": false,
   "transcript_path": "/home/opc/.gemini/antigravity-cli/brain/26ab8040-5532-47a6-b00c-795b226e841b/.system_generated/logs/transcript.jsonl",
-  "peak_depth": 13.684251666666668
+  "peak_depth": 100.0
 }
