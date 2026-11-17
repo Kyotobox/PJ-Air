@@ -7,6 +7,24 @@ import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, C
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
+// Enlaces exclusivos para rol auditor (Read-Only SoD)
+export const AUDITOR_MENU_ITEMS = [
+    { name: '📊 Facturación y Ventas', icon: ShoppingBag, href: '/admin/orders' },
+    { name: '📈 Reportes Fiscales', icon: BarChart3, href: '/admin/reports' },
+    { name: '🏷️ Libro de Store Credit', icon: Tag, href: '/admin/finance' },
+];
+
+/**
+ * Filtra los enlaces de navegación del sidebar según el rol del usuario (§6, §48).
+ * Para el rol auditor, restringe la visualización exclusivamente a módulos contables/financieros.
+ */
+export function filterSidebarNavItems<T = any>(role: string | undefined | null, fullMenuItems: T[]): T[] {
+    if (role === 'auditor') {
+        return AUDITOR_MENU_ITEMS as unknown as T[];
+    }
+    return fullMenuItems;
+}
+
 export default function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
@@ -46,13 +64,7 @@ export default function AdminSidebar() {
     ];
 
     // Enlaces exclusivos para rol auditor (Read-Only SoD)
-    const AUDITOR_MENU_ITEMS = [
-        { name: '📊 Facturación y Ventas', icon: ShoppingBag, href: '/admin/orders' },
-        { name: '📈 Reportes Fiscales', icon: BarChart3, href: '/admin/reports' },
-        { name: '🏷️ Libro de Store Credit', icon: Tag, href: '/admin/finance' },
-    ];
-
-    const navItems = isAuditor ? AUDITOR_MENU_ITEMS : MENU_ITEMS;
+    const navItems = filterSidebarNavItems(userRole, MENU_ITEMS);
 
     const handleLogout = async () => {
         await signOut();

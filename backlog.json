@@ -4,7 +4,7 @@
   "kernel_version": "5.4.0",
   "status": "IN_PROGRESS",
   "current_sprint": "S97",
-  "current_task": "TASK-97-04",
+  "current_task": "TASK-97-05",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -104,7 +104,7 @@
     {
       "id": "S97",
       "title": "Sprint S97: Rol de Auditor Contable y Financiero (RBAC Read-Only SoD) con Aislamiento Operativo, Libro de Ventas y Conciliación Fiscal",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-97-01",
@@ -123,21 +123,21 @@
         {
           "id": "TASK-97-03",
           "title": "Modo Read-Only Contable en panel de órdenes: ocultamiento de botones de acción y visualización de desglose fiscal (Sales Tax NY), Zelle, cheques y Store Credit",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/FINANCE-UI",
           "veracity_hash": null
         },
         {
           "id": "TASK-97-04",
           "title": "Motor de exportación contable masiva en Excel/CSV (Libro de Ventas y Cobranzas) con filtros de rango de fechas para conciliación fiscal",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/EXCEL-FINANCE",
           "veracity_hash": null
         },
         {
           "id": "TASK-97-05",
           "title": "Suite de pruebas automatizadas con Sad Paths (§6) para verificar rechazo 403 Forbidden ante cualquier mutación del rol auditor y despliegue certificado",
-          "status": "TODO",
+          "status": "DONE",
           "type": "TEST/DEVOPS",
           "veracity_hash": null
         }
@@ -149,7 +149,7 @@
   "active_sprint": {
     "id": "S97",
     "title": "Sprint S97: Rol de Auditor Contable y Financiero (RBAC Read-Only SoD) con Aislamiento Operativo, Libro de Ventas y Conciliación Fiscal",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-97-01",
@@ -182,7 +182,7 @@
       {
         "id": "TASK-97-05",
         "title": "Suite de pruebas automatizadas con Sad Paths (§6) para verificar rechazo 403 Forbidden ante cualquier mutación del rol auditor y despliegue certificado",
-        "status": "TODO",
+        "status": "DONE",
         "type": "TEST/DEVOPS",
         "veracity_hash": null
       }
