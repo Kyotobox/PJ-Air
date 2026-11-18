@@ -6,4 +6,4 @@
 - [x] **TASK-98-02** [TASK] Integración en Navbar.tsx (Header superior escritorio y móvil + drawer) con badge de llamada click-to-call visible
 - [x] **TASK-98-03** [TASK] Presencia visible en Landing Page (page.tsx), Portales Externos y páginas legales (terms/privacy)
 - [x] **TASK-98-04** [TASK] Suite de pruebas automatizadas con Sad Paths (§6) validando presencia exacta de texto, protocolo tel y accesibilidad
-- [/] **TASK-98-05** [TASK] Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)
+- [x] **TASK-98-05** [TASK] Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)

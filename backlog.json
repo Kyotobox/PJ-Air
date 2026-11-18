@@ -146,7 +146,7 @@
     {
       "id": "S98",
       "title": "Sprint S98: Cumplimiento de Extensiones Google Ads: Exposición de Línea Mayorista B2B (Header, Footer Global y Links Click-to-Call)",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-98-01",
@@ -179,7 +179,7 @@
         {
           "id": "TASK-98-05",
           "title": "Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)",
-          "status": "IN_PROGRESS",
+          "status": "DONE",
           "type": "DEVOPS/DEPLOY",
           "veracity_hash": null
         }
@@ -191,7 +191,7 @@
   "active_sprint": {
     "id": "S98",
     "title": "Sprint S98: Cumplimiento de Extensiones Google Ads: Exposición de Línea Mayorista B2B (Header, Footer Global y Links Click-to-Call)",
-    "status": "IN_PROGRESS",
+    "status": "COMPLETED",
     "tasks": [
       {
         "id": "TASK-98-01",
@@ -224,7 +224,7 @@
       {
         "id": "TASK-98-05",
         "title": "Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)",
-        "status": "IN_PROGRESS",
+        "status": "DONE",
         "type": "DEVOPS/DEPLOY",
         "veracity_hash": null
       }
