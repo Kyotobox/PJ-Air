@@ -37,6 +37,7 @@ release/
 bin/*.dll
 
 # Telemetry and Historial rotation
+dropzone/
 vault/runtime/
 vault/graveyard/
 # vault/intel is ALLOWED for system knowledge persistence
