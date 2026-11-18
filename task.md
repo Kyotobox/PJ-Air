@@ -1,9 +1,9 @@
-# SPRINT S97 - Sprint Activo
+# SPRINT S98 - Sprint Activo
 **Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-18
 
-- [x] **TASK-97-01** [TASK] Extensión de RBAC para rol "auditor" en User Entity, TypeORM, RolesGuard y JwtPayload con bloqueo estricto en endpoints mutativos
-- [x] **TASK-97-02** [TASK] Aislamiento de rutas en Next.js middleware y Sidebar: acceso exclusivo a finanzas/reportes con bloqueo de /produccion, /delivery y configuración
-- [x] **TASK-97-03** [TASK] Modo Read-Only Contable en panel de órdenes: ocultamiento de botones de acción y visualización de desglose fiscal (Sales Tax NY), Zelle, cheques y Store Credit
-- [x] **TASK-97-04** [TASK] Motor de exportación contable masiva en Excel/CSV (Libro de Ventas y Cobranzas) con filtros de rango de fechas para conciliación fiscal
-- [x] **TASK-97-05** [TASK] Suite de pruebas automatizadas con Sad Paths (§6) para verificar rechazo 403 Forbidden ante cualquier mutación del rol auditor y despliegue certificado
+- [x] **TASK-98-01** [TASK] Componente canónico Footer.tsx y unificación global con texto visible Wholesale: (347) 761-2687 y tel:+13477612687
+- [x] **TASK-98-02** [TASK] Integración en Navbar.tsx (Header superior escritorio y móvil + drawer) con badge de llamada click-to-call visible
+- [x] **TASK-98-03** [TASK] Presencia visible en Landing Page (page.tsx), Portales Externos y páginas legales (terms/privacy)
+- [x] **TASK-98-04** [TASK] Suite de pruebas automatizadas con Sad Paths (§6) validando presencia exacta de texto, protocolo tel y accesibilidad
+- [/] **TASK-98-05** [TASK] Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)

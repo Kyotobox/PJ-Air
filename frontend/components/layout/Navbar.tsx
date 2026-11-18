@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, ShoppingBag, Plus, LayoutDashboard, Package, Users, ClipboardList, Truck, Map, Clock, FileText, ShieldCheck } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, ShoppingBag, Plus, LayoutDashboard, Package, Users, ClipboardList, Truck, Map, Clock, FileText, ShieldCheck, Phone } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -28,34 +28,55 @@ export default function Navbar() {
                 onClose={() => setShowScheduleModal(false)} 
             />
 
-            <nav className="bg-white/90 backdrop-blur-xl border-b border-border/40 sticky top-0 z-[50]">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12">
-                    <div className="flex justify-between items-center h-20">
-                        <div className="flex items-center gap-8">
-                            {/* Logo */}
-                            <Link href="/" className="flex flex-col group">
-                                <span className="text-2xl font-black tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">Jhoanes</span>
-                                <span className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground mt-0.5">{t.nav.orderSystem}</span>
-                            </Link>
+            <header className="sticky top-0 z-[50]">
+                {/* Top Wholesale Call Line Banner for Google Ads Verification & Direct Dialing */}
+                <div className="bg-[#5B0606] text-white py-1.5 px-4 text-center text-xs font-semibold flex items-center justify-center gap-2 border-b border-[#7A0D0D]/40">
+                    <Phone size={12} className="shrink-0 text-amber-300" />
+                    <span className="opacity-90">{locale === 'en' ? 'Direct Wholesale Line:' : 'Atención Mayorista:'}</span>
+                    <a
+                        href="tel:+13477612687"
+                        className="font-black text-amber-200 hover:text-white underline underline-offset-2 transition-colors inline-flex items-center gap-1"
+                    >
+                        <span>Wholesale: (347) 761-2687</span>
+                    </a>
+                </div>
 
-                            <div className="hidden lg:flex items-center gap-8 ml-8">
-                                <Link href="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">{t.nav.catalog}</Link>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowScheduleModal(true)}
-                                    className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors cursor-pointer"
-                                >
-                                    <Clock size={13} className="text-primary" />
-                                    <span>{locale === 'en' ? 'Baking Schedule' : 'Horarios de Horneado'}</span>
-                                </button>
-                                <Link href="/terms" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">
-                                    {locale === 'en' ? 'Terms' : 'Términos'}
+                <nav className="bg-white/90 backdrop-blur-xl border-b border-border/40">
+                    <div className="max-w-7xl mx-auto px-6 lg:px-12">
+                        <div className="flex justify-between items-center h-20">
+                            <div className="flex items-center gap-8">
+                                {/* Logo */}
+                                <Link href="/" className="flex flex-col group">
+                                    <span className="text-2xl font-black tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">Jhoanes</span>
+                                    <span className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground mt-0.5">{t.nav.orderSystem}</span>
                                 </Link>
-                                <Link href="/privacy" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">
-                                    {locale === 'en' ? 'Privacy' : 'Privacidad'}
-                                </Link>
+
+                                <div className="hidden lg:flex items-center gap-6 ml-8">
+                                    <Link href="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">{t.nav.catalog}</Link>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowScheduleModal(true)}
+                                        className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors cursor-pointer"
+                                    >
+                                        <Clock size={13} className="text-primary" />
+                                        <span>{locale === 'en' ? 'Baking Schedule' : 'Horarios de Horneado'}</span>
+                                    </button>
+                                    <Link href="/terms" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">
+                                        {locale === 'en' ? 'Terms' : 'Términos'}
+                                    </Link>
+                                    <Link href="/privacy" className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/70 hover:text-primary transition-colors">
+                                        {locale === 'en' ? 'Privacy' : 'Privacidad'}
+                                    </Link>
+                                    <a
+                                        href="tel:+13477612687"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white border border-primary/20 text-[10px] font-black uppercase tracking-wider transition-all"
+                                        title="Call Wholesale"
+                                    >
+                                        <Phone size={11} className="shrink-0" />
+                                        <span>Wholesale: (347) 761-2687</span>
+                                    </a>
+                                </div>
                             </div>
-                        </div>
 
                         <div className="flex items-center gap-4">
                             {/* Language Switcher */}
@@ -132,6 +153,7 @@ export default function Navbar() {
                     </div>
                 </div>
             </nav>
+            </header>
 
             {/* Side panel overlay */}
             {isMenuOpen && (
@@ -164,6 +186,20 @@ export default function Navbar() {
                     <div className="px-3 py-2 flex items-center justify-between">
                         <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{t.common.language}</span>
                         <LanguageSwitcher variant="pill" />
+                    </div>
+
+                    {/* Mobile Direct Wholesale Call Line for Google Ads & instant dialing */}
+                    <div className="mx-2 my-2 p-3 rounded-2xl bg-primary/5 border border-primary/15 flex flex-col gap-1">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                            {locale === 'en' ? 'Direct Wholesale Line' : 'Línea Directa Mayorista'}
+                        </span>
+                        <a
+                            href="tel:+13477612687"
+                            className="inline-flex items-center gap-2 text-xs font-black text-primary hover:text-[#5B0606] transition-colors underline underline-offset-2"
+                        >
+                            <Phone size={13} className="shrink-0 text-primary" />
+                            <span>Wholesale: (347) 761-2687</span>
+                        </a>
                     </div>
 
                     {/* Common links */}

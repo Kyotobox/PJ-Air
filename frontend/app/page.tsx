@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import { useCart } from '@/context/CartContext';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
@@ -13,7 +14,7 @@ import {
     ChevronLeft, ChevronRight,
     LogIn, UserPlus, Lock, User as UserIcon, Loader2, Eye, EyeOff, X,
     Clock, Truck, Calendar, Store, Moon, ShieldCheck, CheckCircle2, Award, Building2,
-    Package, FileText
+    Package, FileText, Phone
 } from 'lucide-react';
 import Link from 'next/link';
 import { API_URL } from '@/lib/config';
@@ -975,6 +976,14 @@ export default function Home() {
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
+                            <a
+                                href="tel:+13477612687"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-primary/10 hover:bg-primary hover:text-white text-primary text-[11px] font-black uppercase tracking-wider border border-primary/25 transition-all"
+                                title="Call Wholesale"
+                            >
+                                <Phone size={13} />
+                                <span>Wholesale: (347) 761-2687</span>
+                            </a>
                             <Link
                                 href="/auth/register"
                                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-[11px] font-black uppercase tracking-wider shadow-xs hover:bg-primary/90 transition-all"
@@ -1235,21 +1244,7 @@ export default function Home() {
 
             </main>
 
-            <footer className="mt-16 border-t border-border/60 py-8 text-xs text-muted-foreground bg-white/50 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p>
-                        © {new Date().getFullYear()} Jhoanes Bakery Wholesale. {locale === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
-                    </p>
-                    <div className="flex items-center gap-6 font-bold">
-                        <Link href="/terms" className="hover:text-primary transition-colors">
-                            {locale === 'en' ? 'Commercial Terms' : 'Términos Comerciales'}
-                        </Link>
-                        <Link href="/privacy" className="hover:text-primary transition-colors">
-                            {locale === 'en' ? 'Privacy Policy' : 'Política de Privacidad'}
-                        </Link>
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }

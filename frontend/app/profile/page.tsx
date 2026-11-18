@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import { User, MapPin, Mail, Phone, BadgeCheck, Loader2, Save, Plus, Trash2, CreditCard, Building2, ExternalLink, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
@@ -663,6 +664,8 @@ export default function ProfilePage() {
                 }
                 onVerified={handlePhoneVerifiedAndSave}
             />
+
+            <Footer />
         </div>
     );
 }

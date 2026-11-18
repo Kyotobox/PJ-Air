@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import Link from 'next/link';
 import {
     Package, Truck, CheckCircle2, AlertCircle, Clock, Eye, Loader2,
@@ -1544,6 +1545,8 @@ export default function ClientOrdersPage() {
                     </div>
                 </div>
             )}
+
+            <Footer />
         </div>
     );
 }

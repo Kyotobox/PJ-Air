@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Clock, Mail, MapPin, Sparkles, Lock, ShieldCheck } from 'lucide-react';
+import { Clock, Mail, MapPin, Sparkles, Lock, ShieldCheck, Phone } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
@@ -87,6 +87,15 @@ export default function TemporarilyClosed() {
 
                     <div className="flex items-center gap-3 text-neutral-200 text-sm">
                         <div className="w-8 h-8 rounded-lg bg-amber-400/10 text-amber-400 flex items-center justify-center shrink-0">
+                            <Phone size={16} />
+                        </div>
+                        <a href="tel:+13477612687" className="hover:text-amber-400 font-semibold transition-colors">
+                            Wholesale: (347) 761-2687
+                        </a>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-neutral-200 text-sm">
+                        <div className="w-8 h-8 rounded-lg bg-amber-400/10 text-amber-400 flex items-center justify-center shrink-0">
                             <Mail size={16} />
                         </div>
                         <a href="mailto:pedidos@jhoanes.com" className="hover:text-amber-400 font-semibold transition-colors">
@@ -110,7 +119,14 @@ export default function TemporarilyClosed() {
                 <p>
                     © {new Date().getFullYear()} Jhoanes Bakery. {isEn ? 'All rights reserved.' : 'Todos los derechos reservados.'}
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
+                    <a 
+                        href="tel:+13477612687" 
+                        className="text-amber-400 hover:text-white transition-colors text-[11px] font-bold inline-flex items-center gap-1"
+                    >
+                        <Phone size={12} />
+                        <span>Wholesale: (347) 761-2687</span>
+                    </a>
                     <Link 
                         href="/terms" 
                         className="text-neutral-500 hover:text-neutral-300 transition-colors text-[11px] font-semibold"

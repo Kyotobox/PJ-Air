@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import { api } from '@/lib/api';
 import { FileText, Loader2, ArrowLeft, ShieldCheck } from 'lucide-react';
@@ -90,6 +91,8 @@ export default function TermsPage() {
                     )}
                 </div>
             </main>
+
+            <Footer />
         </div>
     );
 }

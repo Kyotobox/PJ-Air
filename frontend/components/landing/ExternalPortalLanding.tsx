@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LogIn, UserPlus, ShieldCheck, Truck, Sparkles, Building2, Store, Clock, Award, ArrowRight } from 'lucide-react';
+import { LogIn, UserPlus, ShieldCheck, Truck, Sparkles, Building2, Store, Clock, Award, ArrowRight, Phone } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
@@ -43,6 +43,14 @@ export default function ExternalPortalLanding({ onOpenLogin }: ExternalPortalLan
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <a
+                        href="tel:+13477612687"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/30 transition-all"
+                        title="Call Wholesale"
+                    >
+                        <Phone size={13} className="shrink-0 text-amber-400" />
+                        <span>Wholesale: (347) 761-2687</span>
+                    </a>
                     <LanguageSwitcher variant="pill" />
                     <button
                         type="button"
@@ -156,7 +164,14 @@ export default function ExternalPortalLanding({ onOpenLogin }: ExternalPortalLan
                 <p>
                     © {new Date().getFullYear()} Jhoanes Bakery Wholesale. {isEn ? 'All rights reserved.' : 'Todos los derechos reservados.'}
                 </p>
-                <div className="flex items-center gap-6">
+                <div className="flex flex-wrap items-center gap-6">
+                    <a
+                        href="tel:+13477612687"
+                        className="text-amber-400 hover:text-white transition-colors font-bold inline-flex items-center gap-1.5"
+                    >
+                        <Phone size={13} />
+                        <span>Wholesale: (347) 761-2687</span>
+                    </a>
                     <Link href="/terms" className="hover:text-amber-400 transition-colors">
                         {isEn ? 'Commercial Terms' : 'Términos Comerciales'}
                     </Link>

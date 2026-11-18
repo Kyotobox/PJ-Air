@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import {
@@ -509,6 +510,8 @@ export default function PrivacyPage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
