@@ -12,7 +12,7 @@ Adhiere a:
 - Escritura atómica a disco (os.replace via .tmp).
 - Rotación de buffer FIFO (máximo 100 eventos).
 - Validación contra contrato JSON Schema (vault/contracts/dispatch_event.schema.json).
-- Cero Mocks / Librerías puras con graceful degradation.
+- Veracidad Física / Librerías puras con graceful degradation.
 """
 
 import os

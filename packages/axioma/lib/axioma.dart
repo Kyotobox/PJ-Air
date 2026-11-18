@@ -2,6 +2,12 @@
 ///
 /// Fuente Única de Verdad (SSSoT) para los modelos, enums e interfaces
 /// transversales del ecosistema Antigravity y el fundamento de la arquitectura Axioma.
+@Deprecated(
+  'Import granular thematic entry points instead: package:axioma/messaging.dart, '
+  'package:axioma/geo.dart, package:axioma/render.dart, package:axioma/flow.dart, '
+  'or package:axioma/automotive.dart. '
+  'The monolithic axioma.dart barrel is scheduled for retirement in Sprint N106 (§39, §48).',
+)
 library;
 
 // Enums
@@ -30,6 +36,8 @@ export 'src/search/hybrid_fitment_service.dart';
 
 // Promoción Sprint B99
 export 'src/parser/lexical_parser.dart';
+export 'src/parser/fast_xlsx_reader.dart';
+export 'src/parser/schema_mapping_bridge.dart';
 export 'src/cleaner/oem_cleaner.dart';
 export 'src/models/catalog_ledger.dart';
 export 'src/models/catalog_update_result.dart';
@@ -93,6 +101,12 @@ export 'src/search/quarantine_service.dart';
 export 'src/search/unified_fitment_cache.dart';
 export 'src/search/unified_fitment_engine.dart';
 export 'src/schema/control_registry.dart';
+export 'src/schema/data_contract.dart';
+export 'src/schema/data_dictionary.dart'
+    hide CurrencyScaleGuard, ScaleValidationResult, CurrencyScaleException;
+export 'src/schema/currency_scale_guard.dart';
+export 'src/schema/llm_pool_contract.dart';
+export 'src/schema/commercial_contracts.dart';
 export 'src/test_axiom.dart';
 
 // Neural AST Vectorization & RepoMap (TASK-NEURAL-01, TASK-N3-02)
@@ -104,6 +118,7 @@ export 'src/analysis/product_leak_linter.dart';
 
 // Transversal Connectors & Official Rate Services (§39, §45, §47)
 export 'src/services/bcv_rate_service.dart';
+export 'src/services/database_path_resolver.dart';
 
 // Fleet Council & Cognitive Cascade Services (§39, §45, §47, TASK-N30-03)
 export 'src/services/fleet_council_client.dart';
@@ -115,14 +130,23 @@ export 'src/geo/haversine_calculator.dart';
 export 'src/geo/address_normalizer.dart';
 export 'src/geo/google_maps_url_builder.dart';
 
-// Messaging Domain Axioms & Channels (Sprint N32 - Pure Dart)
+// Messaging Domain Axioms & Channels (Sprint N32 / N103 - Pure Dart)
 export 'src/messaging/whatsapp_models.dart';
 export 'src/messaging/phone_sanitizer.dart';
 export 'src/messaging/telegram_models.dart';
 export 'src/messaging/discord_models.dart';
+export 'src/messaging/omnichannel_envelope.dart';
+export 'src/messaging/turn0_intent_router.dart';
+export 'src/messaging/intent_signature.dart';
+export 'src/messaging/adapters/whatsapp_envelope_adapter.dart';
+export 'src/messaging/adapters/telegram_envelope_adapter.dart';
+export 'src/messaging/adapters/discord_envelope_adapter.dart';
 
-// Webhook Security & HMAC Verification (Sprint N32 - Pure Dart)
+// Webhook Security & HMAC Verification (Sprint N32 / N103 - Pure Dart)
 export 'src/crypto/webhook_hmac_verifier.dart';
+export 'src/security/security_exceptions.dart';
+export 'src/security/webhook_signature_validator.dart';
+export 'src/security/prompt_sanitizer.dart';
 
 // Multi-OS Parity & Platform Guard (Sprint G1 - Pure Dart, Art. Multi-OS)
 export 'src/platform_guard.dart';
@@ -134,12 +158,14 @@ export 'src/governance/upstream_pointer.dart';
 export 'src/governance/bunker_skill_filter.dart';
 export 'src/governance/atomic_task_bifurcator.dart';
 export 'src/governance/governance_reconciler.dart';
+export 'src/governance/deferred_trigger.dart';
 
 // Incremental Render & Content-Addressable Storage (CAS) Contracts (Sprint N54, §39)
 export 'src/render/incremental_render_spec.dart';
 export 'src/render/cas_storage_engine.dart';
 export 'src/render/fast_splice_engine.dart';
 export 'src/render/incremental_render_canary.dart';
+export 'src/render/studio_render_contract.dart';
 
 // Adaptive User Signal & CAR Linter Synthesis (Sprint N54, §39, §46)
 export 'src/car/user_signal_car_connector.dart';
@@ -155,3 +181,10 @@ export 'src/ui/semantic_tokens.dart';
 export 'src/ui/ui_exceptions.dart';
 export 'src/ui/ui_state_machine.dart';
 export 'src/ui/viewport_test_runner.dart';
+
+// Pure FSM Engine & Socratic Gentle Exit Policy (TASK-N104-04 / TASK-N104-05, §39)
+export 'src/flow/flow_engine.dart';
+export 'src/flow/flow_state.dart';
+export 'src/flow/flow_violations.dart';
+
+// Absorbed Shared Kernel Utilities (§39, §52, TASK-N126-03)

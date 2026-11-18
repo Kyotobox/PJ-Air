@@ -7,7 +7,7 @@ TASK-G20-03: MetricsAnalyticsUseCase y Agregador Estadístico
 Architecture:
 - Pure Domain & Application Services (§39 agnóstico).
 - Thin Client Support (§40): La UI solo consume los snapshots calculados.
-- Zero-Mocks & Anti-Tautology (§4, §6, §16).
+- Veracidad Física & Anti-Tautology (§4, §6, §16).
 - Resiliencia matemática contra ceros, valores nulos y outliers.
 """
 
@@ -219,7 +219,7 @@ class MetricsAnalyticsUseCase:
         )
 
     def calculate_dora_metrics(self, dispatches: Optional[List[Dict[str, Any]]] = None, force_dispatches: bool = False) -> DoraMetricsDto:
-        """Cálculo y certificación formal de las 4 métricas DORA con tolerancia cero a mocks."""
+        """Cálculo y certificación formal de las 4 métricas DORA con tolerancia cero a datos sintéticos."""
         db_path = self._resolve_db_path() if not force_dispatches else None
         total_deploys = 0
         total_failures = 0

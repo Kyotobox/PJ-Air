@@ -32,12 +32,13 @@ interface UserRecord {
     general_discount?: number;
 }
 
-const ROLES = ['client', 'admin', 'delivery', 'produccion'];
+const ROLES = ['client', 'admin', 'delivery', 'produccion', 'auditor'];
 
 const ROLE_STYLES: Record<string, string> = {
     admin:      'bg-primary/10 text-primary border-primary/20',
     delivery:   'bg-amber-50 text-amber-700 border-amber-200',
     produccion: 'bg-violet-50 text-violet-700 border-violet-200',
+    auditor:    'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold',
     client:     'bg-muted text-muted-foreground border-border',
 };
 
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
     const [savingAddr, setSavingAddr] = useState(false);
     const [deliveryUsers, setDeliveryUsers] = useState<any[]>([]);
     const [assigningOrder, setAssigningOrder] = useState<string | null>(null);
-    const [roleFilter, setRoleFilter] = useState<'all' | 'client' | 'admin' | 'delivery' | 'produccion'>('all');
+    const [roleFilter, setRoleFilter] = useState<'all' | 'client' | 'admin' | 'delivery' | 'produccion' | 'auditor'>('all');
     
     // Discount states
     const [generalDiscount, setGeneralDiscount] = useState<number>(0);
@@ -85,7 +86,7 @@ export default function AdminUsersPage() {
     const [newStaffEmail, setNewStaffEmail] = useState('');
     const [newStaffName, setNewStaffName] = useState('');
     const [newStaffPassword, setNewStaffPassword] = useState('');
-    const [newStaffRole, setNewStaffRole] = useState<'admin' | 'delivery' | 'produccion'>('delivery');
+    const [newStaffRole, setNewStaffRole] = useState<'admin' | 'delivery' | 'produccion' | 'auditor'>('delivery');
     const [isCreatingStaff, setIsCreatingStaff] = useState(false);
 
     const handleResetPasswordSubmit = async (e: React.FormEvent) => {
@@ -327,7 +328,7 @@ export default function AdminUsersPage() {
                     </div>
 
                     <div className="flex gap-2 bg-muted/50 p-1 rounded-xl border border-border">
-                        {['all', 'client', 'delivery', 'produccion', 'admin'].map(f => (
+                        {['all', 'client', 'delivery', 'produccion', 'admin', 'auditor'].map(f => (
                             <button
                                 key={f}
                                 onClick={() => setRoleFilter(f as any)}
@@ -337,7 +338,7 @@ export default function AdminUsersPage() {
                                         : 'hover:bg-muted text-muted-foreground hover:text-foreground'
                                 }`}
                             >
-                                {f === 'all' ? 'Todos' : f === 'client' ? 'Clientes' : f}
+                                {f === 'all' ? 'Todos' : f === 'client' ? 'Clientes' : f === 'auditor' ? 'Auditor Contable' : f}
                             </button>
                         ))}
                     </div>
@@ -418,7 +419,7 @@ export default function AdminUsersPage() {
                                                     onChange={e => handleRoleChange(u.id, e.target.value, e as any)}
                                                     className={`text-xs font-bold px-3 py-1.5 rounded-full border outline-none cursor-pointer transition-all disabled:opacity-60 ${ROLE_STYLES[u.role] || ROLE_STYLES.client}`}
                                                 >
-                                                    {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                                                    {ROLES.map(r => <option key={r} value={r}>{r === 'auditor' ? 'Auditor Contable' : r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
                                                 </select>
                                             </div>
                                         </td>
@@ -563,7 +564,7 @@ export default function AdminUsersPage() {
                                     <div className="flex justify-between items-center">
                                         <span className="text-muted-foreground">Rol</span>
                                         <span className={`text-xs font-bold px-3 py-1 rounded-full border ${ROLE_STYLES[selectedUser.role] || ROLE_STYLES.client}`}>
-                                            {selectedUser.role?.charAt(0).toUpperCase()}{selectedUser.role?.slice(1)}
+                                            {selectedUser.role === 'auditor' ? 'Auditor Contable' : (selectedUser.role?.charAt(0).toUpperCase() + selectedUser.role?.slice(1))}
                                         </span>
                                     </div>
                                     {selectedUser.role !== 'admin' && (
@@ -1085,6 +1086,7 @@ export default function AdminUsersPage() {
                                 >
                                     <option value="delivery">Delivery</option>
                                     <option value="produccion">Producción</option>
+                                    <option value="auditor">Auditor Contable</option>
                                     <option value="admin">Administrador</option>
                                 </select>
                             </div>

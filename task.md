@@ -1,6 +1,6 @@
 # SPRINT S97 - Sprint Activo
 **Objetivo**: Sin objetivo especificado
-**Fecha**: 2026-11-17
+**Fecha**: 2026-11-18
 
 - [x] **TASK-97-01** [TASK] Extensión de RBAC para rol "auditor" en User Entity, TypeORM, RolesGuard y JwtPayload con bloqueo estricto en endpoints mutativos
 - [x] **TASK-97-02** [TASK] Aislamiento de rutas en Next.js middleware y Sidebar: acceso exclusivo a finanzas/reportes con bloqueo de /produccion, /delivery y configuración

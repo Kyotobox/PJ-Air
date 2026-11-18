@@ -350,4 +350,40 @@ describe('UsersService', () => {
       ).rejects.toThrow();
     });
   });
+
+  describe('updateRole (Auditor Role Support & Validation)', () => {
+    it('Happy path: updates role to auditor and returns user with auditor role', async () => {
+      const user = { id: 'u-aud-1', email: 'dcueto@atax.com', role: 'auditor' };
+      mockUserRepository.update = jest.fn().mockResolvedValue({ affected: 1 });
+      mockUserRepository.findOne.mockResolvedValue(user);
+
+      const res = await service.updateRole('u-aud-1', 'auditor');
+
+      expect(mockUserRepository.update).toHaveBeenCalledWith('u-aud-1', { role: 'auditor' });
+      expect(res.role).toBe('auditor');
+    });
+
+    it('Happy path: normalizes role with uppercase and whitespace " AUDITOR "', async () => {
+      const user = { id: 'u-aud-2', email: 'auditor@bakery.com', role: 'auditor' };
+      mockUserRepository.update = jest.fn().mockResolvedValue({ affected: 1 });
+      mockUserRepository.findOne.mockResolvedValue(user);
+
+      const res = await service.updateRole('u-aud-2', ' AUDITOR ');
+
+      expect(mockUserRepository.update).toHaveBeenCalledWith('u-aud-2', { role: 'auditor' });
+      expect(res.role).toBe('auditor');
+    });
+
+    it('Sad path: rejects invalid role with BadRequestException', async () => {
+      await expect(service.updateRole('u-aud-1', 'invalid_super_role')).rejects.toThrow('Rol inválido');
+      await expect(service.updateRole('u-aud-1', '')).rejects.toThrow('Rol inválido');
+    });
+
+    it('Sad path: throws NotFoundException if user does not exist', async () => {
+      mockUserRepository.update = jest.fn().mockResolvedValue({ affected: 0 });
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateRole('u-404', 'auditor')).rejects.toThrow('User not found');
+    });
+  });
 });

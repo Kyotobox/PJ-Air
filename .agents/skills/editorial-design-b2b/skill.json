@@ -1,0 +1,16 @@
+{
+  "skill_id": "editorial-design-b2b",
+  "name": "Editorial Design B2B",
+  "version": "1.0.0",
+  "owner_node": "studio",
+  "category": "execution",
+  "entrypoint": ".agents/skills/editorial-design-b2b/SKILL.md",
+  "description": "Suite de diseño editorial para impresión física (trípticos, dípticos, flyers CMYK a 300 DPI, bleed 0.125\") con scripts de automatización InDesign (ExtendScript/UXP).",
+  "tags": [
+    "print",
+    "editorial",
+    "cmyk",
+    "flyers",
+    "b2b"
+  ]
+}

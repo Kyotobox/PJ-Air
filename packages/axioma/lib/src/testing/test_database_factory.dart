@@ -18,9 +18,11 @@ class TestDatabaseFactory {
           '/home/opc/code/Smart/.dart_tool/lib/libsqlite3.so',
         );
       } catch (_) {
+        // INTENTIONAL: Fallback a libsqlite3.so.0 del sistema si no existe en .dart_tool
         try {
           DynamicLibrary.open('libsqlite3.so.0');
         } catch (_) {
+          // INTENTIONAL: Fallback a libsqlite3.so del sistema si so.0 no está presente
           try {
             DynamicLibrary.open('libsqlite3.so');
           } catch (_) {
@@ -88,7 +90,7 @@ class TestDatabaseFactory {
     try {
       db.close();
     } catch (_) {
-      // Intencional: seguro ante conexiones ya cerradas
+      // INTENTIONAL: Seguro ante conexiones ya cerradas
     }
   }
 
@@ -100,7 +102,7 @@ class TestDatabaseFactory {
         dir.deleteSync(recursive: true);
       }
     } catch (_) {
-      // Intencional: seguro contra file locks transitorios en Windows
+      // INTENTIONAL: Seguro contra file locks transitorios en Windows
     }
   }
 

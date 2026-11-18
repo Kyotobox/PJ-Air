@@ -48,6 +48,7 @@ function LoginModal({ onSuccess, onClose }: { onSuccess: () => void; onClose?: (
                 const userDetail = await api.get(`/users/${data.user.id}`) as any;
                 const role = userDetail.role || 'client';
                 if (role === 'admin') router.push('/admin');
+                else if (role === 'auditor') router.push('/admin/orders');
                 else if (role === 'produccion') router.push('/produccion');
                 else if (role === 'delivery') router.push('/delivery');
                 else onSuccess();

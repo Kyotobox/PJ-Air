@@ -122,10 +122,13 @@ let UsersService = class UsersService {
         return (await this.profileRepository.findOne({ where: { id: userId } }));
     }
     async updateRole(id, role) {
-        const user = await this.findOne(id);
-        user.role = role;
-        const result = await this.userRepository.save(user);
-        return Array.isArray(result) ? result[0] : result;
+        const validRoles = ['client', 'admin', 'delivery', 'produccion', 'auditor'];
+        const normalizedRole = role ? String(role).trim().toLowerCase() : '';
+        if (!validRoles.includes(normalizedRole)) {
+            throw new common_1.BadRequestException(`Rol inválido: ${role}`);
+        }
+        await this.userRepository.update(id, { role: normalizedRole });
+        return this.findOne(id);
     }
     async findByEmailWithRole(email) {
         return this.findByEmail(email);

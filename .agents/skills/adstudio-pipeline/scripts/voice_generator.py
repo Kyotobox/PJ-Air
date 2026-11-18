@@ -2,7 +2,7 @@
 """
 voice_generator.py — Cliente de Generación de Voz Publicitaria para adstudio-pipeline
 Integra con la API REST oficial de ElevenLabs para síntesis de audio hiperrealista.
-Cumple con la doctrina CONEXT: Cero mocks (§4), streaming atómico por chunks (§30) y manejo tipado de errores.
+Cumple con la doctrina CONEXT: Tolerancia Cero (§4), streaming atómico por chunks (§30) y manejo tipado de errores.
 """
 
 import os

@@ -346,7 +346,7 @@ class FastSpliceEngine {
         }
       }
     } catch (_) {
-      // Ignora error de comando which/where
+      // INTENTIONAL: Ignora error de comando which/where si no está en PATH o falla
     }
 
     // Rutas canónicas conocidas
@@ -948,7 +948,7 @@ class FastSpliceEngine {
             meta = casEngine.getMetadata(fpKey);
           }
         } catch (_) {
-          // sourceFingerprint no es un hash hexadecimal de 64 caracteres
+          // INTENTIONAL: sourceFingerprint no es un hash hexadecimal de 64 caracteres
         }
       }
 

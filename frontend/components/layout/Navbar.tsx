@@ -19,6 +19,7 @@ export default function Navbar() {
     const [showScheduleModal, setShowScheduleModal] = useState(false);
 
     const isAdmin = profile?.role === 'admin' || user?.email === 'admin@test.com';
+    const isAuditor = profile?.role === 'auditor';
 
     return (
         <>
@@ -92,7 +93,14 @@ export default function Navbar() {
                                 )}
                             </div>
 
-                            {user && (
+                            {isAuditor && (
+                                <Link href="/admin/orders" className="hidden sm:flex items-center gap-2 px-5 py-2 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-300 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-all">
+                                    <ShieldCheck size={14} className="text-emerald-700" />
+                                    <span>{locale === 'en' ? 'Audit & Finance' : 'Panel Auditor'}</span>
+                                </Link>
+                            )}
+
+                            {user && !isAuditor && (
                                 <Link href="/orders" className="hidden sm:flex items-center gap-2 px-6 py-2 bg-muted/50 rounded-full border border-border/50 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-muted transition-all">
                                     {t.nav.myOrders}
                                 </Link>
@@ -141,6 +149,9 @@ export default function Navbar() {
                         <p className="font-black text-sm">{user ? user.email?.split('@')[0] : t.nav.menu}</p>
                         {isAdmin && (
                             <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">Admin</span>
+                        )}
+                        {isAuditor && (
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300">Auditor</span>
                         )}
                     </div>
                     <button onClick={() => setIsMenuOpen(false)} className="p-2 hover:bg-muted rounded-full transition-all">
@@ -206,6 +217,25 @@ export default function Navbar() {
                             </Link>
                             <Link href="/admin/deliveries" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-primary/10 text-primary transition-all font-bold text-sm">
                                 <Truck size={18} /> {t.nav.deliveries}
+                            </Link>
+                        </>
+                    )}
+
+                    {/* Auditor links */}
+                    {isAuditor && (
+                        <>
+                            <div className="my-3 border-t border-border" />
+                            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-700 px-3 py-2">
+                                {locale === 'en' ? 'Audit & Finance' : 'Auditoría y Finanzas'}
+                            </p>
+                            <Link href="/admin/orders" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-emerald-50 text-emerald-800 transition-all font-bold text-sm">
+                                <ShoppingCart size={18} /> {locale === 'en' ? 'Orders & Invoices' : 'Pedidos y Facturación'}
+                            </Link>
+                            <Link href="/admin/reports" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-emerald-50 text-emerald-800 transition-all font-bold text-sm">
+                                <ClipboardList size={18} /> {locale === 'en' ? 'Tax & Sales Reports' : 'Reportes Fiscales y Ventas'}
+                            </Link>
+                            <Link href="/admin/finance" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-emerald-50 text-emerald-800 transition-all font-bold text-sm">
+                                <FileText size={18} /> {locale === 'en' ? 'Store Credit Ledger' : 'Libro de Store Credit'}
                             </Link>
                         </>
                     )}

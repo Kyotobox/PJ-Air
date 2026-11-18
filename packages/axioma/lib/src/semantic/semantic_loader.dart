@@ -45,7 +45,7 @@ class SemanticLoader {
         }
       }
     } catch (_) {
-      // Ignorar si la tabla no existe
+      // INTENTIONAL: Ignorar si la tabla search_aliases no existe en la base de datos
     }
 
     try {
@@ -62,7 +62,7 @@ class SemanticLoader {
         }
       }
     } catch (_) {
-      // Ignorar si la tabla no existe
+      // INTENTIONAL: Ignorar si la tabla regional_aliases no existe en la base de datos
     }
 
     try {
@@ -78,7 +78,7 @@ class SemanticLoader {
         });
       }
     } catch (_) {
-      // Ignorar si la tabla no existe
+      // INTENTIONAL: Ignorar si la tabla canonical_taxonomy_matrix no existe en la base de datos
     }
 
     return SemanticLoader._(
@@ -109,7 +109,7 @@ class SemanticLoader {
         }
       }
     } catch (_) {
-      // Fallback a tokens por defecto en caso de error o ausencia
+      // INTENTIONAL: Fallback a tokens por defecto en caso de error o ausencia en snapshot_meta
     }
 
     return SemanticLoader._(

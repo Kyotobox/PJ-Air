@@ -48,6 +48,64 @@ class SystemMemorySnapshot {
   };
 }
 
+/// Resultado sellado de la resolución canónica multi-OS de transcript (§39, Art. Multi-OS).
+sealed class TranscriptResolutionResult {
+  const TranscriptResolutionResult();
+
+  /// Retorna true si el transcript fue resuelto físicamente en disco.
+  bool get isResolved => this is TranscriptResolved;
+
+  /// Retorna true si el transcript no pudo resolverse y operó en modo degradado.
+  bool get isDegraded => this is TranscriptDegraded;
+
+  /// Retorna los bytes del offset si fue resuelto, o 0 en modo degradado.
+  int get offsetBytes => switch (this) {
+    TranscriptResolved(:final int offsetBytes) => offsetBytes,
+    TranscriptDegraded() => 0,
+  };
+}
+
+/// Transcripción canónica resuelta exitosamente con anclaje físico comprobado.
+final class TranscriptResolved extends TranscriptResolutionResult {
+  /// Ruta física absoluta del archivo transcript.jsonl.
+  final String path;
+
+  /// Tamaño en bytes del archivo transcript.jsonl en el momento de la resolución.
+  @override
+  final int offsetBytes;
+
+  /// Identificador de la conversación resuelta.
+  final String conversationId;
+
+  const TranscriptResolved({
+    required this.path,
+    required this.offsetBytes,
+    required this.conversationId,
+  });
+
+  @override
+  String toString() =>
+      'TranscriptResolved(conversationId: $conversationId, path: $path, offsetBytes: $offsetBytes)';
+}
+
+/// Transcripción no resoluble físicamente; degradación controlada (§45, Calm Error UX).
+final class TranscriptDegraded extends TranscriptResolutionResult {
+  /// Motivo técnico de la degradación.
+  final String reason;
+
+  /// Lista de rutas candidatas inspeccionadas durante la resolución.
+  final List<String> candidates;
+
+  const TranscriptDegraded({
+    required this.reason,
+    this.candidates = const <String>[],
+  });
+
+  @override
+  String toString() =>
+      'TranscriptDegraded(reason: $reason, candidates: ${candidates.length})';
+}
+
 /// Guardián unificado de plataforma para la flota CONEXT (Art. Multi-OS.1, Multi-OS.2).
 class PlatformGuard {
   final SupportedPlatform platform;
@@ -181,6 +239,7 @@ class PlatformGuard {
         usedPercentage: double.parse(usedPercentage.toStringAsFixed(2)),
       );
     } catch (_) {
+      // INTENTIONAL: Fallback seguro a snapshot conservador ante error de lectura o parsing de /proc/meminfo
       return const SystemMemorySnapshot(
         totalMb: 8192.0,
         availableMb: 4096.0,
@@ -188,4 +247,179 @@ class PlatformGuard {
       );
     }
   }
+
+  /// Resuelve canónicamente el transcript para un [conversationId] dado (§39, Art. Multi-OS).
+  ///
+  /// Retorna [TranscriptResolved] con [TranscriptResolved.offsetBytes] si el archivo físico existe,
+  /// o [TranscriptDegraded] con la lista de rutas candidatas evaluadas ante rutas inexistentes
+  /// o directorio home/brain no resoluble sin crashear (Calm Error UX, §45).
+  static TranscriptResolutionResult resolveTranscript({
+    String? conversationId,
+    String? overrideHome,
+    String? brainPath,
+    SupportedPlatform? platform,
+    Map<String, String>? environment,
+    p.Context? pathContext,
+  }) {
+    final SupportedPlatform effectivePlatform =
+        platform ?? _detectCurrentPlatform();
+    final p.Context ctx = pathContext ?? _createPathContext(effectivePlatform);
+    final Map<String, String> env = environment ?? io.Platform.environment;
+
+    if (conversationId == null || conversationId.trim().isEmpty) {
+      return const TranscriptDegraded(
+        reason: 'El conversationId está vacío o es nulo.',
+        candidates: <String>[],
+      );
+    }
+    final String cleanConvId = conversationId.trim();
+
+    // 1. Resolver home directory de forma Multi-OS agnóstica sin rutas hardcoded
+    String? resolvedHome = overrideHome?.trim();
+    if (resolvedHome == null || resolvedHome.isEmpty) {
+      if (effectivePlatform.isWindows) {
+        resolvedHome = env['USERPROFILE'] ?? env['HOME'];
+        if ((resolvedHome == null || resolvedHome.isEmpty) &&
+            env['HOMEDRIVE'] != null &&
+            env['HOMEPATH'] != null) {
+          resolvedHome = '${env['HOMEDRIVE']}${env['HOMEPATH']}';
+        }
+      } else {
+        resolvedHome = env['HOME'] ?? env['USERPROFILE'];
+      }
+    }
+
+    final List<String> candidatePaths = <String>[];
+
+    // 2. Si se proporciona brainPath explícito, evaluar sus rutas canónicas primero
+    if (brainPath != null && brainPath.trim().isNotEmpty) {
+      final String cleanBrain = brainPath.trim();
+      candidatePaths.add(
+        ctx.join(
+          cleanBrain,
+          cleanConvId,
+          '.system_generated',
+          'logs',
+          'transcript.jsonl',
+        ),
+      );
+      candidatePaths.add(ctx.join(cleanBrain, cleanConvId, 'transcript.jsonl'));
+      candidatePaths.add(
+        ctx.join(cleanBrain, '.system_generated', 'logs', 'transcript.jsonl'),
+      );
+      candidatePaths.add(ctx.join(cleanBrain, 'transcript.jsonl'));
+    }
+
+    // 3. Evaluar ubicaciones canónicas bajo resolvedHome si está disponible
+    if (resolvedHome != null && resolvedHome.isNotEmpty) {
+      final List<String> brainBases = <String>[
+        ctx.join(resolvedHome, '.gemini', 'antigravity-cli', 'brain'),
+        ctx.join(resolvedHome, '.gemini', 'antigravity-ide', 'brain'),
+        ctx.join(resolvedHome, '.gemini', 'brain'),
+        ctx.join(resolvedHome, '.gemini', 'antigravity', 'brain'),
+      ];
+
+      for (final String base in brainBases) {
+        candidatePaths.add(
+          ctx.join(
+            base,
+            cleanConvId,
+            '.system_generated',
+            'logs',
+            'transcript.jsonl',
+          ),
+        );
+        candidatePaths.add(ctx.join(base, cleanConvId, 'transcript.jsonl'));
+      }
+    } else if (candidatePaths.isEmpty) {
+      return const TranscriptDegraded(
+        reason:
+            'No se pudo resolver el directorio home del usuario en la plataforma activa.',
+        candidates: <String>[],
+      );
+    }
+
+    // 4. Evaluar existencia física real (§4, SSSoT Física)
+    for (final String candidate in candidatePaths) {
+      try {
+        final io.File file = io.File(candidate);
+        if (file.existsSync()) {
+          final int length = file.lengthSync();
+          return TranscriptResolved(
+            path: candidate,
+            offsetBytes: length,
+            conversationId: cleanConvId,
+          );
+        }
+      } on io.FileSystemException {
+        // INTENTIONAL: Fallback a siguiente candidato si ocurre error de I/O en sistema de archivos
+      } catch (_) {
+        // INTENTIONAL: Fallback seguro a siguiente candidato ante error de acceso o parsing de la ruta
+      }
+    }
+
+    return TranscriptDegraded(
+      reason:
+          'No se encontró ningún archivo transcript.jsonl físico en los candidatos evaluados.',
+      candidates: List<String>.unmodifiable(candidatePaths),
+    );
+  }
+
+  /// Aserción estricta de transcript resuelto (§4, Fast-fail / Sad Path con excepción tipada).
+  static TranscriptResolved requireTranscript({
+    String? conversationId,
+    String? overrideHome,
+    String? brainPath,
+    SupportedPlatform? platform,
+    Map<String, String>? environment,
+    p.Context? pathContext,
+  }) {
+    final TranscriptResolutionResult result = resolveTranscript(
+      conversationId: conversationId,
+      overrideHome: overrideHome,
+      brainPath: brainPath,
+      platform: platform,
+      environment: environment,
+      pathContext: pathContext,
+    );
+    return switch (result) {
+      TranscriptResolved resolved => resolved,
+      TranscriptDegraded degraded => throw io.PathNotFoundException(
+        degraded.candidates.isNotEmpty ? degraded.candidates.first : '',
+        const io.OSError('Transcript no encontrado o no resoluble', 2),
+        degraded.reason,
+      ),
+    };
+  }
+}
+
+/// Extensión de conveniencia para invocar [PlatformGuard.resolveTranscript] sobre una instancia.
+extension PlatformGuardTranscriptExtension on PlatformGuard {
+  TranscriptResolutionResult resolveTranscript({
+    String? conversationId,
+    String? overrideHome,
+    String? brainPath,
+    Map<String, String>? environment,
+  }) => PlatformGuard.resolveTranscript(
+    conversationId: conversationId,
+    overrideHome: overrideHome,
+    brainPath: brainPath,
+    platform: platform,
+    pathContext: pathContext,
+    environment: environment,
+  );
+
+  TranscriptResolved requireTranscript({
+    String? conversationId,
+    String? overrideHome,
+    String? brainPath,
+    Map<String, String>? environment,
+  }) => PlatformGuard.requireTranscript(
+    conversationId: conversationId,
+    overrideHome: overrideHome,
+    brainPath: brainPath,
+    platform: platform,
+    pathContext: pathContext,
+    environment: environment,
+  );
 }

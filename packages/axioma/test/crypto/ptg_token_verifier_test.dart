@@ -108,6 +108,7 @@ void main() {
       final PtgTokenVerifier pemVerifier = PtgTokenVerifier(
         publicKeyPemPath: 'vault/specs/orchestrator_public_key.pem',
       );
+      expect(pemVerifier, isNotNull);
       // Validamos que parsePublicKeyPem devuelva 32 bytes exactos
       expect(
         PtgTokenVerifier.parsePublicKeyPem('''

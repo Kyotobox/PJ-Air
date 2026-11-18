@@ -2,23 +2,32 @@
 # Global build and tool artifacts
 **/build/
 **/.dart_tool/
+!packages/axioma/tool/
 **/windows/flutter/
 **/*.log
 
 # Project specific
 session.lock
 bin/*.exe
+bin/logix
+bin/logix.old
+bin/logix.bak
 bin/*.old
 bin/*.bak
 bin/*.sig
+bin/*.sha256
+*.sig
+logix.exe.sig
 bin/data/
 tool/
+!packages/axioma/tool/
 output_baseline.txt
 
 # Sensitive keys must stay ignored
 vault/po_private.xml
 vault/agent_vanguard.xml
 vault/keys/
+vault/credentials/
 
 # Global heavy binary exclusions
 **/*.pdb
@@ -43,15 +52,15 @@ bin.old/
 scratch/
 **/RESTART_REQUIRED
 *.db
-**/node_modules
-**/node_modules/
-**/.next/
-dist/
-out/
-ui_screenshots/audit/
-*.xlsx
-/.meta/
+.tmp.driveupload/
+.meta/prompts/
+
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+
 .env
-**/.env*
-.env.local
-.env.*.local
+.env.*
+!.env.example
+

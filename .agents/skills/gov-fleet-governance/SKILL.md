@@ -50,8 +50,9 @@ Este skill consolida la disciplina de calidad, veracidad empírica, integridad a
 │   ├── skill_frontmatter_schema.md        <-- Esquema formal YAML para metadatos de skills
 │   ├── harvest_sources.json               <-- Whitelist / Blacklist y reglas de reputación
 │   └── safe_harvest_protocol.md           <-- Protocolo de cuarentena y admisión en 4 fases
-└── scripts/
-    └── security_scanner.py           <-- Motor de escaneo estático (Secrets, AST, Prompt Injection)
+├── scripts/
+│   ├── fleet_sweep.py                <-- Motor de barrido canónico y reconciliación de flota (Protocolo F)
+│   └── security_scanner.py           <-- Motor de escaneo estático (Secrets, AST, Prompt Injection)
 ```
 
 ---
@@ -84,3 +85,12 @@ Consultar las directivas §1 a §46 en `GEMINI-FULL.md`. Ante cualquier violaci�
 2. Despachar acción preventiva mediante `PreventiveActionDispatcher.dispatchFromCausalResult()`.
 3. Ejecutar `AstDoctrineLinter.lintDirectory()` antes de sellar PR o cerrar sprint.
 4. Veto estricto: Todo defecto abierto sin remediación CAR asociada bloquea el cierre del sprint.
+
+### Protocolo F: Barrido Canónico de Gobernanza de Flota (fleet-sweep) (§54.7, §55, §56)
+1. **Propósito**: Ejecutar una inspección física en disco de todos los nodos registrados en `vault/fleet.json`.
+2. **Artefactos Mandatorios Mínimos**: Para todo nodo con status `ACTIVE`, verificar la existencia de `.git`, `bunker_profile.json`, `backlog.json` y `task.md`.
+3. **Paridad de Rama Canónica**: Validar que la rama activa de Git en el nodo coincida con `canonical_branch` declarada en su `bunker_profile.json` (por defecto `master`).
+4. **Comandos**:
+   - `logix fleet-sweep --audit`: Inspección de solo lectura con reporte cuantitativo y código de salida no nulo ante anomalías.
+   - `logix fleet-sweep --reconcile`: Reconciliación automática y actualización de estado a `BROKEN_GOVERNANCE` en `fleet.json` para nodos con artefactos faltantes.
+   - Script nativo: `python3 .agents/skills/gov-fleet-governance/scripts/fleet_sweep.py [--audit] [--reconcile] [--json]`.

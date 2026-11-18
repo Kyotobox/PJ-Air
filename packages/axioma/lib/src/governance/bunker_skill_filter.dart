@@ -441,7 +441,7 @@ class SkillCandidate {
           );
         }
       } catch (_) {
-        // Fallback al parser de SKILL.md
+        // INTENTIONAL: Fallback al parser de SKILL.md si skill.json está ausente o malformado
       }
     }
 
@@ -769,7 +769,7 @@ class BunkerSkillFilter {
         );
         discovered.add(candidate);
       } catch (_) {
-        // Ignorar carpetas que no correspondan a un skill
+        // INTENTIONAL: Ignorar subdirectorios que no correspondan a un skill válido
       }
     }
 
@@ -786,7 +786,7 @@ class BunkerSkillFilter {
           );
           discovered.add(candidate);
         } catch (_) {
-          // Ignorar
+          // INTENTIONAL: Ignorar subdirectorios en cuarentena que no correspondan a un skill válido
         }
       }
     }
