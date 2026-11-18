@@ -25,41 +25,6 @@
   ],
   "sprints": [
     {
-      "id": "S95",
-      "title": "Sprint S95: Normalización de Identidad Comercial B2B: Precedencia y Visualización de Nombre del Negocio vs Contacto en Reportes, Impresiones y Despacho",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-95-01",
-          "title": "Helper canónico universal de identidad comercial (client-identity.ts) y normalización de contratos TypeORM/API",
-          "status": "DONE",
-          "type": "FULLSTACK/CORE-IDENTITY",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-95-02",
-          "title": "Unificación en Reportes Matriciales en Pantalla e Impresos (Admin y Producción) e Impresión de Hoja de Cocina e Invoices",
-          "status": "DONE",
-          "type": "FRONTEND/REPORTS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-95-03",
-          "title": "Exportación de Reportes Excel por Negocio en Backend (ExcelJS) y Visualización Comercial en Pantalla de Despacho/Chofer",
-          "status": "DONE",
-          "type": "BACKEND/EXCEL-LOGISTICS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-95-04",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6), certificación en testing VPS y despliegue a producción",
-          "status": "DONE",
-          "type": "TEST/DEVOPS",
-          "veracity_hash": null
-        }
-      ]
-    },
-    {
       "id": "S96",
       "title": "Sprint S96: Motor de Incidencias de Entrega y Saldo a Favor No Fiscal (Store Credit SC) con Notificación Digital y Autoservicio B2B",
       "status": "COMPLETED",
@@ -186,7 +151,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 1,
+  "archived_sprints_count": 95,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S98",

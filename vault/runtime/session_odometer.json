@@ -13,14 +13,14 @@
   "hwc_complete": true,
   "last_update": "2026-11-18T01:57:37.659640",
   "input_pressure": 0,
-  "degraded_ops_count": 0,
+  "degraded_ops_count": 2,
   "session_count": 3,
   "test_warning_count": 0,
-  "takeover_bytes_offset": 618407,
+  "takeover_bytes_offset": 1533386,
   "conversation_uuid": "b1cfc345-96ed-4d78-b5a0-b843f1986793",
   "transcript_status": "RESOLVED",
   "transcript_degraded": false,
   "transcript_path": "/home/opc/.gemini/antigravity-cli/brain/b1cfc345-96ed-4d78-b5a0-b843f1986793/.system_generated/logs/transcript.jsonl",
-  "peak_depth": 47.9774,
-  "hwc_ts": "2026-11-18T02:04:29.280275"
+  "peak_depth": 100.0,
+  "hwc_ts": "2026-11-18T02:39:44.587192"
 }
