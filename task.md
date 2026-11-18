@@ -1,9 +1,9 @@
 # SPRINT S99 - Sprint Activo
-**Objetivo**: Soporte de Direcciones Distantes con Aprobación Administrativa Condicional (PENDING_APPROVAL), Paridad Fiscal INV y Claridad Léxica
+**Objetivo**: Sin objetivo especificado
 **Fecha**: 2026-11-18
 
-- [ ] **TASK-99-01** [TASK] Soporte de direcciones distantes y fallback manual tolerante en RegisterForm.tsx sin bloqueos de Google Places
-- [ ] **TASK-99-02** [TASK] Compuerta de aprobación administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts
-- [ ] **TASK-99-03** [TASK] Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificación de remitentes oficiales en mail.service.ts
-- [ ] **TASK-99-04** [TASK] Higiene y refinamiento léxico de estados de órdenes a crédito en UI de cliente y panel administrativo
-- [ ] **TASK-99-05** [TASK] Suite de pruebas automatizadas con Sad Paths (§6), verificación de no-regresión y preparación para cola Automa
+- [x] **TASK-99-01** [TASK] Habilitar captura de cualquier dirección en EE. UU. (incluyendo ubicaciones foráneas/distantes) sin restricciones de bounds rígidos de Google Places ni bloqueos por falta de place_changed. Permitir edición libre de calle, ciudad y zip code, calculando coordenadas o aplicando resolución pasiva para que el registro nunca se detenga.
+- [ ] **TASK-99-02** [TASK] En backend/src/auth/auth.service.ts, calcular la distancia de la dirección respecto al centro de operaciones en Astoria HQ (3304 Broadway). Si la distancia excede el radio estándar local (dirección distante > 30 millas o requiere cotización especial de flete), asignar account_status = PENDING_APPROVAL; si es local, asignar APPROVED. Informar al cliente con feedback formal en registro y login.
+- [ ] **TASK-99-03** [TASK] Sustituir la generación del folio en base a UUID recortado (INV-${orderShortId}) por el folio canónico persistido en order.invoice_number en el asunto y cuerpo de sendEnglishInvoice. Unificar remitente a Contact@jhoanesbakery.com y reply-to a Jhoanes.invoices@gmail.com.
+- [ ] **TASK-99-04** [TASK] Reemplazar el badge de texto confuso "Checkout Incompleto" en órdenes con account_type === "credit" por "Crédito Pendiente de Aprobación" o "Aprobado a Crédito", eliminando la falsa alarma y el ruido visual para clientes y administradores.
+- [ ] **TASK-99-05** [TASK] Implementar tests automatizados con sad path cubriendo: 1) Registro de cliente con dirección local asignando APPROVED (Happy Path) vs dirección distante asignando PENDING_APPROVAL (Sad Path/Gate). 2) Envío de sendEnglishInvoice con folio canónico. 3) Compilación limpia de TypeScript (npm run build) y certificación sin errores.

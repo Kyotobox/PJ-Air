@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { RegisterForm } from '@/components/auth/RegisterForm';
+import { RegisterForm, parseAddressDetails } from '@/components/auth/RegisterForm';
 import { useLanguage } from '@/context/LanguageContext';
 import { trackMetaEvent } from '@/components/analytics/MetaPixel';
 import { getStoredUtm, captureAndStoreUtm } from '@/lib/utm';
@@ -127,6 +127,20 @@ export default function RegisterPage() {
         try {
             const normalizedTaxId = formData.tax_id ? formData.tax_id.trim() : '';
 
+            // TASK-99-01: Passive fallback extraction for city and zip if not explicitly set
+            let resolvedCity = formData.address_city ? formData.address_city.trim() : '';
+            let resolvedZip = formData.address_zip ? formData.address_zip.trim() : '';
+
+            if ((!resolvedCity || !resolvedZip) && formData.business_address) {
+                try {
+                    const parsed = parseAddressDetails(formData.business_address);
+                    if (!resolvedCity && parsed.city) resolvedCity = parsed.city;
+                    if (!resolvedZip && parsed.zip) resolvedZip = parsed.zip;
+                } catch {
+                    // Passive resolution: never block registration
+                }
+            }
+
             // Sign up user via local API with wholesale terms and electronic signature
             const data = await api.post('/auth/signup', {
                 email: sanitizedEmail,
@@ -143,7 +157,8 @@ export default function RegisterPage() {
                 business_address: formData.business_address.trim(),
                 address_lat: typeof formData.address_lat === 'number' ? formData.address_lat : undefined,
                 address_lng: typeof formData.address_lng === 'number' ? formData.address_lng : undefined,
-                address_city: formData.address_city ? formData.address_city.trim() : undefined,
+                address_city: resolvedCity || undefined,
+                address_zip: resolvedZip || undefined,
                 access_code: formData.access_code ? formData.access_code.trim() : undefined,
                 has_key: Boolean(formData.has_key),
                 key_location: formData.has_key && formData.key_location ? formData.key_location.trim() : undefined,

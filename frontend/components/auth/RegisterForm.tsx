@@ -15,6 +15,241 @@ import { api } from '@/lib/api';
 import { RegisterAddressMapCard } from './RegisterAddressMapCard';
 import { FacadePhotoUploader } from './FacadePhotoUploader';
 
+export interface ParsedAddressDetails {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    isDistant: boolean;
+}
+
+export const ASTORIA_HQ = { lat: 40.761032, lng: -73.9262 };
+
+export function calculateDistanceMiles(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 3958.8; // Radius of Earth in miles
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10;
+}
+
+export function isDistantAddress(params: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    lat?: number | null;
+    lng?: number | null;
+}): boolean {
+    const { address, state, zip, lat, lng } = params;
+
+    // 1. Physical coordinates calculation if available
+    if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+        const dist = calculateDistanceMiles(ASTORIA_HQ.lat, ASTORIA_HQ.lng, lat, lng);
+        return dist > 30;
+    }
+
+    // 2. Explicit state comparison (non-NY is distant)
+    if (state && typeof state === 'string') {
+        const upperState = state.trim().toUpperCase();
+        if (upperState !== 'NY' && upperState !== 'NEW YORK') {
+            return true;
+        }
+    }
+
+    // 3. ZIP code evaluation
+    if (zip && typeof zip === 'string') {
+        const cleanZip = zip.trim().slice(0, 5);
+        if (/^\d{5}$/.test(cleanZip)) {
+            const zipNum = parseInt(cleanZip, 10);
+            // Non-NY or Upstate NY ranges > 30 miles from Astoria
+            if (zipNum < 10000 || zipNum > 11999) {
+                return true;
+            }
+            if (zipNum >= 12000 && zipNum <= 14999) {
+                return true;
+            }
+        }
+    }
+
+    // 4. Fallback text pattern matching for distant US states
+    if (address && typeof address === 'string') {
+        const lower = address.toLowerCase();
+        const distantStateRegex = /\b(FL|CA|TX|IL|PA|NJ|GA|NC|SC|OH|MI|CO|AZ|WA|OR|NV|MA|FLORIDA|CALIFORNIA|TEXAS)\b/i;
+        if (distantStateRegex.test(address) && !lower.includes('ny') && !lower.includes('new york')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+export function parseAddressDetails(rawAddress: string): ParsedAddressDetails {
+    if (!rawAddress || typeof rawAddress !== 'string' || !rawAddress.trim()) {
+        throw new Error('Address string is required for parsing');
+    }
+
+    const trimmed = rawAddress.trim();
+    const zipRegex = /\b(\d{5}(?:-\d{4})?)\b/;
+    const zipMatch = trimmed.match(zipRegex);
+    const zip = zipMatch ? zipMatch[1] : '';
+
+    const parts = trimmed.split(',').map((p) => p.trim()).filter(Boolean);
+
+    let street = '';
+    let city = '';
+    let state = '';
+
+    if (parts.length >= 3) {
+        street = parts[0];
+        city = parts[1];
+        const stateZipPart = parts[2];
+        const stateMatch = stateZipPart.replace(zip, '').trim().match(/\b([A-Z]{2})\b/i);
+        if (stateMatch) {
+            state = stateMatch[1].toUpperCase();
+        } else {
+            state = stateZipPart.replace(zip, '').trim();
+        }
+    } else if (parts.length === 2) {
+        street = parts[0];
+        const secondPart = parts[1];
+        const stateMatch = secondPart.replace(zip, '').trim().match(/\b([A-Z]{2})\b/i);
+        if (stateMatch) {
+            state = stateMatch[1].toUpperCase();
+            city = secondPart.replace(stateMatch[0], '').replace(zip, '').trim();
+        } else {
+            city = secondPart.replace(zip, '').trim();
+        }
+    } else {
+        street = trimmed;
+    }
+
+    city = city.replace(/[0-9]/g, '').trim();
+
+    const distant = isDistantAddress({
+        address: trimmed,
+        city,
+        state,
+        zip,
+    });
+
+    return {
+        street,
+        city,
+        state,
+        zip,
+        isDistant: distant,
+    };
+}
+
+export async function passiveGeocodeOrFallback(
+    addressQuery: string,
+    geocoder?: {
+        geocode: (
+            request: { address: string; componentRestrictions?: { country: string } },
+            callback: (results: any[] | null, status: string) => void
+        ) => void;
+    }
+): Promise<{
+    lat: number | null;
+    lng: number | null;
+    city: string;
+    zip: string;
+    formattedAddress: string;
+    isManualFallback: boolean;
+}> {
+    if (!addressQuery || typeof addressQuery !== 'string' || !addressQuery.trim()) {
+        throw new Error('Address query cannot be empty');
+    }
+
+    const trimmed = addressQuery.trim();
+    let fallbackParsed: ParsedAddressDetails;
+    try {
+        fallbackParsed = parseAddressDetails(trimmed);
+    } catch {
+        fallbackParsed = { street: trimmed, city: '', state: '', zip: '', isDistant: false };
+    }
+
+    const activeGeocoder = geocoder || (typeof window !== 'undefined' && (window as any).google?.maps?.Geocoder ? new (window as any).google.maps.Geocoder() : null);
+
+    if (activeGeocoder) {
+        try {
+            const geocodeResult = await new Promise<{
+                lat: number | null;
+                lng: number | null;
+                city: string;
+                zip: string;
+                formattedAddress: string;
+            }>((resolve) => {
+                activeGeocoder.geocode(
+                    { address: trimmed, componentRestrictions: { country: 'us' } },
+                    (results: any[] | null, status: string) => {
+                        if (status === 'OK' && results && results[0]) {
+                            const res = results[0];
+                            const lat = res.geometry?.location?.lat ? (typeof res.geometry.location.lat === 'function' ? res.geometry.location.lat() : res.geometry.location.lat) : null;
+                            const lng = res.geometry?.location?.lng ? (typeof res.geometry.location.lng === 'function' ? res.geometry.location.lng() : res.geometry.location.lng) : null;
+
+                            let city = '';
+                            let zip = '';
+                            if (res.address_components) {
+                                for (const comp of res.address_components) {
+                                    if (comp.types.includes('locality')) city = comp.long_name;
+                                    else if (!city && comp.types.includes('sublocality_level_1')) city = comp.long_name;
+                                    else if (!city && comp.types.includes('neighborhood')) city = comp.long_name;
+                                    if (comp.types.includes('postal_code')) zip = comp.long_name;
+                                }
+                            }
+
+                            resolve({
+                                lat,
+                                lng,
+                                city: city || fallbackParsed.city,
+                                zip: zip || fallbackParsed.zip,
+                                formattedAddress: res.formatted_address || trimmed,
+                            });
+                        } else {
+                            resolve({
+                                lat: null,
+                                lng: null,
+                                city: fallbackParsed.city,
+                                zip: fallbackParsed.zip,
+                                formattedAddress: trimmed,
+                            });
+                        }
+                    }
+                );
+            });
+
+            return {
+                ...geocodeResult,
+                isManualFallback: geocodeResult.lat === null,
+            };
+        } catch {
+            return {
+                lat: null,
+                lng: null,
+                city: fallbackParsed.city,
+                zip: fallbackParsed.zip,
+                formattedAddress: trimmed,
+                isManualFallback: true,
+            };
+        }
+    }
+
+    return {
+        lat: null,
+        lng: null,
+        city: fallbackParsed.city,
+        zip: fallbackParsed.zip,
+        formattedAddress: trimmed,
+        isManualFallback: true,
+    };
+}
+
 const libraries: ('places')[] = ['places'];
 
 interface RegisterFormProps {
@@ -118,12 +353,13 @@ export const RegisterForm = ({
             let lat: number | null = null;
             let lng: number | null = null;
             if (place.geometry && place.geometry.location) {
-                lat = place.geometry.location.lat();
-                lng = place.geometry.location.lng();
+                lat = typeof place.geometry.location.lat === 'function' ? place.geometry.location.lat() : (place.geometry.location as any).lat;
+                lng = typeof place.geometry.location.lng === 'function' ? place.geometry.location.lng() : (place.geometry.location as any).lng;
             }
 
             let city = '';
             let postalCode = '';
+            let state = '';
             if (place.address_components) {
                 for (const comp of place.address_components) {
                     if (comp.types.includes('locality')) {
@@ -136,6 +372,9 @@ export const RegisterForm = ({
                     if (comp.types.includes('postal_code')) {
                         postalCode = comp.long_name;
                     }
+                    if (comp.types.includes('administrative_area_level_1')) {
+                        state = comp.short_name;
+                    }
                 }
             }
 
@@ -143,14 +382,44 @@ export const RegisterForm = ({
 
             setFormData((prev: any) => ({
                 ...prev,
-                business_address: formattedAddress,
+                business_address: formattedAddress || prev.business_address,
                 address_lat: lat ?? prev.address_lat,
                 address_lng: lng ?? prev.address_lng,
                 address_city: city || prev.address_city,
                 address_zip: postalCode || prev.address_zip,
+                address_state: state || prev.address_state,
             }));
         }
     }, [autocomplete, setFormData]);
+
+    const handlePassiveResolution = useCallback(async (addressQuery?: string) => {
+        const query = (addressQuery || formData.business_address || '').trim();
+        if (!query) return;
+
+        try {
+            const fullQuery = [query, formData.address_city, formData.address_zip].filter(Boolean).join(', ');
+            const res = await passiveGeocodeOrFallback(fullQuery);
+            setFormData((prev: any) => ({
+                ...prev,
+                business_address: prev.business_address || res.formattedAddress || query,
+                address_lat: res.lat ?? prev.address_lat,
+                address_lng: res.lng ?? prev.address_lng,
+                address_city: prev.address_city || res.city,
+                address_zip: prev.address_zip || res.zip,
+            }));
+        } catch {
+            // Passive resolution: never block the UI or throw
+        }
+    }, [formData.business_address, formData.address_city, formData.address_zip, setFormData]);
+
+    const isDistant = isDistantAddress({
+        address: formData.business_address,
+        city: formData.address_city,
+        state: formData.address_state,
+        zip: formData.address_zip,
+        lat: formData.address_lat,
+        lng: formData.address_lng,
+    });
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formatted = formatPhoneNumber(e.target.value);
@@ -345,11 +614,17 @@ export const RegisterForm = ({
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1 flex items-center justify-between">
                                     <span>{locale === 'en' ? 'Commercial Address (Billing & Delivery) *' : 'Dirección Comercial (Facturación y Entrega) *'}</span>
-                                    {formData.address_lat && formData.address_lng && (
-                                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                            GPS ✓
-                                        </span>
-                                    )}
+                                    <div className="flex items-center gap-1.5">
+                                        {formData.address_lat && formData.address_lng ? (
+                                            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                                GPS ✓
+                                            </span>
+                                        ) : formData.business_address?.trim() ? (
+                                            <span className="text-[9px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                                                {locale === 'en' ? 'Manual Address Fallback ✓' : 'Resolución Manual Tolerante ✓'}
+                                            </span>
+                                        ) : null}
+                                    </div>
                                 </label>
                                 {isLoaded ? (
                                     <Autocomplete
@@ -368,9 +643,15 @@ export const RegisterForm = ({
                                             className="premium-input text-xs w-full"
                                             value={formData.business_address || ''}
                                             onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
+                                            onBlur={() => {
+                                                if (!formData.address_lat && formData.business_address?.trim()) {
+                                                    handlePassiveResolution(formData.business_address);
+                                                }
+                                            }}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                     e.preventDefault();
+                                                    handlePassiveResolution(formData.business_address);
                                                 }
                                             }}
                                         />
@@ -383,12 +664,79 @@ export const RegisterForm = ({
                                         className="premium-input text-xs w-full"
                                         value={formData.business_address || ''}
                                         onChange={(e) => setFormData({ ...formData, business_address: e.target.value })}
+                                        onBlur={() => {
+                                            if (!formData.address_lat && formData.business_address?.trim()) {
+                                                handlePassiveResolution(formData.business_address);
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handlePassiveResolution(formData.business_address);
+                                            }
+                                        }}
                                     />
                                 )}
+
+                                {/* TASK-99-01: Edición libre de Ciudad y Código Postal (ZIP) con fallback tolerante */}
+                                <div className="grid grid-cols-2 gap-3 pt-1">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                                            {locale === 'en' ? 'City / Town' : 'Ciudad'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder={locale === 'en' ? 'e.g. Astoria, Miami, Dallas' : 'Ej: Astoria, Miami, Dallas'}
+                                            className="premium-input text-xs"
+                                            value={formData.address_city || ''}
+                                            onChange={(e) => setFormData({ ...formData, address_city: e.target.value })}
+                                            onBlur={() => {
+                                                if (!formData.address_lat && formData.business_address?.trim()) {
+                                                    handlePassiveResolution();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">
+                                            {locale === 'en' ? 'ZIP Code' : 'Código Postal (ZIP)'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. 11106, 33019"
+                                            className="premium-input text-xs"
+                                            value={formData.address_zip || ''}
+                                            onChange={(e) => setFormData({ ...formData, address_zip: e.target.value })}
+                                            onBlur={() => {
+                                                if (!formData.address_lat && formData.business_address?.trim()) {
+                                                    handlePassiveResolution();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* TASK-99-01: Alerta no bloqueante ante direcciones distantes o foráneas */}
+                                {isDistant && formData.business_address?.trim() && (
+                                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-amber-800 dark:text-amber-300 text-[11px] animate-fade-in">
+                                        <AlertTriangle size={15} className="shrink-0 text-amber-600 mt-0.5" />
+                                        <div className="leading-tight">
+                                            <span className="font-bold block">
+                                                {locale === 'en' ? 'Distant / Nationwide Address' : 'Dirección Distante o Foránea'}
+                                            </span>
+                                            <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                                                {locale === 'en'
+                                                    ? 'Address outside local 30-mile NYC route. Registration continues normally and will be queued for freight review.'
+                                                    : 'Ubicación fuera del radio local de 30 millas desde Astoria. Tu registro continúa con normalidad y quedará habilitado para cotización de flete.'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <p className="text-[10px] text-muted-foreground ml-1">
                                     {locale === 'en'
-                                        ? 'Powered by Google Places. Search by store name or physical address.'
-                                        : 'Con Google Places. Busca por nombre comercial o dirección física.'}
+                                        ? 'Powered by Google Places with manual tolerant fallback. Search by store name or enter physical address.'
+                                        : 'Con Google Places y resolución manual tolerante. Busca por local o escribe la dirección física.'}
                                 </p>
                             </div>
 

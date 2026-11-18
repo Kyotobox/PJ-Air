@@ -3,8 +3,8 @@
   "version": "5.4.0",
   "kernel_version": "5.4.3",
   "status": "IN_PROGRESS",
-  "current_sprint": "S98",
-  "current_task": "TASK-98-05",
+  "current_sprint": "S99",
+  "current_task": "TASK-99-01",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -24,48 +24,6 @@
     }
   ],
   "sprints": [
-    {
-      "id": "S96",
-      "title": "Sprint S96: Motor de Incidencias de Entrega y Saldo a Favor No Fiscal (Store Credit SC) con Notificación Digital y Autoservicio B2B",
-      "status": "COMPLETED",
-      "tasks": [
-        {
-          "id": "TASK-96-01",
-          "title": "Modelo de datos TypeORM, DDL y API para incidencias de entrega (delivery_incidents) y vouchers de Store Credit con prefijo SC-YYYY-XXXX",
-          "status": "DONE",
-          "type": "BACKEND/CORE",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-96-02",
-          "title": "Módulo de autoservicio B2B en /orders/[id] para reporte de incidencias con selector de productos, evidencia fotográfica y ventana 10:00 AM",
-          "status": "DONE",
-          "type": "FRONTEND/CLIENT",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-96-03",
-          "title": "Panel de gestión en /admin/orders y /admin/clients para revisión de fotos, aprobación y acreditación atómica a user.credit_balance",
-          "status": "DONE",
-          "type": "FRONTEND/ADMIN",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-96-04",
-          "title": "Plantilla y servicio de correo transaccional en MailService estilo Gift Card Digital con miniatura de foto y enlace de redención",
-          "status": "DONE",
-          "type": "BACKEND/NOTIFICATIONS",
-          "veracity_hash": null
-        },
-        {
-          "id": "TASK-96-05",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6), verificación en ambiente testing y despliegue a producción",
-          "status": "DONE",
-          "type": "TEST/DEVOPS",
-          "veracity_hash": null
-        }
-      ]
-    },
     {
       "id": "S97",
       "title": "Sprint S97: Rol de Auditor Contable y Financiero (RBAC Read-Only SoD) con Aislamiento Operativo, Libro de Ventas y Conciliación Fiscal",
@@ -153,13 +111,13 @@
     {
       "id": "S99",
       "title": "Sprint S99: Soporte de Direcciones Distantes con Aprobación Administrativa Condicional (PENDING_APPROVAL), Paridad Fiscal INV y Claridad Léxica",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "tasks": [
         {
           "id": "TASK-99-01",
           "title": "Soporte de direcciones distantes y fallback manual tolerante en RegisterForm.tsx sin bloqueos de Google Places",
           "desc": "Habilitar captura de cualquier dirección en EE. UU. (incluyendo ubicaciones foráneas/distantes) sin restricciones de bounds rígidos de Google Places ni bloqueos por falta de place_changed. Permitir edición libre de calle, ciudad y zip code, calculando coordenadas o aplicando resolución pasiva para que el registro nunca se detenga.",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/REGISTER-GEO",
           "predicted_files": [
             "frontend/components/auth/RegisterForm.tsx",
@@ -218,7 +176,7 @@
       ]
     }
   ],
-  "archived_sprints_count": 95,
+  "archived_sprints_count": 1,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S98",
