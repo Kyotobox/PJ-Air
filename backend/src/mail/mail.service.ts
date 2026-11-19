@@ -152,6 +152,10 @@ export class MailService {
 
     try {
       const orderShortId = (order.id || '').toString().slice(0, 8).toUpperCase();
+      // TASK-99-03: Paridad exacta con el folio canónico (order.invoice_number) para sincronía contable
+      const invoiceFolio = order.invoice_number
+        ? (order.invoice_number.startsWith('INV-') ? order.invoice_number : `INV-${order.invoice_number}`)
+        : `INV-${orderShortId}`;
       const itemsListHtml = (order.items || [])
         .map(
           (item: any) => `
@@ -208,7 +212,7 @@ export class MailService {
           </div>
 
           <div style="margin-bottom: 24px; font-size: 14px; color: #334155;">
-            <p style="margin: 0 0 6px 0;"><strong>Invoice Number:</strong> INV-${orderShortId}</p>
+            <p style="margin: 0 0 6px 0;"><strong>Invoice Number:</strong> ${invoiceFolio}</p>
             <p style="margin: 0 0 6px 0;"><strong>Order Date:</strong> ${new Date(order.created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
             <p style="margin: 0 0 6px 0;"><strong>Delivery Date:</strong> <strong>${order.delivery_date || 'Scheduled'}</strong></p>
             <p style="margin: 0;"><strong>Payment Method:</strong> ${(order.payment_method || 'Commercial Account').toUpperCase()}</p>
@@ -245,9 +249,10 @@ export class MailService {
       `;
 
       await this.transporter.sendMail({
-        from: SMTP_USER ? `"Jhoanes Bakery Wholesale" <${SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <invoices@jhoanes.com>',
+        from: SMTP_USER ? `"Jhoanes Bakery Wholesale" <${SMTP_USER}>` : '"Jhoanes Bakery Wholesale" <Contact@jhoanesbakery.com>',
+        replyTo: 'Jhoanes.invoices@gmail.com',
         to: customerEmail,
-        subject: `Commercial Invoice INV-${orderShortId} — Jhoanes Bakery Wholesale`,
+        subject: `Commercial Invoice ${invoiceFolio} — Jhoanes Bakery Wholesale`,
         html,
       });
 

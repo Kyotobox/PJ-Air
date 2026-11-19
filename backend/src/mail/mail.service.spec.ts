@@ -67,6 +67,51 @@ describe('MailService', () => {
       expect(sendMailSpy).not.toHaveBeenCalled();
     });
 
+    describe('TASK-99-03: sendEnglishInvoice Folio Parity & Official Sender', () => {
+      it('should use order.invoice_number in subject and body, and use official sender with reply-to (Happy Path)', async () => {
+        const mockOrder = {
+          id: 'order-uuid-abcdef123456',
+          invoice_number: 'INV-1654',
+          total: 86.88,
+          items: [{ name: 'Croissant', quantity: 12, price_at_time: 5.00 }],
+        };
+
+        const result = await service.sendEnglishInvoice(mockOrder, 'accountant@atax.com');
+        expect(result).toBe(true);
+        expect(sendMailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'accountant@atax.com',
+            from: expect.stringContaining('Contact@jhoanesbakery.com'),
+            replyTo: 'Jhoanes.invoices@gmail.com',
+            subject: 'Commercial Invoice INV-1654 — Jhoanes Bakery Wholesale',
+            html: expect.stringContaining('Invoice Number:</strong> INV-1654'),
+          })
+        );
+      });
+
+      it('should return false when customerEmail is missing or empty (Sad Path §6)', async () => {
+        const mockOrder = { id: 'order-1', invoice_number: 'INV-1654' };
+        const result = await service.sendEnglishInvoice(mockOrder, '');
+        expect(result).toBe(false);
+      });
+
+      it('should fallback to short ID if order.invoice_number is missing (Boundary Path)', async () => {
+        const mockOrder = {
+          id: '12345678-abcd-ef01-2345-6789abcdef01',
+          total: 100,
+        };
+
+        const result = await service.sendEnglishInvoice(mockOrder, 'client@example.com');
+        expect(result).toBe(true);
+        expect(sendMailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            subject: 'Commercial Invoice INV-12345678 — Jhoanes Bakery Wholesale',
+            html: expect.stringContaining('Invoice Number:</strong> INV-12345678'),
+          })
+        );
+      });
+    });
+
     it('should send refund receipt email strictly in English with English labels', async () => {
       const mockOrder = {
         id: 'order-refund-test-456',

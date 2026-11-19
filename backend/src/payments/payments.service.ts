@@ -266,6 +266,8 @@ export class PaymentsService {
           await this.ordersService.update(orderId, {
             payment_status: 'paid',
             stripe_payment_id: intent.id,
+            pending_balance: 0.00,
+            status: 'confirmed',
           }, 'admin');
         }
 
@@ -292,9 +294,6 @@ export class PaymentsService {
         description: resolvedDescription,
         receipt_email: customerEmail,
         metadata,
-        automatic_payment_methods: {
-          enabled: true,
-        },
       };
 
       if (customerId && !customerId.startsWith('cus_mock_')) {
@@ -305,8 +304,10 @@ export class PaymentsService {
       }
 
       if (paymentMethodType === 'us_bank_account') {
-        delete (intentParams as any).automatic_payment_methods;
         (intentParams as any).payment_method_types = ['us_bank_account'];
+      } else {
+        // TASK-99-05: Desactivación de ACH público general: restringir a tarjeta de crédito/débito y billeteras inmediatas
+        (intentParams as any).payment_method_types = ['card'];
       }
 
       const intent = await this.stripe.paymentIntents.create(intentParams);
@@ -739,6 +740,8 @@ export class PaymentsService {
         const updatePayload: any = {
           payment_status: 'paid',
           stripe_payment_id: paymentIntent.id,
+          pending_balance: 0.00,
+          status: 'confirmed',
         };
         if (paymentIntent?.metadata?.feeAmount) {
           updatePayload.fee_amount = Number(paymentIntent.metadata.feeAmount);

@@ -102,7 +102,7 @@ function CheckoutForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <PaymentElement />
+                <PaymentElement options={{ layout: 'tabs' }} />
             </div>
 
             {/* Save Card Checkbox */}

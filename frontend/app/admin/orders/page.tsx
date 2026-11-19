@@ -1502,20 +1502,19 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                         ↩ Reembolsado
                                                     </span>
                                                 )}
-                                                {order.payment_method === 'credit' && (
+                                                {(order.payment_method === 'credit' || (order.user as any)?.account_type === 'credit' || (order as any)?.account_type === 'credit') ? (
                                                     <span className={`px-2 py-0.5 rounded-md text-[9px] font-black border flex items-center gap-1 ${
                                                         order.payment_status === 'paid'
                                                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                             : 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm'
                                                     }`}>
-                                                        {order.payment_status === 'paid' ? '✓ Crédito Liquidado' : '🏢 Crédito B2B (Net-7)'}
+                                                        {order.payment_status === 'paid' ? '✓ Crédito Liquidado' : '🏢 Aprobado a Crédito (Net-7)'}
                                                     </span>
-                                                )}
-                                                {order.payment_status === 'pending' && order.payment_method !== 'credit' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && order.payment_method !== 'ach' && (
-                                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[9px] font-bold border border-slate-300">
-                                                        🛒 Checkout Incompleto
+                                                ) : order.payment_status === 'pending' && order.payment_method !== 'zelle' && order.payment_method !== 'check' && order.payment_method !== 'ach' ? (
+                                                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[9px] font-bold border border-amber-200">
+                                                        ⏳ Pago Pendiente
                                                     </span>
-                                                )}
+                                                ) : null}
                                                 {/* Status ST-120 & Accounting Indicators (TASK-97-03) */}
                                                 <div className="flex items-center gap-1.5 flex-wrap mt-1">
                                                     {Boolean(order.tax_exempt || order.user?.tax_exempt || order.user?.st120_status === 'APPROVED' || (order.user as any)?.profile?.tax_exempt || (order.user as any)?.profile?.st120_status === 'APPROVED') ? (

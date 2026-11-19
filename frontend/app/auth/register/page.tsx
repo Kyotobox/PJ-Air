@@ -184,7 +184,9 @@ export default function RegisterPage() {
 
             trackMetaEvent('CompleteRegistration', { status: 'success', content_name: 'Wholesale Registration' });
 
-            if (data.session) {
+            if (data.account_status === 'PENDING_APPROVAL' || data.user?.account_status === 'PENDING_APPROVAL') {
+                router.push('/auth/login?pending_approval=true');
+            } else if (data.session) {
                 updateLocalSession(data);
                 router.push('/profile/addresses/new');
             } else {

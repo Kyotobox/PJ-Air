@@ -773,6 +773,76 @@ describe('AuthService', () => {
         }),
       );
     });
+
+    it('TASK-99-02: assigns account_status PENDING_APPROVAL and session null for distant address > 30 miles (Sad/Boundary Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(null);
+      mockUsersService.create.mockImplementationOnce(async (data: any) => ({
+        id: 'new-client-distant',
+        email: data.email,
+        role: data.role,
+        account_status: data.account_status,
+      }));
+      mockUsersService.createProfile.mockResolvedValueOnce({ id: 'new-client-distant' });
+
+      // Miami, FL coordinates (~1090 miles from Astoria HQ)
+      const res = await service.signup({
+        email: 'distant@miamibakery.com',
+        password: 'password123',
+        fullName: 'Distant Client',
+        phone: '1234567890',
+        company_name: 'Miami Deli Corp',
+        tax_id: '12-3456789',
+        business_address: '100 Ocean Drive, Miami Beach, FL 33139',
+        address_lat: 25.778135,
+        address_lng: -80.131324,
+        address_state: 'FL',
+        address_zip: '33139',
+      });
+
+      expect(mockUsersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          account_status: 'PENDING_APPROVAL',
+        }),
+      );
+      expect(res.account_status).toBe('PENDING_APPROVAL');
+      expect(res.session).toBeNull();
+      expect(res.message).toContain('en revisión para aprobación administrativa');
+    });
+
+    it('TASK-99-02: assigns account_status APPROVED and returns session for local address <= 30 miles (Happy Path)', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(null);
+      mockUsersService.create.mockImplementationOnce(async (data: any) => ({
+        id: 'new-client-local',
+        email: data.email,
+        role: data.role,
+        account_status: data.account_status,
+      }));
+      mockUsersService.createProfile.mockResolvedValueOnce({ id: 'new-client-local' });
+
+      // Manhattan coordinates (~4 miles from Astoria HQ)
+      const res = await service.signup({
+        email: 'local@manhattancafe.com',
+        password: 'password123',
+        fullName: 'Local Client',
+        phone: '1234567890',
+        company_name: 'Manhattan Cafe LLC',
+        tax_id: '12-3456789',
+        business_address: '350 5th Ave, New York, NY 10118',
+        address_lat: 40.748441,
+        address_lng: -73.985664,
+        address_state: 'NY',
+        address_zip: '10118',
+      });
+
+      expect(mockUsersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          account_status: 'APPROVED',
+        }),
+      );
+      expect(res.account_status).toBe('APPROVED');
+      expect(res.session).not.toBeNull();
+      expect(res.session?.access_token).toBeDefined();
+    });
   });
 });
 

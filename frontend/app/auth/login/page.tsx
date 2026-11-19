@@ -13,6 +13,8 @@ function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectParam = searchParams.get('redirect');
+    const isPendingApproval = searchParams.get('pending_approval') === 'true';
+    const isRegistered = searchParams.get('registered') === 'true';
     const { updateLocalSession } = useAuth();
     const { t } = useLanguage();
     const [error, setError] = useState('');
@@ -67,6 +69,18 @@ function LoginContent() {
                     <h1 className="text-4xl font-black font-serif mb-3 tracking-tighter">{t.login.title}</h1>
                     <p className="text-muted-foreground font-medium">{t.login.subtitle}</p>
                 </div>
+
+                {isPendingApproval && !error && (
+                    <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold leading-relaxed shadow-sm">
+                        ⏳ <strong>Solicitud en Revisión Administrativa:</strong> Tu cuenta comercial mayorista ha sido registrada exitosamente. Al encontrarse fuera del radio de entrega local habitual, nuestro equipo de logística y administración revisará y aprobará la cobertura y cotización de flete antes de habilitar el acceso comercial. Te notificaremos a tu correo o teléfono una vez aprobada.
+                    </div>
+                )}
+
+                {isRegistered && !isPendingApproval && !error && (
+                    <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold leading-relaxed shadow-sm">
+                        ✓ <strong>Registro Exitoso:</strong> Tu cuenta comercial ha sido creada. Por favor ingresa con tus credenciales.
+                    </div>
+                )}
 
                 <LoginForm 
                     identifier={identifier}

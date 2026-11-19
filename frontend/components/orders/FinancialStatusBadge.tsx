@@ -45,6 +45,21 @@ export function getFinancialStatus(
     };
   }
 
+  // TASK-99-04: Órdenes con línea de crédito comercial (Net-7)
+  const isCreditOrder = (order as any).payment_method === 'credit' ||
+    (order as any).account_type === 'credit' ||
+    (order as any).user?.account_type === 'credit';
+
+  if (isCreditOrder && !order.payment_due_date) {
+    return {
+      type: 'up_to_date',
+      label: locale === 'en' ? 'Credit Approved (Net-7)' : 'Aprobado a Crédito (Net-7)',
+      badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-200 shadow-sm',
+      pillClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      icon: '🏢',
+    };
+  }
+
   if (order.payment_due_date) {
     const todayStr = new Intl.DateTimeFormat('en-CA').format(new Date()); // YYYY-MM-DD
     const dueTime = new Date(order.payment_due_date).getTime();

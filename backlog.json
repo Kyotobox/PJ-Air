@@ -4,7 +4,7 @@
   "kernel_version": "5.4.3",
   "status": "IN_PROGRESS",
   "current_sprint": "S99",
-  "current_task": "TASK-99-01",
+  "current_task": "TASK-99-02",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -110,7 +110,7 @@
     },
     {
       "id": "S99",
-      "title": "Sprint S99: Soporte de Direcciones Distantes con Aprobación Administrativa Condicional (PENDING_APPROVAL), Paridad Fiscal INV y Claridad Léxica",
+      "title": "Sprint S99: Erradicación de Fricciones Críticas de Venta y Cobro: Registro Tolerante de Clientes, Inmutabilidad de Flete en Checkout, Desactivación de ACH Público en Stripe y Paridad Fiscal de Facturación",
       "status": "IN_PROGRESS",
       "tasks": [
         {
@@ -129,7 +129,7 @@
           "id": "TASK-99-02",
           "title": "Compuerta de aprobación administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts",
           "desc": "En backend/src/auth/auth.service.ts, calcular la distancia de la dirección respecto al centro de operaciones en Astoria HQ (3304 Broadway). Si la distancia excede el radio estándar local (dirección distante > 30 millas o requiere cotización especial de flete), asignar account_status = PENDING_APPROVAL; si es local, asignar APPROVED. Informar al cliente con feedback formal en registro y login.",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/AUTH-APPROVAL",
           "predicted_files": [
             "backend/src/auth/auth.service.ts",
@@ -141,7 +141,7 @@
           "id": "TASK-99-03",
           "title": "Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificación de remitentes oficiales en mail.service.ts",
           "desc": "Sustituir la generación del folio en base a UUID recortado (INV-${orderShortId}) por el folio canónico persistido en order.invoice_number en el asunto y cuerpo de sendEnglishInvoice. Unificar remitente a Contact@jhoanesbakery.com y reply-to a Jhoanes.invoices@gmail.com.",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/MAIL-INVOICE",
           "predicted_files": [
             "backend/src/mail/mail.service.ts"
@@ -151,8 +151,8 @@
         {
           "id": "TASK-99-04",
           "title": "Higiene y refinamiento léxico de estados de órdenes a crédito en UI de cliente y panel administrativo",
-          "desc": "Reemplazar el badge de texto confuso \"Checkout Incompleto\" en órdenes con account_type === \"credit\" por \"Crédito Pendiente de Aprobación\" o \"Aprobado a Crédito\", eliminando la falsa alarma y el ruido visual para clientes y administradores.",
-          "status": "TODO",
+          "desc": "Reemplazar el badge de texto confuso \"Checkout Incompleto\" en órdenes con account_type === \"credit\" por \"Aprobado a Crédito\", eliminando la falsa alarma y el ruido visual para clientes y administradores.",
+          "status": "DONE",
           "type": "FRONTEND/ORDERS-LEXICON",
           "predicted_files": [
             "frontend/app/orders/page.tsx",
@@ -162,14 +162,39 @@
         },
         {
           "id": "TASK-99-05",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6), verificación de no-regresión y preparación para cola Automa",
-          "desc": "Implementar tests automatizados con sad path cubriendo: 1) Registro de cliente con dirección local asignando APPROVED (Happy Path) vs dirección distante asignando PENDING_APPROVAL (Sad Path/Gate). 2) Envío de sendEnglishInvoice con folio canónico. 3) Compilación limpia de TypeScript (npm run build) y certificación sin errores.",
-          "status": "TODO",
-          "type": "TEST/REGISTRATION-APPROVAL",
+          "title": "Desactivación de us_bank_account (ACH) en checkout público general de Stripe Elements",
+          "desc": "Desactivar la opción de us_bank_account (ACH) en el checkout público de Stripe Elements en frontend (StripePaymentModal.tsx) y en backend (payments.service.ts) para clientes generales, forzando pago con tarjeta y billeteras inmediatas (Apple/Google Pay) para evitar la retención de 5 días y la confusión comercial del \"$5 back\".",
+          "status": "DONE",
+          "type": "FRONTEND/STRIPE-PAYMENTS",
+          "predicted_files": [
+            "frontend/components/checkout/StripePaymentModal.tsx",
+            "backend/src/payments/payments.service.ts"
+          ],
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-99-06",
+          "title": "Inmutabilidad del total y flete en checkout y auto-conciliación inmediata de orden pagada",
+          "desc": "Blindar la inmutabilidad del total y flete en checkout en orders.service.ts: garantizar que el monto autorizado y pagado en Stripe sea el total definitivo de la orden, erradicando el recargo de flete fantasma post-cobro y asegurando que órdenes con cobro exitoso pasen de inmediato a payment_status = paid sin quedar en \"Payment Pending\".",
+          "status": "DONE",
+          "type": "BACKEND/ORDERS-FREIGHT",
+          "predicted_files": [
+            "backend/src/orders/orders.service.ts",
+            "backend/src/payments/payments.service.ts"
+          ],
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-99-07",
+          "title": "Suite de pruebas automatizadas con Sad Paths (§6) y certificación de integridad",
+          "desc": "Implementar suite de pruebas automatizadas con Sad Paths (§6) cubriendo: 1) Registro distante asignando PENDING_APPROVAL vs local APPROVED. 2) Paridad de invoice en sendEnglishInvoice. 3) Bloqueo de ACH en checkout público general. 4) Inmutabilidad de flete post-pago. 5) Compilación limpia (npm run build) y certificación sin errores.",
+          "status": "DONE",
+          "type": "TEST/SPRINT-CERTIFICATION",
           "predicted_files": [
             "backend/src/auth/auth.service.spec.ts",
             "backend/src/mail/mail.service.spec.ts",
-            "package.json"
+            "backend/src/payments/payments.service.spec.ts",
+            "backend/src/orders/orders.service.spec.ts"
           ],
           "veracity_hash": null
         }
@@ -179,43 +204,57 @@
   "archived_sprints_count": 1,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S98",
-    "title": "Sprint S98: Cumplimiento de Extensiones Google Ads: Exposición de Línea Mayorista B2B (Header, Footer Global y Links Click-to-Call)",
-    "status": "COMPLETED",
+    "id": "S99",
+    "title": "Sprint S99: Erradicación de Fricciones Críticas de Venta y Cobro: Registro Tolerante de Clientes, Inmutabilidad de Flete en Checkout, Desactivación de ACH Público en Stripe y Paridad Fiscal de Facturación",
+    "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-98-01",
-        "title": "Componente canónico Footer.tsx y unificación global con texto visible Wholesale: (347) 761-2687 y tel:+13477612687",
+        "id": "TASK-99-01",
+        "title": "Soporte de direcciones distantes y fallback manual tolerante en RegisterForm.tsx sin bloqueos de Google Places",
         "status": "DONE",
-        "type": "FRONTEND/FOOTER",
+        "type": "FRONTEND/REGISTER-GEO",
         "veracity_hash": null
       },
       {
-        "id": "TASK-98-02",
-        "title": "Integración en Navbar.tsx (Header superior escritorio y móvil + drawer) con badge de llamada click-to-call visible",
-        "status": "DONE",
-        "type": "FRONTEND/HEADER",
+        "id": "TASK-99-02",
+        "title": "Compuerta de aprobación administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts",
+        "status": "TODO",
+        "type": "BACKEND/AUTH-APPROVAL",
         "veracity_hash": null
       },
       {
-        "id": "TASK-98-03",
-        "title": "Presencia visible en Landing Page (page.tsx), Portales Externos y páginas legales (terms/privacy)",
-        "status": "DONE",
-        "type": "FRONTEND/LANDING",
+        "id": "TASK-99-03",
+        "title": "Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificación de remitentes oficiales en mail.service.ts",
+        "status": "TODO",
+        "type": "BACKEND/MAIL-INVOICE",
         "veracity_hash": null
       },
       {
-        "id": "TASK-98-04",
-        "title": "Suite de pruebas automatizadas con Sad Paths (§6) validando presencia exacta de texto, protocolo tel y accesibilidad",
-        "status": "DONE",
-        "type": "TEST/DOM",
+        "id": "TASK-99-04",
+        "title": "Higiene y refinamiento léxico de estados de órdenes a crédito en UI de cliente y panel administrativo",
+        "status": "TODO",
+        "type": "FRONTEND/ORDERS-LEXICON",
         "veracity_hash": null
       },
       {
-        "id": "TASK-98-05",
-        "title": "Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)",
-        "status": "DONE",
-        "type": "DEVOPS/DEPLOY",
+        "id": "TASK-99-05",
+        "title": "Desactivación de us_bank_account (ACH) en checkout público general de Stripe Elements",
+        "status": "TODO",
+        "type": "FRONTEND/STRIPE-PAYMENTS",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-99-06",
+        "title": "Inmutabilidad del total y flete en checkout y auto-conciliación inmediata de orden pagada",
+        "status": "TODO",
+        "type": "BACKEND/ORDERS-FREIGHT",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-99-07",
+        "title": "Suite de pruebas automatizadas con Sad Paths (§6) y certificación de integridad",
+        "status": "TODO",
+        "type": "TEST/SPRINT-CERTIFICATION",
         "veracity_hash": null
       }
     ]

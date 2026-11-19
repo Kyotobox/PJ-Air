@@ -144,6 +144,35 @@ describe('PaymentsService', () => {
     }));
   });
 
+  it('TASK-99-05 Happy Path: restricts payment_method_types to ["card"] for general public checkout', async () => {
+    const spy = jest.spyOn((service as any).stripe.paymentIntents, 'create');
+
+    await service.createPaymentIntent({
+      amount: 86.88,
+      currency: 'usd',
+      customerEmail: 'general@client.com',
+    });
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+      payment_method_types: ['card'],
+    }));
+  });
+
+  it('TASK-99-05 VIP/Specific Path: allows payment_method_types ["us_bank_account"] when explicitly requested', async () => {
+    const spy = jest.spyOn((service as any).stripe.paymentIntents, 'create');
+
+    await service.createPaymentIntent({
+      amount: 500.00,
+      currency: 'usd',
+      customerEmail: 'vip@client.com',
+      paymentMethodType: 'us_bank_account',
+    });
+
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+      payment_method_types: ['us_bank_account'],
+    }));
+  });
+
   it('TASK-77-02 Sad Path: retrievePaymentIntent returns null on invalid or missing intent ID (§6)', async () => {
     const res = await service.retrievePaymentIntent('');
     expect(res).toBeNull();

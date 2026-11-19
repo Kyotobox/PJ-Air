@@ -1321,9 +1321,6 @@ export class OrdersService {
     if (updateData.pending_balance !== undefined) {
       order.pending_balance = Number(updateData.pending_balance);
     }
-    if (updateData.delivery_fee !== undefined || updateData.delivery_fee_charged !== undefined) {
-      order.delivery_fee_charged = Number(updateData.delivery_fee ?? updateData.delivery_fee_charged ?? 0);
-    }
     if (updateData.notes !== undefined && !motivo) {
       order.notes = updateData.notes;
     }
@@ -1374,8 +1371,17 @@ export class OrdersService {
     } else if (total !== undefined) {
       order.total = total;
     } else if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
-      const feeDiff = Number(order.delivery_fee_charged || 0) - oldDeliveryFeeCharged;
-      order.total = Math.max(0, Math.round(((Number(order.total) || 0) + feeDiff) * 100) / 100);
+      if (oldPaymentStatus === 'paid' && userRole !== 'admin' && !updateData.allow_paid_total_mutation) {
+        // TASK-99-06: Freeze delivery fee and total on already-paid orders to prevent phantom post-checkout fee inflation
+        order.delivery_fee_charged = oldDeliveryFeeCharged;
+      } else {
+        const feeDiff = Number(order.delivery_fee_charged || 0) - oldDeliveryFeeCharged;
+        order.total = Math.max(0, Math.round(((Number(order.total) || 0) + feeDiff) * 100) / 100);
+      }
+    }
+
+    if (order.payment_status === 'paid' && updateData.pending_balance === undefined) {
+      order.pending_balance = 0.00;
     }
 
     if (oldPaymentStatus === 'paid' && Number(order.total) < oldTotal) {
@@ -1390,14 +1396,14 @@ export class OrdersService {
     const saved = await this.orderRepository.save(order);
 
     // TASK-94-03: Sincronizar invoice en Stripe si la orden fue cobrada con tarjeta/ACH
-    if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+    if (saved?.invoice_number && saved?.stripe_payment_id && typeof this.paymentsService?.syncInvoiceToStripe === 'function') {
       this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => {});
     }
 
-    const isNowPaidOrApproved = (saved.payment_status === 'paid' || saved.status === 'approved' || saved.status === 'aprobado');
+    const isNowPaidOrApproved = (saved?.payment_status === 'paid' || saved?.status === 'approved' || saved?.status === 'aprobado');
     const wasPaidOrApproved = (oldPaymentStatus === 'paid' || oldStatus === 'approved' || oldStatus === 'aprobado');
     if (isNowPaidOrApproved && !wasPaidOrApproved && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
-      const client = await this.userRepository.findOne({ where: { id: saved.user_id } });
+      const client = await this.userRepository.findOne({ where: { id: saved?.user_id } });
       if (client?.email) {
         this.mailService.sendEnglishInvoice(saved, client.email).catch(err => {
           console.error('[OrdersService] Error sending English invoice on order status update:', err?.message || err);

@@ -2783,7 +2783,7 @@ describe('OrdersService', () => {
         payment_method: 'stripe',
         payment_status: 'pending',
         status: 'pending',
-        delivery_date: '2026-11-20',
+        delivery_date: '2026-12-04',
       });
 
       expect(result).toBeDefined();
@@ -2809,7 +2809,7 @@ describe('OrdersService', () => {
       const result = await service.create('user-cash-confirmed', {
         items: [{ product_id: 1, quantity: 2 }],
         payment_method: 'cash',
-        delivery_date: '2026-11-20',
+        delivery_date: '2026-12-04',
       });
 
       expect(result).toBeDefined();
@@ -2872,7 +2872,7 @@ describe('OrdersService', () => {
       const result = await service.create('user-valid-address', {
         items: [{ product_id: 1, quantity: 2 }],
         address_id: 'valid-address-uuid-123',
-        delivery_date: '2026-11-20',
+        delivery_date: '2026-12-04',
         payment_method: 'cash',
       });
 
@@ -3162,7 +3162,7 @@ describe('OrdersService', () => {
         manual_entry: true,
         is_draft: true,
         items: [{ productId: 1, quantity: 2 }],
-        deliveryDate: '2026-11-20',
+        deliveryDate: '2026-12-04',
         paymentMethod: 'credit',
       };
 
@@ -3392,6 +3392,70 @@ describe('OrdersService', () => {
         const result = await service.findInRange('2026-11-01', '2026-11-02');
         expect(result).toEqual([]);
       });
+    });
+  });
+
+  describe('Sprint S99: TASK-99-06 Inmutabilidad de Flete y Auto-Conciliación de Órdenes Pagadas', () => {
+    it('Happy Path: auto-reconciles order to confirmed, sets pending_balance to 0, and assigns invoice_number on payment_status = paid', async () => {
+      const mockOrder = {
+        id: 'order-amex-8688',
+        total: 86.88,
+        delivery_fee_charged: 0.00,
+        payment_status: 'pending',
+        status: 'pending',
+        pending_balance: 40.00,
+        invoice_number: null,
+        items: [],
+      };
+
+      service.findOne = jest.fn().mockResolvedValue(mockOrder);
+      service.getNextInvoiceNumber = jest.fn().mockResolvedValue('INV-1655');
+      orderRepository.save.mockImplementation(async (o: any) => o);
+
+      await service.update('order-amex-8688', {
+        payment_status: 'paid',
+        stripe_payment_id: 'pi_test_amex_8688',
+      });
+
+      expect(orderRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'order-amex-8688',
+          payment_status: 'paid',
+          status: 'confirmed',
+          pending_balance: 0.00,
+          invoice_number: 'INV-1655',
+        }),
+      );
+    });
+
+    it('Sad/Invariance Path: freezes delivery fee and total on already paid order when non-admin attempts mutation without override', async () => {
+      const mockPaidOrder = {
+        id: 'order-paid-settled',
+        total: 86.88,
+        delivery_fee_charged: 0.00,
+        payment_status: 'paid',
+        status: 'confirmed',
+        pending_balance: 0.00,
+        invoice_number: 'INV-1654',
+        items: [],
+      };
+
+      service.findOne = jest.fn().mockResolvedValue(mockPaidOrder);
+      orderRepository.save.mockImplementation(async (o: any) => o);
+
+      await service.update('order-paid-settled', {
+        delivery_fee_charged: 40.00,
+      }, 'client');
+
+      // The delivery fee and total must remain frozen at 0 and 86.88, not inflated to 126.88
+      expect(orderRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'order-paid-settled',
+          total: 86.88,
+          delivery_fee_charged: 0.00,
+          pending_balance: 0.00,
+        }),
+      );
     });
   });
 });
