@@ -199,7 +199,7 @@ describe('PaymentsService', () => {
 
     const result = await service.handleWebhook(webhookEvent);
     expect(result.received).toBe(true);
-    expect(ordersService.update).toHaveBeenCalledWith('order-reconciled-789', { payment_status: 'paid', stripe_payment_id: 'pi_test_123' }, 'admin');
+    expect(ordersService.update).toHaveBeenCalledWith('order-reconciled-789', expect.objectContaining({ payment_status: 'paid', stripe_payment_id: 'pi_test_123', status: 'confirmed' }), 'admin');
     
     // Give non-blocking async a microtick
     await new Promise(r => setTimeout(r, 10));

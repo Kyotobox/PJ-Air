@@ -57,7 +57,11 @@ describe('incident-validation', () => {
       });
 
       it('acepta boolean directo como tercer parámetro para órdenes diurnas', () => {
-        const daytimeDelivery = '2026-11-17 08:00:00';
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const daytimeDelivery = `${y}-${m}-${d} 08:00:00`;
         const result = isWithinReportingWindow(daytimeDelivery, 14, true);
         expect(result).toBe(true);
       });
