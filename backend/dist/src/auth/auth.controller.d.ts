@@ -5,9 +5,27 @@ export declare class AuthController {
     signup(body: any): Promise<{
         address?: import("../addresses/address.entity").Address | undefined;
         message: string;
+        account_status: string;
         user: {
             id: any;
             email: any;
+            account_status: any;
+            app_metadata: {};
+            user_metadata: {
+                full_name: any;
+            };
+            aud: string;
+            created_at: string;
+        };
+        session: null;
+    } | {
+        address?: import("../addresses/address.entity").Address | undefined;
+        message: string;
+        account_status: any;
+        user: {
+            id: any;
+            email: any;
+            account_status: any;
             app_metadata: {};
             user_metadata: {
                 full_name: any;

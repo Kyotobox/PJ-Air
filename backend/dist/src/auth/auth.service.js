@@ -77,7 +77,7 @@ let AuthService = AuthService_1 = class AuthService {
         this.st120GeneratorService = st120GeneratorService;
     }
     async signup(body) {
-        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared, business_address, address_lat, address_lng, address_city, facade_image_url, access_code, has_key, key_location, fridge_access_required, notes, delivery_notes, st120_document_url, st120_auto_generate, utm_source, utm_medium, utm_campaign, utm_content, } = body;
+        const { email, password, full_name, username, phone, company_name, role, phone_verified, idToken, tax_id, st120_declared, business_address, address_lat, address_lng, address_city, address_zip, address_state, facade_image_url, access_code, has_key, key_location, fridge_access_required, notes, delivery_notes, st120_document_url, st120_auto_generate, utm_source, utm_medium, utm_campaign, utm_content, } = body;
         const userRole = role || 'client';
         const cleanCompany = (company_name || '').trim();
         if (userRole === 'client' && !cleanCompany) {
@@ -108,6 +108,28 @@ let AuthService = AuthService_1 = class AuthService {
             : (st120_declared || cleanTaxId || st120_document_url ? 'PENDING' : 'NONE');
         const initialTaxExempt = shouldAutoGenerateSt120 ? true : false;
         const cleanSt120DocUrl = st120_document_url && typeof st120_document_url === 'string' ? st120_document_url.trim() : undefined;
+        const cleanBusinessAddressEarly = business_address && typeof business_address === 'string' ? business_address.trim() : '';
+        const cleanCityEarly = address_city && typeof address_city === 'string' && address_city.trim() ? address_city.trim() : 'New York';
+        const latNumEarly = typeof address_lat === 'number' ? address_lat : (address_lat !== null && address_lat !== undefined && !isNaN(parseFloat(address_lat)) ? parseFloat(address_lat) : null);
+        const lngNumEarly = typeof address_lng === 'number' ? address_lng : (address_lng !== null && address_lng !== undefined && !isNaN(parseFloat(address_lng)) ? parseFloat(address_lng) : null);
+        const distantEval = this.evaluateDistantAddress({
+            lat: latNumEarly,
+            lng: lngNumEarly,
+            address: cleanBusinessAddressEarly || body.business_address,
+            city: cleanCityEarly || body.address_city,
+            state: body.address_state || body.state,
+            zip: address_zip || body.address_zip || body.zip,
+        });
+        let assignedAccountStatus = 'APPROVED';
+        if (userRole === 'admin') {
+            assignedAccountStatus = 'APPROVED';
+        }
+        else if (body.account_status === 'PENDING_APPROVAL' || distantEval.isDistant) {
+            assignedAccountStatus = 'PENDING_APPROVAL';
+        }
+        else if (body.account_status) {
+            assignedAccountStatus = body.account_status;
+        }
         const hashedPassword = (0, crypto_util_1.hashPassword)(password);
         const userResult = await this.usersService.create({
             email: normalizedEmail,
@@ -137,7 +159,7 @@ let AuthService = AuthService_1 = class AuthService {
             ...(utm_medium ? { utm_medium: String(utm_medium).trim().slice(0, 100) } : (body.utm_medium ? { utm_medium: String(body.utm_medium).trim().slice(0, 100) } : {})),
             ...(utm_campaign ? { utm_campaign: String(utm_campaign).trim().slice(0, 100) } : (body.utm_campaign ? { utm_campaign: String(body.utm_campaign).trim().slice(0, 100) } : {})),
             ...(utm_content ? { utm_content: String(utm_content).trim().slice(0, 100) } : (body.utm_content ? { utm_content: String(body.utm_content).trim().slice(0, 100) } : {})),
-            account_status: userRole === 'admin' ? 'APPROVED' : (body.account_status || 'APPROVED'),
+            account_status: assignedAccountStatus,
         });
         const user = Array.isArray(userResult) ? userResult[0] : userResult;
         await this.usersService.createProfile({
@@ -219,11 +241,30 @@ let AuthService = AuthService_1 = class AuthService {
         }
         const payload = { id: user.id, email: user.email, role: user.role };
         const access_token = (0, crypto_util_1.signJwt)(payload);
+        if (user.account_status === 'PENDING_APPROVAL') {
+            return {
+                message: 'Su cuenta comercial B2B ha sido registrada y está en revisión para aprobación administrativa de flete y cobertura.',
+                account_status: 'PENDING_APPROVAL',
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    account_status: user.account_status,
+                    app_metadata: {},
+                    user_metadata: { full_name: full_name },
+                    aud: 'authenticated',
+                    created_at: new Date().toISOString(),
+                },
+                session: null,
+                ...(createdAddress ? { address: createdAddress } : {}),
+            };
+        }
         return {
             message: 'User registered successfully',
+            account_status: user.account_status,
             user: {
                 id: user.id,
                 email: user.email,
+                account_status: user.account_status,
                 app_metadata: {},
                 user_metadata: { full_name: full_name },
                 aud: 'authenticated',
@@ -517,6 +558,50 @@ let AuthService = AuthService_1 = class AuthService {
             idToken,
             phone: e164,
         };
+    }
+    evaluateDistantAddress(params) {
+        const { lat, lng, address, state, zip } = params;
+        if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+            const astoriaLat = 40.761032;
+            const astoriaLng = -73.923714;
+            const R = 3958.8;
+            const dLat = ((lat - astoriaLat) * Math.PI) / 180;
+            const dLon = ((lng - astoriaLng) * Math.PI) / 180;
+            const lat1Rad = (astoriaLat * Math.PI) / 180;
+            const lat2Rad = (lat * Math.PI) / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const roadMiles = Math.round(R * c * 1.25 * 10) / 10;
+            if (roadMiles > 30) {
+                return { isDistant: true, miles: roadMiles, reason: `Distance ${roadMiles} mi exceeds 30 mi threshold` };
+            }
+            return { isDistant: false, miles: roadMiles, reason: `Local distance ${roadMiles} mi <= 30` };
+        }
+        if (state && typeof state === 'string') {
+            const upperState = state.trim().toUpperCase();
+            if (upperState !== 'NY' && upperState !== 'NEW YORK') {
+                return { isDistant: true, reason: `Non-NY state: ${state}` };
+            }
+        }
+        if (zip && typeof zip === 'string') {
+            const cleanZip = zip.trim().slice(0, 5);
+            if (/^\d{5}$/.test(cleanZip)) {
+                const zipNum = parseInt(cleanZip, 10);
+                if (zipNum < 10000 || zipNum > 11999 || (zipNum >= 12000 && zipNum <= 14999)) {
+                    return { isDistant: true, reason: `ZIP ${cleanZip} is outside local NYC metro radius` };
+                }
+            }
+        }
+        if (address && typeof address === 'string') {
+            const lower = address.toLowerCase();
+            const distantStateRegex = /\b(FL|CA|TX|IL|PA|NJ|GA|NC|SC|OH|MI|CO|AZ|WA|OR|NV|MA|FLORIDA|CALIFORNIA|TEXAS)\b/i;
+            if (distantStateRegex.test(address) && !lower.includes('ny') && !lower.includes('new york')) {
+                return { isDistant: true, reason: `Distant state in address text: ${address}` };
+            }
+        }
+        return { isDistant: false, reason: 'Local address' };
     }
 };
 exports.AuthService = AuthService;

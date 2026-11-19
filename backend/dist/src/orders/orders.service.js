@@ -1092,9 +1092,6 @@ let OrdersService = class OrdersService {
         if (updateData.pending_balance !== undefined) {
             order.pending_balance = Number(updateData.pending_balance);
         }
-        if (updateData.delivery_fee !== undefined || updateData.delivery_fee_charged !== undefined) {
-            order.delivery_fee_charged = Number(updateData.delivery_fee ?? updateData.delivery_fee_charged ?? 0);
-        }
         if (updateData.notes !== undefined && !motivo) {
             order.notes = updateData.notes;
         }
@@ -1139,8 +1136,16 @@ let OrdersService = class OrdersService {
             order.total = total;
         }
         else if (updateData.delivery_fee_charged !== undefined || updateData.delivery_fee !== undefined) {
-            const feeDiff = Number(order.delivery_fee_charged || 0) - oldDeliveryFeeCharged;
-            order.total = Math.max(0, Math.round(((Number(order.total) || 0) + feeDiff) * 100) / 100);
+            if (oldPaymentStatus === 'paid' && userRole !== 'admin' && !updateData.allow_paid_total_mutation) {
+                order.delivery_fee_charged = oldDeliveryFeeCharged;
+            }
+            else {
+                const feeDiff = Number(order.delivery_fee_charged || 0) - oldDeliveryFeeCharged;
+                order.total = Math.max(0, Math.round(((Number(order.total) || 0) + feeDiff) * 100) / 100);
+            }
+        }
+        if (order.payment_status === 'paid' && updateData.pending_balance === undefined) {
+            order.pending_balance = 0.00;
         }
         if (oldPaymentStatus === 'paid' && Number(order.total) < oldTotal) {
             const diff = Math.round((oldTotal - Number(order.total)) * 100) / 100;
@@ -1151,13 +1156,13 @@ let OrdersService = class OrdersService {
             }
         }
         const saved = await this.orderRepository.save(order);
-        if (saved.invoice_number && saved.stripe_payment_id && this.paymentsService) {
+        if (saved?.invoice_number && saved?.stripe_payment_id && typeof this.paymentsService?.syncInvoiceToStripe === 'function') {
             this.paymentsService.syncInvoiceToStripe(saved.id, saved.invoice_number, saved.stripe_payment_id).catch(() => { });
         }
-        const isNowPaidOrApproved = (saved.payment_status === 'paid' || saved.status === 'approved' || saved.status === 'aprobado');
+        const isNowPaidOrApproved = (saved?.payment_status === 'paid' || saved?.status === 'approved' || saved?.status === 'aprobado');
         const wasPaidOrApproved = (oldPaymentStatus === 'paid' || oldStatus === 'approved' || oldStatus === 'aprobado');
         if (isNowPaidOrApproved && !wasPaidOrApproved && this.mailService && typeof this.mailService.sendEnglishInvoice === 'function') {
-            const client = await this.userRepository.findOne({ where: { id: saved.user_id } });
+            const client = await this.userRepository.findOne({ where: { id: saved?.user_id } });
             if (client?.email) {
                 this.mailService.sendEnglishInvoice(saved, client.email).catch(err => {
                     console.error('[OrdersService] Error sending English invoice on order status update:', err?.message || err);

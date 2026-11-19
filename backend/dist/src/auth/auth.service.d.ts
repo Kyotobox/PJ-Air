@@ -18,9 +18,27 @@ export declare class AuthService {
     signup(body: any): Promise<{
         address?: Address | undefined;
         message: string;
+        account_status: string;
         user: {
             id: any;
             email: any;
+            account_status: any;
+            app_metadata: {};
+            user_metadata: {
+                full_name: any;
+            };
+            aud: string;
+            created_at: string;
+        };
+        session: null;
+    } | {
+        address?: Address | undefined;
+        message: string;
+        account_status: any;
+        user: {
+            id: any;
+            email: any;
+            account_status: any;
             app_metadata: {};
             user_metadata: {
                 full_name: any;
@@ -42,9 +60,27 @@ export declare class AuthService {
     register(body: any): Promise<{
         address?: Address | undefined;
         message: string;
+        account_status: string;
         user: {
             id: any;
             email: any;
+            account_status: any;
+            app_metadata: {};
+            user_metadata: {
+                full_name: any;
+            };
+            aud: string;
+            created_at: string;
+        };
+        session: null;
+    } | {
+        address?: Address | undefined;
+        message: string;
+        account_status: any;
+        user: {
+            id: any;
+            email: any;
+            account_status: any;
             app_metadata: {};
             user_metadata: {
                 full_name: any;
@@ -103,4 +139,16 @@ export declare class AuthService {
         idToken: string;
         phone: string;
     }>;
+    evaluateDistantAddress(params: {
+        lat?: number | null;
+        lng?: number | null;
+        address?: string;
+        city?: string;
+        state?: string;
+        zip?: string;
+    }): {
+        isDistant: boolean;
+        miles?: number;
+        reason?: string;
+    };
 }

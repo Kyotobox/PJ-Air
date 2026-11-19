@@ -248,6 +248,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     await this.ordersService.update(orderId, {
                         payment_status: 'paid',
                         stripe_payment_id: intent.id,
+                        pending_balance: 0.00,
+                        status: 'confirmed',
                     }, 'admin');
                 }
                 return {
@@ -270,9 +272,6 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 description: resolvedDescription,
                 receipt_email: customerEmail,
                 metadata,
-                automatic_payment_methods: {
-                    enabled: true,
-                },
             };
             if (customerId && !customerId.startsWith('cus_mock_')) {
                 intentParams.customer = customerId;
@@ -281,8 +280,10 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 }
             }
             if (paymentMethodType === 'us_bank_account') {
-                delete intentParams.automatic_payment_methods;
                 intentParams.payment_method_types = ['us_bank_account'];
+            }
+            else {
+                intentParams.payment_method_types = ['card'];
             }
             const intent = await this.stripe.paymentIntents.create(intentParams);
             return {
@@ -640,6 +641,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                 const updatePayload = {
                     payment_status: 'paid',
                     stripe_payment_id: paymentIntent.id,
+                    pending_balance: 0.00,
+                    status: 'confirmed',
                 };
                 if (paymentIntent?.metadata?.feeAmount) {
                     updatePayload.fee_amount = Number(paymentIntent.metadata.feeAmount);
