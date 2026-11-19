@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 function LoginContent() {
     const router = useRouter();
@@ -16,7 +17,7 @@ function LoginContent() {
     const isPendingApproval = searchParams.get('pending_approval') === 'true';
     const isRegistered = searchParams.get('registered') === 'true';
     const { updateLocalSession } = useAuth();
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
     const [error, setError] = useState('');
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -46,9 +47,11 @@ function LoginContent() {
         } catch (err: any) {
             const rawMsg = err.message || '';
             if (rawMsg.includes('ACCOUNT_PENDING_APPROVAL')) {
-                setError('Tu cuenta comercial está en proceso de revisión por nuestro equipo administrativo. Te notificaremos una vez aprobada.');
+                setError(locale === 'en'
+                    ? 'Your wholesale commercial account is currently under administrative review. We will notify you once approved.'
+                    : 'Tu cuenta comercial está en proceso de revisión por nuestro equipo administrativo. Te notificaremos una vez aprobada.');
             } else {
-                setError(rawMsg || 'Error al iniciar sesión');
+                setError(rawMsg || (locale === 'en' ? 'Error signing in' : 'Error al iniciar sesión'));
             }
         } finally {
             setIsLoading(false);
@@ -61,7 +64,10 @@ function LoginContent() {
 
     return (
         <div className="min-h-screen bg-secondary/20 flex items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-            <div className="w-full max-w-xl jhoanes-card bg-white/80 backdrop-blur-xl">
+            <div className="w-full max-w-xl jhoanes-card bg-white/80 backdrop-blur-xl relative">
+                <div className="flex justify-end mb-2">
+                    <LanguageSwitcher variant="pill" />
+                </div>
                 <div className="text-center mb-12">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-[24px] mb-6 text-primary">
                         <LogIn size={32} />
@@ -72,13 +78,19 @@ function LoginContent() {
 
                 {isPendingApproval && !error && (
                     <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold leading-relaxed shadow-sm">
-                        ⏳ <strong>Solicitud en Revisión Administrativa:</strong> Tu cuenta comercial mayorista ha sido registrada exitosamente. Al encontrarse fuera del radio de entrega local habitual, nuestro equipo de logística y administración revisará y aprobará la cobertura y cotización de flete antes de habilitar el acceso comercial. Te notificaremos a tu correo o teléfono una vez aprobada.
+                        ⏳ <strong>{locale === 'en' ? 'Application Under Administrative Review:' : 'Solicitud en Revisión Administrativa:'}</strong>{' '}
+                        {locale === 'en'
+                            ? 'Your wholesale commercial account has been submitted successfully. As your delivery address is outside our standard local delivery radius, our logistics and operations team will review freight coverage before activating commercial ordering. We will notify you via email or phone once approved.'
+                            : 'Tu cuenta comercial mayorista ha sido registrada exitosamente. Al encontrarse fuera del radio de entrega local habitual, nuestro equipo de logística y administración revisará y aprobará la cobertura y cotización de flete antes de habilitar el acceso comercial. Te notificaremos a tu correo o teléfono una vez aprobada.'}
                     </div>
                 )}
 
                 {isRegistered && !isPendingApproval && !error && (
                     <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold leading-relaxed shadow-sm">
-                        ✓ <strong>Registro Exitoso:</strong> Tu cuenta comercial ha sido creada. Por favor ingresa con tus credenciales.
+                        ✓ <strong>{locale === 'en' ? 'Registration Successful:' : 'Registro Exitoso:'}</strong>{' '}
+                        {locale === 'en'
+                            ? 'Your commercial account has been created. Please sign in with your credentials.'
+                            : 'Tu cuenta comercial ha sido creada. Por favor ingresa con tus credenciales.'}
                     </div>
                 )}
 

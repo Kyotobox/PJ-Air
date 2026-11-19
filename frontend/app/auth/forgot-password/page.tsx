@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { Mail, ArrowLeft, Loader2, CheckCircle2, User } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 export default function ForgotPasswordPage() {
     const [identifier, setIdentifier] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
-    const { t } = useLanguage();
+    const { t, locale } = useLanguage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,12 +24,16 @@ export default function ForgotPasswordPage() {
             const data = await api.post('/auth/recover-password', { identifier: identifier.trim().toLowerCase() }) as any;
             setMessage({ 
                 type: 'success', 
-                text: data.message || `Gracias, su contraseña se ha enviado al correo ${data.email || ''}`
+                text: data.message || (locale === 'en'
+                    ? `Thank you, your temporary password has been sent to ${data.email || ''}`
+                    : `Gracias, su contraseña se ha enviado al correo ${data.email || ''}`)
             });
         } catch (err: any) {
             setMessage({ 
                 type: 'error', 
-                text: err.message || `No hemos conseguido un usuario o email que coincida con: ${identifier.trim()}` 
+                text: err.message || (locale === 'en'
+                    ? `No user or email found matching: ${identifier.trim()}`
+                    : `No hemos conseguido un usuario o email que coincida con: ${identifier.trim()}`)
             });
         } finally {
             setIsLoading(false);
@@ -37,7 +42,10 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="min-h-screen bg-secondary/20 flex items-center justify-center p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-            <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl">
+            <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl relative">
+                <div className="flex justify-end mb-2">
+                    <LanguageSwitcher variant="pill" />
+                </div>
                 <div className="text-center mb-10">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-[24px] mb-6 text-primary">
                         <Mail size={32} />
@@ -76,7 +84,7 @@ export default function ForgotPasswordPage() {
                                 <input
                                     required
                                     type="email"
-                                    placeholder="ejemplo@correo.com"
+                                    placeholder={locale === 'en' ? 'example@email.com' : 'ejemplo@correo.com'}
                                     className="premium-input pl-12 h-14"
                                     value={identifier}
                                     onChange={(e) => setIdentifier(e.target.value)}

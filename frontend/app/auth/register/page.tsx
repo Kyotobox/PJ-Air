@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { RegisterForm, parseAddressDetails } from '@/components/auth/RegisterForm';
 import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { trackMetaEvent } from '@/components/analytics/MetaPixel';
 import { getStoredUtm, captureAndStoreUtm } from '@/lib/utm';
 
@@ -193,7 +194,7 @@ export default function RegisterPage() {
                 router.push('/auth/login?registered=true');
             }
         } catch (err: any) {
-            setError(err.message || 'Error al crear la cuenta mayorista');
+            setError(err.message || (locale === 'en' ? 'Error creating wholesale account' : 'Error al crear la cuenta mayorista'));
         } finally {
             setIsLoading(false);
         }
@@ -201,7 +202,10 @@ export default function RegisterPage() {
 
     return (
         <div className="min-h-screen bg-secondary/20 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-            <div className="w-full max-w-6xl jhoanes-card bg-white/90 backdrop-blur-xl shadow-2xl p-6 sm:p-10">
+            <div className="w-full max-w-6xl jhoanes-card bg-white/90 backdrop-blur-xl shadow-2xl p-6 sm:p-10 relative">
+                <div className="flex justify-end mb-2">
+                    <LanguageSwitcher variant="pill" />
+                </div>
                 {/* Header */}
                 <div className="text-center mb-10 pb-6 border-b border-border/40">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-[24px] mb-4 text-primary">

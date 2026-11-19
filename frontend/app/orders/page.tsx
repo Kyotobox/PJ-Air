@@ -255,7 +255,7 @@ export default function ClientOrdersPage() {
             const res = await api.post('/orders/settle-batch', payload) as any;
             setSettlementSuccess(
                 locale === 'en'
-                    ? `Successfully settled ${res.settled_count} invoice(s). Cupo restored: $${(res.available_credit || 0).toFixed(2)}.`
+                    ? `Successfully settled ${res.settled_count} invoice(s). Available credit restored: $${(res.available_credit || 0).toFixed(2)}.`
                     : `¡Se liquidaron exitosamente ${res.settled_count} factura(s)! Cupo disponible actualizado: $${(res.available_credit || 0).toFixed(2)}.`
             );
             setSelectedOrderIds([]);
@@ -264,7 +264,7 @@ export default function ClientOrdersPage() {
             await fetchCreditStatus();
         } catch (err: any) {
             console.error('Error during batch settlement:', err);
-            alert(err?.message || 'Error al procesar la liquidación por lotes');
+            alert(err?.message || (locale === 'en' ? 'Error processing batch settlement' : 'Error al procesar la liquidación por lotes'));
         } finally {
             setIsSettling(false);
         }
@@ -1041,11 +1041,11 @@ export default function ClientOrdersPage() {
                                     {(settlementMethod === 'zelle' || settlementMethod === 'check') && (
                                         <div className="w-full md:w-64">
                                             <label className="text-[10px] font-black uppercase text-slate-400">
-                                                Nro. Referencia / Cheque
+                                                {locale === 'en' ? 'Reference / Check Number' : 'Nro. Referencia / Cheque'}
                                             </label>
                                             <input
                                                 type="text"
-                                                placeholder="Ej: CHK-4091 / Conf. Zelle"
+                                                placeholder={locale === 'en' ? 'e.g. CHK-4091 / Zelle Conf.' : 'Ej: CHK-4091 / Conf. Zelle'}
                                                 value={settlementReference}
                                                 onChange={(e) => setSettlementReference(e.target.value)}
                                                 className="w-full px-3 py-1.5 mt-1 bg-white/10 border border-white/20 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary"
@@ -1057,7 +1057,7 @@ export default function ClientOrdersPage() {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-1">
                                         <p className="text-xs text-slate-400">
-                                            {settlementTotals.count} {locale === 'en' ? 'factura(s) seleccionada(s)' : 'factura(s) seleccionada(s)'}
+                                            {settlementTotals.count} {locale === 'en' ? 'invoice(s) selected' : 'factura(s) seleccionada(s)'}
                                         </p>
                                         <div className="flex items-baseline gap-3">
                                             <span className="text-slate-400 text-xs">Subtotal: ${settlementTotals.subtotal.toFixed(2)}</span>
@@ -1068,7 +1068,7 @@ export default function ClientOrdersPage() {
                                             )}
                                         </div>
                                         <p className="text-2xl font-black text-emerald-400">
-                                            Total a Saldar: ${settlementTotals.totalWithFee.toFixed(2)}
+                                            {locale === 'en' ? 'Total to Settle:' : 'Total a Saldar:'} ${settlementTotals.totalWithFee.toFixed(2)}
                                         </p>
                                     </div>
 
@@ -1079,11 +1079,11 @@ export default function ClientOrdersPage() {
                                     >
                                         {isSettling ? (
                                             <>
-                                                <Loader2 size={16} className="animate-spin" /> Procesando Liquidación...
+                                                <Loader2 size={16} className="animate-spin" /> {locale === 'en' ? 'Processing Settlement...' : 'Procesando Liquidación...'}
                                             </>
                                         ) : (
                                             <>
-                                                <CheckCircle2 size={16} /> Saldar {settlementTotals.count} Factura(s) en 1-Clic
+                                                <CheckCircle2 size={16} /> {locale === 'en' ? `Settle ${settlementTotals.count} Invoice(s) in 1-Click` : `Saldar ${settlementTotals.count} Factura(s) en 1-Clic`}
                                             </>
                                         )}
                                     </button>
@@ -1117,7 +1117,7 @@ export default function ClientOrdersPage() {
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                    <h3 className="text-xl font-bold">{isOrderConfirmed(order) ? `Factura ${order.invoice_number}` : `${t.orders.orderNumber} #${order.id.slice(0, 8)}`}</h3>
+                                                    <h3 className="text-xl font-bold">{isOrderConfirmed(order) ? (locale === 'en' ? `Invoice ${order.invoice_number}` : `Factura ${order.invoice_number}`) : `${t.orders.orderNumber} #${order.id.slice(0, 8)}`}</h3>
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
                                                         (order.status || '').toLowerCase().includes('recibido') || (order.status || '').toLowerCase().includes('entregado') || (order.status || '').toLowerCase() === 'delivered'
                                                             ? 'bg-green-100 text-green-700'
@@ -1194,7 +1194,7 @@ export default function ClientOrdersPage() {
                                                 onClick={() => router.push(`/orders/${order.id}`)}
                                                 className="flex-1 md:flex-none p-3 bg-muted text-foreground rounded-xl hover:bg-border transition-colors flex items-center justify-center gap-2"
                                             >
-                                                <Eye size={18} /> <span className="md:hidden">Ver Detalle</span>
+                                                <Eye size={18} /> <span className="md:hidden">{locale === 'en' ? 'View Details' : 'Ver Detalle'}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -1218,7 +1218,7 @@ export default function ClientOrdersPage() {
                                                 type="button"
                                                 onClick={() => setStatusFeedback(null)}
                                                 className="text-muted-foreground hover:text-foreground ml-2 transition-colors p-1"
-                                                aria-label="Cerrar notificación"
+                                                aria-label={locale === 'en' ? 'Close notification' : 'Cerrar notificación'}
                                             >
                                                 <X size={14} />
                                             </button>

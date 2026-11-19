@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Phone, Mail, MapPin, ShieldCheck, FileText, Clock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 export default function Footer() {
     const { locale } = useLanguage();
@@ -122,7 +123,9 @@ export default function Footer() {
                         © {new Date().getFullYear()} Jhoanes Bakery Wholesale. {isEn ? 'All rights reserved.' : 'Todos los derechos reservados.'}
                     </p>
 
-                    <div className="flex items-center gap-4 text-xs font-bold">
+                    <div className="flex items-center gap-4 text-xs font-bold flex-wrap">
+                        <LanguageSwitcher variant="pill" />
+                        <span>•</span>
                         <a
                             href="tel:+13477612687"
                             className="text-primary hover:text-[#5B0606] transition-colors inline-flex items-center gap-1.5"

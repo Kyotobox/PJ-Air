@@ -539,7 +539,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                                             title={locale === 'en' ? 'View evidence photo' : 'Ver fotografía de evidencia'}
                                                         >
                                                             <Camera size={14} />
-                                                            <span className="text-[10px] font-bold">Foto</span>
+                                                            <span className="text-[10px] font-bold">{locale === 'en' ? 'Photo' : 'Foto'}</span>
                                                         </a>
                                                     )}
                                                 </div>
@@ -556,15 +556,15 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                         <div className="bg-card rounded-[32px] border border-border p-8 shadow-xl sticky top-28">
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-xl font-bold flex items-center gap-2 font-serif"><ShoppingBag size={20} className="text-primary" /> {t.orders.yourPurchase}</h3>
-                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded uppercase tracking-widest">{isOrderConfirmed(order) ? order.invoice_number : `#${order.id.toString().slice(0, 8)}`}</span>
+                                <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded uppercase tracking-widest">{isOrderConfirmed(order) ? (locale === 'en' ? `Invoice ${order.invoice_number}` : order.invoice_number) : `#${order.id.toString().slice(0, 8)}`}</span>
                             </div>
 
                             <div className="space-y-4 mb-8">
                                 {items.map((item, i) => (
                                     <div key={i} className="flex justify-between items-start py-2">
                                         <div>
-                                            <p className="font-bold text-sm">{item.quantity}x {item.product?.name || 'Producto'}</p>
-                                            <p className="text-xs text-muted-foreground">Especialidad Artesanal</p>
+                                            <p className="font-bold text-sm">{item.quantity}x {item.product?.name || (locale === 'en' ? 'Product' : 'Producto')}</p>
+                                            <p className="text-xs text-muted-foreground">{locale === 'en' ? 'Artisanal Specialty' : 'Especialidad Artesanal'}</p>
                                         </div>
                                         <p className="font-black text-sm">${((item.price_at_time || item.product?.price || 0) * item.quantity).toFixed(2)}</p>
                                     </div>
@@ -594,7 +594,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                     </div>
                                     {order.tax_exempt ? (
                                         <div className="flex justify-between items-center text-xs font-bold text-emerald-700 bg-emerald-50/80 px-3 py-2 rounded-xl border border-emerald-200">
-                                            <span>NY Sales Tax (ST-120 Exento)</span>
+                                            <span>{locale === 'en' ? 'NY Sales Tax (ST-120 Exempt)' : 'NY Sales Tax (ST-120 Exento)'}</span>
                                             <span>$0.00 (0.00%)</span>
                                         </div>
                                     ) : Number(order.tax_amount || 0) > 0 ? (
@@ -711,7 +711,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                                 <span>{locale === 'en' ? `Partially Refunded ($${Number(order.refunded_amount || 0).toFixed(2)})` : `Reembolso Parcial ($${Number(order.refunded_amount || 0).toFixed(2)} devuelto)`}</span>
                                             </div>
                                             <div className="text-[11px] font-mono text-orange-900 bg-orange-100/70 px-2 py-0.5 rounded-md inline-block w-fit">
-                                                Nota de Crédito: {order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}
+                                                {locale === 'en' ? 'Credit Note:' : 'Nota de Crédito:'} {order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}
                                             </div>
                                         </div>
                                     )}
@@ -723,7 +723,7 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ id
                                                 <span>{locale === 'en' ? 'Fully Refunded' : 'Reembolsado Totalmente'}</span>
                                             </div>
                                             <div className="text-[11px] font-mono text-rose-900 bg-rose-100/70 px-2 py-0.5 rounded-md inline-block w-fit">
-                                                Nota de Crédito: {order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}
+                                                {locale === 'en' ? 'Credit Note:' : 'Nota de Crédito:'} {order.credit_note_number || `NC-2026-${order.id.slice(0, 4).toUpperCase()}`}
                                             </div>
                                         </div>
                                     )}

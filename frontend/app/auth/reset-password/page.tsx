@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { KeyRound, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
@@ -55,7 +56,10 @@ function ResetPasswordForm() {
 
     if (!token) {
         return (
-            <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl text-center p-8">
+            <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl text-center p-8 relative">
+                <div className="flex justify-end mb-2">
+                    <LanguageSwitcher variant="pill" />
+                </div>
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-50 rounded-[24px] mb-6 text-amber-600">
                     <AlertTriangle size={32} />
                 </div>
@@ -85,7 +89,10 @@ function ResetPasswordForm() {
 
     if (isSuccess) {
         return (
-            <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl text-center p-8 animate-fade-in">
+            <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl text-center p-8 animate-fade-in relative">
+                <div className="flex justify-end mb-2">
+                    <LanguageSwitcher variant="pill" />
+                </div>
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-50 rounded-[24px] mb-6 text-green-600">
                     <CheckCircle2 size={36} />
                 </div>
@@ -106,7 +113,10 @@ function ResetPasswordForm() {
     }
 
     return (
-        <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl">
+        <div className="w-full max-w-md jhoanes-card bg-white/80 backdrop-blur-xl relative">
+            <div className="flex justify-end mb-2">
+                <LanguageSwitcher variant="pill" />
+            </div>
             <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-[24px] mb-4 text-primary">
                     <KeyRound size={32} />
