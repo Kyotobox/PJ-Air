@@ -3,8 +3,8 @@
   "version": "5.4.0",
   "kernel_version": "5.4.3",
   "status": "IN_PROGRESS",
-  "current_sprint": "S99",
-  "current_task": "TASK-99-02",
+  "current_sprint": "S100",
+  "current_task": "TASK-100-01",
   "technical_debt": [
     {
       "id": "DEBT-01",
@@ -204,55 +204,48 @@
   "archived_sprints_count": 1,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S99",
-    "title": "Sprint S99: Erradicación de Fricciones Críticas de Venta y Cobro: Registro Tolerante de Clientes, Inmutabilidad de Flete en Checkout, Desactivación de ACH Público en Stripe y Paridad Fiscal de Facturación",
+    "id": "S100",
+    "title": "Sprint S100: Paridad Transversal de Internacionalización (i18n) e Interfaces Bilingües",
     "status": "IN_PROGRESS",
     "tasks": [
       {
-        "id": "TASK-99-01",
-        "title": "Soporte de direcciones distantes y fallback manual tolerante en RegisterForm.tsx sin bloqueos de Google Places",
-        "status": "DONE",
-        "type": "FRONTEND/REGISTER-GEO",
+        "id": "TASK-100-01",
+        "title": "Montaje de LanguageSwitcher en rutas de autenticación (/auth/login, /auth/register, /auth/forgot-password, /auth/reset-password) y sub-footer bar de Footer.tsx",
+        "status": "IN_PROGRESS",
+        "type": "FRONTEND/I18N-SWITCHER",
         "veracity_hash": null
       },
       {
-        "id": "TASK-99-02",
-        "title": "Compuerta de aprobación administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts",
+        "id": "TASK-100-02",
+        "title": "Banners bilingües y mensajes de error de revisión de cuenta en login, register y forgot-password",
         "status": "TODO",
-        "type": "BACKEND/AUTH-APPROVAL",
+        "type": "FRONTEND/AUTH-I18N",
         "veracity_hash": null
       },
       {
-        "id": "TASK-99-03",
-        "title": "Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificación de remitentes oficiales en mail.service.ts",
+        "id": "TASK-100-03",
+        "title": "Corrección de bug de ternario L1060 en orders/page.tsx, paridad bilingüe en batch settlement, folios y botones",
         "status": "TODO",
-        "type": "BACKEND/MAIL-INVOICE",
+        "type": "FRONTEND/ORDERS-I18N",
         "veracity_hash": null
       },
       {
-        "id": "TASK-99-04",
-        "title": "Higiene y refinamiento léxico de estados de órdenes a crédito en UI de cliente y panel administrativo",
+        "id": "TASK-100-04",
+        "title": "Paridad i18n en expediente de orden (orders/[id]/page.tsx): Foto/Photo, Especialidad, ST-120 Exempt, Nota de Crédito",
         "status": "TODO",
-        "type": "FRONTEND/ORDERS-LEXICON",
+        "type": "FRONTEND/ORDER-DETAIL-I18N",
         "veracity_hash": null
       },
       {
-        "id": "TASK-99-05",
-        "title": "Desactivación de us_bank_account (ACH) en checkout público general de Stripe Elements",
+        "id": "TASK-100-05",
+        "title": "Envoltura bilingüe con lbl() en notificaciones, alertas de fecha mínima de horneado y monto mínimo en checkout/page.tsx",
         "status": "TODO",
-        "type": "FRONTEND/STRIPE-PAYMENTS",
+        "type": "FRONTEND/CHECKOUT-I18N",
         "veracity_hash": null
       },
       {
-        "id": "TASK-99-06",
-        "title": "Inmutabilidad del total y flete en checkout y auto-conciliación inmediata de orden pagada",
-        "status": "TODO",
-        "type": "BACKEND/ORDERS-FREIGHT",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-99-07",
-        "title": "Suite de pruebas automatizadas con Sad Paths (§6) y certificación de integridad",
+        "id": "TASK-100-06",
+        "title": "Pruebas automatizadas de paridad i18n, compilación limpia de frontend y backend, y despliegue a testing y producción",
         "status": "TODO",
         "type": "TEST/SPRINT-CERTIFICATION",
         "veracity_hash": null
