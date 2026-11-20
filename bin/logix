@@ -10,7 +10,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Intercepción canónica de versión para paridad SSSoT (§43)
 if [ "$1" = "-v" ] || [ "$1" = "--version" ] || [ "$1" = "version" ]; then
-  python3 -c "import json; v = json.load(open('$ROOT_DIR/backlog.json'))['version']; print(f'logix v{v}')"
+  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; v = json.load(open(p))['version'] if os.path.exists(p) else '5.5.2'; print(f'logix v{v}')"
   exit 0
 fi
 
@@ -21,19 +21,11 @@ if [ "$1" = "takeover" ]; then
   fi
 fi
 
-# Si el comando es handover, ejecutar el cerrojo bloqueante ante commits sin push (§48, §52, TASK-N130-01)
+# Si el comando es handover, ejecutar el handover canónico de Pure Dart (§39, §48, §52, §60.2)
 if [ "$1" = "handover" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" ]; then
-    dart run "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" "$@" || exit $?
+    exec dart run "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" "$@"
   fi
-  # Filtrar banderas de compuerta antes de despachar al binario nativo
-  FILTERED_ARGS=()
-  for arg in "$@"; do
-    if [ "$arg" != "--allow-unpushed" ]; then
-      FILTERED_ARGS+=("$arg")
-    fi
-  done
-  set -- "${FILTERED_ARGS[@]}"
 fi
 
 # Si el comando es sync-tasks, ejecutar la verificación física de checkmarks (§18, §48, TASK-N130-04)
@@ -54,6 +46,13 @@ fi
 if [ "$1" = "fleet-sweep" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_fleet_sweep_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_fleet_sweep_command.dart" "${@:2}"
+  fi
+fi
+
+# Si el comando es dora, despachar a logix_dora_command (§45, §47, §54, TASK-N143-04)
+if [ "$1" = "dora" ]; then
+  if [ -f "$ROOT_DIR/lib/src/commands/logix_dora_command.dart" ]; then
+    exec dart run "$ROOT_DIR/lib/src/commands/logix_dora_command.dart" "${@:2}"
   fi
 fi
 

@@ -1,7 +1,7 @@
 {
   "project": "pj-air",
   "version": "5.4.0",
-  "kernel_version": "5.4.3",
+  "kernel_version": "5.5.1",
   "status": "IN_PROGRESS",
   "current_sprint": "S100",
   "current_task": "TASK-100-01",

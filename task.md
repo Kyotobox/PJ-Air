@@ -1,10 +1,11 @@
-# SPRINT S100 - Paridad Transversal de Internacionalización (i18n) e Interfaces Bilingües
-**Objetivo**: Garantizar paridad bilingüe (EN/ES) en flujos de cliente mayorista, erradicar textos hardcoded en español en autenticación, pedidos y checkout, y montar LanguageSwitcher en todas las pantallas.
-**Fecha**: 2026-11-19
+# SPRINT S99 - Sprint Activo
+**Objetivo**: Sin objetivo especificado
+**Fecha**: 2026-11-20
 
-- [x] **TASK-100-01** [TASK] Montaje de LanguageSwitcher en rutas de autenticación (/auth/login, /auth/register, /auth/forgot-password, /auth/reset-password) y sub-footer bar de Footer.tsx
-- [x] **TASK-100-02** [TASK] Banners bilingües y mensajes de error de revisión de cuenta en login, register y forgot-password
-- [x] **TASK-100-03** [TASK] Corrección de bug de ternario L1060 en orders/page.tsx, paridad bilingüe en batch settlement, folios y botones
-- [x] **TASK-100-04** [TASK] Paridad i18n en expediente de orden (orders/[id]/page.tsx): Foto/Photo, Especialidad, ST-120 Exempt, Nota de Crédito
-- [x] **TASK-100-05** [TASK] Envoltura bilingüe con lbl() en notificaciones, alertas de fecha mínima de horneado y monto mínimo en checkout/page.tsx
-- [x] **TASK-100-06** [TASK] Pruebas automatizadas de paridad i18n, compilación limpia de frontend y backend, y despliegue a testing y producción
+- [x] **TASK-99-01** [TASK] Habilitar captura de cualquier dirección en EE. UU. (incluyendo ubicaciones foráneas/distantes) sin restricciones de bounds rígidos de Google Places ni bloqueos por falta de place_changed. Permitir edición libre de calle, ciudad y zip code, calculando coordenadas o aplicando resolución pasiva para que el registro nunca se detenga.
+- [x] **TASK-99-02** [TASK] En backend/src/auth/auth.service.ts, calcular la distancia de la dirección respecto al centro de operaciones en Astoria HQ (3304 Broadway). Si la distancia excede el radio estándar local (dirección distante > 30 millas o requiere cotización especial de flete), asignar account_status = PENDING_APPROVAL; si es local, asignar APPROVED. Informar al cliente con feedback formal en registro y login.
+- [x] **TASK-99-03** [TASK] Sustituir la generación del folio en base a UUID recortado (INV-${orderShortId}) por el folio canónico persistido en order.invoice_number en el asunto y cuerpo de sendEnglishInvoice. Unificar remitente a Contact@jhoanesbakery.com y reply-to a Jhoanes.invoices@gmail.com.
+- [x] **TASK-99-04** [TASK] Reemplazar el badge de texto confuso "Checkout Incompleto" en órdenes con account_type === "credit" por "Aprobado a Crédito", eliminando la falsa alarma y el ruido visual para clientes y administradores.
+- [x] **TASK-99-05** [TASK] Desactivar la opción de us_bank_account (ACH) en el checkout público de Stripe Elements en frontend (StripePaymentModal.tsx) y en backend (payments.service.ts) para clientes generales, forzando pago con tarjeta y billeteras inmediatas (Apple/Google Pay) para evitar la retención de 5 días y la confusión comercial del "$5 back".
+- [x] **TASK-99-06** [TASK] Blindar la inmutabilidad del total y flete en checkout en orders.service.ts: garantizar que el monto autorizado y pagado en Stripe sea el total definitivo de la orden, erradicando el recargo de flete fantasma post-cobro y asegurando que órdenes con cobro exitoso pasen de inmediato a payment_status = paid sin quedar en "Payment Pending".
+- [x] **TASK-99-07** [TASK] Implementar suite de pruebas automatizadas con Sad Paths (§6) cubriendo: 1) Registro distante asignando PENDING_APPROVAL vs local APPROVED. 2) Paridad de invoice en sendEnglishInvoice. 3) Bloqueo de ACH en checkout público general. 4) Inmutabilidad de flete post-pago. 5) Compilación limpia (npm run build) y certificación sin errores.
