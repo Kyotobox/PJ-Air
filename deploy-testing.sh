@@ -28,19 +28,21 @@ else
     git pull origin conext
 fi
 
-echo "=== 3. Aprovisionando base de datos de testing ==="
-if [ ! -f "database-testing.sqlite" ]; then
-    if [ -f "/var/www/pj-air/database.sqlite" ]; then
-        cp "/var/www/pj-air/database.sqlite" "database-testing.sqlite"
-        echo "Copia de base de datos creada en database-testing.sqlite"
-    fi
-else
+echo "=== 3. Aprovisionando base de datos de testing (SQLite Backup Atómico) ==="
+if [ -f "database-testing.sqlite" ]; then
     cp "database-testing.sqlite" "database-testing.sqlite.bak_$(date +%Y%m%d_%H%M%S)"
 fi
+if [ -f "/var/www/pj-air/database.sqlite" ]; then
+    rm -f database-testing.sqlite database-testing.sqlite-wal database-testing.sqlite-shm
+    sqlite3 /var/www/pj-air/database.sqlite ".backup 'database-testing.sqlite'"
+    echo "Copia atómica de base de datos creada en database-testing.sqlite"
+fi
 
-# Inyección mandatoria de variables Google Suite
+# Inyección mandatoria de variables Google Suite y Runtime
 export GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k"
 export NEXT_PUBLIC_GOOGLE_MAPS_KEY="AIzaSyCMfaV6rGZZvsXEqJKWcHCANCUuEwWBc-k"
+export JWT_SECRET="jhoanes-bakery-super-secret-key-change-in-production"
+export NODE_PATH="$TESTING_DIR/backend/node_modules:$TESTING_DIR/node_modules"
 
 echo "=== 4. Compilando Backend Testing ==="
 cd "$TESTING_DIR/backend"
@@ -50,14 +52,14 @@ GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" npm run build
 echo "=== 5. Compilando Frontend Testing ==="
 cd "$TESTING_DIR/frontend"
 npm install --production=false
-NEXT_PUBLIC_API_URL="https://testing.jhoanes.com/api" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" npm run build
+NODE_OPTIONS="--max-old-space-size=2048" NEXT_PUBLIC_API_URL="https://testing.jhoanes.com/api" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" npm run build
 
 echo "=== 6. Levantando procesos PM2 en puertos 3200 y 3201 ==="
 cd "$TESTING_DIR"
 pm2 delete pj-air-backend-testing || true
 pm2 delete pj-air-frontend-testing || true
 
-GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH=../database-testing.sqlite FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name pj-air-backend-testing --cwd "$TESTING_DIR/backend"
+NODE_PATH="$NODE_PATH" JWT_SECRET="$JWT_SECRET" GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" BACKEND_PORT=3201 PORT=3201 DATABASE_PATH="$TESTING_DIR/database-testing.sqlite" UPLOAD_PATH="$TESTING_DIR/uploads" FRONTEND_URL=https://testing.jhoanes.com pm2 start dist/src/main.js --name pj-air-backend-testing --cwd "$TESTING_DIR/backend"
 GOOGLE_MAPS_KEY="$GOOGLE_MAPS_KEY" NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" PORT=3200 NEXT_PUBLIC_API_URL=https://testing.jhoanes.com/api pm2 start "$TESTING_DIR/node_modules/next/dist/bin/next" --name pj-air-frontend-testing --cwd "$TESTING_DIR/frontend" -- start -p 3200
 pm2 save
 
