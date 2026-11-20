@@ -8,7 +8,7 @@
   "technical_debt": [
     {
       "id": "DEBT-01",
-      "title": "Recuperación y Gestión Comercial de Carritos Abandonados (Botón de Reintento de Pago y Cron de Expiración 48h)",
+      "title": "Recuperaci\u00f3n y Gesti\u00f3n Comercial de Carritos Abandonados (Bot\u00f3n de Reintento de Pago y Cron de Expiraci\u00f3n 48h)",
       "category": "COMMERCIAL_RECOVERY",
       "status": "OPEN",
       "created_at": "2026-11-14",
@@ -16,7 +16,7 @@
     },
     {
       "id": "DEBT-02",
-      "title": "Ciclo de Vida y Renovación Preventiva del Certificado Fiscal NY Form ST-120",
+      "title": "Ciclo de Vida y Renovaci\u00f3n Preventiva del Certificado Fiscal NY Form ST-120",
       "category": "TAX_COMPLIANCE",
       "status": "OPEN",
       "created_at": "2026-11-14",
@@ -26,40 +26,40 @@
   "sprints": [
     {
       "id": "S97",
-      "title": "Sprint S97: Rol de Auditor Contable y Financiero (RBAC Read-Only SoD) con Aislamiento Operativo, Libro de Ventas y Conciliación Fiscal",
+      "title": "Sprint S97: Rol de Auditor Contable y Financiero (RBAC Read-Only SoD) con Aislamiento Operativo, Libro de Ventas y Conciliaci\u00f3n Fiscal",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-97-01",
-          "title": "Extensión de RBAC para rol \"auditor\" en User Entity, TypeORM, RolesGuard y JwtPayload con bloqueo estricto en endpoints mutativos",
+          "title": "Extensi\u00f3n de RBAC para rol \"auditor\" en User Entity, TypeORM, RolesGuard y JwtPayload con bloqueo estricto en endpoints mutativos",
           "status": "DONE",
           "type": "BACKEND/RBAC",
           "veracity_hash": null
         },
         {
           "id": "TASK-97-02",
-          "title": "Aislamiento de rutas en Next.js middleware y Sidebar: acceso exclusivo a finanzas/reportes con bloqueo de /produccion, /delivery y configuración",
+          "title": "Aislamiento de rutas en Next.js middleware y Sidebar: acceso exclusivo a finanzas/reportes con bloqueo de /produccion, /delivery y configuraci\u00f3n",
           "status": "DONE",
           "type": "FRONTEND/ROUTING-RBAC",
           "veracity_hash": null
         },
         {
           "id": "TASK-97-03",
-          "title": "Modo Read-Only Contable en panel de órdenes: ocultamiento de botones de acción y visualización de desglose fiscal (Sales Tax NY), Zelle, cheques y Store Credit",
+          "title": "Modo Read-Only Contable en panel de \u00f3rdenes: ocultamiento de botones de acci\u00f3n y visualizaci\u00f3n de desglose fiscal (Sales Tax NY), Zelle, cheques y Store Credit",
           "status": "DONE",
           "type": "FRONTEND/FINANCE-UI",
           "veracity_hash": null
         },
         {
           "id": "TASK-97-04",
-          "title": "Motor de exportación contable masiva en Excel/CSV (Libro de Ventas y Cobranzas) con filtros de rango de fechas para conciliación fiscal",
+          "title": "Motor de exportaci\u00f3n contable masiva en Excel/CSV (Libro de Ventas y Cobranzas) con filtros de rango de fechas para conciliaci\u00f3n fiscal",
           "status": "DONE",
           "type": "BACKEND/EXCEL-FINANCE",
           "veracity_hash": null
         },
         {
           "id": "TASK-97-05",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6) para verificar rechazo 403 Forbidden ante cualquier mutación del rol auditor y despliegue certificado",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76) para verificar rechazo 403 Forbidden ante cualquier mutaci\u00f3n del rol auditor y despliegue certificado",
           "status": "DONE",
           "type": "TEST/DEVOPS",
           "veracity_hash": null
@@ -68,40 +68,40 @@
     },
     {
       "id": "S98",
-      "title": "Sprint S98: Cumplimiento de Extensiones Google Ads: Exposición de Línea Mayorista B2B (Header, Footer Global y Links Click-to-Call)",
+      "title": "Sprint S98: Cumplimiento de Extensiones Google Ads: Exposici\u00f3n de L\u00ednea Mayorista B2B (Header, Footer Global y Links Click-to-Call)",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-98-01",
-          "title": "Componente canónico Footer.tsx y unificación global con texto visible Wholesale: (347) 761-2687 y tel:+13477612687",
+          "title": "Componente can\u00f3nico Footer.tsx y unificaci\u00f3n global con texto visible Wholesale: (347) 761-2687 y tel:+13477612687",
           "status": "DONE",
           "type": "FRONTEND/FOOTER",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-02",
-          "title": "Integración en Navbar.tsx (Header superior escritorio y móvil + drawer) con badge de llamada click-to-call visible",
+          "title": "Integraci\u00f3n en Navbar.tsx (Header superior escritorio y m\u00f3vil + drawer) con badge de llamada click-to-call visible",
           "status": "DONE",
           "type": "FRONTEND/HEADER",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-03",
-          "title": "Presencia visible en Landing Page (page.tsx), Portales Externos y páginas legales (terms/privacy)",
+          "title": "Presencia visible en Landing Page (page.tsx), Portales Externos y p\u00e1ginas legales (terms/privacy)",
           "status": "DONE",
           "type": "FRONTEND/LANDING",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-04",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6) validando presencia exacta de texto, protocolo tel y accesibilidad",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76) validando presencia exacta de texto, protocolo tel y accesibilidad",
           "status": "DONE",
           "type": "TEST/DOM",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-05",
-          "title": "Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)",
+          "title": "Compilaci\u00f3n limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producci\u00f3n (app.jhoanes.com)",
           "status": "DONE",
           "type": "DEVOPS/DEPLOY",
           "veracity_hash": null
@@ -110,13 +110,13 @@
     },
     {
       "id": "S99",
-      "title": "Sprint S99: Erradicación de Fricciones Críticas de Venta y Cobro: Registro Tolerante de Clientes, Inmutabilidad de Flete en Checkout, Desactivación de ACH Público en Stripe y Paridad Fiscal de Facturación",
+      "title": "Sprint S99: Erradicaci\u00f3n de Fricciones Cr\u00edticas de Venta y Cobro: Registro Tolerante de Clientes, Inmutabilidad de Flete en Checkout, Desactivaci\u00f3n de ACH P\u00fablico en Stripe y Paridad Fiscal de Facturaci\u00f3n",
       "status": "IN_PROGRESS",
       "tasks": [
         {
           "id": "TASK-99-01",
           "title": "Soporte de direcciones distantes y fallback manual tolerante en RegisterForm.tsx sin bloqueos de Google Places",
-          "desc": "Habilitar captura de cualquier dirección en EE. UU. (incluyendo ubicaciones foráneas/distantes) sin restricciones de bounds rígidos de Google Places ni bloqueos por falta de place_changed. Permitir edición libre de calle, ciudad y zip code, calculando coordenadas o aplicando resolución pasiva para que el registro nunca se detenga.",
+          "desc": "Habilitar captura de cualquier direcci\u00f3n en EE. UU. (incluyendo ubicaciones for\u00e1neas/distantes) sin restricciones de bounds r\u00edgidos de Google Places ni bloqueos por falta de place_changed. Permitir edici\u00f3n libre de calle, ciudad y zip code, calculando coordenadas o aplicando resoluci\u00f3n pasiva para que el registro nunca se detenga.",
           "status": "DONE",
           "type": "FRONTEND/REGISTER-GEO",
           "predicted_files": [
@@ -127,8 +127,8 @@
         },
         {
           "id": "TASK-99-02",
-          "title": "Compuerta de aprobación administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts",
-          "desc": "En backend/src/auth/auth.service.ts, calcular la distancia de la dirección respecto al centro de operaciones en Astoria HQ (3304 Broadway). Si la distancia excede el radio estándar local (dirección distante > 30 millas o requiere cotización especial de flete), asignar account_status = PENDING_APPROVAL; si es local, asignar APPROVED. Informar al cliente con feedback formal en registro y login.",
+          "title": "Compuerta de aprobaci\u00f3n administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts",
+          "desc": "En backend/src/auth/auth.service.ts, calcular la distancia de la direcci\u00f3n respecto al centro de operaciones en Astoria HQ (3304 Broadway). Si la distancia excede el radio est\u00e1ndar local (direcci\u00f3n distante > 30 millas o requiere cotizaci\u00f3n especial de flete), asignar account_status = PENDING_APPROVAL; si es local, asignar APPROVED. Informar al cliente con feedback formal en registro y login.",
           "status": "DONE",
           "type": "BACKEND/AUTH-APPROVAL",
           "predicted_files": [
@@ -139,8 +139,8 @@
         },
         {
           "id": "TASK-99-03",
-          "title": "Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificación de remitentes oficiales en mail.service.ts",
-          "desc": "Sustituir la generación del folio en base a UUID recortado (INV-${orderShortId}) por el folio canónico persistido en order.invoice_number en el asunto y cuerpo de sendEnglishInvoice. Unificar remitente a Contact@jhoanesbakery.com y reply-to a Jhoanes.invoices@gmail.com.",
+          "title": "Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificaci\u00f3n de remitentes oficiales en mail.service.ts",
+          "desc": "Sustituir la generaci\u00f3n del folio en base a UUID recortado (INV-${orderShortId}) por el folio can\u00f3nico persistido en order.invoice_number en el asunto y cuerpo de sendEnglishInvoice. Unificar remitente a Contact@jhoanesbakery.com y reply-to a Jhoanes.invoices@gmail.com.",
           "status": "DONE",
           "type": "BACKEND/MAIL-INVOICE",
           "predicted_files": [
@@ -150,8 +150,8 @@
         },
         {
           "id": "TASK-99-04",
-          "title": "Higiene y refinamiento léxico de estados de órdenes a crédito en UI de cliente y panel administrativo",
-          "desc": "Reemplazar el badge de texto confuso \"Checkout Incompleto\" en órdenes con account_type === \"credit\" por \"Aprobado a Crédito\", eliminando la falsa alarma y el ruido visual para clientes y administradores.",
+          "title": "Higiene y refinamiento l\u00e9xico de estados de \u00f3rdenes a cr\u00e9dito en UI de cliente y panel administrativo",
+          "desc": "Reemplazar el badge de texto confuso \"Checkout Incompleto\" en \u00f3rdenes con account_type === \"credit\" por \"Aprobado a Cr\u00e9dito\", eliminando la falsa alarma y el ruido visual para clientes y administradores.",
           "status": "DONE",
           "type": "FRONTEND/ORDERS-LEXICON",
           "predicted_files": [
@@ -162,8 +162,8 @@
         },
         {
           "id": "TASK-99-05",
-          "title": "Desactivación de us_bank_account (ACH) en checkout público general de Stripe Elements",
-          "desc": "Desactivar la opción de us_bank_account (ACH) en el checkout público de Stripe Elements en frontend (StripePaymentModal.tsx) y en backend (payments.service.ts) para clientes generales, forzando pago con tarjeta y billeteras inmediatas (Apple/Google Pay) para evitar la retención de 5 días y la confusión comercial del \"$5 back\".",
+          "title": "Desactivaci\u00f3n de us_bank_account (ACH) en checkout p\u00fablico general de Stripe Elements",
+          "desc": "Desactivar la opci\u00f3n de us_bank_account (ACH) en el checkout p\u00fablico de Stripe Elements en frontend (StripePaymentModal.tsx) y en backend (payments.service.ts) para clientes generales, forzando pago con tarjeta y billeteras inmediatas (Apple/Google Pay) para evitar la retenci\u00f3n de 5 d\u00edas y la confusi\u00f3n comercial del \"$5 back\".",
           "status": "DONE",
           "type": "FRONTEND/STRIPE-PAYMENTS",
           "predicted_files": [
@@ -174,8 +174,8 @@
         },
         {
           "id": "TASK-99-06",
-          "title": "Inmutabilidad del total y flete en checkout y auto-conciliación inmediata de orden pagada",
-          "desc": "Blindar la inmutabilidad del total y flete en checkout en orders.service.ts: garantizar que el monto autorizado y pagado en Stripe sea el total definitivo de la orden, erradicando el recargo de flete fantasma post-cobro y asegurando que órdenes con cobro exitoso pasen de inmediato a payment_status = paid sin quedar en \"Payment Pending\".",
+          "title": "Inmutabilidad del total y flete en checkout y auto-conciliaci\u00f3n inmediata de orden pagada",
+          "desc": "Blindar la inmutabilidad del total y flete en checkout en orders.service.ts: garantizar que el monto autorizado y pagado en Stripe sea el total definitivo de la orden, erradicando el recargo de flete fantasma post-cobro y asegurando que \u00f3rdenes con cobro exitoso pasen de inmediato a payment_status = paid sin quedar en \"Payment Pending\".",
           "status": "DONE",
           "type": "BACKEND/ORDERS-FREIGHT",
           "predicted_files": [
@@ -186,8 +186,8 @@
         },
         {
           "id": "TASK-99-07",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6) y certificación de integridad",
-          "desc": "Implementar suite de pruebas automatizadas con Sad Paths (§6) cubriendo: 1) Registro distante asignando PENDING_APPROVAL vs local APPROVED. 2) Paridad de invoice en sendEnglishInvoice. 3) Bloqueo de ACH en checkout público general. 4) Inmutabilidad de flete post-pago. 5) Compilación limpia (npm run build) y certificación sin errores.",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76) y certificaci\u00f3n de integridad",
+          "desc": "Implementar suite de pruebas automatizadas con Sad Paths (\u00a76) cubriendo: 1) Registro distante asignando PENDING_APPROVAL vs local APPROVED. 2) Paridad de invoice en sendEnglishInvoice. 3) Bloqueo de ACH en checkout p\u00fablico general. 4) Inmutabilidad de flete post-pago. 5) Compilaci\u00f3n limpia (npm run build) y certificaci\u00f3n sin errores.",
           "status": "DONE",
           "type": "TEST/SPRINT-CERTIFICATION",
           "predicted_files": [
@@ -199,53 +199,62 @@
           "veracity_hash": null
         }
       ]
+    },
+    {
+      "id": "S100",
+      "name": "Sprint S100: [RECONCILED] Auto-reconciled from git history",
+      "dag_id": "SPRINT-S100-RECONCILED",
+      "status": "COMPLETED",
+      "reconciled_at": "2026-11-20T00:47:20.322026+00:00",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
+      "tasks": []
     }
   ],
   "archived_sprints_count": 1,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S100",
-    "title": "Sprint S100: Paridad Transversal de Internacionalización (i18n) e Interfaces Bilingües",
+    "title": "Sprint S100: Paridad Transversal de Internacionalizaci\u00f3n (i18n) e Interfaces Biling\u00fces",
     "status": "IN_PROGRESS",
     "tasks": [
       {
         "id": "TASK-100-01",
-        "title": "Montaje de LanguageSwitcher en rutas de autenticación (/auth/login, /auth/register, /auth/forgot-password, /auth/reset-password) y sub-footer bar de Footer.tsx",
+        "title": "Montaje de LanguageSwitcher en rutas de autenticaci\u00f3n (/auth/login, /auth/register, /auth/forgot-password, /auth/reset-password) y sub-footer bar de Footer.tsx",
         "status": "IN_PROGRESS",
         "type": "FRONTEND/I18N-SWITCHER",
         "veracity_hash": null
       },
       {
         "id": "TASK-100-02",
-        "title": "Banners bilingües y mensajes de error de revisión de cuenta en login, register y forgot-password",
+        "title": "Banners biling\u00fces y mensajes de error de revisi\u00f3n de cuenta en login, register y forgot-password",
         "status": "TODO",
         "type": "FRONTEND/AUTH-I18N",
         "veracity_hash": null
       },
       {
         "id": "TASK-100-03",
-        "title": "Corrección de bug de ternario L1060 en orders/page.tsx, paridad bilingüe en batch settlement, folios y botones",
+        "title": "Correcci\u00f3n de bug de ternario L1060 en orders/page.tsx, paridad biling\u00fce en batch settlement, folios y botones",
         "status": "TODO",
         "type": "FRONTEND/ORDERS-I18N",
         "veracity_hash": null
       },
       {
         "id": "TASK-100-04",
-        "title": "Paridad i18n en expediente de orden (orders/[id]/page.tsx): Foto/Photo, Especialidad, ST-120 Exempt, Nota de Crédito",
+        "title": "Paridad i18n en expediente de orden (orders/[id]/page.tsx): Foto/Photo, Especialidad, ST-120 Exempt, Nota de Cr\u00e9dito",
         "status": "TODO",
         "type": "FRONTEND/ORDER-DETAIL-I18N",
         "veracity_hash": null
       },
       {
         "id": "TASK-100-05",
-        "title": "Envoltura bilingüe con lbl() en notificaciones, alertas de fecha mínima de horneado y monto mínimo en checkout/page.tsx",
+        "title": "Envoltura biling\u00fce con lbl() en notificaciones, alertas de fecha m\u00ednima de horneado y monto m\u00ednimo en checkout/page.tsx",
         "status": "TODO",
         "type": "FRONTEND/CHECKOUT-I18N",
         "veracity_hash": null
       },
       {
         "id": "TASK-100-06",
-        "title": "Pruebas automatizadas de paridad i18n, compilación limpia de frontend y backend, y despliegue a testing y producción",
+        "title": "Pruebas automatizadas de paridad i18n, compilaci\u00f3n limpia de frontend y backend, y despliegue a testing y producci\u00f3n",
         "status": "TODO",
         "type": "TEST/SPRINT-CERTIFICATION",
         "veracity_hash": null
