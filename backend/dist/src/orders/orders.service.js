@@ -683,13 +683,21 @@ let OrdersService = class OrdersService {
             orderData.free_delivery_enabled ||
             orderData.waive_delivery_fee ||
             orderData.is_free_delivery);
+        const isManualAdminEntry = Boolean(orderData.admin_created === true ||
+            orderData.manual_entry === true ||
+            isAdmin);
+        const hasExplicitDeliveryFeeCharged = orderData.delivery_fee_charged !== undefined &&
+            orderData.delivery_fee_charged !== null;
         if (isFreeDeliveryOrder || appliedDeliveryType === 'pickup') {
             deliveryFee = 0;
+        }
+        else if (isManualAdminEntry && hasExplicitDeliveryFeeCharged) {
+            deliveryFee = Number(orderData.delivery_fee_charged);
         }
         else if (user?.delivery_fee !== null && user?.delivery_fee !== undefined && Number(user.delivery_fee) > 0) {
             deliveryFee = Number(user.delivery_fee);
         }
-        else if (orderData.delivery_fee_charged !== undefined && orderData.delivery_fee_charged !== null) {
+        else if (hasExplicitDeliveryFeeCharged) {
             deliveryFee = Number(orderData.delivery_fee_charged);
         }
         else {
@@ -722,8 +730,23 @@ let OrdersService = class OrdersService {
                     delivery_date: appliedDeliveryDate,
                 },
             });
-            const validExisting = (activeSameDateOrders || []).filter(o => o.status !== 'cancelled' && o.status !== 'Cancelado' && (!appliedAddressId || !o.address_id || o.address_id === appliedAddressId));
-            if (validExisting.length > 0 || orderData.is_complementary === true) {
+            const validExisting = (activeSameDateOrders || []).filter(o => {
+                if (!o || o.id === orderData.id)
+                    return false;
+                const normalizedStatus = (o.status || '').toLowerCase().trim();
+                const paymentStatus = (o.payment_status || '').toLowerCase().trim();
+                const isCancelled = normalizedStatus === 'cancelled' || normalizedStatus === 'cancelado';
+                const isDraft = Boolean(o.is_draft || normalizedStatus === 'draft' || normalizedStatus === 'borrador');
+                if (isCancelled || isDraft)
+                    return false;
+                const isPaidOrConfirmed = paymentStatus === 'paid' ||
+                    ['confirmed', 'confirmado', 'approved', 'aprobado', 'processing', 'en_produccion', 'shipped', 'delivered'].includes(normalizedStatus);
+                if (!isPaidOrConfirmed)
+                    return false;
+                return (!appliedAddressId || !o.address_id || o.address_id === appliedAddressId);
+            });
+            const isAdminComplementary = Boolean((isAdmin || orderData.admin_created) && orderData.is_complementary === true);
+            if (validExisting.length > 0 || isAdminComplementary) {
                 isComplementary = true;
                 deliveryFee = 0.00;
             }
@@ -1129,7 +1152,20 @@ let OrdersService = class OrdersService {
                 order.total = total;
             }
             else {
-                order.total = result.total;
+                const itemsSubtotal = Number(result.total) || 0;
+                let discountAmount = 0;
+                if (order.global_discount_percentage && Number(order.global_discount_percentage) > 0) {
+                    discountAmount = Math.round(itemsSubtotal * (Number(order.global_discount_percentage) / 100) * 100) / 100;
+                    order.global_discount_amount = discountAmount;
+                }
+                let appliedTaxAmount = 0.00;
+                if (!order.tax_exempt && order.tax_rate && Number(order.tax_rate) > 0) {
+                    appliedTaxAmount = Math.round((itemsSubtotal - discountAmount) * (Number(order.tax_rate) / 100) * 100) / 100;
+                    order.tax_amount = appliedTaxAmount;
+                }
+                const deliveryFee = Number(order.delivery_fee_charged) || 0;
+                const feeAmount = Number(order.fee_amount) || 0;
+                order.total = Math.round((itemsSubtotal - discountAmount + appliedTaxAmount + deliveryFee + feeAmount) * 100) / 100;
             }
         }
         else if (total !== undefined) {
@@ -1148,11 +1184,17 @@ let OrdersService = class OrdersService {
             order.pending_balance = 0.00;
         }
         if (oldPaymentStatus === 'paid' && Number(order.total) < oldTotal) {
-            const diff = Math.round((oldTotal - Number(order.total)) * 100) / 100;
-            const client = await this.userRepository.findOne({ where: { id: order.user_id } });
-            if (client) {
-                client.credit_balance = Math.round(((Number(client.credit_balance) || 0) + diff) * 100) / 100;
-                await this.userRepository.save(client);
+            const totalDiff = Math.round((oldTotal - Number(order.total)) * 100) / 100;
+            let creditableDiff = totalDiff;
+            if (items && Array.isArray(items)) {
+                creditableDiff = Math.min(totalDiff, Math.max(0, Math.round((oldTotal - Number(order.total)) * 100) / 100));
+            }
+            if (creditableDiff > 0) {
+                const client = await this.userRepository.findOne({ where: { id: order.user_id } });
+                if (client) {
+                    client.credit_balance = Math.round(((Number(client.credit_balance) || 0) + creditableDiff) * 100) / 100;
+                    await this.userRepository.save(client);
+                }
             }
         }
         const saved = await this.orderRepository.save(order);

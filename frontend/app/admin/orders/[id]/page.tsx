@@ -6,7 +6,8 @@ import AdminSidebar from '@/components/layout/AdminSidebar';
 import {
     ArrowLeft, ShoppingBag, Clock, User, MapPin, Phone,
     CheckCircle2, AlertCircle, RefreshCcw, DollarSign, Loader2,
-    ShieldCheck, CreditCard, ChevronRight, Truck, FileText, Building2, Receipt
+    ShieldCheck, CreditCard, ChevronRight, Truck, FileText, Building2, Receipt,
+    Plus, Trash2, Search, X
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
@@ -15,9 +16,10 @@ import AdminOrderDispatchSheet from '@/components/admin/AdminOrderDispatchSheet'
 
 interface OrderItem {
     id: string;
+    product_id?: number;
     quantity: number;
     price_at_time: number;
-    product?: { name: string; image?: string; category?: any };
+    product?: { id?: number; name: string; image?: string; category?: any };
 }
 
 interface OrderDetail {
@@ -89,6 +91,95 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
     const [isCheckModalOpen, setIsCheckModalOpen] = useState(false);
     const [orderChecks, setOrderChecks] = useState<any[]>([]);
     const [isProcessingCheck, setIsProcessingCheck] = useState(false);
+
+    // Edit & Add Items Modal State (TASK-101-04)
+    const [editItemsModalOpen, setEditItemsModalOpen] = useState(false);
+    const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
+    const [editingItems, setEditingItems] = useState<{ productId: number; name: string; quantity: number; price: number; image?: string }[]>([]);
+    const [productSearch, setProductSearch] = useState('');
+    const [isSavingItems, setIsSavingItems] = useState(false);
+
+    const handleOpenEditItems = async () => {
+        if (!order) return;
+        const initial = (order.items || []).map(i => ({
+            productId: Number(i.product?.id || i.product_id || 0),
+            name: i.product?.name || 'Producto',
+            quantity: Number(i.quantity) || 1,
+            price: Number(i.price_at_time) || 0,
+            image: i.product?.image,
+        })).filter(i => i.productId > 0);
+        setEditingItems(initial);
+        setProductSearch('');
+        setEditItemsModalOpen(true);
+
+        if (catalogProducts.length === 0) {
+            setLoadingProducts(true);
+            try {
+                const res = await api.get('/products') as any[];
+                setCatalogProducts(Array.isArray(res) ? res.filter(p => p.is_active !== false) : []);
+            } catch (err) {
+                console.error('Error loading products for admin order item editor:', err);
+            } finally {
+                setLoadingProducts(false);
+            }
+        }
+    };
+
+    const handleAddProductToOrder = (prod: any) => {
+        setEditingItems(prev => {
+            const existingIndex = prev.findIndex(p => p.productId === prod.id);
+            if (existingIndex >= 0) {
+                const copy = [...prev];
+                copy[existingIndex].quantity += 1;
+                return copy;
+            }
+            return [...prev, {
+                productId: prod.id,
+                name: prod.name,
+                quantity: 1,
+                price: Number(prod.price) || 0,
+                image: prod.image,
+            }];
+        });
+        setProductSearch('');
+    };
+
+    const handleUpdateItemQuantity = (productId: number, qty: number) => {
+        setEditingItems(prev => {
+            if (qty <= 0) {
+                return prev.filter(p => p.productId !== productId);
+            }
+            return prev.map(p => p.productId === productId ? { ...p, quantity: qty } : p);
+        });
+    };
+
+    const handleSaveOrderItems = async () => {
+        if (!order) return;
+        if (editingItems.length === 0) {
+            showToast('La orden debe contener al menos un producto', 'error');
+            return;
+        }
+        setIsSavingItems(true);
+        try {
+            const payload = {
+                replaceItems: true,
+                items: editingItems.map(i => ({
+                    productId: i.productId,
+                    quantity: i.quantity,
+                })),
+                reason: 'Ajuste / Adición de productos por administración',
+            };
+            await api.patch(`/orders/${order.id}/mutate-items`, payload);
+            showToast('✅ Productos de la orden actualizados exitosamente');
+            setEditItemsModalOpen(false);
+            await fetchOrder();
+        } catch (err: any) {
+            showToast(err?.message || 'Error al actualizar los productos de la orden', 'error');
+        } finally {
+            setIsSavingItems(false);
+        }
+    };
 
     useEffect(() => {
         fetchOrder();
@@ -897,9 +988,18 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 
                 {/* Products Table */}
                 <section className="bg-white rounded-[2rem] p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-6">
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                        <ShoppingBag size={16} className="text-primary" /> Productos del Pedido
-                    </h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                            <ShoppingBag size={16} className="text-primary" /> Productos del Pedido
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={handleOpenEditItems}
+                            className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                            <Plus size={14} /> Modificar / Agregar Productos
+                        </button>
+                    </div>
                     <div className="space-y-3">
                         {(order.items || []).map((item) => (
                             <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
@@ -970,6 +1070,112 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                             </div>
                         );
                     })()}
+                </section>
+
+                {/* TASK-101-05: Auditoría de Liquidación y Trazabilidad Forense de Cobro */}
+                <section className="bg-white rounded-[2rem] p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-6">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center font-black">
+                                <Receipt size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                                    Auditoría de Liquidación y Trazabilidad Forense
+                                </h3>
+                                <p className="text-xs text-slate-400 font-medium">
+                                    Desglose explicativo de reglas de flete, créditos, impuestos y balance contable
+                                </p>
+                            </div>
+                        </div>
+                        <span className={`text-[10px] font-black px-3.5 py-1.5 rounded-full border ${
+                            order.payment_status === 'paid'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                : order.payment_status === 'partially_paid'
+                                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                : 'bg-slate-100 text-slate-800 border-slate-300'
+                        }`}>
+                            {order.payment_status === 'paid' ? '✓ Totalmente Liquidado' : order.payment_status === 'partially_paid' ? '⚠️ Saldo Pendiente de Cobro' : order.payment_status?.toUpperCase() || 'PENDIENTE'}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* 1. Regla de Flete */}
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                <Truck size={12} className="text-amber-600" /> Regla de Flete Aplicada
+                            </span>
+                            <p className="text-xs font-black text-slate-800">
+                                {order.delivery_type === 'pickup'
+                                    ? 'Retiro en Tienda ($0.00)'
+                                    : (order.notes?.includes('[Complementario') || (order as any).is_complementary)
+                                    ? 'Pedido Complementario ($0.00)'
+                                    : order.notes?.includes('Exoneración') || order.notes?.includes('Bypass')
+                                    ? 'Exonerado por Admin ($0.00)'
+                                    : Number(order.delivery_fee_charged || 0) > 0
+                                    ? `Flete Cobrado: $${Number(order.delivery_fee_charged).toFixed(2)}`
+                                    : 'Flete Gratuito ($0.00)'}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                                {(order.notes?.includes('[Complementario') || (order as any).is_complementary)
+                                    ? 'Despacho conjunto con orden existente del mismo día'
+                                    : order.delivery_type === 'pickup'
+                                    ? 'Cliente retira en 3304 Broadway, Astoria'
+                                    : Number(order.delivery_fee_charged || 0) > 0
+                                    ? 'Tarifa negociada de perfil o cotización de millaje'
+                                    : 'Beneficio de entrega gratuita'}
+                            </p>
+                        </div>
+
+                        {/* 2. Impuestos & ST-120 */}
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                <FileText size={12} className="text-primary" /> Régimen Fiscal NY
+                            </span>
+                            <p className="text-xs font-black text-slate-800">
+                                {(order as any).tax_exempt ? 'Exento de Impuestos (ST-120)' : Number((order as any).tax_amount || 0) > 0 ? `Sales Tax: $${Number((order as any).tax_amount).toFixed(2)}` : 'Impuesto $0.00 (Exento)'}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                                {(order as any).tax_exempt ? 'Certificado fiscal ST-120 validado' : 'Impuestos sobre ventas NY aplicados'}
+                            </p>
+                        </div>
+
+                        {/* 3. Saldo a Favor / Store Credit */}
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                <CreditCard size={12} className="text-emerald-600" /> Saldo a Favor / Ajustes
+                            </span>
+                            <p className="text-xs font-black text-slate-800">
+                                {Number((order as any).refunded_amount || 0) > 0
+                                    ? `Ajustado: -$${Number((order as any).refunded_amount).toFixed(2)}`
+                                    : 'Sin descuentos/ajustes'}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                                {(order as any).refund_reason || 'Sin notas de crédito registradas'}
+                            </p>
+                        </div>
+
+                        {/* 4. Balance y Liquidación */}
+                        <div className={`p-4 rounded-2xl border space-y-1 ${
+                            Number(order.pending_balance || 0) > 0
+                                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                                : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        }`}>
+                            <span className="text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                                <DollarSign size={12} /> Estado de Cobro
+                            </span>
+                            <p className="text-xs font-black">
+                                {Number(order.pending_balance || 0) > 0
+                                    ? `Pendiente: $${Number(order.pending_balance).toFixed(2)}`
+                                    : `Cobrado: $${Number(order.total || 0).toFixed(2)}`}
+                            </p>
+                            <p className="text-[10px] opacity-80">
+                                {Number(order.pending_balance || 0) > 0
+                                    ? 'Delta generado por adición de productos o flete'
+                                    : 'Orden liquidada sin saldo pendiente'}
+                            </p>
+                        </div>
+                    </div>
                 </section>
             </main>
 
@@ -1110,6 +1316,162 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                     showToast('✅ Cheque registrado exitosamente');
                 }}
             />
+
+            {/* Edit & Add Items Modal (TASK-101-04) */}
+            {editItemsModalOpen && (
+                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="relative bg-white rounded-[2.5rem] p-6 lg:p-8 max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200 space-y-5">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 font-serif flex items-center gap-2">
+                                    <ShoppingBag className="text-amber-500" size={22} /> Modificar Ítems de la Orden
+                                </h3>
+                                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                    Agrega nuevos SKUs o ajusta cantidades. Si la orden ya fue pagada, el delta se registra como saldo pendiente.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setEditItemsModalOpen(false)}
+                                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-black cursor-pointer"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Search & Add New Product from Catalog */}
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                <Plus size={12} className="text-amber-600" /> Buscar y Agregar Nuevo Producto a la Orden
+                            </label>
+                            <div className="relative">
+                                <Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
+                                <input
+                                    type="text"
+                                    value={productSearch}
+                                    onChange={(e) => setProductSearch(e.target.value)}
+                                    placeholder="Buscar pastel o producto por nombre..."
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 outline-none focus:border-amber-500 transition-all"
+                                />
+                            </div>
+
+                            {/* Dropdown Suggestions */}
+                            {productSearch.trim().length > 0 && (
+                                <div className="max-h-48 overflow-y-auto bg-white rounded-2xl border border-slate-200 shadow-lg p-2 space-y-1">
+                                    {loadingProducts ? (
+                                        <div className="p-3 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+                                            <Loader2 size={14} className="animate-spin" /> Cargando catálogo...
+                                        </div>
+                                    ) : (() => {
+                                        const filtered = catalogProducts.filter(p =>
+                                            p.name.toLowerCase().includes(productSearch.toLowerCase())
+                                        );
+                                        if (filtered.length === 0) {
+                                            return <p className="text-xs text-slate-400 p-2 text-center">No se encontraron productos coincidentes</p>;
+                                        }
+                                        return filtered.slice(0, 6).map(prod => (
+                                            <button
+                                                key={prod.id}
+                                                type="button"
+                                                onClick={() => handleAddProductToOrder(prod)}
+                                                className="w-full p-2.5 rounded-xl hover:bg-amber-50 text-left flex items-center justify-between text-xs transition-colors cursor-pointer"
+                                            >
+                                                <span className="font-bold text-slate-800">{prod.name}</span>
+                                                <span className="font-mono font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-lg text-[11px]">
+                                                    +${Number(prod.price).toFixed(2)} (Agregar)
+                                                </span>
+                                            </button>
+                                        ));
+                                    })()}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Current Editing Items List */}
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-64">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                Lista de Productos Actuales ({editingItems.length})
+                            </p>
+                            {editingItems.length === 0 ? (
+                                <div className="p-6 text-center text-xs text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl">
+                                    No hay productos en la orden. Busca arriba para agregar.
+                                </div>
+                            ) : (
+                                editingItems.map(item => (
+                                    <div key={item.productId} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-xs text-slate-800 truncate">{item.name}</p>
+                                            <p className="text-[10px] text-slate-400 font-mono">Unitario: ${item.price.toFixed(2)}</p>
+                                        </div>
+
+                                        {/* Quantity Controls */}
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUpdateItemQuantity(item.productId, item.quantity - 1)}
+                                                className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center text-xs font-black cursor-pointer"
+                                            >
+                                                -
+                                            </button>
+                                            <span className="w-8 text-center font-black text-xs text-slate-800 font-mono">
+                                                {item.quantity}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUpdateItemQuantity(item.productId, item.quantity + 1)}
+                                                className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center text-xs font-black cursor-pointer"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+
+                                        <p className="font-mono font-black text-xs text-slate-900 w-16 text-right">
+                                            ${(item.price * item.quantity).toFixed(2)}
+                                        </p>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleUpdateItemQuantity(item.productId, 0)}
+                                            className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                                            title="Eliminar producto"
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Projected Totals Footer */}
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Nuevo Subtotal Ítems</span>
+                                <span className="text-base font-black text-slate-900 font-mono">
+                                    ${editingItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditItemsModalOpen(false)}
+                                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSaveOrderItems}
+                                    disabled={isSavingItems || editingItems.length === 0}
+                                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/25 transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                    {isSavingItems ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                    {isSavingItems ? 'Guardando...' : 'Guardar y Recalcular Orden'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Notification Toast */}
             {toast && (

@@ -3458,5 +3458,153 @@ describe('OrdersService', () => {
       );
     });
   });
+
+  describe('Sprint S101: TASK-101-01, TASK-101-02, TASK-101-03 Guardrails Financieros y de Flete', () => {
+    it('TASK-101-01 (Happy Path): Grants $0.00 complementary delivery fee when a paid order exists for same date', async () => {
+      const mockUser = { id: 'user-blue-fig', delivery_fee: 200, productDiscounts: [] };
+      userRepository.findOne.mockResolvedValue(mockUser);
+      productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
+
+      orderRepository.find.mockResolvedValue([
+        {
+          id: 'existing-paid-order-1',
+          user_id: 'user-blue-fig',
+          delivery_date: '2026-11-25',
+          status: 'confirmed',
+          payment_status: 'paid',
+        },
+      ]);
+
+      const orderData = {
+        deliveryDate: '2026-11-25',
+        deliveryType: 'delivery',
+        items: [{ productId: 1, quantity: 1 }],
+      };
+
+      const createdOrder = { id: 'new-order-comp', total: 100 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockImplementation(async (entity: any) => entity);
+      service.findOne = jest.fn().mockImplementation(async (id: string) => mockManager.create.mock.results[0]?.value || createdOrder);
+
+      await service.create('user-blue-fig', orderData as any);
+      expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+        delivery_fee_charged: 0.00,
+      }));
+    });
+
+    it('TASK-101-01 (Sad Path - Anti-Leak): Charges full delivery fee when prior order is only an unpaid draft or pending checkout', async () => {
+      const mockUser = { id: 'user-blue-fig', delivery_fee: 200, productDiscounts: [] };
+      userRepository.findOne.mockResolvedValue(mockUser);
+      productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
+
+      orderRepository.find.mockResolvedValue([
+        {
+          id: 'abandoned-draft-order',
+          user_id: 'user-blue-fig',
+          delivery_date: '2026-11-25',
+          status: 'pending',
+          payment_status: 'pending',
+          is_draft: true,
+        },
+      ]);
+
+      const orderData = {
+        deliveryDate: '2026-11-25',
+        deliveryType: 'delivery',
+        items: [{ productId: 1, quantity: 1 }],
+      };
+
+      const createdOrder = { id: 'new-order-retry', total: 300 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockImplementation(async (entity: any) => entity);
+      service.findOne = jest.fn().mockImplementation(async (id: string) => mockManager.create.mock.results[0]?.value || createdOrder);
+
+      await service.create('user-blue-fig', orderData as any);
+      expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+        delivery_fee_charged: 200.00,
+      }));
+    });
+
+    it('TASK-101-02 (Happy Path): Admin manual order with explicit delivery_fee_charged: 0 overrides VIP profile delivery fee ($300)', async () => {
+      const mockUser = { id: 'user-zaytoona', delivery_fee: 300, productDiscounts: [] };
+      userRepository.findOne.mockResolvedValue(mockUser);
+      productRepository.find.mockResolvedValue([{ id: 1, price: 100 }]);
+      orderRepository.find.mockResolvedValue([]);
+
+      const adminOrderData = {
+        admin_created: true,
+        delivery_fee_charged: 0.00,
+        deliveryDate: '2026-11-26',
+        deliveryType: 'delivery',
+        items: [{ productId: 1, quantity: 1 }],
+      };
+
+      const createdOrder = { id: 'admin-manual-order', total: 100 };
+      mockManager.create.mockImplementation((entity: any, data: any) => ({ ...createdOrder, ...data }));
+      mockManager.save.mockImplementation(async (entity: any) => entity);
+      service.findOne = jest.fn().mockImplementation(async (id: string) => mockManager.create.mock.results[0]?.value || createdOrder);
+
+      await service.create('user-zaytoona', adminOrderData as any, 'admin');
+      expect(mockManager.create).toHaveBeenCalledWith(Order, expect.objectContaining({
+        delivery_fee_charged: 0.00,
+      }));
+    });
+
+    it('TASK-101-03 (Sad Path / Financial Isolation): Item update on paid order preserves delivery fee and does not leak it into credit_balance', async () => {
+      const mockPaidOrder = {
+        id: 'order-spring-st-210',
+        user_id: 'user-spring-st',
+        total: 250.00,
+        delivery_fee_charged: 200.00,
+        tax_amount: 0.00,
+        fee_amount: 0.00,
+        payment_status: 'paid',
+        status: 'confirmed',
+        pending_balance: 0.00,
+        items: [
+          { product_id: 1, quantity: 5, price_at_time: 10.00 },
+        ],
+      };
+
+      const mockClientUser = {
+        id: 'user-spring-st',
+        credit_balance: 0.00,
+        productDiscounts: [],
+      };
+
+      service.findOne = jest.fn().mockResolvedValue(mockPaidOrder);
+      userRepository.findOne.mockResolvedValue(mockClientUser);
+      userRepository.save = jest.fn().mockImplementation(async (u: any) => u);
+      orderRepository.save = jest.fn().mockImplementation(async (o: any) => o);
+      orderItemRepository.delete = jest.fn().mockResolvedValue({});
+      orderItemRepository.save = jest.fn().mockResolvedValue([]);
+
+      service.calculateOrderPricesAndTotal = jest.fn().mockResolvedValue({
+        total: 44.08,
+        validatedItems: [{ product_id: 1, quantity: 4, price_at_time: 11.02 }],
+      });
+
+      await service.update('order-spring-st-210', {
+        items: [{ productId: 1, quantity: 4 }],
+      }, 'admin');
+
+      // The new total must preserve the $200 delivery fee (200 + 44.08 = 244.08)
+      expect(orderRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'order-spring-st-210',
+          total: 244.08,
+          delivery_fee_charged: 200.00,
+        }),
+      );
+
+      // The credit_balance must be credited ONLY $5.92, NEVER $205.92
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'user-spring-st',
+          credit_balance: 5.92,
+        }),
+      );
+    });
+  });
 });
 
