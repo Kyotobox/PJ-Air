@@ -661,6 +661,10 @@ export default function AdminOrdersPage() {
             (o.invoice_number && o.invoice_number.toLowerCase().includes(q)) ||
             o.id.toLowerCase().includes(q) ||
             o.user?.email.toLowerCase().includes(q) ||
+            (o.user?.profile?.nickname && o.user.profile.nickname.toLowerCase().includes(q)) ||
+            (o.user?.dba && o.user.dba.toLowerCase().includes(q)) ||
+            (o.user?.legal_business_name && o.user.legal_business_name.toLowerCase().includes(q)) ||
+            (o.user?.profile?.company_name && o.user.profile.company_name.toLowerCase().includes(q)) ||
             o.user?.profile?.full_name?.toLowerCase().includes(q) ||
             o.items?.some(item => item.product?.name?.toLowerCase().includes(q)) ||
             o.items?.some(item => {

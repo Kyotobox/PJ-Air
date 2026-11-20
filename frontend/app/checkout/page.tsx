@@ -1321,14 +1321,13 @@ export default function CheckoutPage() {
             }
         }
 
-        const [yVal, mVal, dVal] = (rawDeliveryDate || '').split('-').map(Number);
-        if (yVal && mVal && dVal) {
-            const dateObj = new Date(yVal, mVal - 1, dVal);
-            if (dateObj.getDay() === 2) {
+        if (rawDeliveryDate) {
+            const scheduleCheck = isDateAvailableForDelivery(rawDeliveryDate, deliverySchedule, (locale || 'es') as 'es' | 'en');
+            if (!scheduleCheck.available) {
                 showNotification(
-                    lbl(
-                        'Panadería Jhoanes no realiza entregas los martes. Por favor selecciona a partir del miércoles',
-                        'Jhoanes Bakery does not make deliveries on Tuesdays. Please select from Wednesday onwards'
+                    scheduleCheck.reason || lbl(
+                        'Panadería Jhoanes no realiza entregas en la fecha seleccionada. Por favor selecciona otro día operativo.',
+                        'Jhoanes Bakery does not make deliveries on the selected date. Please select another operational day.'
                     ),
                     'warning'
                 );

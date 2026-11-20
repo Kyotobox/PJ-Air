@@ -52,6 +52,8 @@ interface OrderDetail {
     user?: {
         id: string;
         email: string;
+        dba?: string;
+        legal_business_name?: string;
         profile?: { full_name?: string; phone?: string; nickname?: string };
     };
     address?: {
@@ -99,6 +101,38 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
     const [editingItems, setEditingItems] = useState<{ productId: number; name: string; quantity: number; price: number; image?: string }[]>([]);
     const [productSearch, setProductSearch] = useState('');
     const [isSavingItems, setIsSavingItems] = useState(false);
+
+    // Nickname inline editing state
+    const [isEditingNickname, setIsEditingNickname] = useState(false);
+    const [nicknameVal, setNicknameVal] = useState('');
+    const [isSavingNickname, setIsSavingNickname] = useState(false);
+
+    const handleSaveNickname = async () => {
+        if (!order?.user?.id) return;
+        setIsSavingNickname(true);
+        try {
+            await api.patch(`/users/${order.user.id}/profile`, { nickname: nicknameVal.trim() });
+            setOrder(prev => {
+                if (!prev || !prev.user) return prev;
+                return {
+                    ...prev,
+                    user: {
+                        ...prev.user,
+                        profile: {
+                            ...(prev.user.profile || {}),
+                            nickname: nicknameVal.trim()
+                        }
+                    }
+                };
+            });
+            setIsEditingNickname(false);
+            showToast('✅ Nickname de tienda actualizado con éxito');
+        } catch (err: any) {
+            showToast(err?.message || 'Error al actualizar nickname', 'error');
+        } finally {
+            setIsSavingNickname(false);
+        }
+    };
 
     const handleOpenEditItems = async () => {
         if (!order) return;
@@ -936,14 +970,71 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Customer Info */}
                     <section className="bg-white rounded-[2rem] p-6 lg:p-8 border border-slate-200/80 shadow-sm space-y-4">
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                            <User size={16} className="text-primary" /> Información del Cliente
-                        </h3>
+                        <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                                <User size={16} className="text-primary" /> Información del Cliente
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setNicknameVal(order.user?.profile?.nickname || '');
+                                    setIsEditingNickname(prev => !prev);
+                                }}
+                                className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all shrink-0 cursor-pointer"
+                                title="Editar apodo comercial / Nickname de la tienda"
+                            >
+                                {order.user?.profile?.nickname ? '🏷️ Editar Nickname' : '🏷️ + Asignar Nickname'}
+                            </button>
+                        </div>
                         <div className="pt-2">
-                            <p className="text-lg font-black text-slate-800 leading-tight">
-                                {order.user?.profile?.nickname || order.user?.profile?.full_name || 'Cliente B2B'}
-                            </p>
-                            <p className="text-xs text-primary font-bold mt-1">{order.user?.email}</p>
+                            {isEditingNickname ? (
+                                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl mb-3 space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                                        Nickname de Tienda (Identificador Comercial)
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={nicknameVal}
+                                            onChange={e => setNicknameVal(e.target.value)}
+                                            placeholder="Ej. Haraz Coffee SoHo"
+                                            className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary/20"
+                                            autoFocus
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleSaveNickname}
+                                            disabled={isSavingNickname}
+                                            className="px-3 py-1.5 bg-slate-900 hover:bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                                        >
+                                            {isSavingNickname ? '...' : 'Guardar'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsEditingNickname(false)}
+                                            className="px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            <div className="space-y-0.5">
+                                <p className="text-lg font-black text-slate-800 leading-tight">
+                                    {order.user?.profile?.nickname ? (
+                                        <span>
+                                            {order.user.profile.nickname}
+                                            <span className="text-xs font-bold text-slate-400 block mt-0.5">
+                                                {order.user?.dba || order.user?.legal_business_name || order.user?.profile?.full_name || 'Sin Razón Social'}
+                                            </span>
+                                        </span>
+                                    ) : (
+                                        order.user?.dba || order.user?.legal_business_name || order.user?.profile?.full_name || 'Cliente B2B'
+                                    )}
+                                </p>
+                            </div>
+                            <p className="text-xs text-primary font-bold mt-1.5">{order.user?.email}</p>
                             {order.user?.profile?.phone && (
                                 <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
                                     <Phone size={12} /> {order.user.profile.phone}
