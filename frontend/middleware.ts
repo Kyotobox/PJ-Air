@@ -38,8 +38,22 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  const rawRole = jwtPayload?.role || cookieRole || 'client';
-  const role = String(rawRole).trim().toLowerCase();
+  // TASK-102-01: Prioridad estricta a jwtPayload?.role sobre cookieRole
+  const tokenRole = jwtPayload?.role ? String(jwtPayload.role).trim().toLowerCase() : null;
+  const cookieRoleNorm = cookieRole ? String(cookieRole).trim().toLowerCase() : null;
+  const role = tokenRole || cookieRoleNorm || 'client';
+
+  // Saneamiento de cookie residual si tokenRole difiere de cookieRole
+  const syncResidualCookie = (res: NextResponse) => {
+    if (tokenRole && cookieRoleNorm && cookieRoleNorm !== tokenRole) {
+      res.cookies.set('session_role', tokenRole, {
+        path: '/',
+        maxAge: 604800,
+        sameSite: 'lax',
+      });
+    }
+    return res;
+  };
 
   // Role-based access control para 'auditor'
   if (role === 'auditor') {
@@ -54,10 +68,10 @@ export function middleware(request: NextRequest) {
       const redirectUrl = new URL('/admin/orders', request.url);
       redirectUrl.searchParams.set('notice', 'unauthorized_auditor_route');
       redirectUrl.searchParams.set('warning', 'Acceso no autorizado para el perfil de auditor.');
-      return NextResponse.redirect(redirectUrl);
+      return redirectUrl ? syncResidualCookie(NextResponse.redirect(redirectUrl)) : NextResponse.redirect(redirectUrl);
     }
 
-    return NextResponse.next();
+    return syncResidualCookie(NextResponse.next());
   }
 
   // Role-based access control para resto de roles
@@ -76,7 +90,7 @@ export function middleware(request: NextRequest) {
   }
   // /orders and /profile only require valid authentication (checked above)
 
-  return NextResponse.next();
+  return syncResidualCookie(NextResponse.next());
 }
 
 export const config = {

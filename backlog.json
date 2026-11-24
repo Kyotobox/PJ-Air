@@ -218,13 +218,13 @@
     },
     {
       "id": "S102",
-      "title": "Sprint S102: Auditor\u00eda Global Omnipresente (Read-Only SoD), Paginaci\u00f3n de \u00d3rdenes y Prevalencia de Admin",
-      "status": "PLANNED",
+      "title": "Sprint S102: Auditoría Global Omnipresente (Read-Only SoD), Paginación de Órdenes y Prevalencia de Admin",
+      "status": "IN_PROGRESS",
       "tasks": [
         {
           "id": "TASK-102-01",
-          "title": "Prevalencia de sesi\u00f3n Admin sobre cookies residuales y saneamiento de session_role en AuthContext y orders/page.tsx",
-          "status": "TODO",
+          "title": "Prevalencia de sesión Admin sobre cookies residuales y saneamiento de session_role en AuthContext y orders/page.tsx",
+          "status": "DONE",
           "type": "FRONTEND/SECURITY",
           "predicted_files": [
             "frontend/app/admin/orders/page.tsx",
@@ -305,13 +305,13 @@
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
     "id": "S102",
-    "title": "Sprint S102: Auditor\u00eda Global Omnipresente (Read-Only SoD), Paginaci\u00f3n de \u00d3rdenes y Prevalencia de Admin",
-    "status": "PLANNED",
+    "title": "Sprint S102: Auditoría Global Omnipresente (Read-Only SoD), Paginación de Órdenes y Prevalencia de Admin",
+    "status": "IN_PROGRESS",
     "tasks": [
       {
         "id": "TASK-102-01",
-        "title": "Prevalencia de sesi\u00f3n Admin sobre cookies residuales y saneamiento de session_role en AuthContext y orders/page.tsx",
-        "status": "TODO",
+        "title": "Prevalencia de sesión Admin sobre cookies residuales y saneamiento de session_role en AuthContext y orders/page.tsx",
+        "status": "DONE",
         "type": "FRONTEND/SECURITY",
         "predicted_files": [
           "frontend/app/admin/orders/page.tsx",

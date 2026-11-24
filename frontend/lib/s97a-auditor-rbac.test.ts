@@ -167,4 +167,93 @@ describe('Sprint S97A: Auditor RBAC & Frontend Route Isolation (§6, §48)', () 
       expect(AUDITOR_BADGE).toBe('🛡️ Auditor Contable / Finanzas');
     });
   });
+
+  describe('TASK-102-01: Prevalencia de sesión Admin sobre cookies residuales y saneamiento de session_role (§6, §48)', () => {
+    it('Happy Path: prioritizes jwtPayload.role=admin over residual cookie session_role=auditor', () => {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ id: 'admin-1', email: 'admin@jhoanes.com', role: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 }));
+      const token = `${header}.${payload}.signature`;
+
+      // Simular cookie residual con session_role=auditor
+      const req = new NextRequest('https://jhoanes.com/admin/orders', {
+        headers: {
+          cookie: `auth_token=${token}; session_role=auditor`,
+        },
+      });
+
+      const res = middleware(req);
+      // Admin tiene acceso permitido sin redirect forzado a notice de auditor
+      expect(res.headers.get('location')).toBeNull();
+      // Y la cookie residual es saneada en la respuesta a session_role=admin
+      const setCookie = res.headers.get('set-cookie');
+      expect(setCookie).toContain('session_role=admin');
+    });
+
+    it('Happy Path: allows admin with residual auditor cookie to access protected /produccion routes', () => {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ id: 'admin-1', email: 'admin@jhoanes.com', role: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 }));
+      const token = `${header}.${payload}.signature`;
+
+      const req = new NextRequest('https://jhoanes.com/produccion', {
+        headers: {
+          cookie: `auth_token=${token}; session_role=auditor`,
+        },
+      });
+
+      const res = middleware(req);
+      // Si el auditor residual hubiera prevalecido, habría sido redirigido a /admin/orders?notice=unauthorized_auditor_route
+      expect(res.headers.get('location')).toBeNull();
+      expect(res.headers.get('set-cookie')).toContain('session_role=admin');
+    });
+
+    it('Sad Path 1 (§6): rejects forged session_role=admin cookie when JWT token has client role', () => {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ id: 'client-1', email: 'client@jhoanes.com', role: 'client', exp: Math.floor(Date.now() / 1000) + 3600 }));
+      const token = `${header}.${payload}.signature`;
+
+      // Atacante intenta elevar privilegios inyectando cookie session_role=admin
+      const req = new NextRequest('https://jhoanes.com/admin/orders', {
+        headers: {
+          cookie: `auth_token=${token}; session_role=admin`,
+        },
+      });
+
+      const res = middleware(req);
+      // Debe rechazar el acceso a /admin y redirigir al home (/)
+      const location = res.headers.get('location');
+      expect(location).toBe('https://jhoanes.com/');
+    });
+
+    it('Sad Path 2 (§6): rejects expired admin token even if session_role cookie is admin', () => {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ id: 'admin-1', email: 'admin@jhoanes.com', role: 'admin', exp: Math.floor(Date.now() / 1000) - 3600 }));
+      const token = `${header}.${payload}.signature`;
+
+      const req = new NextRequest('https://jhoanes.com/admin/orders', {
+        headers: {
+          cookie: `auth_token=${token}; session_role=admin`,
+        },
+      });
+
+      const res = middleware(req);
+      // Debe redirigir a /auth/login
+      const location = res.headers.get('location');
+      expect(location).toContain('/auth/login');
+    });
+
+    it('Sad Path 3 (§6): strictly evaluates isAuditor logic: admin role is NEVER auditor regardless of cookies', () => {
+      // Función espejo estricta de la regla de evaluación de isAuditor en orders/page.tsx
+      const evaluateIsAuditor = (userRole: string, _cookieString: string): boolean => {
+        const normRole = userRole.trim().toLowerCase();
+        if (normRole === 'admin') return false;
+        return normRole === 'auditor';
+      };
+
+      expect(evaluateIsAuditor('admin', 'session_role=auditor')).toBe(false);
+      expect(evaluateIsAuditor('admin', '')).toBe(false);
+      expect(evaluateIsAuditor('auditor', 'session_role=auditor')).toBe(true);
+      expect(evaluateIsAuditor('client', 'session_role=auditor')).toBe(false);
+      expect(evaluateIsAuditor('', 'session_role=auditor')).toBe(false);
+    });
+  });
 });

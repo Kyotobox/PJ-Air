@@ -127,7 +127,16 @@ export default function AdminOrdersPage() {
     const { user, profile } = useAuth();
     const rawRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
     const userRole = rawRole ? String(rawRole).trim().toLowerCase() : '';
-    const isAuditor = userRole === 'auditor' || (typeof window !== 'undefined' && document.cookie.toLowerCase().includes('session_role=auditor'));
+    // TASK-102-01: Prevalencia de sesión Admin sobre cookies residuales
+    const isAuditor = userRole === 'admin' ? false : (userRole === 'auditor');
+
+    // Saneamiento de cookie residual session_role si el usuario autenticado es admin
+    if (typeof document !== 'undefined' && userRole === 'admin') {
+        if (document.cookie.toLowerCase().includes('session_role=auditor')) {
+            document.cookie = 'session_role=; path=/; max-age=0; SameSite=Lax';
+            document.cookie = 'session_role=admin; path=/; max-age=604800; SameSite=Lax';
+        }
+    }
 
     const [orders, setOrders] = useState<Order[]>([]);
     const [deliveryUsers, setDeliveryUsers] = useState<DeliveryUser[]>([]);

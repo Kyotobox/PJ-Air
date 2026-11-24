@@ -36,17 +36,38 @@ interface AuthContextType {
     setRequirePasswordChange: (val: boolean) => void;
 }
 
-function setSessionCookies(token?: string, role?: string) {
+export function decodeJwtPayload(token?: string): { role?: string; exp?: number; id?: string; email?: string } | null {
+    if (!token) return null;
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const base64Url = parts[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const json = atob(base64);
+        return JSON.parse(json);
+    } catch {
+        return null;
+    }
+}
+
+export function setSessionCookies(token?: string, role?: string) {
     if (typeof document === 'undefined') return;
     if (token) {
         document.cookie = `auth_token=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax`;
     }
     if (role) {
-        document.cookie = `session_role=${encodeURIComponent(role)}; path=/; max-age=604800; SameSite=Lax`;
+        const normalizedRole = String(role).trim().toLowerCase();
+        // TASK-102-01: Si el rol es admin, sobreescribir y sanear cualquier cookie residual previa
+        if (normalizedRole === 'admin') {
+            document.cookie = 'session_role=; path=/; max-age=0; SameSite=Lax';
+            document.cookie = 'session_role=admin; path=/; max-age=604800; SameSite=Lax';
+        } else {
+            document.cookie = `session_role=${encodeURIComponent(normalizedRole)}; path=/; max-age=604800; SameSite=Lax`;
+        }
     }
 }
 
-function clearSessionCookies() {
+export function clearSessionCookies() {
     if (typeof document === 'undefined') return;
     document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
     document.cookie = 'session_role=; path=/; max-age=0; SameSite=Lax';
@@ -125,7 +146,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                 // Ensure cookies are synchronized on load
                 const token = parsed.session?.access_token;
-                const role = parsed.user?.user_metadata?.role || parsed.role || 'client';
+                const jwtPayload = decodeJwtPayload(token);
+                const tokenRole = jwtPayload?.role ? String(jwtPayload.role).trim().toLowerCase() : null;
+                const userRole = parsed.user?.role || parsed.user?.user_metadata?.role || parsed.role;
+                const normalizedUserRole = userRole ? String(userRole).trim().toLowerCase() : null;
+
+                const isAdmin = tokenRole === 'admin' || normalizedUserRole === 'admin';
+                const role = isAdmin ? 'admin' : (tokenRole || normalizedUserRole || 'client');
                 setSessionCookies(token, role);
 
                 // Fetch live profile + role from backend
@@ -144,7 +171,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('local_session', JSON.stringify(data));
 
         const token = data.session?.access_token;
-        const initialRole = data.user?.user_metadata?.role || data.role || 'client';
+        const jwtPayload = decodeJwtPayload(token);
+        const tokenRole = jwtPayload?.role ? String(jwtPayload.role).trim().toLowerCase() : null;
+        const userRole = data.user?.role || data.user?.user_metadata?.role || data.role;
+        const normalizedUserRole = userRole ? String(userRole).trim().toLowerCase() : null;
+
+        // TASK-102-01: Al iniciar sesión como admin, asegurar que la cookie session_role se sobreescriba como "admin"
+        const isAdmin = tokenRole === 'admin' || normalizedUserRole === 'admin';
+        const initialRole = isAdmin ? 'admin' : (tokenRole || normalizedUserRole || 'client');
         setSessionCookies(token, initialRole);
 
         // Fetch live profile + role from backend immediately after login
