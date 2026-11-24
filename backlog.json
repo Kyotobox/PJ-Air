@@ -3,12 +3,12 @@
   "version": "5.6.0",
   "kernel_version": "5.6.0",
   "status": "IN_PROGRESS",
-  "current_sprint": "S101",
-  "current_task": "TASK-101-01",
+  "current_sprint": "S102",
+  "current_task": "TASK-102-01",
   "technical_debt": [
     {
       "id": "DEBT-01",
-      "title": "Recuperación y Gestión Comercial de Carritos Abandonados (Botón de Reintento de Pago y Cron de Expiración 48h)",
+      "title": "Recuperaci\u00f3n y Gesti\u00f3n Comercial de Carritos Abandonados (Bot\u00f3n de Reintento de Pago y Cron de Expiraci\u00f3n 48h)",
       "category": "COMMERCIAL_RECOVERY",
       "status": "OPEN",
       "created_at": "2026-11-14",
@@ -16,7 +16,7 @@
     },
     {
       "id": "DEBT-02",
-      "title": "Ciclo de Vida y Renovación Preventiva del Certificado Fiscal NY Form ST-120",
+      "title": "Ciclo de Vida y Renovaci\u00f3n Preventiva del Certificado Fiscal NY Form ST-120",
       "category": "TAX_COMPLIANCE",
       "status": "OPEN",
       "created_at": "2026-11-14",
@@ -26,40 +26,40 @@
   "sprints": [
     {
       "id": "S98",
-      "title": "Sprint S98: Cumplimiento de Extensiones Google Ads: Exposición de Línea Mayorista B2B (Header, Footer Global y Links Click-to-Call)",
+      "title": "Sprint S98: Cumplimiento de Extensiones Google Ads: Exposici\u00f3n de L\u00ednea Mayorista B2B (Header, Footer Global y Links Click-to-Call)",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-98-01",
-          "title": "Componente canónico Footer.tsx y unificación global con texto visible Wholesale: (347) 761-2687 y tel:+13477612687",
+          "title": "Componente can\u00f3nico Footer.tsx y unificaci\u00f3n global con texto visible Wholesale: (347) 761-2687 y tel:+13477612687",
           "status": "DONE",
           "type": "FRONTEND/FOOTER",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-02",
-          "title": "Integración en Navbar.tsx (Header superior escritorio y móvil + drawer) con badge de llamada click-to-call visible",
+          "title": "Integraci\u00f3n en Navbar.tsx (Header superior escritorio y m\u00f3vil + drawer) con badge de llamada click-to-call visible",
           "status": "DONE",
           "type": "FRONTEND/HEADER",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-03",
-          "title": "Presencia visible en Landing Page (page.tsx), Portales Externos y páginas legales (terms/privacy)",
+          "title": "Presencia visible en Landing Page (page.tsx), Portales Externos y p\u00e1ginas legales (terms/privacy)",
           "status": "DONE",
           "type": "FRONTEND/LANDING",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-04",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6) validando presencia exacta de texto, protocolo tel y accesibilidad",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76) validando presencia exacta de texto, protocolo tel y accesibilidad",
           "status": "DONE",
           "type": "TEST/DOM",
           "veracity_hash": null
         },
         {
           "id": "TASK-98-05",
-          "title": "Compilación limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producción (app.jhoanes.com)",
+          "title": "Compilaci\u00f3n limpia y despliegue certificado a entornos Testing (testing.jhoanes.com) y Producci\u00f3n (app.jhoanes.com)",
           "status": "DONE",
           "type": "DEVOPS/DEPLOY",
           "veracity_hash": null
@@ -68,13 +68,13 @@
     },
     {
       "id": "S99",
-      "title": "Sprint S99: Erradicación de Fricciones Críticas de Venta y Cobro: Registro Tolerante de Clientes, Inmutabilidad de Flete en Checkout, Desactivación de ACH Público en Stripe y Paridad Fiscal de Facturación",
+      "title": "Sprint S99: Erradicaci\u00f3n de Fricciones Cr\u00edticas de Venta y Cobro: Registro Tolerante de Clientes, Inmutabilidad de Flete en Checkout, Desactivaci\u00f3n de ACH P\u00fablico en Stripe y Paridad Fiscal de Facturaci\u00f3n",
       "status": "COMPLETED",
       "tasks": [
         {
           "id": "TASK-99-01",
           "title": "Soporte de direcciones distantes y fallback manual tolerante en RegisterForm.tsx sin bloqueos de Google Places",
-          "desc": "Habilitar captura de cualquier dirección en EE. UU. (incluyendo ubicaciones foráneas/distantes) sin restricciones de bounds rígidos de Google Places ni bloqueos por falta de place_changed. Permitir edición libre de calle, ciudad y zip code, calculando coordenadas o aplicando resolución pasiva para que el registro nunca se detenga.",
+          "desc": "Habilitar captura de cualquier direcci\u00f3n en EE. UU. (incluyendo ubicaciones for\u00e1neas/distantes) sin restricciones de bounds r\u00edgidos de Google Places ni bloqueos por falta de place_changed. Permitir edici\u00f3n libre de calle, ciudad y zip code, calculando coordenadas o aplicando resoluci\u00f3n pasiva para que el registro nunca se detenga.",
           "status": "DONE",
           "type": "FRONTEND/REGISTER-GEO",
           "predicted_files": [
@@ -85,8 +85,8 @@
         },
         {
           "id": "TASK-99-02",
-          "title": "Compuerta de aprobación administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts",
-          "desc": "En backend/src/auth/auth.service.ts, calcular la distancia de la dirección respecto al centro de operaciones en Astoria HQ (3304 Broadway). Si la distancia excede el radio estándar local (dirección distante > 30 millas o requiere cotización especial de flete), asignar account_status = PENDING_APPROVAL; si es local, asignar APPROVED. Informar al cliente con feedback formal en registro y login.",
+          "title": "Compuerta de aprobaci\u00f3n administrativa condicional para clientes con direcciones distantes (PENDING_APPROVAL) en auth.service.ts",
+          "desc": "En backend/src/auth/auth.service.ts, calcular la distancia de la direcci\u00f3n respecto al centro de operaciones en Astoria HQ (3304 Broadway). Si la distancia excede el radio est\u00e1ndar local (direcci\u00f3n distante > 30 millas o requiere cotizaci\u00f3n especial de flete), asignar account_status = PENDING_APPROVAL; si es local, asignar APPROVED. Informar al cliente con feedback formal en registro y login.",
           "status": "DONE",
           "type": "BACKEND/AUTH-APPROVAL",
           "predicted_files": [
@@ -97,8 +97,8 @@
         },
         {
           "id": "TASK-99-03",
-          "title": "Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificación de remitentes oficiales en mail.service.ts",
-          "desc": "Sustituir la generación del folio en base a UUID recortado (INV-${orderShortId}) por el folio canónico persistido en order.invoice_number en el asunto y cuerpo de sendEnglishInvoice. Unificar remitente a Contact@jhoanesbakery.com y reply-to a Jhoanes.invoices@gmail.com.",
+          "title": "Paridad del folio fiscal correlativo oficial (order.invoice_number) y unificaci\u00f3n de remitentes oficiales en mail.service.ts",
+          "desc": "Sustituir la generaci\u00f3n del folio en base a UUID recortado (INV-${orderShortId}) por el folio can\u00f3nico persistido en order.invoice_number en el asunto y cuerpo de sendEnglishInvoice. Unificar remitente a Contact@jhoanesbakery.com y reply-to a Jhoanes.invoices@gmail.com.",
           "status": "DONE",
           "type": "BACKEND/MAIL-INVOICE",
           "predicted_files": [
@@ -108,8 +108,8 @@
         },
         {
           "id": "TASK-99-04",
-          "title": "Higiene y refinamiento léxico de estados de órdenes a crédito en UI de cliente y panel administrativo",
-          "desc": "Reemplazar el badge de texto confuso \"Checkout Incompleto\" en órdenes con account_type === \"credit\" por \"Aprobado a Crédito\", eliminando la falsa alarma y el ruido visual para clientes y administradores.",
+          "title": "Higiene y refinamiento l\u00e9xico de estados de \u00f3rdenes a cr\u00e9dito en UI de cliente y panel administrativo",
+          "desc": "Reemplazar el badge de texto confuso \"Checkout Incompleto\" en \u00f3rdenes con account_type === \"credit\" por \"Aprobado a Cr\u00e9dito\", eliminando la falsa alarma y el ruido visual para clientes y administradores.",
           "status": "DONE",
           "type": "FRONTEND/ORDERS-LEXICON",
           "predicted_files": [
@@ -120,8 +120,8 @@
         },
         {
           "id": "TASK-99-05",
-          "title": "Desactivación de us_bank_account (ACH) en checkout público general de Stripe Elements",
-          "desc": "Desactivar la opción de us_bank_account (ACH) en el checkout público de Stripe Elements en frontend (StripePaymentModal.tsx) y en backend (payments.service.ts) para clientes generales, forzando pago con tarjeta y billeteras inmediatas (Apple/Google Pay) para evitar la retención de 5 días y la confusión comercial del \"$5 back\".",
+          "title": "Desactivaci\u00f3n de us_bank_account (ACH) en checkout p\u00fablico general de Stripe Elements",
+          "desc": "Desactivar la opci\u00f3n de us_bank_account (ACH) en el checkout p\u00fablico de Stripe Elements en frontend (StripePaymentModal.tsx) y en backend (payments.service.ts) para clientes generales, forzando pago con tarjeta y billeteras inmediatas (Apple/Google Pay) para evitar la retenci\u00f3n de 5 d\u00edas y la confusi\u00f3n comercial del \"$5 back\".",
           "status": "DONE",
           "type": "FRONTEND/STRIPE-PAYMENTS",
           "predicted_files": [
@@ -132,8 +132,8 @@
         },
         {
           "id": "TASK-99-06",
-          "title": "Inmutabilidad del total y flete en checkout y auto-conciliación inmediata de orden pagada",
-          "desc": "Blindar la inmutabilidad del total y flete en checkout en orders.service.ts: garantizar que el monto autorizado y pagado en Stripe sea el total definitivo de la orden, erradicando el recargo de flete fantasma post-cobro y asegurando que órdenes con cobro exitoso pasen de inmediato a payment_status = paid sin quedar en \"Payment Pending\".",
+          "title": "Inmutabilidad del total y flete en checkout y auto-conciliaci\u00f3n inmediata de orden pagada",
+          "desc": "Blindar la inmutabilidad del total y flete en checkout en orders.service.ts: garantizar que el monto autorizado y pagado en Stripe sea el total definitivo de la orden, erradicando el recargo de flete fantasma post-cobro y asegurando que \u00f3rdenes con cobro exitoso pasen de inmediato a payment_status = paid sin quedar en \"Payment Pending\".",
           "status": "DONE",
           "type": "BACKEND/ORDERS-FREIGHT",
           "predicted_files": [
@@ -144,8 +144,8 @@
         },
         {
           "id": "TASK-99-07",
-          "title": "Suite de pruebas automatizadas con Sad Paths (§6) y certificación de integridad",
-          "desc": "Implementar suite de pruebas automatizadas con Sad Paths (§6) cubriendo: 1) Registro distante asignando PENDING_APPROVAL vs local APPROVED. 2) Paridad de invoice en sendEnglishInvoice. 3) Bloqueo de ACH en checkout público general. 4) Inmutabilidad de flete post-pago. 5) Compilación limpia (npm run build) y certificación sin errores.",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76) y certificaci\u00f3n de integridad",
+          "desc": "Implementar suite de pruebas automatizadas con Sad Paths (\u00a76) cubriendo: 1) Registro distante asignando PENDING_APPROVAL vs local APPROVED. 2) Paridad de invoice en sendEnglishInvoice. 3) Bloqueo de ACH en checkout p\u00fablico general. 4) Inmutabilidad de flete post-pago. 5) Compilaci\u00f3n limpia (npm run build) y certificaci\u00f3n sin errores.",
           "status": "DONE",
           "type": "TEST/SPRINT-CERTIFICATION",
           "predicted_files": [
@@ -164,57 +164,225 @@
       "dag_id": "SPRINT-S100-RECONCILED",
       "status": "COMPLETED",
       "reconciled_at": "2026-11-20T00:47:20.322026+00:00",
-      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (§54).",
+      "forensic_notes": "Auto-inserted by MultiInstanceReconciler to restore SSSoT continuity (\u00a754).",
       "tasks": []
+    },
+    {
+      "id": "S101",
+      "title": "Sprint S101: Blindaje Financiero y Operativo de \u00d3rdenes: Anti-Fuga de Flete en Reintentos, Precedencia de Flete Manual, Aislamiento de Store Credit y Adici\u00f3n de Productos en Pedidos Pagados",
+      "status": "COMPLETED",
+      "tasks": [
+        {
+          "id": "TASK-101-01",
+          "title": "Blindaje de regla de flete complementario ($0.00) contra reintentos de checkout en orders.service.ts",
+          "status": "DONE",
+          "type": "BACKEND/FREIGHT-LEAK",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-101-02",
+          "title": "Precedencia de flete manual admin sobre tarifa de perfil VIP en orders.service.ts y /admin/orders/new",
+          "status": "DONE",
+          "type": "BACKEND/ADMIN-FREIGHT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-101-03",
+          "title": "Aislamiento estricto de Store Credit en ajustes de orden e incidencias en delivery-incidents.service.ts y orders.service.ts",
+          "status": "DONE",
+          "type": "BACKEND/STORE-CREDIT",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-101-04",
+          "title": "Soporte de adici\u00f3n de nuevos SKUs en \u00f3rdenes preexistentes y cobro de delta en expediente admin",
+          "status": "DONE",
+          "type": "FULLSTACK/ORDER-ITEMS",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-101-05",
+          "title": "Widget de auditor\u00eda y trazabilidad de liquidaci\u00f3n / flete en detalle de orden (/admin/orders/[id]/page.tsx)",
+          "status": "DONE",
+          "type": "FRONTEND/AUDIT-UI",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-101-06",
+          "title": "Suite de pruebas automatizadas con Sad Paths (\u00a76), build limpio y certificaci\u00f3n de sprint",
+          "status": "DONE",
+          "type": "TEST/CERTIFICATION",
+          "veracity_hash": null
+        }
+      ]
+    },
+    {
+      "id": "S102",
+      "title": "Sprint S102: Auditor\u00eda Global Omnipresente (Read-Only SoD), Paginaci\u00f3n de \u00d3rdenes y Prevalencia de Admin",
+      "status": "PLANNED",
+      "tasks": [
+        {
+          "id": "TASK-102-01",
+          "title": "Prevalencia de sesi\u00f3n Admin sobre cookies residuales y saneamiento de session_role en AuthContext y orders/page.tsx",
+          "status": "TODO",
+          "type": "FRONTEND/SECURITY",
+          "predicted_files": [
+            "frontend/app/admin/orders/page.tsx",
+            "frontend/context/AuthContext.tsx",
+            "frontend/middleware.ts"
+          ],
+          "detail_doc": "En frontend/app/admin/orders/page.tsx, isAuditor debe ser evaluado estrictamente como userRole === \"admin\" ? false : (userRole === \"auditor\"). Si el usuario autenticado tiene rol admin, document.cookie residual con session_role=auditor debe ser purgada de inmediato mediante clearSessionCookies() o eliminaci\u00f3n expl\u00edcita. En AuthContext.tsx, asegurar que al iniciar sesi\u00f3n como admin, la cookie session_role se sobreescriba como \"admin\". En middleware.ts, dar prioridad a jwtPayload?.role sobre cookieRole.",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-102-02",
+          "title": "Auditor\u00eda Global: Apertura de lectura en middleware y sidebar (/admin/*, /produccion, /delivery) con interfaz Read-Only SoD",
+          "status": "TODO",
+          "type": "FRONTEND/UX-PERMISSIONS",
+          "predicted_files": [
+            "frontend/middleware.ts",
+            "frontend/components/layout/AdminSidebar.tsx",
+            "frontend/app/admin/clients/page.tsx",
+            "frontend/app/admin/products/page.tsx"
+          ],
+          "detail_doc": "En frontend/middleware.ts, eliminar la restricci\u00f3n que confina al auditor solo a orders/reports/finance; permitir al auditor navegar libremente por todas las rutas de /admin/*, /produccion y /delivery. En AdminSidebar.tsx, mostrar los m\u00f3dulos de Clientes, Productos, Producci\u00f3n y Configuraci\u00f3n al auditor con indicador de modo s\u00f3lo lectura. En /admin/clients/page.tsx y /admin/products/page.tsx, deshabilitar botones mutativos (crear, editar, eliminar, alterar cr\u00e9dito) cuando el rol sea auditor.",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-102-03",
+          "title": "Unificaci\u00f3n de autorizaci\u00f3n Read-Only para auditor en delivery-incidents.service.ts y tax.service.ts",
+          "status": "TODO",
+          "type": "BACKEND/PERMISSIONS",
+          "predicted_files": [
+            "backend/src/orders/delivery-incidents.service.ts",
+            "backend/src/orders/delivery-incidents.controller.ts",
+            "backend/src/tax/tax.service.ts",
+            "backend/src/tax/tax.controller.ts"
+          ],
+          "detail_doc": "En DeliveryIncidentsService.findByOrder y findByUser, autorizar expl\u00edcitamente a usuarios con rol auditor para consultar incidencias sin lanzar ForbiddenException. En TaxService (findExemptionByUser, downloadCertificate), permitir que el rol auditor consulte y descargue certificados fiscales ST-120 de clientes para conciliaci\u00f3n. Los endpoints mutativos (POST/PATCH/DELETE) siguen prohibidos para auditor manteniendo SoD.",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-102-04",
+          "title": "Eliminaci\u00f3n de take:100 en orders.service.ts con soporte de paginaci\u00f3n y b\u00fasqueda transversal en base de datos",
+          "status": "TODO",
+          "type": "BACKEND/DATABASE",
+          "predicted_files": [
+            "backend/src/orders/orders.service.ts",
+            "backend/src/orders/orders.controller.ts"
+          ],
+          "detail_doc": "En OrdersService.findAll(), remover el l\u00edmite fijo take: 100 que oculta 127+ \u00f3rdenes en producci\u00f3n. Permitir opcionalmente recibir query params (search, status, limit) o retornar la colecci\u00f3n completa ordenada por created_at DESC. Garantizar que las 227+ \u00f3rdenes registradas en database.sqlite sean consultables y buscables por cliente, ID o n\u00famero de factura.",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-102-05",
+          "title": "B\u00fasqueda omnicanal en /admin/orders con badges de coincidencia inter-pesta\u00f1as y normalizaci\u00f3n de fechas",
+          "status": "TODO",
+          "type": "FRONTEND/ORDERS-UI",
+          "predicted_files": [
+            "frontend/app/admin/orders/page.tsx"
+          ],
+          "detail_doc": "En frontend/app/admin/orders/page.tsx, cuando el usuario ingresa un texto en el buscador, si no hay resultados en la pesta\u00f1a activa pero existen coincidencias en otras pesta\u00f1as (\"Verificaciones Pendientes\", \"Borradores / Abandonados\"), mostrar un indicador visual/badge de coincidencias con bot\u00f3n para cambiar de pesta\u00f1a con un clic. Normalizar la comparaci\u00f3n de fechas para evitar que formatos textuales (ej. \"Friday, November 13\") provoquen fallas silenciosas en el filtro de despacho.",
+          "veracity_hash": null
+        },
+        {
+          "id": "TASK-102-06",
+          "title": "Suite de pruebas unitarias Sad Path (\u00a76) para rol auditor, build limpio y certificaci\u00f3n en VPS testing y prod",
+          "status": "TODO",
+          "type": "TEST/CERTIFICATION",
+          "predicted_files": [
+            "backend/src/orders/delivery-incidents.service.spec.ts",
+            "backend/src/orders/orders.service.spec.ts",
+            "backend/src/tax/tax.service.spec.ts"
+          ],
+          "detail_doc": "Implementar tests unitarios con Sad Path mandatorio (\u00a76) verificando: 1) Auditor consulta incidencias y ST-120 -> 200 OK. 2) Cliente ajeno a la orden intenta consultar incidencias -> lanza ForbiddenException (rejects). 3) Auditor intenta mutar estado -> lanza ForbiddenException (SoD). 4) findAll() devuelve \u00f3rdenes completas. Ejecutar build limpio de backend y frontend.",
+          "veracity_hash": null
+        }
+      ]
     }
   ],
   "archived_sprints_count": 96,
   "archive_file": "vault/runtime/backlog_archive.json",
   "active_sprint": {
-    "id": "S101",
-    "title": "Sprint S101: Blindaje Financiero y Operativo de Órdenes: Anti-Fuga de Flete en Reintentos, Precedencia de Flete Manual, Aislamiento de Store Credit y Adición de Productos en Pedidos Pagados",
-    "status": "IN_PROGRESS",
+    "id": "S102",
+    "title": "Sprint S102: Auditor\u00eda Global Omnipresente (Read-Only SoD), Paginaci\u00f3n de \u00d3rdenes y Prevalencia de Admin",
+    "status": "PLANNED",
     "tasks": [
       {
-        "id": "TASK-101-01",
-        "title": "Blindaje de regla de flete complementario ($0.00) contra reintentos de checkout en orders.service.ts",
-        "status": "IN_PROGRESS",
-        "type": "BACKEND/FREIGHT-LEAK",
-        "veracity_hash": null
-      },
-      {
-        "id": "TASK-101-02",
-        "title": "Precedencia de flete manual admin sobre tarifa de perfil VIP en orders.service.ts y /admin/orders/new",
+        "id": "TASK-102-01",
+        "title": "Prevalencia de sesi\u00f3n Admin sobre cookies residuales y saneamiento de session_role en AuthContext y orders/page.tsx",
         "status": "TODO",
-        "type": "BACKEND/ADMIN-FREIGHT",
+        "type": "FRONTEND/SECURITY",
+        "predicted_files": [
+          "frontend/app/admin/orders/page.tsx",
+          "frontend/context/AuthContext.tsx",
+          "frontend/middleware.ts"
+        ],
+        "detail_doc": "En frontend/app/admin/orders/page.tsx, isAuditor debe ser evaluado estrictamente como userRole === \"admin\" ? false : (userRole === \"auditor\"). Si el usuario autenticado tiene rol admin, document.cookie residual con session_role=auditor debe ser purgada de inmediato mediante clearSessionCookies() o eliminaci\u00f3n expl\u00edcita. En AuthContext.tsx, asegurar que al iniciar sesi\u00f3n como admin, la cookie session_role se sobreescriba como \"admin\". En middleware.ts, dar prioridad a jwtPayload?.role sobre cookieRole.",
         "veracity_hash": null
       },
       {
-        "id": "TASK-101-03",
-        "title": "Aislamiento estricto de Store Credit en ajustes de orden e incidencias en delivery-incidents.service.ts y orders.service.ts",
+        "id": "TASK-102-02",
+        "title": "Auditor\u00eda Global: Apertura de lectura en middleware y sidebar (/admin/*, /produccion, /delivery) con interfaz Read-Only SoD",
         "status": "TODO",
-        "type": "BACKEND/STORE-CREDIT",
+        "type": "FRONTEND/UX-PERMISSIONS",
+        "predicted_files": [
+          "frontend/middleware.ts",
+          "frontend/components/layout/AdminSidebar.tsx",
+          "frontend/app/admin/clients/page.tsx",
+          "frontend/app/admin/products/page.tsx"
+        ],
+        "detail_doc": "En frontend/middleware.ts, eliminar la restricci\u00f3n que confina al auditor solo a orders/reports/finance; permitir al auditor navegar libremente por todas las rutas de /admin/*, /produccion y /delivery. En AdminSidebar.tsx, mostrar los m\u00f3dulos de Clientes, Productos, Producci\u00f3n y Configuraci\u00f3n al auditor con indicador de modo s\u00f3lo lectura. En /admin/clients/page.tsx y /admin/products/page.tsx, deshabilitar botones mutativos (crear, editar, eliminar, alterar cr\u00e9dito) cuando el rol sea auditor.",
         "veracity_hash": null
       },
       {
-        "id": "TASK-101-04",
-        "title": "Soporte de adición de nuevos SKUs en órdenes preexistentes y cobro de delta en expediente admin",
+        "id": "TASK-102-03",
+        "title": "Unificaci\u00f3n de autorizaci\u00f3n Read-Only para auditor en delivery-incidents.service.ts y tax.service.ts",
         "status": "TODO",
-        "type": "FULLSTACK/ORDER-ITEMS",
+        "type": "BACKEND/PERMISSIONS",
+        "predicted_files": [
+          "backend/src/orders/delivery-incidents.service.ts",
+          "backend/src/orders/delivery-incidents.controller.ts",
+          "backend/src/tax/tax.service.ts",
+          "backend/src/tax/tax.controller.ts"
+        ],
+        "detail_doc": "En DeliveryIncidentsService.findByOrder y findByUser, autorizar expl\u00edcitamente a usuarios con rol auditor para consultar incidencias sin lanzar ForbiddenException. En TaxService (findExemptionByUser, downloadCertificate), permitir que el rol auditor consulte y descargue certificados fiscales ST-120 de clientes para conciliaci\u00f3n. Los endpoints mutativos (POST/PATCH/DELETE) siguen prohibidos para auditor manteniendo SoD.",
         "veracity_hash": null
       },
       {
-        "id": "TASK-101-05",
-        "title": "Widget de auditoría y trazabilidad de liquidación / flete en detalle de orden (/admin/orders/[id]/page.tsx)",
+        "id": "TASK-102-04",
+        "title": "Eliminaci\u00f3n de take:100 en orders.service.ts con soporte de paginaci\u00f3n y b\u00fasqueda transversal en base de datos",
         "status": "TODO",
-        "type": "FRONTEND/AUDIT-UI",
+        "type": "BACKEND/DATABASE",
+        "predicted_files": [
+          "backend/src/orders/orders.service.ts",
+          "backend/src/orders/orders.controller.ts"
+        ],
+        "detail_doc": "En OrdersService.findAll(), remover el l\u00edmite fijo take: 100 que oculta 127+ \u00f3rdenes en producci\u00f3n. Permitir opcionalmente recibir query params (search, status, limit) o retornar la colecci\u00f3n completa ordenada por created_at DESC. Garantizar que las 227+ \u00f3rdenes registradas en database.sqlite sean consultables y buscables por cliente, ID o n\u00famero de factura.",
         "veracity_hash": null
       },
       {
-        "id": "TASK-101-06",
-        "title": "Suite de pruebas automatizadas con Sad Paths (§6), build limpio y certificación de sprint",
+        "id": "TASK-102-05",
+        "title": "B\u00fasqueda omnicanal en /admin/orders con badges de coincidencia inter-pesta\u00f1as y normalizaci\u00f3n de fechas",
+        "status": "TODO",
+        "type": "FRONTEND/ORDERS-UI",
+        "predicted_files": [
+          "frontend/app/admin/orders/page.tsx"
+        ],
+        "detail_doc": "En frontend/app/admin/orders/page.tsx, cuando el usuario ingresa un texto en el buscador, si no hay resultados en la pesta\u00f1a activa pero existen coincidencias en otras pesta\u00f1as (\"Verificaciones Pendientes\", \"Borradores / Abandonados\"), mostrar un indicador visual/badge de coincidencias con bot\u00f3n para cambiar de pesta\u00f1a con un clic. Normalizar la comparaci\u00f3n de fechas para evitar que formatos textuales (ej. \"Friday, November 13\") provoquen fallas silenciosas en el filtro de despacho.",
+        "veracity_hash": null
+      },
+      {
+        "id": "TASK-102-06",
+        "title": "Suite de pruebas unitarias Sad Path (\u00a76) para rol auditor, build limpio y certificaci\u00f3n en VPS testing y prod",
         "status": "TODO",
         "type": "TEST/CERTIFICATION",
+        "predicted_files": [
+          "backend/src/orders/delivery-incidents.service.spec.ts",
+          "backend/src/orders/orders.service.spec.ts",
+          "backend/src/tax/tax.service.spec.ts"
+        ],
+        "detail_doc": "Implementar tests unitarios con Sad Path mandatorio (\u00a76) verificando: 1) Auditor consulta incidencias y ST-120 -> 200 OK. 2) Cliente ajeno a la orden intenta consultar incidencias -> lanza ForbiddenException (rejects). 3) Auditor intenta mutar estado -> lanza ForbiddenException (SoD). 4) findAll() devuelve \u00f3rdenes completas. Ejecutar build limpio de backend y frontend.",
         "veracity_hash": null
       }
     ]
