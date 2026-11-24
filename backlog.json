@@ -236,8 +236,8 @@
         },
         {
           "id": "TASK-102-02",
-          "title": "Auditor\u00eda Global: Apertura de lectura en middleware y sidebar (/admin/*, /produccion, /delivery) con interfaz Read-Only SoD",
-          "status": "TODO",
+          "title": "Auditoría Global: Apertura de lectura en middleware y sidebar (/admin/*, /produccion, /delivery) con interfaz Read-Only SoD",
+          "status": "DONE",
           "type": "FRONTEND/UX-PERMISSIONS",
           "predicted_files": [
             "frontend/middleware.ts",
@@ -323,8 +323,8 @@
       },
       {
         "id": "TASK-102-02",
-        "title": "Auditor\u00eda Global: Apertura de lectura en middleware y sidebar (/admin/*, /produccion, /delivery) con interfaz Read-Only SoD",
-        "status": "TODO",
+        "title": "Auditoría Global: Apertura de lectura en middleware y sidebar (/admin/*, /produccion, /delivery) con interfaz Read-Only SoD",
+        "status": "DONE",
         "type": "FRONTEND/UX-PERMISSIONS",
         "predicted_files": [
           "frontend/middleware.ts",

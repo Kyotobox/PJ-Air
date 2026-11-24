@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
+import { useAuth } from '@/context/AuthContext';
 
 interface Category {
     id: number;
@@ -45,6 +46,17 @@ const emptyForm: ProductForm = {
 };
 
 export default function AdminProductsPage() {
+    const { user, profile } = useAuth();
+    const rawRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
+    let userRole = rawRole ? String(rawRole).trim().toLowerCase() : '';
+    if (!userRole && typeof document !== 'undefined') {
+        const match = document.cookie.match(/(?:^|;\s*)session_role=([^;]+)/);
+        if (match) {
+            userRole = decodeURIComponent(match[1]).trim().toLowerCase();
+        }
+    }
+    const isAuditor = userRole === 'admin' ? false : (userRole === 'auditor');
+
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState<Product[]>([]);
@@ -95,6 +107,10 @@ export default function AdminProductsPage() {
     };
 
     const openCreate = () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)', 'error');
+            return;
+        }
         setEditingProduct(null);
         setForm(emptyForm);
         setFormError(null);
@@ -102,6 +118,10 @@ export default function AdminProductsPage() {
     };
 
     const openEdit = (p: Product) => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)', 'error');
+            return;
+        }
         setEditingProduct(p);
         setForm({
             name: p.name,
@@ -141,6 +161,10 @@ export default function AdminProductsPage() {
     };
 
     const handleSave = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)', 'error');
+            return;
+        }
         if (!form.name.trim() || !form.price || !form.category_id) {
             setFormError('Nombre, categoría y precio son obligatorios.');
             return;
@@ -189,6 +213,10 @@ export default function AdminProductsPage() {
     };
 
     const handleDelete = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)', 'error');
+            return;
+        }
         if (!deleteConfirm) return;
         setDeleting(true);
         try {
@@ -221,10 +249,23 @@ export default function AdminProductsPage() {
                             {loading ? 'Cargando catálogo...' : `${products.length} productos en el catálogo`}
                         </p>
                     </div>
-                    <button onClick={openCreate} className="flex items-center gap-2 bg-primary text-white btn-premium">
+                    <button
+                        onClick={openCreate}
+                        disabled={isAuditor}
+                        title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                        className={`flex items-center gap-2 bg-primary text-white btn-premium ${isAuditor ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                    >
                         <Plus size={20} /> Añadir Producto
                     </button>
                 </div>
+
+                {/* Banner de Modo Auditoría (Read-Only SoD) */}
+                {isAuditor && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 px-4 py-3 rounded-2xl flex items-center gap-3 mb-6 text-xs font-bold shadow-xs">
+                        <CheckCircle2 size={18} className="text-amber-600 shrink-0" />
+                        <span>🛡️ <strong>Modo Auditoría (Read-Only SoD):</strong> Catálogo en modo de sólo lectura. La creación, edición y eliminación de productos están deshabilitadas por política de segregación de funciones.</span>
+                    </div>
+                )}
 
                 {/* Toolbar */}
                 <div className="bg-card p-4 rounded-2xl border border-border flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
@@ -268,8 +309,22 @@ export default function AdminProductsPage() {
                                         <div className="w-full h-full flex items-center justify-center text-muted-foreground/30"><Package size={40} /></div>
                                     )}
                                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                        <button onClick={() => openEdit(product)} className="p-2.5 bg-white rounded-full text-primary hover:bg-primary hover:text-white transition-all shadow-lg"><Edit2 size={16} /></button>
-                                        <button onClick={() => setDeleteConfirm(product)} className="p-2.5 bg-white rounded-full text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-lg"><Trash2 size={16} /></button>
+                                        <button
+                                            onClick={() => openEdit(product)}
+                                            disabled={isAuditor}
+                                            title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                            className={`p-2.5 bg-white rounded-full text-primary hover:bg-primary hover:text-white transition-all shadow-lg ${isAuditor ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => setDeleteConfirm(product)}
+                                            disabled={isAuditor}
+                                            title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                            className={`p-2.5 bg-white rounded-full text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-lg ${isAuditor ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="p-4">
@@ -286,8 +341,22 @@ export default function AdminProductsPage() {
                                     <div className="flex justify-between items-center mt-3">
                                         <span className="font-bold text-primary text-lg">${Number(product.price).toFixed(2)}</span>
                                         <div className="flex gap-1">
-                                            <button onClick={() => openEdit(product)} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"><Edit2 size={14} /></button>
-                                            <button onClick={() => setDeleteConfirm(product)} className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={14} /></button>
+                                            <button
+                                                onClick={() => openEdit(product)}
+                                                disabled={isAuditor}
+                                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                className={`p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all ${isAuditor ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteConfirm(product)}
+                                                disabled={isAuditor}
+                                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                className={`p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ${isAuditor ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -336,8 +405,22 @@ export default function AdminProductsPage() {
                                         <td className="px-6 py-4 font-bold text-primary">${Number(product.price).toFixed(2)}</td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
-                                                <button onClick={() => openEdit(product)} className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"><Edit2 size={18} /></button>
-                                                <button onClick={() => setDeleteConfirm(product)} className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
+                                                <button
+                                                    onClick={() => openEdit(product)}
+                                                    disabled={isAuditor}
+                                                    title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                    className={`p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all ${isAuditor ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    <Edit2 size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirm(product)}
+                                                    disabled={isAuditor}
+                                                    title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                    className={`p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-all ${isAuditor ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -351,7 +434,16 @@ export default function AdminProductsPage() {
                     <div className="text-center py-20 bg-card rounded-2xl border border-border">
                         <Package size={48} className="mx-auto text-muted-foreground/20 mb-4" />
                         <p className="font-medium text-muted-foreground">{searchQuery ? `Sin resultados para "${searchQuery}"` : 'No hay productos.'}</p>
-                        {!searchQuery && <button onClick={openCreate} className="mt-4 px-6 py-2 bg-primary text-white rounded-full font-bold text-sm">Añadir primero</button>}
+                        {!searchQuery && (
+                            <button
+                                onClick={openCreate}
+                                disabled={isAuditor}
+                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                className={`mt-4 px-6 py-2 bg-primary text-white rounded-full font-bold text-sm ${isAuditor ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                            >
+                                Añadir primero
+                            </button>
+                        )}
                     </div>
                 )}
             </main>
@@ -469,7 +561,12 @@ export default function AdminProductsPage() {
 
                         <div className="px-8 py-6 bg-muted/10 flex gap-4 border-t border-border">
                             <button onClick={() => setShowModal(false)} className="flex-1 py-3.5 font-bold text-muted-foreground hover:bg-muted rounded-2xl transition-all">Cancelar</button>
-                            <button onClick={handleSave} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-primary text-white font-bold rounded-2xl shadow-xl hover:bg-black transition-all disabled:opacity-60">
+                            <button
+                                onClick={handleSave}
+                                disabled={isAuditor || saving}
+                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-primary text-white font-bold rounded-2xl shadow-xl hover:bg-black transition-all disabled:opacity-60"
+                            >
                                 {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                                 {saving ? 'Guardando...' : editingProduct ? 'Actualizar Producto' : 'Crear Producto'}
                             </button>
@@ -489,7 +586,12 @@ export default function AdminProductsPage() {
                         </div>
                         <div className="p-6 flex gap-4">
                             <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3.5 font-bold text-muted-foreground hover:bg-muted rounded-2xl transition-all">Cancelar</button>
-                            <button onClick={handleDelete} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 transition-all disabled:opacity-60">
+                            <button
+                                onClick={handleDelete}
+                                disabled={isAuditor || deleting}
+                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 transition-all disabled:opacity-60"
+                            >
                                 {deleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
                                 {deleting ? 'Eliminando...' : 'Sí, eliminar'}
                             </button>

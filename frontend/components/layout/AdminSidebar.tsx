@@ -7,16 +7,28 @@ import { LayoutDashboard, ShoppingBag, Layers, Users, Truck, Settings, LogOut, C
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
-// Enlaces exclusivos para rol auditor (Read-Only SoD)
-export const AUDITOR_MENU_ITEMS = [
-    { name: '📊 Facturación y Ventas', icon: ShoppingBag, href: '/admin/orders' },
-    { name: '📈 Reportes Fiscales', icon: BarChart3, href: '/admin/reports' },
-    { name: '🏷️ Libro de Store Credit', icon: Tag, href: '/admin/finance' },
+// TASK-102-02: Enlaces para rol auditor (Apertura Global SoD: /admin/*, /produccion, /delivery) con indicador de sólo lectura
+export interface AuditorMenuItem {
+    name: string;
+    icon: any;
+    href: string;
+    readOnly?: boolean;
+}
+
+export const AUDITOR_MENU_ITEMS: AuditorMenuItem[] = [
+    { name: '📊 Facturación y Ventas', icon: ShoppingBag, href: '/admin/orders', readOnly: true },
+    { name: '📈 Reportes Fiscales', icon: BarChart3, href: '/admin/reports', readOnly: true },
+    { name: '🏷️ Libro de Store Credit', icon: Tag, href: '/admin/finance', readOnly: true },
+    { name: '👥 Clientes', icon: Users, href: '/admin/clients', readOnly: true },
+    { name: '📦 Productos', icon: ShoppingBag, href: '/admin/products', readOnly: true },
+    { name: '🏭 Producción', icon: Layers, href: '/produccion', readOnly: true },
+    { name: '⚙️ Configuración', icon: Settings, href: '/admin/settings', readOnly: true },
 ];
 
 /**
- * Filtra los enlaces de navegación del sidebar según el rol del usuario (§6, §48).
- * Para el rol auditor, restringe la visualización exclusivamente a módulos contables/financieros.
+ * Filtra los enlaces de navegación del sidebar según el rol del usuario (§6, §48, TASK-102-02).
+ * Para el rol auditor, muestra los módulos de Facturación, Reportes, Store Credit, Clientes, Productos,
+ * Producción y Configuración con indicador explícito de modo sólo lectura.
  */
 export function filterSidebarNavItems<T = any>(role: string | undefined | null, fullMenuItems: T[]): T[] {
     const normalizedRole = role ? String(role).trim().toLowerCase() : '';
@@ -106,32 +118,51 @@ export default function AdminSidebar() {
                 <div
                     data-testid="auditor-profile-badge"
                     className={`mx-3 my-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}
-                    title="🛡️ Auditor Contable / Finanzas"
+                    title="🛡️ Auditor Global (Read-Only SoD)"
                 >
                     {!collapsed ? (
-                        <span className="text-xs font-bold tracking-tight truncate">
-                            🛡️ Auditor Contable / Finanzas
-                        </span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-bold tracking-tight truncate">
+                                🛡️ Auditor Global
+                            </span>
+                            <span className="text-[10px] text-amber-600/90 dark:text-amber-400/90 font-semibold">
+                                Modo Sólo Lectura (SoD)
+                            </span>
+                        </div>
                     ) : (
-                        <span className="text-base leading-none" title="🛡️ Auditor Contable / Finanzas">🛡️</span>
+                        <span className="text-base leading-none" title="🛡️ Auditor Global (Read-Only SoD)">🛡️</span>
                     )}
                 </div>
             )}
 
             {/* Nav */}
             <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                {navItems.map(item => {
+                {navItems.map((item: any) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
+                    const isReadOnly = Boolean(item.readOnly || isAuditor);
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
-                            title={collapsed ? item.name : undefined}
+                            title={collapsed ? `${item.name}${isReadOnly ? ' (Solo Lectura)' : ''}` : undefined}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${collapsed ? 'justify-center' : ''} ${isActive ? 'bg-primary text-white shadow-lg' : 'text-muted-foreground hover:bg-secondary hover:text-primary'}`}
                         >
                             <Icon size={20} className="shrink-0" />
-                            {!collapsed && <span>{item.name}</span>}
+                            {!collapsed && (
+                                <div className="flex items-center justify-between flex-1 min-w-0">
+                                    <span className="truncate">{item.name}</span>
+                                    {isReadOnly && (
+                                        <span
+                                            data-testid="readonly-indicator"
+                                            className="ml-2 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 shrink-0"
+                                            title="Modo sólo lectura"
+                                        >
+                                            Lectura
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </Link>
                     );
                 })}

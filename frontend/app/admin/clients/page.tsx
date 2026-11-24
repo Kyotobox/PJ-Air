@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { ST120AuditModal } from '@/components/admin/ST120AuditModal';
 import StoreCreditModal from '@/components/modals/StoreCreditModal';
+import { useAuth } from '@/context/AuthContext';
 
 interface Address { 
     id: string; 
@@ -164,6 +165,17 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminClientsPage() {
+    const { user, profile } = useAuth();
+    const rawRole = (user as any)?.role || profile?.role || (user as any)?.user_metadata?.role;
+    let userRole = rawRole ? String(rawRole).trim().toLowerCase() : '';
+    if (!userRole && typeof document !== 'undefined') {
+        const match = document.cookie.match(/(?:^|;\s*)session_role=([^;]+)/);
+        if (match) {
+            userRole = decodeURIComponent(match[1]).trim().toLowerCase();
+        }
+    }
+    const isAuditor = userRole === 'admin' ? false : (userRole === 'auditor');
+
     const [users, setUsers] = useState<UserRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -267,6 +279,10 @@ export default function AdminClientsPage() {
     }, [selectedUser, selectedUserFacadePhoto, selectedUserPrimaryAddress]);
 
     const handleUpdateFacadeAuditStatus = (status: 'VERIFIED' | 'REJECTED' | 'PENDING') => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser) return;
         setSelectedUser(prev => prev ? { ...prev, facade_audit_status: status } : null);
         setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, facade_audit_status: status } : u));
@@ -277,6 +293,10 @@ export default function AdminClientsPage() {
     const [togglingStatusId, setTogglingStatusId] = useState<string | null>(null);
 
     const handleToggleActiveStatus = async (userRecord: UserRecord, e?: React.MouseEvent) => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (e) e.stopPropagation();
         const currentActive = userRecord.is_active !== false;
         const nextActive = !currentActive;
@@ -303,6 +323,10 @@ export default function AdminClientsPage() {
 
     const handleResetPasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!resetPasswordModal) return;
         if (newPassword.length < 8) {
             alert('La contraseña debe tener al menos 8 caracteres');
@@ -410,6 +434,10 @@ export default function AdminClientsPage() {
     };
 
     const handleUpdateCredit = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser) return;
         setIsSavingCredit(true);
         try {
@@ -455,6 +483,10 @@ export default function AdminClientsPage() {
     };
 
     const handleMarkOrderPaid = async (orderId: string) => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser) return;
         try {
             await api.patch(`/orders/${orderId}/payment-status`, { payment_status: 'paid' });
@@ -472,6 +504,10 @@ export default function AdminClientsPage() {
     const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
     const handleGenerateSettlementLink = async (userId: string, email?: string, orderId?: string) => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         setIsGeneratingLink(true);
         try {
             const payload = orderId ? { orderId } : { clientId: userId, clientEmail: email };
@@ -490,6 +526,10 @@ export default function AdminClientsPage() {
     };
 
     const handleUpdateNickname = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser) return;
         setIsSavingNickname(true);
         try {
@@ -612,6 +652,10 @@ export default function AdminClientsPage() {
     }, [selectedUser, creditSummary]);
 
     const handleUpdateGeneralDiscount = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser) return;
         setIsSavingDiscount(true);
         try {
@@ -624,6 +668,10 @@ export default function AdminClientsPage() {
     };
 
     const handleUpdateDeliveryFee = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser) return;
         setIsSavingFee(true);
         try {
@@ -636,6 +684,10 @@ export default function AdminClientsPage() {
     };
 
     const handleUpdateMinOrderAmount = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser) return;
         setIsSavingMinOrder(true);
         try {
@@ -649,6 +701,10 @@ export default function AdminClientsPage() {
 
     const handleUpdateAddress = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!editingAddress) return;
         setSavingAddr(true);
         try {
@@ -666,6 +722,10 @@ export default function AdminClientsPage() {
     };
 
     const handleGenerateDigitalST120 = async (targetUser?: UserRecord | null) => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         const uToGen = targetUser || selectedUser;
         if (!uToGen) return;
         setGeneratingUserId(uToGen.id);
@@ -728,6 +788,10 @@ export default function AdminClientsPage() {
     };
 
     const handleAddProductDiscount = async () => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!selectedUser || !selectedPdProduct) return;
         setIsSavingDiscount(true);
         try {
@@ -751,6 +815,10 @@ export default function AdminClientsPage() {
     };
 
     const handleDeleteProductDiscount = async (id: string) => {
+        if (isAuditor) {
+            showToast('⚠️ Operación no permitida: Perfil de Auditor (Read-Only SoD)');
+            return;
+        }
         if (!confirm('¿Eliminar este descuento?')) return;
         try {
             await api.delete(`/users/product-discounts/${id}`);
@@ -811,6 +879,14 @@ export default function AdminClientsPage() {
                         </p>
                     </div>
                 </div>
+
+                {/* Banner de Modo Auditoría (Read-Only SoD) */}
+                {isAuditor && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 px-4 py-3 rounded-2xl flex items-center gap-3 mb-6 text-xs font-bold shadow-xs">
+                        <ShieldCheck size={18} className="text-amber-600 shrink-0" />
+                        <span>🛡️ <strong>Modo Auditoría (Read-Only SoD):</strong> Vista de inspección habilitada. Las operaciones mutativas (edición de clientes, inhabilitación, generación de ST-120, ajuste de descuentos y alteración de crédito) están deshabilitadas por política de segregación de funciones.</span>
+                    </div>
+                )}
 
                 {/* Commercial Filters Bar */}
                 <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1" data-testid="commercial-filter-bar">
@@ -1050,10 +1126,10 @@ export default function AdminClientsPage() {
                                                     {(u.profile?.st120_status === 'PENDING' || u.st120_status === 'PENDING' || (!u.tax_exempt && !u.profile?.tax_exempt && (u.profile?.tax_id || u.tax_id || u.company_name || u.profile?.company_name || u.legal_business_name))) && (
                                                         <button
                                                             type="button"
-                                                            disabled={generatingUserId === u.id}
+                                                            disabled={isAuditor || generatingUserId === u.id}
                                                             onClick={(e) => { e.stopPropagation(); handleGenerateDigitalST120(u); }}
-                                                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
-                                                            title="Generar y aprobar ST-120 Oficial Digital"
+                                                            className={`px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs disabled:opacity-50 ${isAuditor ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+                                                            title={isAuditor ? 'Acción deshabilitada en modo auditor' : 'Generar y aprobar ST-120 Oficial Digital'}
                                                         >
                                                             {generatingUserId === u.id ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
                                                             <span>📄 Generar ST-120 Oficial</span>
@@ -1099,13 +1175,15 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 onClick={(e) => handleToggleActiveStatus(u, e)}
-                                                disabled={togglingStatusId === u.id}
-                                                className={`text-[10px] font-bold px-2 py-0.5 rounded transition-all cursor-pointer ${
-                                                    u.is_active !== false
-                                                        ? 'text-rose-600 hover:bg-rose-50'
-                                                        : 'text-emerald-600 hover:bg-emerald-50'
+                                                disabled={isAuditor || togglingStatusId === u.id}
+                                                className={`text-[10px] font-bold px-2 py-0.5 rounded transition-all ${
+                                                    isAuditor
+                                                        ? 'text-slate-400 opacity-50 cursor-not-allowed pointer-events-none'
+                                                        : u.is_active !== false
+                                                        ? 'text-rose-600 hover:bg-rose-50 cursor-pointer'
+                                                        : 'text-emerald-600 hover:bg-emerald-50 cursor-pointer'
                                                 }`}
-                                                title={u.is_active !== false ? 'Inhabilitar cuenta del cliente' : 'Activar cuenta del cliente'}
+                                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : u.is_active !== false ? 'Inhabilitar cuenta del cliente' : 'Activar cuenta del cliente'}
                                             >
                                                 {togglingStatusId === u.id ? (
                                                     <Loader2 size={12} className="animate-spin inline" />
@@ -1407,11 +1485,14 @@ export default function AdminClientsPage() {
                                         <button
                                             type="button"
                                             onClick={() => handleToggleActiveStatus(selectedUser)}
-                                            disabled={togglingStatusId === selectedUser.id}
-                                            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                                selectedUser.is_active !== false
-                                                    ? 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
-                                                    : 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+                                            disabled={isAuditor || togglingStatusId === selectedUser.id}
+                                            title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                                                isAuditor
+                                                    ? 'text-slate-400 bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed pointer-events-none'
+                                                    : selectedUser.is_active !== false
+                                                    ? 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100 cursor-pointer'
+                                                    : 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
                                             }`}
                                         >
                                             {togglingStatusId === selectedUser.id ? (
@@ -1421,7 +1502,9 @@ export default function AdminClientsPage() {
                                         </button>
                                         <button
                                             onClick={() => setResetPasswordModal(selectedUser)}
-                                            className="px-4 py-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 transition-all cursor-pointer"
+                                            disabled={isAuditor}
+                                            title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                            className={`px-4 py-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 transition-all ${isAuditor ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
                                         >
                                             Restablecer Contraseña
                                         </button>
@@ -1434,13 +1517,15 @@ export default function AdminClientsPage() {
                                             type="text"
                                             value={nickname}
                                             onChange={e => setNickname(e.target.value)}
+                                            disabled={isAuditor}
                                             placeholder="Nombre alternativo o ID interno..."
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20 transition-all font-semibold text-slate-700"
+                                            className={`w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20 transition-all text-slate-700 ${isAuditor ? 'opacity-60 bg-slate-100 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <button
                                         onClick={handleUpdateNickname}
-                                        disabled={isSavingNickname}
+                                        disabled={isAuditor || isSavingNickname}
+                                        title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
                                         className="px-5 py-2.5 bg-slate-900 hover:bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all disabled:opacity-50 h-[38px] flex items-center justify-center"
                                     >
                                         {isSavingNickname ? 'Guardando...' : 'Guardar'}
@@ -1472,10 +1557,10 @@ export default function AdminClientsPage() {
                                         {(!selectedUser.tax_exempt && !selectedUser.profile?.tax_exempt) && (
                                             <button
                                                 type="button"
-                                                disabled={isGeneratingDigitalST120}
+                                                disabled={isAuditor || isGeneratingDigitalST120}
                                                 onClick={() => handleGenerateDigitalST120(selectedUser)}
-                                                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-                                                title="Generar y firmar certificado digital oficial en 1 clic"
+                                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : 'Generar y firmar certificado digital oficial en 1 clic'}
+                                                className={`px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 ${isAuditor ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
                                             >
                                                 {isGeneratingDigitalST120 ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                                                 <span>📄 Generar ST-120 Oficial</span>
@@ -1616,36 +1701,45 @@ export default function AdminClientsPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleUpdateFacadeAuditStatus('VERIFIED')}
-                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                                            selectedUserFacadeStatus === 'VERIFIED'
-                                                                ? 'bg-emerald-600 text-white shadow-sm'
-                                                                : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                                                        disabled={isAuditor}
+                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                            isAuditor
+                                                                ? 'opacity-50 cursor-not-allowed'
+                                                                : selectedUserFacadeStatus === 'VERIFIED'
+                                                                ? 'bg-emerald-600 text-white shadow-sm cursor-pointer'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer'
                                                         }`}
-                                                        title="Marcar como Verificada por IA"
+                                                        title={isAuditor ? 'Acción deshabilitada en modo auditor' : 'Marcar como Verificada por IA'}
                                                     >
                                                         🟢 Verificada
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleUpdateFacadeAuditStatus('REJECTED')}
-                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                                            selectedUserFacadeStatus === 'REJECTED'
-                                                                ? 'bg-rose-600 text-white shadow-sm'
-                                                                : 'bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700'
+                                                        disabled={isAuditor}
+                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                            isAuditor
+                                                                ? 'opacity-50 cursor-not-allowed'
+                                                                : selectedUserFacadeStatus === 'REJECTED'
+                                                                ? 'bg-rose-600 text-white shadow-sm cursor-pointer'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700 cursor-pointer'
                                                         }`}
-                                                        title="Rechazar foto de fachada"
+                                                        title={isAuditor ? 'Acción deshabilitada en modo auditor' : 'Rechazar foto de fachada'}
                                                     >
                                                         🔴 Rechazar
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleUpdateFacadeAuditStatus('PENDING')}
-                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                                            selectedUserFacadeStatus === 'PENDING'
-                                                                ? 'bg-amber-500 text-white shadow-sm'
-                                                                : 'bg-slate-100 text-slate-600 hover:bg-amber-50 hover:text-amber-700'
+                                                        disabled={isAuditor}
+                                                        className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                            isAuditor
+                                                                ? 'opacity-50 cursor-not-allowed'
+                                                                : selectedUserFacadeStatus === 'PENDING'
+                                                                ? 'bg-amber-500 text-white shadow-sm cursor-pointer'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-amber-50 hover:text-amber-700 cursor-pointer'
                                                         }`}
-                                                        title="Marcar como Pendiente de Inspección"
+                                                        title={isAuditor ? 'Acción deshabilitada en modo auditor' : 'Marcar como Pendiente de Inspección'}
                                                     >
                                                         🟡 Pendiente
                                                     </button>
@@ -1795,7 +1889,8 @@ export default function AdminClientsPage() {
                                                         <span>Maps</span>
                                                     </a>
                                                     <button 
-                                                        onClick={() => { 
+                                                        disabled={isAuditor}
+                                                        onClick={isAuditor ? undefined : () => { 
                                                             setEditingAddress(addr); 
                                                             setAddrFormData({
                                                                 ...addr,
@@ -1806,8 +1901,8 @@ export default function AdminClientsPage() {
                                                                 notes: addr.notes || '',
                                                             }); 
                                                         }}
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-all"
-                                                        title="Editar dirección"
+                                                        className={`w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-all ${isAuditor ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                                                        title={isAuditor ? 'Acción deshabilitada en modo auditor' : 'Editar dirección'}
                                                     >
                                                         <Edit size={14} />
                                                     </button>
@@ -2014,7 +2109,10 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => setAccountType('cash')}
+                                                disabled={isAuditor}
                                                 className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition-all ${
+                                                    isAuditor ? 'opacity-50 cursor-not-allowed' : ''
+                                                } ${
                                                     accountType === 'cash'
                                                         ? 'bg-white border-slate-900 shadow-md text-slate-900'
                                                         : 'bg-transparent border-slate-200 text-slate-400 hover:border-slate-300'
@@ -2030,7 +2128,10 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => setAccountType('credit')}
+                                                disabled={isAuditor}
                                                 className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition-all ${
+                                                    isAuditor ? 'opacity-50 cursor-not-allowed' : ''
+                                                } ${
                                                     accountType === 'credit'
                                                         ? 'bg-white border-blue-600 shadow-md text-blue-900'
                                                         : 'bg-transparent border-slate-200 text-slate-400 hover:border-slate-300'
@@ -2058,8 +2159,9 @@ export default function AdminClientsPage() {
                                                         min="0"
                                                         step="50"
                                                         value={creditLimit}
+                                                        disabled={isAuditor}
                                                         onChange={e => setCreditLimit(Number(e.target.value) || 0)}
-                                                        className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-base font-black text-slate-800 outline-none focus:ring-2 focus:ring-blue-300 transition-all shadow-inner"
+                                                        className={`w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-base font-black text-slate-800 outline-none focus:ring-2 focus:ring-blue-300 transition-all shadow-inner ${isAuditor ? 'opacity-60 bg-slate-100 cursor-not-allowed' : ''}`}
                                                     />
                                                 </div>
 
@@ -2068,8 +2170,9 @@ export default function AdminClientsPage() {
                                                         <input
                                                             type="checkbox"
                                                             checked={creditOverride}
+                                                            disabled={isAuditor}
                                                             onChange={e => setCreditOverride(e.target.checked)}
-                                                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer"
+                                                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 accent-blue-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                         />
                                                         <div>
                                                             <p className="text-xs font-black text-slate-800">Sobregiro Excepcional</p>
@@ -2116,8 +2219,11 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 data-testid="toggle-check-enabled"
+                                                disabled={isAuditor}
                                                 onClick={() => setCheckEnabled(!checkEnabled)}
-                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    isAuditor ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                                } ${
                                                     checkEnabled ? 'bg-purple-600' : 'bg-slate-300'
                                                 }`}
                                             >
@@ -2159,8 +2265,11 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 data-testid="toggle-ach-enabled"
+                                                disabled={isAuditor}
                                                 onClick={() => setAchEnabled(!achEnabled)}
-                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    isAuditor ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                                } ${
                                                     achEnabled ? 'bg-emerald-600' : 'bg-slate-300'
                                                 }`}
                                             >
@@ -2202,8 +2311,11 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 data-testid="toggle-zelle-enabled"
+                                                disabled={isAuditor}
                                                 onClick={() => setZelleEnabled(!zelleEnabled)}
-                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    isAuditor ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                                } ${
                                                     zelleEnabled ? 'bg-violet-600' : 'bg-slate-300'
                                                 }`}
                                             >
@@ -2245,8 +2357,11 @@ export default function AdminClientsPage() {
                                             <button
                                                 type="button"
                                                 data-testid="toggle-free-delivery-enabled"
+                                                disabled={isAuditor}
                                                 onClick={() => setFreeDeliveryEnabled(!freeDeliveryEnabled)}
-                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                                                    isAuditor ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                                } ${
                                                     freeDeliveryEnabled ? 'bg-teal-600' : 'bg-slate-300'
                                                 }`}
                                             >
@@ -2275,7 +2390,8 @@ export default function AdminClientsPage() {
                                         <button
                                             type="button"
                                             onClick={handleUpdateCredit}
-                                            disabled={isSavingCredit}
+                                            disabled={isAuditor || isSavingCredit}
+                                            title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
                                             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg shadow-blue-200 transition-all disabled:opacity-50 flex items-center gap-2"
                                         >
                                             {isSavingCredit ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
@@ -2294,7 +2410,8 @@ export default function AdminClientsPage() {
                                                     type="button"
                                                     data-testid="generate-settlement-link-btn"
                                                     onClick={() => handleGenerateSettlementLink(selectedUser.id, selectedUser.email)}
-                                                    disabled={isGeneratingLink}
+                                                    disabled={isAuditor || isGeneratingLink}
+                                                    title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
                                                     className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase text-[10px] tracking-wider shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-50 active:scale-95"
                                                 >
                                                     {isGeneratingLink ? <Loader2 size={12} className="animate-spin" /> : <CreditCard size={12} />}
@@ -2314,16 +2431,18 @@ export default function AdminClientsPage() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleGenerateSettlementLink(selectedUser.id, selectedUser.email, order.id)}
-                                                                    disabled={isGeneratingLink}
-                                                                    className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all"
-                                                                    title="Copiar enlace de pago para esta orden"
+                                                                    disabled={isAuditor || isGeneratingLink}
+                                                                    className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold uppercase text-[9px] tracking-wider transition-all disabled:opacity-50"
+                                                                    title={isAuditor ? 'Acción deshabilitada en modo auditor' : 'Copiar enlace de pago para esta orden'}
                                                                 >
                                                                     Enlace
                                                                 </button>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleMarkOrderPaid(order.id)}
-                                                                    className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white rounded-xl font-black uppercase text-[10px] tracking-wider transition-all border border-green-200"
+                                                                    disabled={isAuditor}
+                                                                    title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                                    className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white rounded-xl font-black uppercase text-[10px] tracking-wider transition-all border border-green-200 disabled:opacity-50 disabled:pointer-events-none"
                                                                 >
                                                                     Marcar Pagado ✓
                                                                 </button>
@@ -2362,15 +2481,18 @@ export default function AdminClientsPage() {
                                                     max="100"
                                                     step="1"
                                                     value={generalDiscount}
+                                                    disabled={isAuditor}
                                                     onChange={e => setGeneralDiscount(Number(e.target.value))}
                                                     onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()}
-                                                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-green-200 outline-none focus:ring-2 focus:ring-green-400 font-black text-lg text-green-900 bg-white shadow-inner"
+                                                    className={`w-full pl-9 pr-4 py-3 rounded-2xl border border-green-200 outline-none focus:ring-2 focus:ring-green-400 font-black text-lg text-green-900 bg-white shadow-inner ${isAuditor ? 'opacity-60 bg-slate-100 cursor-not-allowed' : ''}`}
                                                 />
                                             </div>
                                             <button 
                                                 type="button"
                                                 onClick={handleUpdateGeneralDiscount}
-                                                className="w-full py-2.5 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-green-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98"
+                                                disabled={isAuditor || isSavingDiscount}
+                                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                className="w-full py-2.5 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-green-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50"
                                             >
                                                 <span>Guardar Descuento</span>
                                             </button>
@@ -2394,15 +2516,18 @@ export default function AdminClientsPage() {
                                                     min="0"
                                                     step="0.5"
                                                     value={deliveryFee}
+                                                    disabled={isAuditor}
                                                     onChange={e => setDeliveryFee(Number(e.target.value))}
                                                     onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()}
-                                                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-amber-200 outline-none focus:ring-2 focus:ring-amber-400 font-black text-lg text-amber-900 bg-white shadow-inner"
+                                                    className={`w-full pl-9 pr-4 py-3 rounded-2xl border border-amber-200 outline-none focus:ring-2 focus:ring-amber-400 font-black text-lg text-amber-900 bg-white shadow-inner ${isAuditor ? 'opacity-60 bg-slate-100 cursor-not-allowed' : ''}`}
                                                 />
                                             </div>
                                             <button 
                                                 type="button"
                                                 onClick={handleUpdateDeliveryFee}
-                                                className="w-full py-2.5 bg-amber-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98"
+                                                disabled={isAuditor || isSavingFee}
+                                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                className="w-full py-2.5 bg-amber-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50"
                                             >
                                                 <span>Guardar Costo Envío</span>
                                             </button>
@@ -2427,14 +2552,16 @@ export default function AdminClientsPage() {
                                                     step="10"
                                                     placeholder="Global"
                                                     value={clientMinOrder}
+                                                    disabled={isAuditor}
                                                     onChange={e => setClientMinOrder(e.target.value)}
-                                                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-blue-200 outline-none focus:ring-2 focus:ring-blue-400 font-black text-lg text-blue-900 bg-white shadow-inner"
+                                                    className={`w-full pl-9 pr-4 py-3 rounded-2xl border border-blue-200 outline-none focus:ring-2 focus:ring-blue-400 font-black text-lg text-blue-900 bg-white shadow-inner ${isAuditor ? 'opacity-60 bg-slate-100 cursor-not-allowed' : ''}`}
                                                 />
                                             </div>
                                             <button 
                                                 type="button"
                                                 onClick={handleUpdateMinOrderAmount}
-                                                disabled={isSavingMinOrder}
+                                                disabled={isAuditor || isSavingMinOrder}
+                                                title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
                                                 className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-98 disabled:opacity-50"
                                             >
                                                 {isSavingMinOrder ? <Loader2 size={12} className="animate-spin" /> : null}
@@ -2465,7 +2592,14 @@ export default function AdminClientsPage() {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <button onClick={() => handleDeleteProductDiscount(pd.id)} className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                                                <button
+                                                    onClick={() => handleDeleteProductDiscount(pd.id)}
+                                                    disabled={isAuditor}
+                                                    title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${isAuditor ? 'text-slate-300 opacity-50 cursor-not-allowed' : 'text-slate-300 hover:text-red-500 hover:bg-red-50 cursor-pointer'}`}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
                                             </div>
                                         ))}
                                         
@@ -2479,8 +2613,9 @@ export default function AdminClientsPage() {
                                                     type="text" 
                                                     placeholder="Buscar producto para oferta..." 
                                                     value={pdSearch}
+                                                    disabled={isAuditor}
                                                     onChange={e => setPdSearch(e.target.value)}
-                                                    className="w-full pl-12 pr-4 py-3.5 bg-white border-none rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-700 shadow-sm"
+                                                    className={`w-full pl-12 pr-4 py-3.5 bg-white border-none rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-700 shadow-sm ${isAuditor ? 'opacity-60 bg-slate-100 cursor-not-allowed' : ''}`}
                                                 />
                                                 {pdSearch && (
                                                     <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-slate-200 shadow-2xl rounded-3xl z-20 max-h-56 overflow-y-auto p-2">
@@ -2504,16 +2639,18 @@ export default function AdminClientsPage() {
                                                     <div className="grid grid-cols-2 gap-4 mb-6">
                                                         <div>
                                                             <label className="text-[9px] font-black uppercase text-slate-400 mb-2 block px-2">Descuento %</label>
-                                                            <input type="number" value={pdPercent} onChange={e => { setPdPercent(e.target.value); if(e.target.value) setPdPrice(''); }} onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()} className="w-full px-5 py-3 rounded-2xl bg-slate-50 border-none outline-none font-bold text-slate-700" placeholder="%" />
+                                                            <input type="number" value={pdPercent} disabled={isAuditor} onChange={e => { setPdPercent(e.target.value); if(e.target.value) setPdPrice(''); }} onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()} className="w-full px-5 py-3 rounded-2xl bg-slate-50 border-none outline-none font-bold text-slate-700" placeholder="%" />
                                                         </div>
                                                         <div>
                                                             <label className="text-[9px] font-black uppercase text-slate-400 mb-2 block px-2">ó Precio $</label>
-                                                            <input type="number" value={pdPrice} onChange={e => { setPdPrice(e.target.value); if(e.target.value) setPdPercent(''); }} onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()} className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl outline-none font-bold text-slate-700" placeholder="$" />
+                                                            <input type="number" value={pdPrice} disabled={isAuditor} onChange={e => { setPdPrice(e.target.value); if(e.target.value) setPdPercent(''); }} onFocus={e => (e.target.value === '0' || e.target.value === '1') && e.target.select()} className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl outline-none font-bold text-slate-700" placeholder="$" />
                                                         </div>
                                                     </div>
                                                     <button 
                                                         onClick={handleAddProductDiscount}
-                                                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[.2em] shadow-xl shadow-slate-200 hover:bg-primary transition-all"
+                                                        disabled={isAuditor || isSavingDiscount}
+                                                        title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
+                                                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[.2em] shadow-xl shadow-slate-200 hover:bg-primary transition-all disabled:opacity-50"
                                                     >
                                                         {isSavingDiscount ? <Loader2 className="animate-spin mx-auto" /> : 'Confirmar Oferta'}
                                                     </button>
@@ -2799,7 +2936,7 @@ export default function AdminClientsPage() {
 
                             <div className="flex gap-4 pt-4 border-t border-slate-100">
                                 <button type="button" onClick={() => setEditingAddress(null)} className="flex-1 py-4 font-black uppercase text-xs tracking-widest text-slate-400 hover:text-slate-900 transition-colors cursor-pointer">Cancelar</button>
-                                <button type="submit" disabled={savingAddr} className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-primary transition-all flex items-center justify-center cursor-pointer">
+                                <button type="submit" disabled={isAuditor || savingAddr} title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined} className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-primary transition-all flex items-center justify-center cursor-pointer disabled:opacity-50">
                                     {savingAddr ? <Loader2 className="animate-spin" size={18} /> : 'Guardar'}
                                 </button>
                             </div>
@@ -2849,7 +2986,8 @@ export default function AdminClientsPage() {
                                 </button>
                                 <button 
                                     type="submit" 
-                                    disabled={isResettingPwd}
+                                    disabled={isAuditor || isResettingPwd}
+                                    title={isAuditor ? 'Acción deshabilitada en modo auditor' : undefined}
                                     className="flex-1 py-4 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl hover:bg-primary transition-all disabled:opacity-50"
                                 >
                                     {isResettingPwd ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirmar'}
