@@ -202,6 +202,10 @@ export class TaxService {
       taxId?: string;
     },
   ): Promise<{ success: boolean; documentUrl: string; st120_pdf_url: string; auditHash?: string; user: User }> {
+    if (requestingUser?.role === 'auditor') {
+      throw new ForbiddenException('Auditors are restricted to read-only access (SoD)');
+    }
+
     if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
       throw new ForbiddenException('Cannot generate ST-120 for another user');
     }
@@ -361,6 +365,10 @@ export class TaxService {
     clientIp?: string,
     requestingUser?: { id: string; role?: string },
   ): Promise<{ success: boolean; documentUrl: string; st120_pdf_url: string; user: User }> {
+    if (requestingUser?.role === 'auditor') {
+      throw new ForbiddenException('Auditors are restricted to read-only access (SoD)');
+    }
+
     if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
       throw new ForbiddenException('Cannot sign ST-120 for another user');
     }
@@ -479,6 +487,10 @@ export class TaxService {
     requestingUser?: { id: string; role?: string },
     status?: string,
   ): Promise<{ success: boolean; url: string; documentUrl: string; st120_pdf_url: string; user: User }> {
+    if (requestingUser?.role === 'auditor') {
+      throw new ForbiddenException('Auditors are restricted to read-only access (SoD)');
+    }
+
     if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
       throw new ForbiddenException('Cannot upload ST-120 for another user');
     }
@@ -534,15 +546,104 @@ export class TaxService {
   }
 
   /**
-   * Retrieves official ST-120 PDF file data for download or browser visualization
-   * TASK-82-02: GET /api/tax/:userId/st120-pdf retorna el PDF para visualización en navegador o descarga
+   * Consulta el estado de exención fiscal ST-120 de un cliente.
+   * Permite acceso al propio usuario, admin o auditor para conciliación (§TASK-102-03).
    */
-  async getSt120Pdf(userId: string): Promise<{
+  async findExemptionByUser(
+    userId: string,
+    requestingUser?: { id: string; role?: string },
+  ): Promise<{
+    userId: string;
+    taxId: string | null;
+    st120Status: string;
+    st120DocumentUrl: string | null;
+    st120PdfUrl: string | null;
+    taxExempt: boolean;
+    taxLegend: string | null;
+  }> {
+    if (
+      requestingUser &&
+      requestingUser.role !== 'admin' &&
+      requestingUser.role !== 'auditor' &&
+      requestingUser.id !== userId
+    ) {
+      throw new ForbiddenException('Cannot access tax exemption status for another user');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const isExempt = Boolean(user?.tax_exempt || user?.profile?.tax_exempt);
+    const taxId = user?.profile?.tax_id || user?.tax_id || null;
+    const st120Status = user?.profile?.st120_status || user?.st120_status || 'NONE';
+    const st120DocUrl =
+      user?.st120_pdf_url || user?.profile?.st120_document_url || user?.st120_document_url || null;
+
+    return {
+      userId,
+      taxId,
+      st120Status,
+      st120DocumentUrl: st120DocUrl,
+      st120PdfUrl: st120DocUrl,
+      taxExempt: isExempt,
+      taxLegend: isExempt ? this.getOfficialNysDtfLegend(taxId) : null,
+    };
+  }
+
+  /**
+   * Descarga o consulta el certificado ST-120 físico/digital de un cliente.
+   * Permite acceso al propio usuario, admin o auditor para conciliación (§TASK-102-03).
+   */
+  async downloadCertificate(
+    userId: string,
+    requestingUser?: { id: string; role?: string },
+  ): Promise<{
     filePath: string;
     buffer: Buffer;
     filename: string;
     mimeType: string;
   }> {
+    if (
+      requestingUser &&
+      requestingUser.role !== 'admin' &&
+      requestingUser.role !== 'auditor' &&
+      requestingUser.id !== userId
+    ) {
+      throw new ForbiddenException('Cannot access ST-120 certificate for another user');
+    }
+
+    return await this.getSt120Pdf(userId, requestingUser);
+  }
+
+  /**
+   * Retrieves official ST-120 PDF file data for download or browser visualization
+   * TASK-82-02: GET /api/tax/:userId/st120-pdf retorna el PDF para visualización en navegador o descarga
+   * TASK-102-03: Autoriza explícitamente a admin, auditor y al propio usuario.
+   */
+  async getSt120Pdf(
+    userId: string,
+    requestingUser?: { id: string; role?: string },
+  ): Promise<{
+    filePath: string;
+    buffer: Buffer;
+    filename: string;
+    mimeType: string;
+  }> {
+    if (
+      requestingUser &&
+      requestingUser.role !== 'admin' &&
+      requestingUser.role !== 'auditor' &&
+      requestingUser.id !== userId
+    ) {
+      throw new ForbiddenException('Cannot access ST-120 PDF for another user');
+    }
+
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['profile'],

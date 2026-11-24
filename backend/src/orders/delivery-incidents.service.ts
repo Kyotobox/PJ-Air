@@ -93,6 +93,11 @@ export class DeliveryIncidentsService {
       throw new NotFoundException(`Orden con id ${orderId} no encontrada`);
     }
 
+    // Si el usuario tiene rol auditor, queda bloqueado para reportar incidencias (Read-Only SoD, §TASK-102-03)
+    if (userContext?.role === 'auditor') {
+      throw new ForbiddenException('No autorizado para reportar incidencias: el rol auditor es estrictamente de solo lectura (SoD)');
+    }
+
     // Si viene contexto de usuario y no es admin, debe ser el dueño de la orden
     if (userContext && userContext.role !== 'admin' && order.user_id !== userContext.id) {
       throw new ForbiddenException('No autorizado para reportar incidencias sobre esta orden');
@@ -259,12 +264,13 @@ export class DeliveryIncidentsService {
 
   /**
    * Consulta incidencias asociadas a una orden.
+   * Permite acceso al dueño de la orden, admin o auditor para conciliación (§TASK-102-03).
    */
   async findByOrder(
     orderId: string,
     userContext?: { id: string; role?: string },
   ): Promise<DeliveryIncident[]> {
-    if (userContext && userContext.role !== 'admin') {
+    if (userContext && userContext.role !== 'admin' && userContext.role !== 'auditor') {
       const order = await this.orderRepository.findOne({ where: { id: orderId } });
       if (!order) {
         throw new NotFoundException(`Orden con id ${orderId} no encontrada`);
@@ -282,8 +288,21 @@ export class DeliveryIncidentsService {
 
   /**
    * Consulta incidencias asociadas a un cliente.
+   * Permite acceso al propio cliente, admin o auditor para conciliación (§TASK-102-03).
    */
-  async findByUser(userId: string): Promise<DeliveryIncident[]> {
+  async findByUser(
+    userId: string,
+    userContext?: { id: string; role?: string },
+  ): Promise<DeliveryIncident[]> {
+    if (
+      userContext &&
+      userContext.role !== 'admin' &&
+      userContext.role !== 'auditor' &&
+      userContext.id !== userId
+    ) {
+      throw new ForbiddenException('No autorizado para ver incidencias de este usuario');
+    }
+
     return await this.incidentRepository.find({
       where: { user_id: userId },
       order: { created_at: 'DESC' },

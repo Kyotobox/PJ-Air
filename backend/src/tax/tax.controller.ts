@@ -48,9 +48,13 @@ export class TaxController {
 
   @Get('status/:userId')
   @UseGuards(AuthGuard)
-  async getStatus(@Param('userId') userId: string) {
+  async getStatus(@Param('userId') userId: string, @Req() req?: any) {
+    const targetUserId = userId === 'me' && req?.user ? req.user.id : userId;
+    if (typeof this.taxService.findExemptionByUser === 'function') {
+      return this.taxService.findExemptionByUser(targetUserId, req?.user);
+    }
     const user = await this.taxService['userRepository'].findOne({
-      where: { id: userId },
+      where: { id: targetUserId },
       relations: ['profile'],
     });
     const isExempt = Boolean(user?.tax_exempt || user?.profile?.tax_exempt);
@@ -59,7 +63,7 @@ export class TaxController {
     const st120DocUrl = user?.st120_pdf_url || user?.profile?.st120_document_url || user?.st120_document_url || null;
 
     return {
-      userId,
+      userId: targetUserId,
       taxId,
       st120Status,
       st120DocumentUrl: st120DocUrl,
@@ -67,6 +71,13 @@ export class TaxController {
       taxExempt: isExempt,
       taxLegend: isExempt ? this.taxService.getOfficialNysDtfLegend(taxId) : null,
     };
+  }
+
+  @Get('exemption/:userId')
+  @UseGuards(AuthGuard)
+  async findExemptionByUser(@Param('userId') userId: string, @Req() req?: any) {
+    const targetUserId = userId === 'me' && req?.user ? req.user.id : userId;
+    return this.taxService.findExemptionByUser(targetUserId, req?.user);
   }
 
   /**
@@ -77,6 +88,9 @@ export class TaxController {
   @Post('generate-digital-st120')
   @UseGuards(AuthGuard)
   async generateDigitalST120(@Req() req: any, @Body() body?: any) {
+    if (req.user?.role === 'auditor') {
+      throw new ForbiddenException('Auditors are restricted to read-only access (SoD)');
+    }
     const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
     return this.taxService.generateDigitalST120(targetUserId, req.user, body);
   }
@@ -87,6 +101,9 @@ export class TaxController {
   @Post('sign-st120')
   @UseGuards(AuthGuard)
   async signST120(@Req() req: any, @Body() body: any) {
+    if (req.user?.role === 'auditor') {
+      throw new ForbiddenException('Auditors are restricted to read-only access (SoD)');
+    }
     const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
     const clientIp =
       (req.headers && req.headers['x-forwarded-for']) ||
@@ -150,6 +167,9 @@ export class TaxController {
     @Body('tax_id') taxId?: string,
     @Body('status') status?: string,
   ) {
+    if (req.user?.role === 'auditor') {
+      throw new ForbiddenException('Auditors are restricted to read-only access (SoD)');
+    }
     if (!file) {
       throw new BadRequestException('No file uploaded or file type not allowed');
     }
@@ -159,6 +179,7 @@ export class TaxController {
 
   /**
    * Returns ST-120 PDF for inline browser viewing or download
+   * Autoriza a admin, auditor y al propio dueño del certificado (§TASK-102-03)
    */
   @Get(':userId/st120-pdf')
   @UseGuards(AuthGuard)
@@ -168,11 +189,38 @@ export class TaxController {
     @Res() res: any,
   ) {
     const targetUserId = paramUserId === 'me' ? req.user.id : paramUserId;
-    if (req.user?.role !== 'admin' && req.user?.id !== targetUserId) {
+    if (req.user?.role !== 'admin' && req.user?.role !== 'auditor' && req.user?.id !== targetUserId) {
       throw new ForbiddenException('Cannot access ST-120 PDF for another user');
     }
 
     const pdfData = await this.taxService.getSt120Pdf(targetUserId);
+    res.set({
+      'Content-Type': pdfData.mimeType,
+      'Content-Disposition': `inline; filename="${pdfData.filename}"`,
+      'Content-Length': pdfData.buffer.length,
+    });
+    res.end(pdfData.buffer);
+  }
+
+  /**
+   * Alias para consultar/descargar certificado ST-120 (§TASK-102-03)
+   */
+  @Get(':userId/certificate')
+  @UseGuards(AuthGuard)
+  async downloadCertificate(
+    @Param('userId') paramUserId: string,
+    @Req() req: any,
+    @Res() res: any,
+  ) {
+    const targetUserId = paramUserId === 'me' ? req.user.id : paramUserId;
+    if (req.user?.role !== 'admin' && req.user?.role !== 'auditor' && req.user?.id !== targetUserId) {
+      throw new ForbiddenException('Cannot access ST-120 PDF for another user');
+    }
+
+    const pdfData = typeof this.taxService.downloadCertificate === 'function'
+      ? await this.taxService.downloadCertificate(targetUserId, req.user)
+      : await this.taxService.getSt120Pdf(targetUserId, req.user);
+
     res.set({
       'Content-Type': pdfData.mimeType,
       'Content-Disposition': `inline; filename="${pdfData.filename}"`,

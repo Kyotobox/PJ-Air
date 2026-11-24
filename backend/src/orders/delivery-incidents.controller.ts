@@ -56,13 +56,18 @@ export class DeliveryIncidentsController {
   /**
    * GET /orders/incidents/user/:userId
    * Consulta el historial de incidencias de un cliente.
+   * Autoriza explícitamente a admin y auditor (§TASK-102-03).
    */
   @Get('incidents/user/:userId')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'auditor')
   async getIncidentsByUser(
     @Param('userId') userId: string,
+    @Req() req?: any,
   ) {
+    if (req?.user) {
+      return this.deliveryIncidentsService.findByUser(userId, req.user);
+    }
     return this.deliveryIncidentsService.findByUser(userId);
   }
 
