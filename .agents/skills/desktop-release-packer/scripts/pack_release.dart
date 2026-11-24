@@ -7,7 +7,6 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:sqlite3/sqlite3.dart';
 
 /// Excepción tipada para fallos durante el checkpoint de integridad o empaquetado WAL (§6, §55).
@@ -219,6 +218,8 @@ void main(List<String> args) {
     exit(2);
   }
 
+  final Stopwatch stopwatch = Stopwatch()..start();
+
   try {
     WalCheckpointResult? result;
     if (doCheckpoint || (!doCheckpoint && !doValidate)) {
@@ -232,12 +233,19 @@ void main(List<String> args) {
       DesktopReleasePacker.validateZeroByteWal(dbPath);
     }
 
+    stopwatch.stop();
     if (asJson) {
       stdout.writeln(
         jsonEncode(<String, dynamic>{
-          'status': 'OK',
-          'db_path': dbPath,
-          'checkpoint': result?.toJson(),
+          'status': 'ok',
+          'data': <String, dynamic>{
+            'db_path': dbPath,
+            'checkpoint': result?.toJson(),
+          },
+          'metrics': <String, dynamic>{
+            'duration_ms': stopwatch.elapsedMilliseconds,
+            'records_processed': 1,
+          },
         }),
       );
     } else {
@@ -247,13 +255,20 @@ void main(List<String> args) {
     }
     exit(0);
   } on WalCheckpointException catch (e) {
+    stopwatch.stop();
     if (asJson) {
       stderr.writeln(
         jsonEncode(<String, dynamic>{
-          'status': 'ERROR',
+          'status': 'error',
+          'data': <String, dynamic>{
+            'db_path': e.dbPath,
+            'busy_code': e.busyCode,
+          },
           'error': e.toString(),
-          'db_path': e.dbPath,
-          'busy_code': e.busyCode,
+          'metrics': <String, dynamic>{
+            'duration_ms': stopwatch.elapsedMilliseconds,
+            'records_processed': 0,
+          },
         }),
       );
     } else {
@@ -261,7 +276,22 @@ void main(List<String> args) {
     }
     exit(1);
   } catch (e) {
-    stderr.writeln('❌ [DesktopReleasePacker] ERROR INESPERADO: $e');
+    stopwatch.stop();
+    if (asJson) {
+      stderr.writeln(
+        jsonEncode(<String, dynamic>{
+          'status': 'error',
+          'data': <String, dynamic>{},
+          'error': e.toString(),
+          'metrics': <String, dynamic>{
+            'duration_ms': stopwatch.elapsedMilliseconds,
+            'records_processed': 0,
+          },
+        }),
+      );
+    } else {
+      stderr.writeln('❌ [DesktopReleasePacker] ERROR INESPERADO: $e');
+    }
     exit(1);
   }
 }

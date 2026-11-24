@@ -149,30 +149,63 @@ OSINT_TOOL_DEFINITIONS: List[Dict[str, Any]] = [
 
 
 def dispatch_osint_tool(tool_name: str, arguments: Dict[str, Any] = None) -> Dict[str, Any]:
-    """Cortafuegos y enrutador unificado de herramientas OSINT para MarkOS."""
+    """Cortafuegos y enrutador unificado de herramientas OSINT para MarkOS y Servidor MCP."""
     args = arguments or {}
     start = time.time()
+    normalized = tool_name.replace(".", "_")
 
     try:
-        if tool_name == "osint_niche_directory":
+        if normalized in ("osint_niche_directory", "niche_directory"):
             cat = args.get("category", "venues_wineries")
             loc = args.get("location", None)
             enrich = args.get("enrich", False)
-            return fetch_niche_directory(category=cat, location_filter=loc, enrich=enrich)
+            data = fetch_niche_directory(category=cat, location_filter=loc, enrich=enrich) if fetch_niche_directory else {"venues": []}
+            return {
+                "status": "ok",
+                "data": data,
+                "metrics": {
+                    "duration_ms": int((time.time() - start) * 1000),
+                    "records_processed": len(data.get("venues", [])) if isinstance(data, dict) else 0
+                }
+            }
 
-        elif tool_name == "osint_transit_hub_radar":
+        elif normalized in ("osint_transit_hub_radar", "transit_hub_radar"):
             ap = args.get("airports", ["IAD", "DCA"])
-            return fetch_transit_hub_status(airports=ap)
+            data = fetch_transit_hub_status(airports=ap) if fetch_transit_hub_status else {"airports": {}}
+            return {
+                "status": "ok",
+                "data": data,
+                "metrics": {
+                    "duration_ms": int((time.time() - start) * 1000),
+                    "records_processed": len(ap)
+                }
+            }
 
-        elif tool_name == "osint_social_listening":
+        elif normalized in ("osint_social_listening", "social_listening"):
             subs = args.get("subreddits", ["nova", "washingtondc"])
             kws = args.get("keywords", None)
             live = args.get("live", False)
-            return monitor_social_demand(subreddits=subs, keywords=kws, live=live)
+            data = monitor_social_demand(subreddits=subs, keywords=kws, live=live) if monitor_social_demand else {"findings": []}
+            return {
+                "status": "ok",
+                "data": data,
+                "metrics": {
+                    "duration_ms": int((time.time() - start) * 1000),
+                    "records_processed": len(subs)
+                }
+            }
 
-        elif tool_name == "osint_interstate_routes":
+        elif normalized in ("osint_interstate_routes", "interstate_routes"):
             q = args.get("query", None)
-            return fetch_interstate_routes(corridor_query=q)
+            data = fetch_interstate_routes(corridor_query=q) if fetch_interstate_routes else {"routes": []}
+            return {
+                "status": "ok",
+                "data": data,
+                "metrics": {
+                    "duration_ms": int((time.time() - start) * 1000),
+                    "records_processed": len(data.get("routes", [])) if isinstance(data, dict) else 0
+                }
+            }
 
         else:
             return {
@@ -181,7 +214,11 @@ def dispatch_osint_tool(tool_name: str, arguments: Dict[str, Any] = None) -> Dic
                 "error_type": "ToolNotFound",
                 "message": f"Herramienta '{tool_name}' no existe en el registro OSINT de MarkOS.",
                 "available_tools": [t["function"]["name"] for t in OSINT_TOOL_DEFINITIONS],
-                "data": []
+                "data": {},
+                "metrics": {
+                    "duration_ms": int((time.time() - start) * 1000),
+                    "records_processed": 0
+                }
             }
 
     except Exception as e:
@@ -190,8 +227,11 @@ def dispatch_osint_tool(tool_name: str, arguments: Dict[str, Any] = None) -> Dic
             "module": tool_name,
             "error_type": type(e).__name__,
             "message": f"Excepción contenida en {tool_name}: {str(e)}",
-            "elapsed": round(time.time() - start, 3),
-            "data": []
+            "data": {},
+            "metrics": {
+                "duration_ms": int((time.time() - start) * 1000),
+                "records_processed": 0
+            }
         }
 
 

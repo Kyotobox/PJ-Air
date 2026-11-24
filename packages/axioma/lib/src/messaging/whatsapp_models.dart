@@ -1,5 +1,6 @@
 /// Canonical Pure Dart DTOs for WhatsApp Messaging (§39).
 /// Fully compatible with Meta WhatsApp Business Cloud API payload specifications.
+library;
 
 /// WhatsApp text message payload.
 class WhatsAppTextMessage {

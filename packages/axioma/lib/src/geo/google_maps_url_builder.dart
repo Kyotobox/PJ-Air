@@ -63,8 +63,9 @@ class GoogleMapsStaticUrlBuilder {
     final SplayTreeMap<String, String> params = SplayTreeMap<String, String>();
     if (fov != null) params['fov'] = fov.toString();
     if (heading != null) params['heading'] = heading.toString();
-    if (apiKey != null && apiKey.trim().isNotEmpty)
+    if (apiKey != null && apiKey.trim().isNotEmpty) {
       params['key'] = apiKey.trim();
+    }
     params['location'] = locationStr;
     if (pitch != null) params['pitch'] = pitch.toString();
     params['size'] = '${width}x$height';

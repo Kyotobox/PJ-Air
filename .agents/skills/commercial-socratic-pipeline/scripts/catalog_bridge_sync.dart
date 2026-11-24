@@ -13,7 +13,6 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:axioma/src/schema/commercial_contracts.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 

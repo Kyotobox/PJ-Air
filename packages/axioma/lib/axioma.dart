@@ -63,8 +63,8 @@ export 'src/models/cross_fitment_dto.dart';
 // Promoción Sprint B118
 export 'src/semantic/semantic_loader.dart';
 
-// Testing Infrastructure (TASK-G173-03)
-export 'src/testing/test_database_factory.dart';
+// Storage & Testing Infrastructure (TASK-N147-03)
+export 'src/storage/test_database_factory.dart';
 
 // LLM Infrastructure (TASK-G188-02)
 export 'src/shared/key_pool_base.dart';
@@ -151,7 +151,7 @@ export 'src/security/prompt_sanitizer.dart';
 // Multi-OS Parity & Platform Guard (Sprint G1 - Pure Dart, Art. Multi-OS)
 export 'src/platform_guard.dart';
 
-// Governance & Anti-Rebound Lifecycle Gate (§4, §6, §39, §50)
+// Governance & Anti-Rebound Lifecycle Gate (§4, §6, §39, §50, §62)
 export 'src/governance/sprint_sequence_validator.dart';
 export 'src/governance/takeover_rebound_gate.dart';
 export 'src/governance/upstream_pointer.dart';
@@ -159,6 +159,10 @@ export 'src/governance/bunker_skill_filter.dart';
 export 'src/governance/atomic_task_bifurcator.dart';
 export 'src/governance/governance_reconciler.dart';
 export 'src/governance/deferred_trigger.dart';
+export 'src/governance/ontological_scope_gate.dart';
+export 'src/governance/backlog_validator.dart';
+export 'src/governance/validation_codes.dart';
+export 'src/governance/ast_validator.dart';
 
 // Incremental Render & Content-Addressable Storage (CAS) Contracts (Sprint N54, §39)
 export 'src/render/incremental_render_spec.dart';
@@ -166,6 +170,7 @@ export 'src/render/cas_storage_engine.dart';
 export 'src/render/fast_splice_engine.dart';
 export 'src/render/incremental_render_canary.dart';
 export 'src/render/studio_render_contract.dart';
+export 'src/render/creative_render_job_dto.dart';
 
 // Adaptive User Signal & CAR Linter Synthesis (Sprint N54, §39, §46)
 export 'src/car/user_signal_car_connector.dart';
@@ -173,6 +178,11 @@ export 'src/car/user_signal_car_connector.dart';
 // Canonical Tactical Directives (Sprint N89 - Pure Dart, TASK-N89-01, §4, §6, §39)
 export 'src/contracts/tactical_directive.dart';
 export 'src/contracts/directive_acknowledgement.dart';
+export 'src/contracts/merchant_onboarding_dto.dart';
+
+// Levita Autonomous Commerce & Messaging Contracts (§39)
+export 'src/messaging/broadcast_campaign_dto.dart';
+export 'src/messaging/whatsapp_offer_dto.dart';
 
 // UI Contracts, Defensive State Machine & Semantic Tokens (Sprint N91 / N94, §8, §39, TASK-N94-01)
 export 'src/ui/action_lock.dart';
@@ -188,3 +198,19 @@ export 'src/flow/flow_state.dart';
 export 'src/flow/flow_violations.dart';
 
 // Absorbed Shared Kernel Utilities (§39, §52, TASK-N126-03)
+export 'council.dart';
+export 'src/contracts/creative_studio_contracts.dart';
+export 'src/arbitrage/arbitrage_contracts.dart' hide WhatsAppOfferDTO;
+export 'src/arbitrage/studio_offer_bridge.dart';
+
+// Counterweight Gate & Anti-Sycophancy Governance (Sprint N152, §39, §46, §47, §61.2, §63)
+export 'src/governance/governance_exceptions.dart';
+export 'src/governance/directive_classifier.dart';
+export 'src/governance/counterweight_gate.dart';
+
+// Canonical Synapse Primitive, ContextPassport & Topology Validators (Sprint N153, §39, §60.8)
+export 'synapse.dart';
+export 'src/validators/fleet_topo.dart';
+export 'src/validators/synapse_health_check.dart';
+export 'src/protocol/uds_connector_transport.dart';
+export 'src/protocol/cross_node_exceptions.dart';

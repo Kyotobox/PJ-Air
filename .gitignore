@@ -9,6 +9,8 @@
 # Project specific
 session.lock
 bin/*.exe
+bin/*.native
+bin/*.native.sig
 bin/logix
 bin/logix.old
 bin/logix.bak
@@ -37,7 +39,6 @@ release/
 bin/*.dll
 
 # Telemetry and Historial rotation
-dropzone/
 vault/runtime/
 vault/graveyard/
 # vault/intel is ALLOWED for system knowledge persistence
@@ -55,13 +56,10 @@ scratch/
 *.db
 .tmp.driveupload/
 .meta/prompts/
-
 node_modules/
-backend/node_modules/
-frontend/node_modules/
 
-
+# Node modules exclusion
+**/node_modules/
+node_modules/
 .env
 .env.*
-!.env.example
-

@@ -8,15 +8,15 @@ void main() {
       test(
         'Happy Path: Instantiates valid coordinates and serializes correctly',
         () {
-          final point = GeoPoint(10.4806, -66.9036);
+          final GeoPoint point = GeoPoint(10.4806, -66.9036);
           expect(point.latitude, closeTo(10.4806, 0.0001));
           expect(point.longitude, closeTo(-66.9036, 0.0001));
 
-          final json = point.toJson();
+          final Map<String, dynamic> json = point.toJson();
           expect(json['latitude'], 10.4806);
           expect(json['longitude'], -66.9036);
 
-          final restored = GeoPoint.fromJson(json);
+          final GeoPoint restored = GeoPoint.fromJson(json);
           expect(restored, equals(point));
           expect(restored.hashCode, equals(point.hashCode));
           expect(point.toString(), contains('10.4806'));
@@ -26,10 +26,10 @@ void main() {
       test(
         'Happy Path: Handles boundary coordinates (Poles and Anti-meridian)',
         () {
-          final northPole = GeoPoint(90.0, 0.0);
-          final southPole = GeoPoint(-90.0, 0.0);
-          final eastBound = GeoPoint(0.0, 180.0);
-          final westBound = GeoPoint(0.0, -180.0);
+          final GeoPoint northPole = GeoPoint(90.0, 0.0);
+          final GeoPoint southPole = GeoPoint(-90.0, 0.0);
+          final GeoPoint eastBound = GeoPoint(0.0, 180.0);
+          final GeoPoint westBound = GeoPoint(0.0, -180.0);
 
           expect(northPole.latitude, 90.0);
           expect(southPole.latitude, -90.0);
@@ -72,11 +72,11 @@ void main() {
         'Sad Path (§6): Throws ArgumentError on missing JSON attributes',
         () {
           expect(
-            () => GeoPoint.fromJson({'latitude': 10.0}),
+            () => GeoPoint.fromJson(<String, dynamic>{'latitude': 10.0}),
             throwsA(isA<ArgumentError>()),
           );
           expect(
-            () => GeoPoint.fromJson({'longitude': -66.0}),
+            () => GeoPoint.fromJson(<String, dynamic>{'longitude': -66.0}),
             throwsA(isA<ArgumentError>()),
           );
         },
@@ -87,20 +87,20 @@ void main() {
       test(
         'Happy Path: Creates valid bounding box and verifies containment & center',
         () {
-          final sw = GeoPoint(10.0, -67.0);
-          final ne = GeoPoint(11.0, -66.0);
-          final bbox = BoundingBox(southWest: sw, northEast: ne);
+          final GeoPoint sw = GeoPoint(10.0, -67.0);
+          final GeoPoint ne = GeoPoint(11.0, -66.0);
+          final BoundingBox bbox = BoundingBox(southWest: sw, northEast: ne);
 
           expect(bbox.contains(GeoPoint(10.5, -66.5)), isTrue);
           expect(bbox.contains(GeoPoint(12.0, -66.5)), isFalse);
           expect(bbox.contains(GeoPoint(10.5, -68.0)), isFalse);
 
-          final center = bbox.center;
+          final GeoPoint center = bbox.center;
           expect(center.latitude, closeTo(10.5, 0.0001));
           expect(center.longitude, closeTo(-66.5, 0.0001));
 
-          final json = bbox.toJson();
-          final restored = BoundingBox.fromJson(json);
+          final Map<String, dynamic> json = bbox.toJson();
+          final BoundingBox restored = BoundingBox.fromJson(json);
           expect(restored, equals(bbox));
         },
       );
@@ -108,8 +108,8 @@ void main() {
       test(
         'Sad Path (§6): Throws ArgumentError if southWest latitude > northEast latitude',
         () {
-          final sw = GeoPoint(15.0, -67.0);
-          final ne = GeoPoint(10.0, -66.0);
+          final GeoPoint sw = GeoPoint(15.0, -67.0);
+          final GeoPoint ne = GeoPoint(10.0, -66.0);
           expect(
             () => BoundingBox(southWest: sw, northEast: ne),
             throwsA(isA<ArgumentError>()),
@@ -120,14 +120,17 @@ void main() {
       test(
         'Sad Path (§6): Throws ArgumentError on malformed BoundingBox JSON',
         () {
-          expect(() => BoundingBox.fromJson({}), throwsA(isA<ArgumentError>()));
+          expect(
+            () => BoundingBox.fromJson(<String, dynamic>{}),
+            throwsA(isA<ArgumentError>()),
+          );
         },
       );
     });
 
     group('Haversine Distance Calculator', () {
       test('Happy Path: Distance between identical points is strictly 0', () {
-        final p = GeoPoint(10.4806, -66.9036);
+        final GeoPoint p = GeoPoint(10.4806, -66.9036);
         expect(calculateHaversineDistanceKm(p, p), 0.0);
         expect(calculateHaversineDistanceMeters(p, p), 0.0);
       });
@@ -135,11 +138,11 @@ void main() {
       test(
         'Happy Path: Calculates exact known distances (London to Paris)',
         () {
-          final london = GeoPoint(51.5074, -0.1278);
-          final paris = GeoPoint(48.8566, 2.3522);
+          final GeoPoint london = GeoPoint(51.5074, -0.1278);
+          final GeoPoint paris = GeoPoint(48.8566, 2.3522);
 
-          final distanceKm = calculateHaversineDistanceKm(london, paris);
-          final distanceMeters = calculateHaversineDistanceMeters(
+          final double distanceKm = calculateHaversineDistanceKm(london, paris);
+          final double distanceMeters = calculateHaversineDistanceMeters(
             london,
             paris,
           );
@@ -151,9 +154,9 @@ void main() {
       );
 
       test('Happy Path: Calculates distance for antipodal coordinates', () {
-        final p1 = GeoPoint(0.0, 0.0);
-        final p2 = GeoPoint(0.0, 180.0);
-        final distance = calculateHaversineDistanceKm(p1, p2);
+        final GeoPoint p1 = GeoPoint(0.0, 0.0);
+        final GeoPoint p2 = GeoPoint(0.0, 180.0);
+        final double distance = calculateHaversineDistanceKm(p1, p2);
         // Half circumference of Earth is pi * 6371 ~ 20015 km
         expect(distance, closeTo(math.pi * kEarthRadiusKm, 10.0));
       });
@@ -163,9 +166,9 @@ void main() {
       test(
         'Happy Path: Normalizes addresses removing escapes, extra spaces and uppercase',
         () {
-          const raw =
+          const String raw =
               '  av.  francisco\tde\\nmiranda,\r\n\tedif.  galipán,\t\tpiso 3  ';
-          final normalized = AddressNormalizer.normalize(raw);
+          final String normalized = AddressNormalizer.normalize(raw);
           expect(
             normalized,
             equals('AV. FRANCISCO DE MIRANDA, EDIF. GALIPÁN, PISO 3'),
@@ -203,8 +206,8 @@ void main() {
     test(
       'Happy Path: Builds deterministic Street View URL with coordinates',
       () {
-        final point = GeoPoint(10.4806, -66.9036);
-        final uri = GoogleMapsStaticUrlBuilder.buildStreetViewUrl(
+        final GeoPoint point = GeoPoint(10.4806, -66.9036);
+        final Uri uri = GoogleMapsStaticUrlBuilder.buildStreetViewUrl(
           point: point,
           width: 800,
           height: 600,
@@ -229,7 +232,7 @@ void main() {
     test(
       'Happy Path: Builds deterministic Street View URL with address string',
       () {
-        final uri = GoogleMapsStaticUrlBuilder.buildStreetViewUrl(
+        final Uri uri = GoogleMapsStaticUrlBuilder.buildStreetViewUrl(
           address: 'Times Square, New York, NY',
           width: 640,
           height: 360,
@@ -247,8 +250,8 @@ void main() {
     test(
       'Happy Path: Builds deterministic Static Map URL with center and zoom',
       () {
-        final center = GeoPoint(40.7128, -74.0060);
-        final uri = GoogleMapsStaticUrlBuilder.buildStaticMapUrl(
+        final GeoPoint center = GeoPoint(40.7128, -74.0060);
+        final Uri uri = GoogleMapsStaticUrlBuilder.buildStaticMapUrl(
           center: center,
           zoom: 14,
           width: 600,
@@ -299,7 +302,7 @@ void main() {
     test(
       'Sad Path (§6): Throws ArgumentError on invalid size or boundary parameters',
       () {
-        final point = GeoPoint(0.0, 0.0);
+        final GeoPoint point = GeoPoint(0.0, 0.0);
         // Non-positive dimensions
         expect(
           () => GoogleMapsStaticUrlBuilder.buildStreetViewUrl(

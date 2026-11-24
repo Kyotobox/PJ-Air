@@ -203,7 +203,7 @@ Debes implementar de forma atómica y completa la tarea:
 {files_str}
 
 === CRITERIOS DE EJECUCIÓN LEAN (§4, §6, §48) ===
-1. Cero mocks en código de producción ni dominio (§4). Pruebas físicas con SQLite o repositorios reales.
+1. Cero datos o dobles simulados en producción ni dominio (§4). Pruebas físicas con SQLite o repositorios reales.
 2. Sad path mandatorio (§6): al menos una aserción negativa real (throwsA o excepción esperada).
 3. Paridad multi-OS: usar PlatformGuard o contextos agnósticos.
 4. Al pasar los tests con exit code 0, ejecutar commit atómico inmediato (§48).

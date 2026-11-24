@@ -138,6 +138,9 @@ class TakeoverReboundGate {
     );
   }
 
+  /// Límite máximo de sesiones selladas retenidas para evitar O(n) desbocado y acotar búsquedas (GAP-2).
+  static const int maxRetentionSessions = 50;
+
   /// Evalúa el estado físico del disco en [rootPath] contra el [incomingConversationId].
   TakeoverGateResult validateDiskState(
     String incomingConversationId, {
@@ -152,6 +155,41 @@ class TakeoverReboundGate {
       sealedConversations: sealed,
       throwOnError: throwOnError,
     );
+  }
+
+  /// Verifica si existe el cerrojo de detención de emergencia `handover_halt.lock`.
+  bool isHandoverHaltLocked() {
+    final File lockFile = File(
+      p.join(rootPath, 'vault', 'runtime', 'handover_halt.lock'),
+    );
+    return lockFile.existsSync();
+  }
+
+  /// Lee el estado de `session_odometer.json` manejando cold-start y JSON corrupto (SAD-B).
+  Map<String, dynamic>? readSessionOdometer() {
+    final File odoFile = File(
+      p.join(rootPath, 'vault', 'runtime', 'session_odometer.json'),
+    );
+    if (!odoFile.existsSync()) return null;
+
+    try {
+      final String raw = odoFile.readAsStringSync().trim();
+      if (raw.isEmpty) return null;
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+    } catch (_) {
+      // INTENTIONAL: Fallback ante corrupción física del archivo del odómetro (SAD-B, §45).
+    }
+    return null;
+  }
+
+  /// Determina si la sesión anterior cerró su ciclo con el marcador atómico `hwc_complete: true` (GAP-1).
+  bool isOdometerHandoverComplete() {
+    final Map<String, dynamic>? odo = readSessionOdometer();
+    if (odo == null) return false;
+    return odo['hwc_complete'] == true;
   }
 
   /// Lee el `previous_conversation_id` almacenado en `.meta/session.relay`.
@@ -186,21 +224,28 @@ class TakeoverReboundGate {
       final String raw = sealedFile.readAsStringSync().trim();
       if (raw.isEmpty) return <String>{};
       final dynamic decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic> && decoded['sealed_ids'] is List) {
-        final List<dynamic> list = decoded['sealed_ids'] as List<dynamic>;
-        return list
-            .map<String>((dynamic e) => e.toString().trim())
-            .where((String id) => id.isNotEmpty)
-            .toSet();
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['sealed_ids'] is List) {
+          final List<dynamic> list = decoded['sealed_ids'] as List<dynamic>;
+          return list
+              .map<String>((dynamic e) => e.toString().trim())
+              .where((String id) => id.isNotEmpty)
+              .toSet();
+        }
       }
     } catch (_) {
-      // INTENTIONAL: Fallback defensivo ante archivo corrupto o no inicializado.
+      // INTENTIONAL: Fallback defensivo ante archivo corrupto o no inicializado (SAD-B).
     }
     return <String>{};
   }
 
-  /// Sella físicamente una conversación en `vault/runtime/sealed_conversations.json`.
-  void sealConversation(String conversationId, {required String reason}) {
+  /// Sella físicamente una conversación en `vault/runtime/sealed_conversations.json` con
+  /// poda atómica rotacional acotada a [maxEntries] (GAP-2) y escritura atómica en dos fases (.tmp + rename).
+  void sealConversation(
+    String conversationId, {
+    required String reason,
+    int maxEntries = maxRetentionSessions,
+  }) {
     final String cleanId = conversationId.trim();
     if (cleanId.isEmpty) {
       throw ArgumentError(
@@ -211,22 +256,85 @@ class TakeoverReboundGate {
     final File sealedFile = File(
       p.join(rootPath, 'vault', 'runtime', 'sealed_conversations.json'),
     );
-    final Set<String> currentSealed = loadSealedConversations();
-    currentSealed.add(cleanId);
+    final List<Map<String, dynamic>> entries = _loadSealedEntries(sealedFile);
+
+    // Evitar duplicados del mismo ID conservando el más reciente
+    entries.removeWhere((Map<String, dynamic> e) => e['id'] == cleanId);
+
+    final String nowIso = DateTime.now().toUtc().toIso8601String();
+    entries.add(<String, dynamic>{
+      'id': cleanId,
+      'reason': reason,
+      'sealed_at': nowIso,
+    });
+
+    // Poda rotacional FIFO acotada a maxEntries (GAP-2)
+    while (entries.length > maxEntries) {
+      entries.removeAt(0);
+    }
+
+    final List<String> sealedIds = entries
+        .map<String>((Map<String, dynamic> e) => e['id'] as String)
+        .toList();
 
     final Map<String, dynamic> payload = <String, dynamic>{
-      'version': '1.0.0',
-      'last_updated': DateTime.now().toUtc().toIso8601String(),
+      'version': '1.1.0',
+      'last_updated': nowIso,
       'last_sealed_id': cleanId,
       'last_sealed_reason': reason,
-      'sealed_ids': currentSealed.toList()..sort(),
+      'max_retention': maxEntries,
+      'sealed_ids': sealedIds,
+      'entries': entries,
     };
 
     if (!sealedFile.parent.existsSync()) {
       sealedFile.parent.createSync(recursive: true);
     }
-    sealedFile.writeAsStringSync(
+
+    // Escritura atómica en dos fases (.tmp + rename) para prevenir torn-writes (GAP-1, SAD-A)
+    final File tempFile = File('${sealedFile.path}.tmp');
+    tempFile.writeAsStringSync(
       const JsonEncoder.withIndent('  ').convert(payload),
+      flush: true,
     );
+    tempFile.renameSync(sealedFile.path);
+  }
+
+  List<Map<String, dynamic>> _loadSealedEntries(File sealedFile) {
+    if (!sealedFile.existsSync()) return <Map<String, dynamic>>[];
+    try {
+      final String raw = sealedFile.readAsStringSync().trim();
+      if (raw.isEmpty) return <Map<String, dynamic>>[];
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['entries'] is List) {
+          final List<dynamic> list = decoded['entries'] as List<dynamic>;
+          return list
+              .whereType<Map<String, dynamic>>()
+              .map((Map<String, dynamic> m) => Map<String, dynamic>.from(m))
+              .toList();
+        } else if (decoded['sealed_ids'] is List) {
+          // Retrocompatibilidad con versión previa sin array 'entries'
+          final List<dynamic> list = decoded['sealed_ids'] as List<dynamic>;
+          final String stamp =
+              decoded['last_updated'] as String? ??
+              DateTime.now().toUtc().toIso8601String();
+          return list
+              .map<String>((dynamic e) => e.toString().trim())
+              .where((String id) => id.isNotEmpty)
+              .map(
+                (String id) => <String, dynamic>{
+                  'id': id,
+                  'reason': 'HISTORICAL_SEAL',
+                  'sealed_at': stamp,
+                },
+              )
+              .toList();
+        }
+      }
+    } catch (_) {
+      // INTENTIONAL: Fallback defensivo ante archivo corrupto (SAD-B).
+    }
+    return <Map<String, dynamic>>[];
   }
 }

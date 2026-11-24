@@ -14,7 +14,7 @@ void main() {
     });
 
     test('Happy Path: Promoción exitosa tras 3 sprints limpios a ERROR', () {
-      final record = RuleQuarantineRecord(
+      final RuleQuarantineRecord record = RuleQuarantineRecord(
         ruleId: 'CAR-DEF-001-EMPTY-CATCH',
         status: CarPromotionStatus.observation,
         severity: CarRuleSeverity.warn,
@@ -24,7 +24,7 @@ void main() {
         quarantinedAt: DateTime.now().subtract(const Duration(days: 21)),
       );
 
-      final result = evaluator.evaluate(record);
+      final LifecycleEvaluationResult result = evaluator.evaluate(record);
 
       expect(result.decision, equals(LifecycleDecision.promoted));
       expect(result.updatedRecord.status, equals(CarPromotionStatus.promoted));
@@ -33,7 +33,7 @@ void main() {
     });
 
     test('Happy Path: Retención en observación cuando sprints < 3', () {
-      final record = RuleQuarantineRecord(
+      final RuleQuarantineRecord record = RuleQuarantineRecord(
         ruleId: 'CAR-DEF-002-BLIND-FIRST',
         status: CarPromotionStatus.observation,
         severity: CarRuleSeverity.warn,
@@ -43,7 +43,7 @@ void main() {
         quarantinedAt: DateTime.now().subtract(const Duration(days: 14)),
       );
 
-      final result = evaluator.evaluate(record);
+      final LifecycleEvaluationResult result = evaluator.evaluate(record);
 
       expect(result.decision, equals(LifecycleDecision.retainInQuarantine));
       expect(
@@ -55,7 +55,7 @@ void main() {
     });
 
     test('Happy Path: Cuarentena extendida ante falsos positivos menores', () {
-      final record = RuleQuarantineRecord(
+      final RuleQuarantineRecord record = RuleQuarantineRecord(
         ruleId: 'CAR-DEF-003-FORCE-UNWRAP',
         status: CarPromotionStatus.observation,
         severity: CarRuleSeverity.warn,
@@ -65,7 +65,7 @@ void main() {
         quarantinedAt: DateTime.now().subtract(const Duration(days: 28)),
       );
 
-      final result = evaluator.evaluate(record);
+      final LifecycleEvaluationResult result = evaluator.evaluate(record);
 
       expect(result.decision, equals(LifecycleDecision.retainInQuarantine));
       expect(
@@ -78,7 +78,7 @@ void main() {
     test(
       'Happy Path: Revocación (Veto) ante 3 o más falsos positivos fatales',
       () {
-        final record = RuleQuarantineRecord(
+        final RuleQuarantineRecord record = RuleQuarantineRecord(
           ruleId: 'CAR-DEF-004-SPURIOUS-VAR',
           status: CarPromotionStatus.observation,
           severity: CarRuleSeverity.warn,
@@ -88,7 +88,7 @@ void main() {
           quarantinedAt: DateTime.now().subtract(const Duration(days: 10)),
         );
 
-        final result = evaluator.evaluate(record);
+        final LifecycleEvaluationResult result = evaluator.evaluate(record);
 
         expect(result.decision, equals(LifecycleDecision.vetoed));
         expect(result.updatedRecord.status, equals(CarPromotionStatus.vetoed));

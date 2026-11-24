@@ -10,6 +10,7 @@ purga tokens de ruido industrial y deduplica registros respetando la Regla §54.
 
 import sys
 import os
+import time
 import csv
 import json
 import sqlite3
@@ -650,6 +651,7 @@ def main() -> int:
     args = parser.parse_args()
 
     dedupe_keys = [k.strip() for k in args.dedupe_keys.split(",") if k.strip()]
+    start_time = time.time()
 
     try:
         result = process_catalog(
@@ -666,8 +668,18 @@ def main() -> int:
             strict=args.strict,
         )
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        envelope = {
+            "status": "ok",
+            "data": result,
+            "metrics": {
+                "duration_ms": duration_ms,
+                "records_processed": result.get("summary", {}).get("total_records", 0),
+            },
+        }
+
         if args.json:
-            print(json.dumps(result, indent=2, ensure_ascii=False))
+            print(json.dumps(envelope, indent=2, ensure_ascii=False))
         else:
             mode_label = "AUDITORÍA DE CALIDAD" if args.validate and not args.sanitize else "SANITIZACIÓN EXITOSA"
             print(f"=== [DATA-CATALOG-SANITIZER] {mode_label} ===")
@@ -683,19 +695,55 @@ def main() -> int:
         return 0
 
     except FileNotFoundError as fnf:
-        sys.stderr.write(f"{fnf}\n")
+        if args.json:
+            err_envelope = {
+                "status": "error",
+                "data": {},
+                "error": str(fnf),
+                "metrics": {"duration_ms": int((time.time() - start_time) * 1000), "records_processed": 0},
+            }
+            print(json.dumps(err_envelope, indent=2, ensure_ascii=False))
+        else:
+            sys.stderr.write(f"{fnf}\n")
         return 2
     except ValueError as ve:
         err_msg = str(ve)
-        sys.stderr.write(f"{err_msg}\n")
+        if args.json:
+            err_envelope = {
+                "status": "error",
+                "data": {},
+                "error": err_msg,
+                "metrics": {"duration_ms": int((time.time() - start_time) * 1000), "records_processed": 0},
+            }
+            print(json.dumps(err_envelope, indent=2, ensure_ascii=False))
+        else:
+            sys.stderr.write(f"{err_msg}\n")
         if "[ERROR-VALIDATION-FAILED]" in err_msg:
             return 1
         return 2
     except IOError as ioe:
-        sys.stderr.write(f"{ioe}\n")
+        if args.json:
+            err_envelope = {
+                "status": "error",
+                "data": {},
+                "error": str(ioe),
+                "metrics": {"duration_ms": int((time.time() - start_time) * 1000), "records_processed": 0},
+            }
+            print(json.dumps(err_envelope, indent=2, ensure_ascii=False))
+        else:
+            sys.stderr.write(f"{ioe}\n")
         return 1
     except Exception as ex:
-        sys.stderr.write(f"[ERROR-UNEXPECTED] Excepción no controlada: {ex}\n")
+        if args.json:
+            err_envelope = {
+                "status": "error",
+                "data": {},
+                "error": f"[ERROR-UNEXPECTED] Excepción no controlada: {ex}",
+                "metrics": {"duration_ms": int((time.time() - start_time) * 1000), "records_processed": 0},
+            }
+            print(json.dumps(err_envelope, indent=2, ensure_ascii=False))
+        else:
+            sys.stderr.write(f"[ERROR-UNEXPECTED] Excepción no controlada: {ex}\n")
         return 1
 
 

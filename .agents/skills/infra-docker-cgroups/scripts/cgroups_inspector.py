@@ -78,11 +78,36 @@ def parse_cgroup_v2_metrics(cgroup_dir: str) -> Dict[str, Any]:
     if mem_max_str and mem_max_str != "max" and mem_max_str.isdigit():
         mem_max_bytes = int(mem_max_str)
 
+    # Si memory.current no esta en el cgroup (ej. root cgroup v2), resolver desde /proc/meminfo
+    if mem_current_bytes is None:
+        meminfo_raw = read_file_safe("/proc/meminfo")
+        if meminfo_raw:
+            tot_kb = None
+            avail_kb = None
+            for mline in meminfo_raw.splitlines():
+                if mline.startswith("MemTotal:"):
+                    tot_kb = int(mline.split()[1])
+                elif mline.startswith("MemAvailable:"):
+                    avail_kb = int(mline.split()[1])
+            if tot_kb is not None and avail_kb is not None:
+                used_kb = tot_kb - avail_kb
+                mem_current_bytes = used_kb * 1024
+
     mem_usage_mb = round(mem_current_bytes / (1024 * 1024), 2) if mem_current_bytes is not None else None
     mem_limit_mb = round(mem_max_bytes / (1024 * 1024), 2) if mem_max_bytes is not None else None
     mem_usage_pct: Optional[float] = None
     if mem_current_bytes is not None and mem_max_bytes is not None and mem_max_bytes > 0:
         mem_usage_pct = round((mem_current_bytes / mem_max_bytes) * 100.0, 2)
+    elif mem_current_bytes is not None:
+        # Si no hay limite explícito en el cgroup, calcular % relativo a la RAM física total del host
+        meminfo_raw = read_file_safe("/proc/meminfo")
+        if meminfo_raw:
+            for mline in meminfo_raw.splitlines():
+                if mline.startswith("MemTotal:"):
+                    tot_kb = int(mline.split()[1])
+                    if tot_kb > 0:
+                        mem_usage_pct = round((mem_current_bytes / (tot_kb * 1024)) * 100.0, 2)
+                    break
 
     stat_details: Dict[str, int] = {}
     if mem_stat_str:

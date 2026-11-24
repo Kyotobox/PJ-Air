@@ -10,21 +10,27 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Intercepción canónica de versión para paridad SSSoT (§43)
 if [ "$1" = "-v" ] || [ "$1" = "--version" ] || [ "$1" = "version" ]; then
-  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; v = json.load(open(p))['version'] if os.path.exists(p) else '5.5.2'; print(f'logix v{v}')"
+  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; v = json.load(open(p))['version'] if os.path.exists(p) else '5.6.0'; print(f'logix v{v}')"
   exit 0
 fi
 
 # Si el comando es takeover, ejecutar la compuerta física anti-rebote antes de proceder (§50)
 if [ "$1" = "takeover" ]; then
   if [ -f "$ROOT_DIR/tools/takeover_gate.dart" ]; then
-    dart run "$ROOT_DIR/tools/takeover_gate.dart" "$@" || exit $?
+    exec dart run "$ROOT_DIR/tools/takeover_gate.dart" "${@:2}"
+  else
+    echo "❌ Error: tools/takeover_gate.dart no encontrado en $ROOT_DIR/tools" >&2
+    exit 1
   fi
 fi
 
 # Si el comando es handover, ejecutar el handover canónico de Pure Dart (§39, §48, §52, §60.2)
 if [ "$1" = "handover" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" ]; then
-    exec dart run "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" "$@"
+    exec dart run "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" "${@:2}"
+  else
+    echo "❌ Error: logix_handover_command.dart no encontrado en $ROOT_DIR/lib/src/commands" >&2
+    exit 1
   fi
 fi
 
@@ -32,6 +38,9 @@ fi
 if [ "$1" = "sync-tasks" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_sync_tasks_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_sync_tasks_command.dart" "${@:2}"
+  else
+    echo "❌ Error: logix_sync_tasks_command.dart no encontrado" >&2
+    exit 1
   fi
 fi
 
@@ -39,6 +48,24 @@ fi
 if [ "$1" = "install-hooks" ] || [ "$1" = "hooks" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_install_hooks_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_install_hooks_command.dart" "${@:2}"
+  else
+    echo "❌ Error: logix_install_hooks_command.dart no encontrado" >&2
+    exit 1
+  fi
+fi
+
+# Si el comando es feature, despachar al query_cli de Feature Graph (§33, §45, §52)
+if [ "$1" = "feature" ]; then
+  export PYTHONPATH="$ROOT_DIR:$PYTHONPATH"
+  shift
+  if [ "$1" = "query" ]; then
+    shift
+  fi
+  if [ -f "$ROOT_DIR/services/feature_graph/query_cli.py" ]; then
+    exec python3 "$ROOT_DIR/services/feature_graph/query_cli.py" "$@"
+  elif [ -f "/home/opc/code/automa/services/feature_graph/query_cli.py" ]; then
+    export PYTHONPATH="/home/opc/code/automa:$PYTHONPATH"
+    exec python3 "/home/opc/code/automa/services/feature_graph/query_cli.py" "$@"
   fi
 fi
 
@@ -46,6 +73,9 @@ fi
 if [ "$1" = "fleet-sweep" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_fleet_sweep_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_fleet_sweep_command.dart" "${@:2}"
+  else
+    echo "❌ Error: logix_fleet_sweep_command.dart no encontrado" >&2
+    exit 1
   fi
 fi
 
@@ -53,6 +83,9 @@ fi
 if [ "$1" = "dora" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_dora_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_dora_command.dart" "${@:2}"
+  else
+    echo "❌ Error: logix_dora_command.dart no encontrado" >&2
+    exit 1
   fi
 fi
 
@@ -60,6 +93,9 @@ fi
 if [ "$1" = "maintenance" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_maintenance_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_maintenance_command.dart" "${@:2}"
+  else
+    echo "❌ Error: logix_maintenance_command.dart no encontrado" >&2
+    exit 1
   fi
 fi
 
@@ -275,6 +311,18 @@ elif [ "$1" = "audit" ]; then
       echo "=== [LOGIX/AUDIT] Escaneo Semántico AST sobre archivos objetivo ==="
       "$AST_BIN" scan --rule "$RULES_FILE" "${TARGETS[@]}" || exit 1
     fi
+  fi
+  # Despacho exclusivo de auditoría al binario nativo compilado
+  if [ -f "$SCRIPT_DIR/logix.native" ]; then
+    exec "$SCRIPT_DIR/logix.native" "$@"
+  elif [ -f /opt/logix-bundle/bin/logix ]; then
+    exec /opt/logix-bundle/bin/logix "$@"
+  elif [ -f "$SCRIPT_DIR/logix.elf" ]; then
+    exec "$SCRIPT_DIR/logix.elf" "$@"
+  elif command -v logix >/dev/null 2>&1; then
+    exec logix "$@"
+  else
+    exit 0
   fi
 fi
 

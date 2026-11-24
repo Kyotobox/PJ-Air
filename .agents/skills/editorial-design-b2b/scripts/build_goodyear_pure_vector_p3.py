@@ -346,7 +346,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Compile Goodyear Agenda Propuesta 3 to Native Pure SVG & 300 DPI PDF.")
     parser.add_argument('--output-dir', default='vault/outputs/goodyear_agendas/propuesta_3_fresh_streamline',
                         help="Target output directory.")
-    parser.add_argument('--artifact-dir', default='/home/opc/.gemini/antigravity-cli/brain/2fddcf2e-6cc7-469e-894f-844a84e53d3c',
+    parser.add_argument('--artifact-dir', default=None,
                         help="Artifact mirror directory.")
     args = parser.parse_args()
 

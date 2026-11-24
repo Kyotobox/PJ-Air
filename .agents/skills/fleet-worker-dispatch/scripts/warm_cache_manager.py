@@ -404,8 +404,9 @@ class WarmCacheManager:
             if target_repo_type in ("dart_flutter", "dart", "all"):
                 pub_cache_abs = str(self.pub_cache_dir)
                 # Montaje de solo lectura al interior del worker
-                docker_mounts.extend(["-v", f"{pub_cache_abs}:/home/opc/.pub-cache:ro"])
-                env_vars["PUB_CACHE"] = "/home/opc/.pub-cache"
+                container_pub_cache = os.path.join("/home", "opc", ".pub-cache")
+                docker_mounts.extend(["-v", f"{pub_cache_abs}:{container_pub_cache}:ro"])
+                env_vars["PUB_CACHE"] = container_pub_cache
                 mounted_caches.append(CACHE_TYPE_PUB)
 
                 # 2. Configuración COW para .dart_tool

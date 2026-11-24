@@ -205,5 +205,148 @@ void main() {
         expect(gate.extractPreviousConversationIdFromRelay(), isNull);
       },
     );
+
+    test(
+      'Happy Path 5 (GAP-2): Poda rotacional acota sealed_conversations a maxEntries',
+      () {
+        final TakeoverReboundGate gate = TakeoverReboundGate(
+          rootPath: tempDir.path,
+        );
+
+        // Insertar 5 conversaciones con límite de 3
+        for (int i = 1; i <= 5; i++) {
+          gate.sealConversation(
+            'conv-id-$i',
+            reason: 'Test compaction $i',
+            maxEntries: 3,
+          );
+        }
+
+        final Set<String> sealed = gate.loadSealedConversations();
+        expect(sealed.length, equals(3));
+        expect(sealed.contains('conv-id-1'), isFalse); // Podado (FIFO)
+        expect(sealed.contains('conv-id-2'), isFalse); // Podado (FIFO)
+        expect(sealed.contains('conv-id-3'), isTrue);
+        expect(sealed.contains('conv-id-4'), isTrue);
+        expect(sealed.contains('conv-id-5'), isTrue);
+      },
+    );
+
+    test(
+      'Happy Path 6 (GAP-1): isOdometerHandoverComplete detecta hwc_complete true',
+      () {
+        final File odoFile = File(
+          p.join(tempDir.path, 'vault', 'runtime', 'session_odometer.json'),
+        );
+        odoFile.parent.createSync(recursive: true);
+        odoFile.writeAsStringSync(
+          jsonEncode(<String, dynamic>{
+            'session_uuid': 'test-uuid-123',
+            'hwc_complete': true,
+            'peak_depth': 12.5,
+          }),
+        );
+
+        final TakeoverReboundGate gate = TakeoverReboundGate(
+          rootPath: tempDir.path,
+        );
+        expect(gate.isOdometerHandoverComplete(), isTrue);
+      },
+    );
+
+    test(
+      'Happy Path 7: isHandoverHaltLocked detecta presencia física del lock',
+      () {
+        final TakeoverReboundGate gate = TakeoverReboundGate(
+          rootPath: tempDir.path,
+        );
+        expect(gate.isHandoverHaltLocked(), isFalse);
+
+        final File lockFile = File(
+          p.join(tempDir.path, 'vault', 'runtime', 'handover_halt.lock'),
+        );
+        lockFile.parent.createSync(recursive: true);
+        lockFile.writeAsStringSync('HALT_ACTIVE');
+
+        expect(gate.isHandoverHaltLocked(), isTrue);
+      },
+    );
+
+    test(
+      'Sad Path 7 (SAD-B): session_odometer.json corrupto o truncado no crashea y retorna null',
+      () {
+        final File odoFile = File(
+          p.join(tempDir.path, 'vault', 'runtime', 'session_odometer.json'),
+        );
+        odoFile.parent.createSync(recursive: true);
+        odoFile.writeAsStringSync('{ "truncated_json": ');
+
+        final TakeoverReboundGate gate = TakeoverReboundGate(
+          rootPath: tempDir.path,
+        );
+        expect(gate.readSessionOdometer(), isNull);
+        expect(gate.isOdometerHandoverComplete(), isFalse);
+      },
+    );
+
+    test(
+      'Sad Path 8: Cold-start inaugural sin archivos de telemetría retorna null sin excepción',
+      () {
+        final TakeoverReboundGate gate = TakeoverReboundGate(
+          rootPath: tempDir.path,
+        );
+        expect(gate.readSessionOdometer(), isNull);
+        expect(gate.isOdometerHandoverComplete(), isFalse);
+        expect(gate.loadSealedConversations(), isEmpty);
+        expect(gate.extractPreviousConversationIdFromRelay(), isNull);
+      },
+    );
+
+    test(
+      'Sad Path 9 (GAP-1, §50): Trampa de reintento en Turn-1 con sesión activa en relay es bloqueada',
+      () {
+        final File relayFile = File(
+          p.join(tempDir.path, '.meta', 'session.relay'),
+        );
+        relayFile.parent.createSync(recursive: true);
+        relayFile.writeAsStringSync(
+          jsonEncode(<String, dynamic>{
+            'previous_conversation_id': 'active-conversation-session',
+            'status': 'HANDOVER_COMPLETED',
+          }),
+        );
+
+        final File odoFile = File(
+          p.join(tempDir.path, 'vault', 'runtime', 'session_odometer.json'),
+        );
+        odoFile.parent.createSync(recursive: true);
+        odoFile.writeAsStringSync(
+          jsonEncode(<String, dynamic>{
+            'session_uuid': 'active-conversation-session',
+            'conversation_uuid': 'active-conversation-session',
+            'hwc_complete': false,
+            'peak_depth': 25.0,
+          }),
+        );
+
+        final TakeoverReboundGate gate = TakeoverReboundGate(
+          rootPath: tempDir.path,
+        );
+
+        expect(
+          () => gate.validateDiskState(
+            'active-conversation-session',
+            throwOnError: true,
+          ),
+          throwsA(
+            isA<TakeoverReboundException>().having(
+              (TakeoverReboundException e) => e.conversationId,
+              'conversationId',
+              equals('active-conversation-session'),
+            ),
+          ),
+        );
+      },
+    );
   });
 }

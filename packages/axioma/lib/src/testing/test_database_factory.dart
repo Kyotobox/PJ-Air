@@ -1,9 +1,12 @@
+// test_database_factory.dart — Fábrica Consolidada de SQLite Real en Scratch con WAL (§4, §39).
+library;
+
 import 'dart:ffi';
 import 'dart:io';
 import 'package:sqlite3/sqlite3.dart';
 
-/// [RULE-04 / RULE-37] Fábrica de bases de datos SQLite efímeras y deterministas
-/// para pruebas unitarias y de integración sin mocks en toda la flota.
+/// Fábrica consolidada de bases de datos SQLite efímeras, deterministas y reales
+/// para pruebas unitarias y de integración sin mocks en toda la flota (§4, §39).
 class TestDatabaseFactory {
   const TestDatabaseFactory();
 
@@ -18,11 +21,9 @@ class TestDatabaseFactory {
           '/home/opc/code/Smart/.dart_tool/lib/libsqlite3.so',
         );
       } catch (_) {
-        // INTENTIONAL: Fallback a libsqlite3.so.0 del sistema si no existe en .dart_tool
         try {
           DynamicLibrary.open('libsqlite3.so.0');
         } catch (_) {
-          // INTENTIONAL: Fallback a libsqlite3.so del sistema si so.0 no está presente
           try {
             DynamicLibrary.open('libsqlite3.so');
           } catch (_) {
@@ -35,9 +36,6 @@ class TestDatabaseFactory {
   }
 
   /// Crea una base de datos SQLite real 100% en memoria RAM (`:memory:`).
-  ///
-  /// Latencia ultra-baja (<10ms), garantizando aislamiento absoluto entre tests
-  /// y eliminando la necesidad de datos simulados o mocks.
   Database createInMemory({
     List<String>? initialDdl,
     bool enableForeignKeys = true,
@@ -47,20 +45,19 @@ class TestDatabaseFactory {
     _configureDatabase(
       db,
       enableForeignKeys: enableForeignKeys,
+      enableWal: false,
       initialDdl: initialDdl,
     );
     return db;
   }
 
-  /// Crea una base de datos SQLite real persistida en un directorio temporal de scratch.
-  ///
-  /// Ideal para tests de integración que requieren verificar persistencia de archivo físico
-  /// o traspaso entre procesos.
+  /// Crea una base de datos SQLite real persistida en un directorio temporal de scratch con WAL (§4, §39).
   Database createScratch({
     required String scratchDir,
     String name = 'test_scratch.db',
     List<String>? initialDdl,
     bool enableForeignKeys = true,
+    bool enableWal = true,
   }) {
     ensureInitialized();
     final Directory dir = Directory(scratchDir);
@@ -80,6 +77,7 @@ class TestDatabaseFactory {
     _configureDatabase(
       db,
       enableForeignKeys: enableForeignKeys,
+      enableWal: enableWal,
       initialDdl: initialDdl,
     );
     return db;
@@ -109,8 +107,18 @@ class TestDatabaseFactory {
   void _configureDatabase(
     Database db, {
     required bool enableForeignKeys,
+    required bool enableWal,
     List<String>? initialDdl,
   }) {
+    if (enableWal) {
+      try {
+        db.execute('PRAGMA journal_mode = WAL;');
+        db.execute('PRAGMA synchronous = NORMAL;');
+      } catch (_) {
+        // INTENTIONAL: Degradación suave si el entorno no admite WAL
+      }
+    }
+
     if (enableForeignKeys) {
       db.execute('PRAGMA foreign_keys = ON;');
     }

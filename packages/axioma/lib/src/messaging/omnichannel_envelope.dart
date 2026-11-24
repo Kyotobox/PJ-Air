@@ -1,6 +1,9 @@
 // 🎯 Canonical Omnichannel Messaging Envelope & Triage DTOs — Pure Dart (§39)
 // Conforme a: §4 Tolerancia cero a mocks, §6 Sad Paths obligatorios, §40 Thin Client.
 
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+
 /// Versión canónica del esquema de sobres omnicanal.
 const String kOmnichannelSchemaVersion = '1.0.0';
 
@@ -162,6 +165,32 @@ class InboundMessage {
   }
 }
 
+/// Estados de ciclo de vida de un despacho saliente.
+enum SendStatus {
+  queued('queued'),
+  pending('pending'),
+  sent('sent'),
+  delivered('delivered'),
+  read('read'),
+  failed('failed');
+
+  final String value;
+  const SendStatus(this.value);
+
+  static SendStatus fromString(String raw) {
+    final String clean = raw.trim().toLowerCase();
+    for (final SendStatus s in SendStatus.values) {
+      if (s.value == clean || s.name.toLowerCase() == clean) return s;
+    }
+    throw ArgumentError.value(
+      raw,
+      'raw',
+      'Estado de envío desconocido: "$raw". Válidos: '
+          '${SendStatus.values.map((SendStatus e) => e.value).join(", ")}',
+    );
+  }
+}
+
 /// Mensaje saliente canónico despachable hacia cualquier canal.
 class OutboundMessage {
   static const String currentSchemaVersion = kOmnichannelSchemaVersion;
@@ -171,6 +200,9 @@ class OutboundMessage {
   final ChannelType channel;
   final String recipientId;
   final String text;
+  String get body => text;
+  final String idempotencyKey;
+  final String? template;
   final String? mediaUrl;
   final String? mediaType;
   final String? replyToId;
@@ -180,12 +212,23 @@ class OutboundMessage {
     this.schemaVersion = defaultSchemaVersion,
     required this.channel,
     required this.recipientId,
-    required this.text,
+    String? text,
+    String? body,
+    String? idempotencyKey,
+    this.template,
     this.mediaUrl,
     this.mediaType,
     this.replyToId,
     this.metadata = const <String, dynamic>{},
-  }) {
+  }) : text = (body != null && body.trim().isNotEmpty) ? body : (text ?? ''),
+       idempotencyKey = (idempotencyKey != null)
+           ? (idempotencyKey.trim().isEmpty ? '' : idempotencyKey.trim())
+           : _generateDefaultIdempotencyKey(
+               channel,
+               recipientId,
+               (body != null && body.trim().isNotEmpty) ? body : (text ?? ''),
+               replyToId,
+             ) {
     if (schemaVersion.trim().isEmpty) {
       throw ArgumentError.value(
         schemaVersion,
@@ -200,11 +243,40 @@ class OutboundMessage {
         'El destinatario no puede estar vacío.',
       );
     }
-    if (text.trim().isEmpty && (mediaUrl == null || mediaUrl!.trim().isEmpty)) {
-      throw ArgumentError(
-        'El mensaje saliente debe contener al menos texto o una URL de medio.',
+    if (this.idempotencyKey.trim().isEmpty) {
+      throw ArgumentError.value(
+        this.idempotencyKey,
+        'idempotencyKey',
+        'La clave de idempotencia no puede estar vacía.',
       );
     }
+    if (template != null && template!.trim().isEmpty) {
+      throw ArgumentError.value(
+        template,
+        'template',
+        'El nombre de la plantilla no puede ser una cadena vacía.',
+      );
+    }
+    if (this.text.trim().isEmpty &&
+        (mediaUrl == null || mediaUrl!.trim().isEmpty) &&
+        (template == null || template!.trim().isEmpty)) {
+      throw ArgumentError(
+        'El mensaje saliente debe contener al menos texto, plantilla o una URL de medio.',
+      );
+    }
+  }
+
+  static String _generateDefaultIdempotencyKey(
+    ChannelType channel,
+    String recipientId,
+    String body,
+    String? replyToId,
+  ) {
+    final String seed =
+        '${channel.value}:$recipientId:$body:${replyToId ?? ""}:${DateTime.now().microsecondsSinceEpoch}';
+    final List<int> bytes = utf8.encode(seed);
+    final Digest digest = sha256.convert(bytes);
+    return 'idemp_${digest.toString().substring(0, 24)}';
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -212,6 +284,9 @@ class OutboundMessage {
     'channel': channel.value,
     'recipient_id': recipientId.trim(),
     'text': text,
+    'body': text,
+    'idempotency_key': idempotencyKey,
+    if (template != null) 'template': template,
     if (mediaUrl != null) 'media_url': mediaUrl,
     if (mediaType != null) 'media_type': mediaType,
     if (replyToId != null) 'reply_to_id': replyToId,
@@ -243,12 +318,26 @@ class OutboundMessage {
         'Campo obligatorio "recipient_id" faltante en OutboundMessage.',
       );
     }
+    if (json.containsKey('idempotency_key')) {
+      final String? rawKey = json['idempotency_key'] as String?;
+      if (rawKey == null || rawKey.trim().isEmpty) {
+        throw ArgumentError(
+          'El campo "idempotency_key" no puede estar vacío en OutboundMessage.',
+        );
+      }
+    }
+
+    final String textVal =
+        json['body'] as String? ?? json['text'] as String? ?? '';
 
     return OutboundMessage(
       schemaVersion: schemaVersion,
       channel: ChannelType.fromString(channelStr),
       recipientId: recipientId,
-      text: json['text'] as String? ?? '',
+      text: textVal,
+      body: textVal,
+      idempotencyKey: json['idempotency_key'] as String?,
+      template: json['template'] as String?,
       mediaUrl: json['media_url'] as String?,
       mediaType: json['media_type'] as String?,
       replyToId: json['reply_to_id'] as String?,
@@ -257,6 +346,231 @@ class OutboundMessage {
           const <String, dynamic>{},
     );
   }
+
+  SendResult createSuccessResult({
+    required String messageId,
+    SendStatus status = SendStatus.sent,
+    DateTime? timestamp,
+    Map<String, dynamic>? metadata,
+  }) {
+    return SendResult(
+      schemaVersion: schemaVersion,
+      messageId: messageId,
+      idempotencyKey: idempotencyKey,
+      channel: channel,
+      recipientId: recipientId,
+      status: status,
+      timestamp: timestamp ?? DateTime.now().toUtc(),
+      metadata: <String, dynamic>{...this.metadata, ...?metadata},
+    );
+  }
+
+  SendResult createFailureResult({
+    required String errorCode,
+    required String errorMessage,
+    String? messageId,
+    DateTime? timestamp,
+    Map<String, dynamic>? metadata,
+  }) {
+    return SendResult(
+      schemaVersion: schemaVersion,
+      messageId: messageId ?? 'failed_${DateTime.now().microsecondsSinceEpoch}',
+      idempotencyKey: idempotencyKey,
+      channel: channel,
+      recipientId: recipientId,
+      status: SendStatus.failed,
+      errorCode: errorCode,
+      errorMessage: errorMessage,
+      timestamp: timestamp ?? DateTime.now().toUtc(),
+      metadata: <String, dynamic>{...this.metadata, ...?metadata},
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OutboundMessage &&
+          runtimeType == other.runtimeType &&
+          schemaVersion == other.schemaVersion &&
+          channel == other.channel &&
+          recipientId == other.recipientId &&
+          text == other.text &&
+          idempotencyKey == other.idempotencyKey &&
+          template == other.template &&
+          mediaUrl == other.mediaUrl &&
+          replyToId == other.replyToId;
+
+  @override
+  int get hashCode => Object.hash(
+    schemaVersion,
+    channel,
+    recipientId,
+    text,
+    idempotencyKey,
+    template,
+    mediaUrl,
+    replyToId,
+  );
+
+  @override
+  String toString() =>
+      'OutboundMessage(channel: ${channel.value}, to: $recipientId, key: $idempotencyKey, text: $text)';
+}
+
+/// Resultado canónico del despacho de un mensaje saliente ([OutboundMessage]).
+class SendResult {
+  static const String currentSchemaVersion = kOmnichannelSchemaVersion;
+  static const String defaultSchemaVersion = currentSchemaVersion;
+
+  final String schemaVersion;
+  final String messageId;
+  final String idempotencyKey;
+  final ChannelType channel;
+  final String? recipientId;
+  final SendStatus status;
+  final DateTime timestamp;
+  final String? errorCode;
+  final String? errorMessage;
+  final Map<String, dynamic> metadata;
+
+  SendResult({
+    this.schemaVersion = defaultSchemaVersion,
+    required this.messageId,
+    required this.idempotencyKey,
+    required this.channel,
+    this.recipientId,
+    required this.status,
+    required this.timestamp,
+    this.errorCode,
+    this.errorMessage,
+    this.metadata = const <String, dynamic>{},
+  }) {
+    if (schemaVersion.trim().isEmpty) {
+      throw ArgumentError.value(
+        schemaVersion,
+        'schemaVersion',
+        'La versión del esquema no puede estar vacía.',
+      );
+    }
+    if (messageId.trim().isEmpty) {
+      throw ArgumentError.value(
+        messageId,
+        'messageId',
+        'El ID del mensaje no puede estar vacío.',
+      );
+    }
+    if (idempotencyKey.trim().isEmpty) {
+      throw ArgumentError.value(
+        idempotencyKey,
+        'idempotencyKey',
+        'La clave de idempotencia no puede estar vacía.',
+      );
+    }
+  }
+
+  bool get isSuccess =>
+      status == SendStatus.sent ||
+      status == SendStatus.delivered ||
+      status == SendStatus.read;
+
+  bool get isFailed => status == SendStatus.failed;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'schema_version': schemaVersion,
+    'message_id': messageId.trim(),
+    'idempotency_key': idempotencyKey.trim(),
+    'channel': channel.value,
+    if (recipientId != null) 'recipient_id': recipientId!.trim(),
+    'status': status.value,
+    'timestamp': timestamp.toIso8601String(),
+    if (errorCode != null) 'error_code': errorCode,
+    if (errorMessage != null) 'error_message': errorMessage,
+    if (metadata.isNotEmpty) 'metadata': metadata,
+  };
+
+  factory SendResult.fromJson(Map<String, dynamic> json) {
+    final String? rawSchema = json['schema_version'] as String?;
+    if (json.containsKey('schema_version') &&
+        (rawSchema == null || rawSchema.trim().isEmpty)) {
+      throw ArgumentError(
+        'El campo "schema_version" no puede estar vacío en SendResult.',
+      );
+    }
+    final String schemaVersion =
+        (rawSchema != null && rawSchema.trim().isNotEmpty)
+        ? rawSchema.trim()
+        : defaultSchemaVersion;
+
+    final String? messageId = json['message_id'] as String?;
+    if (messageId == null || messageId.trim().isEmpty) {
+      throw ArgumentError(
+        'Campo obligatorio "message_id" faltante en SendResult.',
+      );
+    }
+    final String? idempotencyKey = json['idempotency_key'] as String?;
+    if (idempotencyKey == null || idempotencyKey.trim().isEmpty) {
+      throw ArgumentError(
+        'Campo obligatorio "idempotency_key" faltante en SendResult.',
+      );
+    }
+    final String? channelStr = json['channel'] as String?;
+    if (channelStr == null || channelStr.trim().isEmpty) {
+      throw ArgumentError(
+        'Campo obligatorio "channel" faltante en SendResult.',
+      );
+    }
+    final String? statusStr = json['status'] as String?;
+    if (statusStr == null || statusStr.trim().isEmpty) {
+      throw ArgumentError('Campo obligatorio "status" faltante en SendResult.');
+    }
+    final String? tsStr = json['timestamp'] as String?;
+    if (tsStr == null || tsStr.trim().isEmpty) {
+      throw ArgumentError(
+        'Campo obligatorio "timestamp" faltante en SendResult.',
+      );
+    }
+
+    return SendResult(
+      schemaVersion: schemaVersion,
+      messageId: messageId,
+      idempotencyKey: idempotencyKey,
+      channel: ChannelType.fromString(channelStr),
+      recipientId: json['recipient_id'] as String?,
+      status: SendStatus.fromString(statusStr),
+      timestamp: DateTime.parse(tsStr),
+      errorCode: json['error_code'] as String?,
+      errorMessage: json['error_message'] as String?,
+      metadata:
+          (json['metadata'] as Map<String, dynamic>?) ??
+          const <String, dynamic>{},
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SendResult &&
+          runtimeType == other.runtimeType &&
+          schemaVersion == other.schemaVersion &&
+          messageId == other.messageId &&
+          idempotencyKey == other.idempotencyKey &&
+          channel == other.channel &&
+          status == other.status &&
+          timestamp == other.timestamp;
+
+  @override
+  int get hashCode => Object.hash(
+    schemaVersion,
+    messageId,
+    idempotencyKey,
+    channel,
+    status,
+    timestamp,
+  );
+
+  @override
+  String toString() =>
+      'SendResult(id: $messageId, key: $idempotencyKey, channel: ${channel.value}, status: ${status.value})';
 }
 
 /// Confirmación canónica e idempotente de deduplicación de webhooks (§4, §6, §39).

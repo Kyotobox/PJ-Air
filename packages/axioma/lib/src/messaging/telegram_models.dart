@@ -1,4 +1,5 @@
 /// Canonical Pure Dart DTOs for Telegram Bot API messaging (§39).
+library;
 
 /// Telegram text message payload.
 class TelegramTextMessage {

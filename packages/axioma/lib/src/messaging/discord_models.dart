@@ -1,4 +1,5 @@
 /// Canonical Pure Dart DTOs for Discord Webhooks and Bot messaging (§39).
+library;
 
 /// Field inside a Discord Embed object.
 class DiscordEmbedField {

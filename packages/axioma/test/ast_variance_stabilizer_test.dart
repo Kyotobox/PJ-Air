@@ -10,15 +10,15 @@ void main() {
     });
 
     test('Happy Path: Causa Especial clasificada y aprobada para síntesis', () {
-      final sample = AstCandidateSample(
+      final AstCandidateSample sample = const AstCandidateSample(
         snippet: 'catch (_) {}',
         nodeType: 'CatchClause',
         recurrenceCount: 4,
-        affectedFiles: {'lib/src/a.dart', 'lib/src/b.dart'},
+        affectedFiles: <String>{'lib/src/a.dart', 'lib/src/b.dart'},
         violatesInvariant: true,
       );
 
-      final result = stabilizer.evaluate(sample);
+      final VarianceEvaluationResult result = stabilizer.evaluate(sample);
 
       expect(
         result.classification,
@@ -32,15 +32,15 @@ void main() {
     test(
       'Happy Path: Causa Común clasificada y rechazada (ruido sintáctico)',
       () {
-        final sample = const AstCandidateSample(
+        final AstCandidateSample sample = const AstCandidateSample(
           snippet: 'myTempVar',
           nodeType: 'SimpleIdentifier',
           recurrenceCount: 1,
-          affectedFiles: {'lib/src/feature.dart'},
+          affectedFiles: <String>{'lib/src/feature.dart'},
           violatesInvariant: false,
         );
 
-        final result = stabilizer.evaluate(sample);
+        final VarianceEvaluationResult result = stabilizer.evaluate(sample);
 
         expect(
           result.classification,
@@ -55,7 +55,7 @@ void main() {
     test(
       'Happy Path: Filtrado de lista de candidatos reteniendo solo Causa Especial',
       () {
-        final candidates = [
+        final List<AstCandidateSample> candidates = <AstCandidateSample>[
           const AstCandidateSample(
             snippet: 'tempX',
             nodeType: 'SimpleIdentifier',
@@ -66,39 +66,49 @@ void main() {
             snippet: 'as String',
             nodeType: 'AsExpression',
             recurrenceCount: 3,
-            affectedFiles: {'lib/service.dart', 'lib/repo.dart'},
+            affectedFiles: <String>{'lib/service.dart', 'lib/repo.dart'},
             violatesInvariant: true,
           ),
           const AstCandidateSample(
             snippet: 'catch (e) {}',
             nodeType: 'CatchClause',
             recurrenceCount: 5,
-            affectedFiles: {'lib/a.dart', 'lib/b.dart', 'lib/c.dart'},
+            affectedFiles: <String>{'lib/a.dart', 'lib/b.dart', 'lib/c.dart'},
             violatesInvariant: true,
           ),
         ];
 
-        final filtered = stabilizer.filterSpecialCauses(candidates);
+        final List<AstCandidateSample> filtered = stabilizer
+            .filterSpecialCauses(candidates);
 
         expect(filtered.length, equals(2));
-        expect(filtered.any((c) => c.snippet == 'tempX'), isFalse);
-        expect(filtered.any((c) => c.snippet == 'as String'), isTrue);
-        expect(filtered.any((c) => c.snippet == 'catch (e) {}'), isTrue);
+        expect(
+          filtered.any((AstCandidateSample c) => c.snippet == 'tempX'),
+          isFalse,
+        );
+        expect(
+          filtered.any((AstCandidateSample c) => c.snippet == 'as String'),
+          isTrue,
+        );
+        expect(
+          filtered.any((AstCandidateSample c) => c.snippet == 'catch (e) {}'),
+          isTrue,
+        );
       },
     );
 
     test(
       'Sad Path: Caso Indeterminado para muestra ambigua sin invariante rota',
       () {
-        final ambiguous = const AstCandidateSample(
+        final AstCandidateSample ambiguous = const AstCandidateSample(
           snippet: 'calculateSubtotal(items)',
           nodeType: 'MethodInvocation',
           recurrenceCount: 2,
-          affectedFiles: {'lib/calculator.dart'},
+          affectedFiles: <String>{'lib/calculator.dart'},
           violatesInvariant: false,
         );
 
-        final result = stabilizer.evaluate(ambiguous);
+        final VarianceEvaluationResult result = stabilizer.evaluate(ambiguous);
 
         expect(
           result.classification,

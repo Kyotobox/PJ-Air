@@ -8,3 +8,4 @@ export 'src/render/cas_storage_engine.dart';
 export 'src/render/fast_splice_engine.dart';
 export 'src/render/incremental_render_canary.dart';
 export 'src/render/studio_render_contract.dart';
+export 'src/render/creative_render_job_dto.dart';

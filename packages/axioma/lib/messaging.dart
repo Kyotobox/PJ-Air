@@ -6,12 +6,16 @@ library;
 
 // Messaging Models & Channels
 export 'src/messaging/whatsapp_models.dart';
+export 'src/messaging/broadcast_campaign_dto.dart';
+export 'src/messaging/broadcast_campaign_validator.dart';
+export 'src/messaging/whatsapp_offer_dto.dart';
 export 'src/messaging/phone_sanitizer.dart';
 export 'src/messaging/telegram_models.dart';
 export 'src/messaging/discord_models.dart';
 export 'src/messaging/omnichannel_envelope.dart';
 export 'src/messaging/turn0_intent_router.dart';
 export 'src/messaging/intent_signature.dart';
+export 'src/messaging/channel_sender.dart';
 
 // Messaging Adapters
 export 'src/messaging/adapters/whatsapp_envelope_adapter.dart';

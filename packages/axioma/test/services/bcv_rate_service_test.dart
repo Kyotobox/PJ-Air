@@ -4,7 +4,7 @@
 import 'dart:io';
 
 import 'package:test/test.dart';
-import '../../lib/src/services/bcv_rate_service.dart';
+import 'package:axioma/src/services/bcv_rate_service.dart';
 
 void main() {
   group('BcvRateService — Pruebas Físicas de Verdad Atómica (§4, §6, §39, §45)', () {
