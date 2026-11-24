@@ -160,6 +160,7 @@ export 'src/governance/atomic_task_bifurcator.dart';
 export 'src/governance/governance_reconciler.dart';
 export 'src/governance/deferred_trigger.dart';
 export 'src/governance/ontological_scope_gate.dart';
+export 'src/governance/cross_node_policy_gate.dart';
 export 'src/governance/backlog_validator.dart';
 export 'src/governance/validation_codes.dart';
 export 'src/governance/ast_validator.dart';

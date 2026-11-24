@@ -1,6 +1,6 @@
 name: axioma
 description: Núcleo de ADN Axioma (Shared Kernel) - Evolución del Shared Kernel con soporte para Pasaportes Atómicos.
-version: 5.6.0
+version: 5.6.1
 publish_to: 'none'
 
 environment:

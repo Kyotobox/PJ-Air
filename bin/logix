@@ -10,47 +10,39 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Intercepción canónica de versión para paridad SSSoT (§43)
 if [ "$1" = "-v" ] || [ "$1" = "--version" ] || [ "$1" = "version" ]; then
-  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; v = json.load(open(p))['version'] if os.path.exists(p) else '5.6.0'; print(f'logix v{v}')"
+  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; d = json.load(open(p)) if os.path.exists(p) else {}; v = d.get('kernel_version') or d.get('version') or '5.6.1'; print(f'logix v{v}')"
   exit 0
 fi
 
-# Si el comando es takeover, ejecutar la compuerta física anti-rebote antes de proceder (§50)
+# Si el comando es takeover, ejecutar compuerta anti-rebote y solo terminar con exec si el script integra LogixTakeover (§50)
 if [ "$1" = "takeover" ]; then
   if [ -f "$ROOT_DIR/tools/takeover_gate.dart" ]; then
-    exec dart run "$ROOT_DIR/tools/takeover_gate.dart" "${@:2}"
-  else
-    echo "❌ Error: tools/takeover_gate.dart no encontrado en $ROOT_DIR/tools" >&2
-    exit 1
+    if grep -q "LogixTakeover" "$ROOT_DIR/tools/takeover_gate.dart" 2>/dev/null; then
+      exec dart run "$ROOT_DIR/tools/takeover_gate.dart" "${@:2}"
+    else
+      dart run "$ROOT_DIR/tools/takeover_gate.dart" "${@:2}"
+    fi
   fi
 fi
 
-# Si el comando es handover, ejecutar el handover canónico de Pure Dart (§39, §48, §52, §60.2)
+# Si el comando es handover, despachar a Pure Dart si existe en el nodo o delegar en logix.native (§39, §48, §52, §60.2)
 if [ "$1" = "handover" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_handover_command.dart" "${@:2}"
-  else
-    echo "❌ Error: logix_handover_command.dart no encontrado en $ROOT_DIR/lib/src/commands" >&2
-    exit 1
   fi
 fi
 
-# Si el comando es sync-tasks, ejecutar la verificación física de checkmarks (§18, §48, TASK-N130-04)
+# Si el comando es sync-tasks, ejecutar verificación si existe en el nodo o delegar en logix.native (§18, §48)
 if [ "$1" = "sync-tasks" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_sync_tasks_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_sync_tasks_command.dart" "${@:2}"
-  else
-    echo "❌ Error: logix_sync_tasks_command.dart no encontrado" >&2
-    exit 1
   fi
 fi
 
-# Si el comando es install-hooks o hooks, despachar a logix_install_hooks_command (§12.b, §55)
+# Si el comando es install-hooks o hooks, despachar si existe en el nodo o delegar en logix.native (§12.b, §55)
 if [ "$1" = "install-hooks" ] || [ "$1" = "hooks" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_install_hooks_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_install_hooks_command.dart" "${@:2}"
-  else
-    echo "❌ Error: logix_install_hooks_command.dart no encontrado" >&2
-    exit 1
   fi
 fi
 
@@ -66,36 +58,30 @@ if [ "$1" = "feature" ]; then
   elif [ -f "/home/opc/code/automa/services/feature_graph/query_cli.py" ]; then
     export PYTHONPATH="/home/opc/code/automa:$PYTHONPATH"
     exec python3 "/home/opc/code/automa/services/feature_graph/query_cli.py" "$@"
+  else
+    echo "❌ Error: query_cli.py de Feature Graph no encontrado" >&2
+    exit 1
   fi
 fi
 
-# Si el comando es fleet-sweep, despachar a logix_fleet_sweep_command (§55, TASK-N131-04)
+# Si el comando es fleet-sweep, despachar si existe en el nodo o delegar en logix.native (§55)
 if [ "$1" = "fleet-sweep" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_fleet_sweep_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_fleet_sweep_command.dart" "${@:2}"
-  else
-    echo "❌ Error: logix_fleet_sweep_command.dart no encontrado" >&2
-    exit 1
   fi
 fi
 
-# Si el comando es dora, despachar a logix_dora_command (§45, §47, §54, TASK-N143-04)
+# Si el comando es dora, despachar si existe en el nodo o delegar en logix.native (§45, §47, §54)
 if [ "$1" = "dora" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_dora_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_dora_command.dart" "${@:2}"
-  else
-    echo "❌ Error: logix_dora_command.dart no encontrado" >&2
-    exit 1
   fi
 fi
 
-# Si el comando es maintenance, despachar a logix_maintenance_command (§48, §52, TASK-N131-05)
+# Si el comando es maintenance, despachar si existe en el nodo o delegar en logix.native (§48, §52)
 if [ "$1" = "maintenance" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_maintenance_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_maintenance_command.dart" "${@:2}"
-  else
-    echo "❌ Error: logix_maintenance_command.dart no encontrado" >&2
-    exit 1
   fi
 fi
 
@@ -297,6 +283,24 @@ elif [ "$1" = "orphan-ratchet" ] || [ "$1" = "orphans-ratchet" ]; then
     exit 1
   fi
 elif [ "$1" = "audit" ]; then
+  # Intercepción de Auditoría de Convergencia Pass-and-Stop (§53.c)
+  if [ "$2" = "--convergence" ] || [ "$2" = "-c" ]; then
+    if [ -f "$ROOT_DIR/tools/fleet/council_autonomous_trigger.dart" ]; then
+      exec dart run "$ROOT_DIR/tools/fleet/council_autonomous_trigger.dart" --audit-only "${@:3}"
+    fi
+  fi
+  # Intercepción de Auditoría de Alcance Ontológico (ADLC §62)
+  if [ "$2" = "--scope" ] || [ "$2" = "-s" ]; then
+    if [ -f "$ROOT_DIR/lib/src/commands/logix_audit_command.dart" ]; then
+      exec dart run "$ROOT_DIR/lib/src/commands/logix_audit_command.dart" "${@:2}"
+    fi
+  fi
+  # Intercepción de Auditoría de Linter Semántico AST (§46 - CAR CMMI-5)
+  if [ "$2" = "--ast" ]; then
+    if [ -f "$ROOT_DIR/lib/src/commands/logix_audit_command.dart" ]; then
+      exec dart run "$ROOT_DIR/lib/src/commands/logix_audit_command.dart" "${@:2}"
+    fi
+  fi
   # Si vienen argumentos de archivo específicos (ej. archivo dirty con import ilegal)
   TARGETS=()
   for arg in "${@:2}"; do
