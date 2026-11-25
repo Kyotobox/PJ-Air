@@ -55,109 +55,101 @@ describe('Sprint S97A: Auditor RBAC & Frontend Route Isolation (§6, §48)', () 
     });
   });
 
-  describe('Sad Paths: Auditor Route Blocking & Forced Redirects (§6)', () => {
-    it('blocks auditor from /produccion and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/produccion', 'auditor');
+  describe('Sad Paths: Unauthorized Route Blocking & Forced Redirects (§6)', () => {
+    it('blocks client role from /produccion and redirects to home', () => {
+      const req = createMockRequest('/produccion', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
 
-    it('blocks auditor from /produccion/kitchen and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/produccion/kitchen', 'auditor');
+    it('blocks client role from /produccion/kitchen and redirects to home', () => {
+      const req = createMockRequest('/produccion/kitchen', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
 
-    it('blocks auditor from /delivery and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/delivery', 'auditor');
+    it('blocks client role from /delivery and redirects to home', () => {
+      const req = createMockRequest('/delivery', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
 
-    it('blocks auditor from /admin/zones and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/admin/zones', 'auditor');
+    it('blocks client role from /admin/zones and redirects to home', () => {
+      const req = createMockRequest('/admin/zones', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
 
-    it('blocks auditor from /admin/banners and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/admin/banners', 'auditor');
+    it('blocks client role from /admin/banners and redirects to home', () => {
+      const req = createMockRequest('/admin/banners', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
 
-    it('blocks auditor from /admin/settings and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/admin/settings', 'auditor');
+    it('blocks client role from /admin/settings and redirects to home', () => {
+      const req = createMockRequest('/admin/settings', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
 
-    it('blocks auditor from /admin root dashboard and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/admin', 'auditor');
+    it('blocks client role from /admin root dashboard and redirects to home', () => {
+      const req = createMockRequest('/admin', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
 
-    it('blocks auditor from /admin/users and redirects to /admin/orders with notice', () => {
-      const req = createMockRequest('/admin/users', 'auditor');
+    it('blocks client role from /admin/users and redirects to home', () => {
+      const req = createMockRequest('/admin/users', 'client');
       const res = middleware(req);
       const location = res.headers.get('location');
-      expect(location).toContain('/admin/orders');
-      expect(location).toContain('notice=unauthorized_auditor_route');
+      expect(location).toBe('https://jhoanes.com/');
     });
   });
 
   describe('Auditor Navigation Structure & Profile Insignia Specifications', () => {
-    it('defines only the 3 authorized links for auditor role', () => {
+    it('defines the 7 authorized links for auditor role in S102', () => {
       const AUDITOR_LINKS = [
         { name: '📊 Facturación y Ventas', href: '/admin/orders' },
         { name: '📈 Reportes Fiscales', href: '/admin/reports' },
         { name: '🏷️ Libro de Store Credit', href: '/admin/finance' },
+        { name: '👥 Clientes B2B', href: '/admin/clients' },
+        { name: '📦 Productos', href: '/admin/products' },
+        { name: '🍳 Producción', href: '/produccion' },
+        { name: '⚙️ Configuración', href: '/admin/settings' },
       ];
 
-      expect(AUDITOR_LINKS).toHaveLength(3);
-      expect(AUDITOR_LINKS.map(l => l.href)).toEqual(['/admin/orders', '/admin/reports', '/admin/finance']);
+      expect(AUDITOR_LINKS).toHaveLength(7);
+      expect(AUDITOR_LINKS.map(l => l.href)).toContain('/admin/orders');
+      expect(AUDITOR_LINKS.map(l => l.href)).toContain('/admin/clients');
+      expect(AUDITOR_LINKS.map(l => l.href)).toContain('/admin/products');
+      expect(AUDITOR_LINKS.map(l => l.href)).toContain('/produccion');
     });
 
-    it('ensures forbidden modules are completely excluded from auditor navigation', () => {
+    it('ensures forbidden mutative modules are excluded from auditor navigation', () => {
       const AUDITOR_LINKS = [
         { name: '📊 Facturación y Ventas', href: '/admin/orders' },
         { name: '📈 Reportes Fiscales', href: '/admin/reports' },
         { name: '🏷️ Libro de Store Credit', href: '/admin/finance' },
+        { name: '👥 Clientes B2B', href: '/admin/clients' },
+        { name: '📦 Productos', href: '/admin/products' },
+        { name: '🍳 Producción', href: '/produccion' },
+        { name: '⚙️ Configuración', href: '/admin/settings' },
       ];
 
-      const forbiddenHrefs = [
-        '/admin',
-        '/admin/products',
-        '/admin/categories',
+      const strictlyForbiddenHrefs = [
         '/admin/users',
-        '/admin/clients',
-        '/admin/routes',
-        '/admin/feedback',
-        '/admin/banners',
-        '/admin/zones',
         '/admin/dispatch',
-        '/admin/settings',
-        '/produccion',
-        '/delivery',
       ];
 
       const auditorHrefs = AUDITOR_LINKS.map(l => l.href);
-      for (const forbidden of forbiddenHrefs) {
+      for (const forbidden of strictlyForbiddenHrefs) {
         expect(auditorHrefs).not.toContain(forbidden);
       }
     });
