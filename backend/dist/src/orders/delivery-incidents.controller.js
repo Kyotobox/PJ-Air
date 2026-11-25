@@ -34,7 +34,10 @@ let DeliveryIncidentsController = class DeliveryIncidentsController {
         const adminId = req.user?.id || 'admin';
         return this.deliveryIncidentsService.approveIncident(incidentId, adminId);
     }
-    async getIncidentsByUser(userId) {
+    async getIncidentsByUser(userId, req) {
+        if (req?.user) {
+            return this.deliveryIncidentsService.findByUser(userId, req.user);
+        }
         return this.deliveryIncidentsService.findByUser(userId);
     }
     async getIncidentsByOrder(orderId, req) {
@@ -65,10 +68,11 @@ __decorate([
 __decorate([
     (0, common_1.Get)('incidents/user/:userId'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('admin'),
+    (0, roles_decorator_1.Roles)('admin', 'auditor'),
     __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], DeliveryIncidentsController.prototype, "getIncidentsByUser", null);
 __decorate([

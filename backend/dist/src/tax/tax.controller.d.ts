@@ -11,7 +11,16 @@ export declare class TaxController {
         success: boolean;
         user: import("../users/user.entity").User;
     }>;
-    getStatus(userId: string): Promise<{
+    getStatus(userId: string, req?: any): Promise<{
+        userId: any;
+        taxId: string | null;
+        st120Status: string;
+        st120DocumentUrl: string | null;
+        st120PdfUrl: string | null;
+        taxExempt: boolean;
+        taxLegend: string | null;
+    }>;
+    findExemptionByUser(userId: string, req?: any): Promise<{
         userId: string;
         taxId: string | null;
         st120Status: string;
@@ -41,6 +50,7 @@ export declare class TaxController {
         user: import("../users/user.entity").User;
     }>;
     getSt120Pdf(paramUserId: string, req: any, res: any): Promise<void>;
+    downloadCertificate(paramUserId: string, req: any, res: any): Promise<void>;
     backfillAll(): Promise<{
         success: boolean;
         processedCount: number;

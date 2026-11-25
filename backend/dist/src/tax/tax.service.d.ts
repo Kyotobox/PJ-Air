@@ -90,7 +90,31 @@ export declare class TaxService {
         st120_pdf_url: string;
         user: User;
     }>;
-    getSt120Pdf(userId: string): Promise<{
+    findExemptionByUser(userId: string, requestingUser?: {
+        id: string;
+        role?: string;
+    }): Promise<{
+        userId: string;
+        taxId: string | null;
+        st120Status: string;
+        st120DocumentUrl: string | null;
+        st120PdfUrl: string | null;
+        taxExempt: boolean;
+        taxLegend: string | null;
+    }>;
+    downloadCertificate(userId: string, requestingUser?: {
+        id: string;
+        role?: string;
+    }): Promise<{
+        filePath: string;
+        buffer: Buffer;
+        filename: string;
+        mimeType: string;
+    }>;
+    getSt120Pdf(userId: string, requestingUser?: {
+        id: string;
+        role?: string;
+    }): Promise<{
         filePath: string;
         buffer: Buffer;
         filename: string;

@@ -131,7 +131,7 @@
         {
           "id": "TASK-102-04",
           "title": "Eliminación de take:100 en orders.service.ts con soporte de paginación y búsqueda transversal en base de datos",
-          "status": "TODO",
+          "status": "DONE",
           "type": "BACKEND/DATABASE",
           "predicted_files": [
             "backend/src/orders/orders.service.ts",
@@ -154,7 +154,7 @@
         {
           "id": "TASK-102-06",
           "title": "Suite de pruebas unitarias Sad Path (§6) para rol auditor, build limpio y certificación en VPS testing y prod",
-          "status": "TODO",
+          "status": "DONE",
           "type": "TEST/CERTIFICATION",
           "predicted_files": [
             "backend/src/orders/delivery-incidents.service.spec.ts",

@@ -3205,6 +3205,56 @@ describe('OrdersService', () => {
         );
       });
 
+      it('TASK-102-06 (Happy Path): findAll() sin filtros devuelve órdenes completas con todas sus relaciones y ordenadas por created_at DESC', async () => {
+        const fullOrders = [
+          {
+            id: 'ord-task102-complete',
+            invoice_number: 'INV-102-06',
+            items: [
+              {
+                id: 'item-1',
+                product_id: 10,
+                product: { id: 10, name: 'Croissant Mantequilla' },
+              },
+            ],
+            user: {
+              id: 'user-b2b-102',
+              email: 'client102@bakery.com',
+              profile: {
+                id: 'prof-102',
+                company_name: 'Café Del Sol',
+              },
+            },
+            delivery_user: {
+              id: 'driver-102',
+              profile: { id: 'dp-102', full_name: 'Carlos Chofer' },
+            },
+            address: {
+              id: 'addr-102',
+              address: '789 Queens Blvd, NY',
+            },
+            created_at: new Date('2026-11-25T01:00:00Z'),
+          },
+        ];
+        orderRepository.find.mockResolvedValue(fullOrders);
+
+        const result = await service.findAll();
+
+        expect(result).toEqual(fullOrders);
+        expect(orderRepository.find).toHaveBeenCalledWith({
+          relations: [
+            'items',
+            'items.product',
+            'user',
+            'user.profile',
+            'delivery_user',
+            'delivery_user.profile',
+            'address',
+          ],
+          order: { created_at: 'DESC' },
+        });
+      });
+
       it('Sad Path (§6): handles orders with users without business data or null profile without throwing', async () => {
         const mockOrdersWithoutBusinessData = [
           {
@@ -3630,6 +3680,35 @@ describe('OrdersService', () => {
           credit_balance: 5.92,
         }),
       );
+    });
+
+    it('TASK-102-06 (Sad Path §6): Auditor intenta mutar estado/datos de orden ajena en mutateOrderItems -> lanza ForbiddenException (SoD)', async () => {
+      const mockExistingOrder = {
+        id: 'ord-target-sod-1',
+        user_id: 'client-real-owner',
+        status: 'pending',
+        delivery_date: '2026-12-01',
+        items: [],
+      };
+      service.findOne = jest.fn().mockResolvedValue(mockExistingOrder);
+
+      await expect(
+        service.mutateOrderItems(
+          'ord-target-sod-1',
+          { zelle_reference: 'FRAUD-AUDITOR-ATTEMPT' },
+          'auditor-user-id',
+          'auditor',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.mutateOrderItems(
+          'ord-target-sod-1',
+          { zelle_reference: 'FRAUD-AUDITOR-ATTEMPT' },
+          'auditor-user-id',
+          'auditor',
+        ),
+      ).rejects.toThrow('No tienes permiso para modificar esta orden');
     });
   });
 });

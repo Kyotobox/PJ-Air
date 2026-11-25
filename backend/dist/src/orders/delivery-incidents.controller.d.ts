@@ -5,6 +5,6 @@ export declare class DeliveryIncidentsController {
     constructor(deliveryIncidentsService: DeliveryIncidentsService);
     reportIncident(orderId: string, body: CreateDeliveryIncidentDto, req: any): Promise<import("./delivery-incident.entity").DeliveryIncident>;
     approveIncident(incidentId: string, req: any): Promise<import("./delivery-incident.entity").DeliveryIncident>;
-    getIncidentsByUser(userId: string): Promise<import("./delivery-incident.entity").DeliveryIncident[]>;
+    getIncidentsByUser(userId: string, req?: any): Promise<import("./delivery-incident.entity").DeliveryIncident[]>;
     getIncidentsByOrder(orderId: string, req: any): Promise<import("./delivery-incident.entity").DeliveryIncident[]>;
 }

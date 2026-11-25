@@ -13,6 +13,13 @@ import { PaymentsService } from '../payments/payments.service';
 import { CheckPaymentsService } from '../payments/check-payments.service';
 import { AddressValidationService } from '../addresses/address-validation.service';
 import { SystemConfigsService } from '../system-configs/system-configs.service';
+export interface FindAllOrdersParams {
+    search?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+    page?: number;
+}
 export declare class OrdersService {
     private orderRepository;
     private orderItemRepository;
@@ -36,14 +43,14 @@ export declare class OrdersService {
     validateStatusTransition(currentStatus: string, newStatus: string, userRole?: string): string;
     private calculateOrderPricesAndTotal;
     findInRange(startDate: string, endDate: string, userId?: string): Promise<Order[]>;
-    findAll(): Promise<Order[]>;
+    findAll(params?: FindAllOrdersParams): Promise<Order[]>;
     findByUser(userId: string): Promise<Order[]>;
     findOne(id: string): Promise<Order>;
     getNextInvoiceNumber(manager?: any): Promise<string>;
     backfillInvoiceNumbers(): Promise<number>;
     create(userId: string, orderData: any, options?: {
         isAdmin?: boolean;
-    }): Promise<Order>;
+    } | string): Promise<Order>;
     updateStatus(id: string, status: string, userRole?: string): Promise<Order>;
     completeCheckout(id: string, userRole?: string): Promise<Order>;
     assignDelivery(id: string, deliveryUserId: string): Promise<Order>;

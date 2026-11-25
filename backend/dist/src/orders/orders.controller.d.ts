@@ -31,7 +31,7 @@ export declare class OrdersController {
     }>;
     getFrequentProducts(req: any): Promise<any[]>;
     getUserFrequentProducts(userId: string, req: any): Promise<any[]>;
-    findAll(req: any): Promise<import("./order.entity").Order[]>;
+    findAll(req: any, search?: string, status?: string, limit?: string, page?: string, offset?: string): Promise<import("./order.entity").Order[]>;
     findByUser(userId: string, req: any): Promise<import("./order.entity").Order[]>;
     exportIndividual(startDate: string, endDate: string, res: any): Promise<void>;
     exportConsolidated(startDate: string, endDate: string, res: any): Promise<void>;

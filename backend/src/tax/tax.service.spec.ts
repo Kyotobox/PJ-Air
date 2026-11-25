@@ -197,6 +197,20 @@ describe('TaxService', () => {
         service.generateDigitalST120('user-tax-1', { id: 'user-tax-1', role: 'client' }, { signer_name: '' }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('TASK-102-06 (Sad Path §6): Auditor intenta mutar estado generando ST-120 -> lanza ForbiddenException (SoD)', async () => {
+      await expect(
+        service.generateDigitalST120('user-tax-1', { id: 'auditor-1', role: 'auditor' }, {
+          legal_business_name: 'Test Corp',
+          ein: '12-3456789',
+          signer_name: 'Tester',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.generateDigitalST120('user-tax-1', { id: 'auditor-1', role: 'auditor' }),
+      ).rejects.toThrow('Auditors are restricted to read-only access (SoD)');
+    });
   });
 
   describe('signST120', () => {
@@ -258,6 +272,26 @@ describe('TaxService', () => {
       await expect(
         service.signST120('other-user', { signature_text: 'John', signer_name: 'John' }, '127.0.0.1', { id: 'client-1', role: 'client' }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('TASK-102-06 (Sad Path §6): Auditor intenta mutar estado firmando digitalmente ST-120 -> lanza ForbiddenException (SoD)', async () => {
+      await expect(
+        service.signST120(
+          'user-tax-1',
+          { signature_text: 'Auditor Sign', signer_name: 'Auditor' },
+          '127.0.0.1',
+          { id: 'auditor-1', role: 'auditor' },
+        ),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.signST120(
+          'user-tax-1',
+          { signature_text: 'Auditor Sign', signer_name: 'Auditor' },
+          '127.0.0.1',
+          { id: 'auditor-1', role: 'auditor' },
+        ),
+      ).rejects.toThrow('Auditors are restricted to read-only access (SoD)');
     });
   });
 
@@ -340,6 +374,97 @@ describe('TaxService', () => {
         service.uploadST120('victim-user', mockFile, undefined, { id: 'attacker-client', role: 'client' }),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('TASK-102-06 (Sad Path §6): Auditor intenta mutar estado subiendo ST-120 -> lanza ForbiddenException (SoD)', async () => {
+      await expect(
+        service.uploadST120('user-tax-1', mockFile, '12-3456789', { id: 'auditor-1', role: 'auditor' }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.uploadST120('user-tax-1', mockFile, '12-3456789', { id: 'auditor-1', role: 'auditor' }),
+      ).rejects.toThrow('Auditors are restricted to read-only access (SoD)');
+    });
+  });
+
+  describe('findExemptionByUser', () => {
+    it('TASK-102-06 (Happy Path): Auditor consulta estado de exención ST-120 -> 200 OK', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        tax_exempt: true,
+        st120_status: 'APPROVED',
+        st120_pdf_url: '/uploads/st120/cert.pdf',
+        profile: {
+          ...mockUser.profile,
+          tax_exempt: true,
+          st120_status: 'APPROVED',
+          st120_document_url: '/uploads/st120/cert.pdf',
+        },
+      });
+
+      const result = await service.findExemptionByUser('user-tax-1', { id: 'auditor-1', role: 'auditor' });
+
+      expect(result).toBeDefined();
+      expect(result.userId).toBe('user-tax-1');
+      expect(result.taxExempt).toBe(true);
+      expect(result.st120Status).toBe('APPROVED');
+      expect(result.st120PdfUrl).toBe('/uploads/st120/cert.pdf');
+      expect(result.taxLegend).toContain('NYS DTF Form ST-120');
+    });
+
+    it('TASK-102-06 (Sad Path §6): Cliente ajeno intenta consultar estado de exención ST-120 de otro usuario -> lanza ForbiddenException (rejects)', async () => {
+      await expect(
+        service.findExemptionByUser('user-tax-1', { id: 'other-client', role: 'client' }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.findExemptionByUser('user-tax-1', { id: 'other-client', role: 'client' }),
+      ).rejects.toThrow('Cannot access tax exemption status for another user');
+    });
+
+    it('TASK-102-06 (Sad Path §6): Consulta de usuario no existente lanza NotFoundException', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.findExemptionByUser('non-existent', { id: 'auditor-1', role: 'auditor' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('downloadCertificate', () => {
+    it('TASK-102-06 (Happy Path): Auditor consulta y descarga certificado ST-120 de cliente -> 200 OK', async () => {
+      const testPdfPath = path.join(path.resolve(UPLOAD_PATH), 'st120', 'test-cert.pdf');
+      const testDir = path.dirname(testPdfPath);
+      if (!fs.existsSync(testDir)) {
+        fs.mkdirSync(testDir, { recursive: true });
+      }
+      fs.writeFileSync(testPdfPath, Buffer.from('%PDF-1.4 sample cert'));
+
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        st120_pdf_url: '/uploads/st120/test-cert.pdf',
+      });
+
+      const result = await service.downloadCertificate('user-tax-1', { id: 'auditor-1', role: 'auditor' });
+
+      expect(result).toBeDefined();
+      expect(result.filename).toBe('test-cert.pdf');
+      expect(result.mimeType).toBe('application/pdf');
+      expect(Buffer.isBuffer(result.buffer)).toBe(true);
+
+      try {
+        if (fs.existsSync(testPdfPath)) fs.unlinkSync(testPdfPath);
+      } catch (_) {}
+    });
+
+    it('TASK-102-06 (Sad Path §6): Cliente ajeno intenta descargar certificado ST-120 de otro usuario -> lanza ForbiddenException (rejects)', async () => {
+      await expect(
+        service.downloadCertificate('user-tax-1', { id: 'other-client', role: 'client' }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.downloadCertificate('user-tax-1', { id: 'other-client', role: 'client' }),
+      ).rejects.toThrow('Cannot access ST-120 certificate for another user');
+    });
   });
 
   describe('getSt120Pdf', () => {
@@ -397,6 +522,30 @@ describe('TaxService', () => {
         st120_pdf_url: '/uploads/st120/ghost-file-does-not-exist.pdf',
       });
       await expect(service.getSt120Pdf('user-tax-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('TASK-102-06 (Happy Path): Auditor consulta PDF ST-120 de cliente -> 200 OK', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        ...mockUser,
+        st120_pdf_url: '/uploads/st120/test-download.pdf',
+      });
+
+      const result = await service.getSt120Pdf('user-tax-1', { id: 'auditor-1', role: 'auditor' });
+
+      expect(result).toBeDefined();
+      expect(result.filename).toBe('test-download.pdf');
+      expect(result.mimeType).toBe('application/pdf');
+      expect(result.buffer.toString()).toContain('%PDF-1.4');
+    });
+
+    it('TASK-102-06 (Sad Path §6): Cliente ajeno intenta consultar PDF ST-120 de otro usuario -> lanza ForbiddenException (rejects)', async () => {
+      await expect(
+        service.getSt120Pdf('user-tax-1', { id: 'other-client', role: 'client' }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.getSt120Pdf('user-tax-1', { id: 'other-client', role: 'client' }),
+      ).rejects.toThrow('Cannot access ST-120 PDF for another user');
     });
   });
 

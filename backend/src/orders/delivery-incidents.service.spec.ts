@@ -252,6 +252,34 @@ describe('DeliveryIncidentsService', () => {
 
         expect(result).toBeDefined();
       });
+
+      it('TASK-102-06 (Sad Path §6): Auditor intenta mutar estado reportando incidencia -> lanza ForbiddenException (SoD)', async () => {
+        orderRepo.findOne.mockResolvedValue(mockOrder);
+
+        await expect(
+          service.createIncident(
+            {
+              order_id: 'order-uuid-1',
+              product_id: 101,
+              quantity: 1,
+              reason_category: 'missing_kitchen',
+            },
+            { id: 'auditor-uuid', role: 'auditor' },
+          ),
+        ).rejects.toThrow(ForbiddenException);
+
+        await expect(
+          service.createIncident(
+            {
+              order_id: 'order-uuid-1',
+              product_id: 101,
+              quantity: 1,
+              reason_category: 'missing_kitchen',
+            },
+            { id: 'auditor-uuid', role: 'auditor' },
+          ),
+        ).rejects.toThrow('No autorizado para reportar incidencias: el rol auditor es estrictamente de solo lectura (SoD)');
+      });
     });
   });
 
@@ -410,6 +438,33 @@ describe('DeliveryIncidentsService', () => {
       });
     });
 
+    it('TASK-102-06 (Happy Path): Auditor consulta incidencias y ST-120 -> 200 OK', async () => {
+      const incidents = [{ id: 'inc-1', order_id: 'order-1' } as DeliveryIncident];
+      incidentRepo.find.mockResolvedValue(incidents);
+
+      const result = await service.findByOrder('order-1', { id: 'auditor-1', role: 'auditor' });
+      expect(result).toBe(incidents);
+      expect(incidentRepo.find).toHaveBeenCalledWith({
+        where: { order_id: 'order-1' },
+        order: { created_at: 'DESC' },
+      });
+    });
+
+    it('TASK-102-06 (Sad Path §6): Cliente ajeno a la orden intenta consultar incidencias -> lanza ForbiddenException (rejects)', async () => {
+      orderRepo.findOne.mockResolvedValue({
+        id: 'order-1',
+        user_id: 'owner-id',
+      } as any);
+
+      await expect(
+        service.findByOrder('order-1', { id: 'other-user', role: 'client' }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.findByOrder('order-1', { id: 'other-user', role: 'client' }),
+      ).rejects.toThrow('No autorizado para ver incidencias de esta orden');
+    });
+
     it('should throw ForbiddenException if non-admin tries to view incidents of another user order', async () => {
       orderRepo.findOne.mockResolvedValue({
         id: 'order-1',
@@ -433,6 +488,28 @@ describe('DeliveryIncidentsService', () => {
         where: { user_id: 'user-1' },
         order: { created_at: 'DESC' },
       });
+    });
+
+    it('TASK-102-06 (Happy Path): Auditor consulta incidencias asociadas a un cliente -> 200 OK', async () => {
+      const incidents = [{ id: 'inc-1', user_id: 'user-1' } as DeliveryIncident];
+      incidentRepo.find.mockResolvedValue(incidents);
+
+      const result = await service.findByUser('user-1', { id: 'auditor-1', role: 'auditor' });
+      expect(result).toBe(incidents);
+      expect(incidentRepo.find).toHaveBeenCalledWith({
+        where: { user_id: 'user-1' },
+        order: { created_at: 'DESC' },
+      });
+    });
+
+    it('TASK-102-06 (Sad Path §6): Cliente ajeno intenta consultar incidencias de otro usuario -> lanza ForbiddenException (rejects)', async () => {
+      await expect(
+        service.findByUser('user-1', { id: 'other-client-user', role: 'client' }),
+      ).rejects.toThrow(ForbiddenException);
+
+      await expect(
+        service.findByUser('user-1', { id: 'other-client-user', role: 'client' }),
+      ).rejects.toThrow('No autorizado para ver incidencias de este usuario');
     });
   });
 

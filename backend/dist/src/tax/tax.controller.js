@@ -70,9 +70,13 @@ let TaxController = class TaxController {
     async rejectExemption(userId, reason) {
         return this.taxService.rejectExemption(userId, reason);
     }
-    async getStatus(userId) {
+    async getStatus(userId, req) {
+        const targetUserId = userId === 'me' && req?.user ? req.user.id : userId;
+        if (typeof this.taxService.findExemptionByUser === 'function') {
+            return this.taxService.findExemptionByUser(targetUserId, req?.user);
+        }
         const user = await this.taxService['userRepository'].findOne({
-            where: { id: userId },
+            where: { id: targetUserId },
             relations: ['profile'],
         });
         const isExempt = Boolean(user?.tax_exempt || user?.profile?.tax_exempt);
@@ -80,7 +84,7 @@ let TaxController = class TaxController {
         const st120Status = user?.profile?.st120_status || user?.st120_status || 'NONE';
         const st120DocUrl = user?.st120_pdf_url || user?.profile?.st120_document_url || user?.st120_document_url || null;
         return {
-            userId,
+            userId: targetUserId,
             taxId,
             st120Status,
             st120DocumentUrl: st120DocUrl,
@@ -89,11 +93,21 @@ let TaxController = class TaxController {
             taxLegend: isExempt ? this.taxService.getOfficialNysDtfLegend(taxId) : null,
         };
     }
+    async findExemptionByUser(userId, req) {
+        const targetUserId = userId === 'me' && req?.user ? req.user.id : userId;
+        return this.taxService.findExemptionByUser(targetUserId, req?.user);
+    }
     async generateDigitalST120(req, body) {
+        if (req.user?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditors are restricted to read-only access (SoD)');
+        }
         const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
         return this.taxService.generateDigitalST120(targetUserId, req.user, body);
     }
     async signST120(req, body) {
+        if (req.user?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditors are restricted to read-only access (SoD)');
+        }
         const targetUserId = req.user?.role === 'admin' && body?.userId ? body.userId : req.user.id;
         const clientIp = (req.headers && req.headers['x-forwarded-for']) ||
             req.socket?.remoteAddress ||
@@ -102,6 +116,9 @@ let TaxController = class TaxController {
         return this.taxService.signST120(targetUserId, body, String(clientIp), req.user);
     }
     async uploadST120(req, file, bodyUserId, taxId, status) {
+        if (req.user?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditors are restricted to read-only access (SoD)');
+        }
         if (!file) {
             throw new common_1.BadRequestException('No file uploaded or file type not allowed');
         }
@@ -110,10 +127,25 @@ let TaxController = class TaxController {
     }
     async getSt120Pdf(paramUserId, req, res) {
         const targetUserId = paramUserId === 'me' ? req.user.id : paramUserId;
-        if (req.user?.role !== 'admin' && req.user?.id !== targetUserId) {
+        if (req.user?.role !== 'admin' && req.user?.role !== 'auditor' && req.user?.id !== targetUserId) {
             throw new common_1.ForbiddenException('Cannot access ST-120 PDF for another user');
         }
         const pdfData = await this.taxService.getSt120Pdf(targetUserId);
+        res.set({
+            'Content-Type': pdfData.mimeType,
+            'Content-Disposition': `inline; filename="${pdfData.filename}"`,
+            'Content-Length': pdfData.buffer.length,
+        });
+        res.end(pdfData.buffer);
+    }
+    async downloadCertificate(paramUserId, req, res) {
+        const targetUserId = paramUserId === 'me' ? req.user.id : paramUserId;
+        if (req.user?.role !== 'admin' && req.user?.role !== 'auditor' && req.user?.id !== targetUserId) {
+            throw new common_1.ForbiddenException('Cannot access ST-120 PDF for another user');
+        }
+        const pdfData = typeof this.taxService.downloadCertificate === 'function'
+            ? await this.taxService.downloadCertificate(targetUserId, req.user)
+            : await this.taxService.getSt120Pdf(targetUserId, req.user);
         res.set({
             'Content-Type': pdfData.mimeType,
             'Content-Disposition': `inline; filename="${pdfData.filename}"`,
@@ -157,10 +189,20 @@ __decorate([
     (0, common_1.Get)('status/:userId'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], TaxController.prototype, "getStatus", null);
+__decorate([
+    (0, common_1.Get)('exemption/:userId'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], TaxController.prototype, "findExemptionByUser", null);
 __decorate([
     (0, common_1.Post)('generate-digital-st120'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
@@ -232,6 +274,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], TaxController.prototype, "getSt120Pdf", null);
+__decorate([
+    (0, common_1.Get)(':userId/certificate'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], TaxController.prototype, "downloadCertificate", null);
 __decorate([
     (0, common_1.Post)('backfill-all'),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, roles_guard_1.RolesGuard),

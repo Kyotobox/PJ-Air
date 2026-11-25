@@ -23,6 +23,9 @@ export declare class DeliveryIncidentsService {
         id: string;
         role?: string;
     }): Promise<DeliveryIncident[]>;
-    findByUser(userId: string): Promise<DeliveryIncident[]>;
+    findByUser(userId: string, userContext?: {
+        id: string;
+        role?: string;
+    }): Promise<DeliveryIncident[]>;
     findById(id: string): Promise<DeliveryIncident>;
 }

@@ -169,6 +169,9 @@ let TaxService = class TaxService {
         return { success: true, user: updatedUser };
     }
     async generateDigitalST120(userId, requestingUser, dto) {
+        if (requestingUser?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditors are restricted to read-only access (SoD)');
+        }
         if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
             throw new common_1.ForbiddenException('Cannot generate ST-120 for another user');
         }
@@ -279,6 +282,9 @@ let TaxService = class TaxService {
         };
     }
     async signST120(userId, signData, clientIp, requestingUser) {
+        if (requestingUser?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditors are restricted to read-only access (SoD)');
+        }
         if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
             throw new common_1.ForbiddenException('Cannot sign ST-120 for another user');
         }
@@ -371,6 +377,9 @@ let TaxService = class TaxService {
         };
     }
     async uploadST120(userId, file, taxId, requestingUser, status) {
+        if (requestingUser?.role === 'auditor') {
+            throw new common_1.ForbiddenException('Auditors are restricted to read-only access (SoD)');
+        }
         if (requestingUser && requestingUser.role !== 'admin' && requestingUser.id !== userId) {
             throw new common_1.ForbiddenException('Cannot upload ST-120 for another user');
         }
@@ -416,7 +425,50 @@ let TaxService = class TaxService {
             user: updatedUser,
         };
     }
-    async getSt120Pdf(userId) {
+    async findExemptionByUser(userId, requestingUser) {
+        if (requestingUser &&
+            requestingUser.role !== 'admin' &&
+            requestingUser.role !== 'auditor' &&
+            requestingUser.id !== userId) {
+            throw new common_1.ForbiddenException('Cannot access tax exemption status for another user');
+        }
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            relations: ['profile'],
+        });
+        if (!user) {
+            throw new common_1.NotFoundException(`User with ID ${userId} not found`);
+        }
+        const isExempt = Boolean(user?.tax_exempt || user?.profile?.tax_exempt);
+        const taxId = user?.profile?.tax_id || user?.tax_id || null;
+        const st120Status = user?.profile?.st120_status || user?.st120_status || 'NONE';
+        const st120DocUrl = user?.st120_pdf_url || user?.profile?.st120_document_url || user?.st120_document_url || null;
+        return {
+            userId,
+            taxId,
+            st120Status,
+            st120DocumentUrl: st120DocUrl,
+            st120PdfUrl: st120DocUrl,
+            taxExempt: isExempt,
+            taxLegend: isExempt ? this.getOfficialNysDtfLegend(taxId) : null,
+        };
+    }
+    async downloadCertificate(userId, requestingUser) {
+        if (requestingUser &&
+            requestingUser.role !== 'admin' &&
+            requestingUser.role !== 'auditor' &&
+            requestingUser.id !== userId) {
+            throw new common_1.ForbiddenException('Cannot access ST-120 certificate for another user');
+        }
+        return await this.getSt120Pdf(userId, requestingUser);
+    }
+    async getSt120Pdf(userId, requestingUser) {
+        if (requestingUser &&
+            requestingUser.role !== 'admin' &&
+            requestingUser.role !== 'auditor' &&
+            requestingUser.id !== userId) {
+            throw new common_1.ForbiddenException('Cannot access ST-120 PDF for another user');
+        }
         const user = await this.userRepository.findOne({
             where: { id: userId },
             relations: ['profile'],

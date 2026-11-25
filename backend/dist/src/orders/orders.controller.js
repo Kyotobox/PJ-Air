@@ -99,10 +99,23 @@ let OrdersController = class OrdersController {
         }
         return this.ordersService.getFrequentProducts(userId);
     }
-    async findAll(req) {
+    async findAll(req, search, status, limit, page, offset) {
         const role = req.user?.role;
         if (role === 'admin' || role === 'delivery' || role === 'produccion' || role === 'auditor') {
-            return this.ordersService.findAll();
+            const parsedLimit = limit !== undefined && limit !== '' ? Number(limit) : undefined;
+            const parsedPage = page !== undefined && page !== '' ? Number(page) : undefined;
+            const parsedOffset = offset !== undefined && offset !== '' ? Number(offset) : undefined;
+            const hasParams = search !== undefined || status !== undefined || limit !== undefined || page !== undefined || offset !== undefined;
+            if (!hasParams) {
+                return this.ordersService.findAll();
+            }
+            return this.ordersService.findAll({
+                search,
+                status,
+                limit: parsedLimit,
+                page: parsedPage,
+                offset: parsedOffset,
+            });
         }
         return this.ordersService.findByUser(req.user.id);
     }
@@ -352,8 +365,13 @@ __decorate([
     (0, common_1.Get)(),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('search')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('limit')),
+    __param(4, (0, common_1.Query)('page')),
+    __param(5, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "findAll", null);
 __decorate([

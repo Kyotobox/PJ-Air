@@ -395,12 +395,88 @@ let OrdersService = class OrdersService {
         console.log(`findInRange: wider query found ${allMatching.length}, filtered down to ${filtered.length} for ${rawStart} to ${rawEnd}`);
         return filtered;
     }
-    async findAll() {
-        return this.orderRepository.find({
-            relations: ['items', 'items.product', 'user', 'user.profile', 'delivery_user', 'delivery_user.profile', 'address'],
-            order: { created_at: 'DESC' },
-            take: 100
-        });
+    async findAll(params) {
+        if (params) {
+            if (params.limit !== undefined) {
+                if (typeof params.limit !== 'number' || isNaN(params.limit) || !Number.isInteger(params.limit) || params.limit < 1) {
+                    throw new common_1.BadRequestException('El parámetro limit debe ser un número entero mayor o igual a 1');
+                }
+                if (params.limit > 1000) {
+                    throw new common_1.BadRequestException('El parámetro limit no puede exceder 1000');
+                }
+            }
+            if (params.page !== undefined) {
+                if (typeof params.page !== 'number' || isNaN(params.page) || !Number.isInteger(params.page) || params.page < 1) {
+                    throw new common_1.BadRequestException('El parámetro page debe ser un número entero mayor o igual a 1');
+                }
+            }
+            if (params.offset !== undefined) {
+                if (typeof params.offset !== 'number' || isNaN(params.offset) || !Number.isInteger(params.offset) || params.offset < 0) {
+                    throw new common_1.BadRequestException('El parámetro offset debe ser un número entero mayor o igual a 0');
+                }
+            }
+        }
+        const hasSearch = Boolean(params?.search && params.search.trim().length > 0);
+        const hasStatus = Boolean(params?.status && params.status.trim().length > 0 && params.status.trim().toLowerCase() !== 'all');
+        const hasLimit = params?.limit !== undefined;
+        const hasPagination = params?.page !== undefined || params?.offset !== undefined;
+        if (!hasSearch && !hasStatus && !hasLimit && !hasPagination) {
+            return this.orderRepository.find({
+                relations: ['items', 'items.product', 'user', 'user.profile', 'delivery_user', 'delivery_user.profile', 'address'],
+                order: { created_at: 'DESC' },
+            });
+        }
+        const qb = this.orderRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.items', 'items')
+            .leftJoinAndSelect('items.product', 'product')
+            .leftJoinAndSelect('order.user', 'user')
+            .leftJoinAndSelect('user.profile', 'profile')
+            .leftJoinAndSelect('order.delivery_user', 'delivery_user')
+            .leftJoinAndSelect('delivery_user.profile', 'delivery_profile')
+            .leftJoinAndSelect('order.address', 'address');
+        if (hasStatus && params?.status) {
+            const rawStatus = params.status.trim();
+            const normStatus = this.normalizeStatus(rawStatus);
+            qb.andWhere('(LOWER(order.status) = LOWER(:rawStatus) OR LOWER(order.status) = LOWER(:normStatus))', {
+                rawStatus,
+                normStatus,
+            });
+        }
+        if (hasSearch && params?.search) {
+            const term = `%${params.search.trim()}%`;
+            qb.andWhere('(order.id LIKE :term OR ' +
+                'order.invoice_number LIKE :term OR ' +
+                'user.email LIKE :term OR ' +
+                'user.legal_business_name LIKE :term OR ' +
+                'user.dba LIKE :term OR ' +
+                'profile.company_name LIKE :term OR ' +
+                'profile.full_name LIKE :term OR ' +
+                'profile.nickname LIKE :term OR ' +
+                'order.delivery_address_text LIKE :term)', { term });
+        }
+        qb.orderBy('order.created_at', 'DESC');
+        const effectiveLimit = params?.limit;
+        let effectiveOffset = params?.offset;
+        if (effectiveOffset === undefined && params?.page !== undefined && effectiveLimit !== undefined) {
+            effectiveOffset = (params.page - 1) * effectiveLimit;
+        }
+        if (effectiveLimit !== undefined) {
+            if (typeof qb.take === 'function') {
+                qb.take(effectiveLimit);
+            }
+            else if (typeof qb.limit === 'function') {
+                qb.limit(effectiveLimit);
+            }
+        }
+        if (effectiveOffset !== undefined) {
+            if (typeof qb.skip === 'function') {
+                qb.skip(effectiveOffset);
+            }
+            else if (typeof qb.offset === 'function') {
+                qb.offset(effectiveOffset);
+            }
+        }
+        return qb.getMany();
     }
     async findByUser(userId) {
         return this.orderRepository.find({
@@ -482,7 +558,9 @@ let OrdersService = class OrdersService {
         return unassignedOrders.length;
     }
     async create(userId, orderData, options) {
-        const isAdmin = Boolean(options?.isAdmin || orderData.is_admin_actor);
+        const isAdmin = Boolean((typeof options === 'object' && options?.isAdmin) ||
+            options === 'admin' ||
+            orderData.is_admin_actor);
         const rawDeliveryFee = orderData.delivery_fee_charged !== undefined
             ? orderData.delivery_fee_charged
             : orderData.delivery_fee;
@@ -525,7 +603,8 @@ let OrdersService = class OrdersService {
         }
         const isCutoffOverrideRequested = Boolean(orderData.admin_override_cutoff ||
             orderData.override_cutoff ||
-            orderData.bypass_cutoff);
+            orderData.bypass_cutoff ||
+            (isAdmin && Boolean(orderData.admin_created || orderData.manual_entry)));
         if (isCutoffOverrideRequested && !isAdmin) {
             throw new common_1.BadRequestException('Solo administradores pueden eludir la hora de corte de producción');
         }

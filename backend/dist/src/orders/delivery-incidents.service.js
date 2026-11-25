@@ -77,6 +77,9 @@ let DeliveryIncidentsService = DeliveryIncidentsService_1 = class DeliveryIncide
         if (!order) {
             throw new common_1.NotFoundException(`Orden con id ${orderId} no encontrada`);
         }
+        if (userContext?.role === 'auditor') {
+            throw new common_1.ForbiddenException('No autorizado para reportar incidencias: el rol auditor es estrictamente de solo lectura (SoD)');
+        }
         if (userContext && userContext.role !== 'admin' && order.user_id !== userContext.id) {
             throw new common_1.ForbiddenException('No autorizado para reportar incidencias sobre esta orden');
         }
@@ -199,7 +202,7 @@ let DeliveryIncidentsService = DeliveryIncidentsService_1 = class DeliveryIncide
         });
     }
     async findByOrder(orderId, userContext) {
-        if (userContext && userContext.role !== 'admin') {
+        if (userContext && userContext.role !== 'admin' && userContext.role !== 'auditor') {
             const order = await this.orderRepository.findOne({ where: { id: orderId } });
             if (!order) {
                 throw new common_1.NotFoundException(`Orden con id ${orderId} no encontrada`);
@@ -213,7 +216,13 @@ let DeliveryIncidentsService = DeliveryIncidentsService_1 = class DeliveryIncide
             order: { created_at: 'DESC' },
         });
     }
-    async findByUser(userId) {
+    async findByUser(userId, userContext) {
+        if (userContext &&
+            userContext.role !== 'admin' &&
+            userContext.role !== 'auditor' &&
+            userContext.id !== userId) {
+            throw new common_1.ForbiddenException('No autorizado para ver incidencias de este usuario');
+        }
         return await this.incidentRepository.find({
             where: { user_id: userId },
             order: { created_at: 'DESC' },
