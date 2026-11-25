@@ -143,7 +143,7 @@
         {
           "id": "TASK-102-05",
           "title": "Búsqueda omnicanal en /admin/orders con badges de coincidencia inter-pestañas y normalización de fechas",
-          "status": "TODO",
+          "status": "DONE",
           "type": "FRONTEND/ORDERS-UI",
           "predicted_files": [
             "frontend/app/admin/orders/page.tsx"
@@ -230,7 +230,7 @@
       {
         "id": "TASK-102-05",
         "title": "Búsqueda omnicanal en /admin/orders con badges de coincidencia inter-pestañas y normalización de fechas",
-        "status": "TODO",
+        "status": "DONE",
         "type": "FRONTEND/ORDERS-UI",
         "predicted_files": [
           "frontend/app/admin/orders/page.tsx"

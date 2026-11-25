@@ -17,78 +17,18 @@ import PrintKitchenModal from '@/components/modals/PrintKitchenModal';
 import StoreCreditModal from '@/components/modals/StoreCreditModal';
 import { getClientBusinessName, getClientContactName } from '@/lib/client-identity';
 import { useAuth } from '@/context/AuthContext';
-
-interface OrderItem {
-    id: string;
-    quantity: number;
-    price_at_time: number;
-    product_id?: string;
-    product?: { name: string; category?: string; image?: string; };
-}
-
-interface Order {
-    id: string;
-    invoice_number?: string;
-    total: number;
-    status: string;
-    payment_status?: string;
-    payment_method?: string;
-    zelle_reference?: string;
-    zelle_receipt_url?: string;
-    check_number?: string;
-    check_bank?: string;
-    check_amount?: number;
-    check_image_url?: string;
-    check_verified?: boolean;
-    wire_reference?: string;
-    wire_receipt_url?: string;
-    pending_balance?: number;
-    packaging_fee?: number;
-    packaging_discount?: number;
-    refunded_amount?: number;
-    refund_reason?: string;
-    stripe_payment_id?: string;
-    created_at: string;
-    delivery_date?: string;
-    payment_due_date?: string;
-    tax_amount?: number;
-    tax_rate?: number;
-    tax_exempt?: boolean;
-    tax_legend?: string;
-    store_credit_applied?: number;
-    notes?: string;
-    user?: {
-        id?: string;
-        email: string;
-        account_type?: string;
-        tax_exempt?: boolean;
-        st120_status?: string;
-        st120_document_url?: string;
-        legal_business_name?: string;
-        dba?: string;
-        profile?: {
-            full_name?: string;
-            phone?: string;
-            nickname?: string;
-            company_name?: string;
-            tax_exempt?: boolean;
-            st120_status?: string;
-            st120_document_url?: string;
-        };
-    };
-    delivery_user_id?: string;
-    delivery_user?: { id: string; profile?: { full_name?: string; }; };
-    address?: { address: string; city: string; };
-    delivery_type?: string;
-    fee_amount?: number;
-    fee_method?: string;
-    delivery_fee_charged?: number;
-    delivery_fee?: number;
-    global_discount_percentage?: number;
-    global_discount_amount?: number;
-    global_discount_reason?: string;
-    items?: OrderItem[];
-}
+import {
+    type OrderItem,
+    type Order,
+    type OrderViewTab,
+    type CrossTabMatch,
+    normalizeDispatchDate,
+    isPendingVerificationOrder,
+    isDraftOrder,
+    orderMatchesSearch,
+    checkMatchesSearch,
+    computeCrossTabMatches,
+} from '@/lib/orders-omnisearch';
 
 interface DeliveryUser {
     id: string;
@@ -176,8 +116,7 @@ export default function AdminOrdersPage() {
         }
     };
 
-    // Check & Segmented Views State (TASK-87-02)
-    type OrderViewTab = 'orders' | 'pending_verification' | 'drafts' | 'in_hand' | 'deposited' | 'bounced';
+    // Check & Segmented Views State (TASK-87-02 & TASK-102-05)
     const [activeTab, setActiveTab] = useState<OrderViewTab>('orders');
     const [checksReconciliation, setChecksReconciliation] = useState<{
         inHand: any[];
@@ -658,29 +597,12 @@ export default function AdminOrdersPage() {
 
         // TASK-87-02 & TASK-89-03: Filtro por pestaña activa (Verificaciones Pendientes o Borradores)
         if (activeTab === 'pending_verification') {
-            const isPendingVerif = o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification' || o.payment_status === 'pending_wire_verification';
-            if (!isPendingVerif) return false;
+            if (!isPendingVerificationOrder(o)) return false;
         } else if (activeTab === 'drafts') {
-            const isDraft = !o.invoice_number && (normStatus === 'pending' || normStatus === 'cancelled' || normStatus === 'cancelado') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification' && o.payment_status !== 'pending_wire_verification';
-            if (!isDraft) return false;
+            if (!isDraftOrder(o)) return false;
         }
 
-        const q = search.toLowerCase();
-        const matchesSearch = !q ||
-            (o.invoice_number && o.invoice_number.toLowerCase().includes(q)) ||
-            o.id.toLowerCase().includes(q) ||
-            o.user?.email.toLowerCase().includes(q) ||
-            (o.user?.profile?.nickname && o.user.profile.nickname.toLowerCase().includes(q)) ||
-            (o.user?.dba && o.user.dba.toLowerCase().includes(q)) ||
-            (o.user?.legal_business_name && o.user.legal_business_name.toLowerCase().includes(q)) ||
-            (o.user?.profile?.company_name && o.user.profile.company_name.toLowerCase().includes(q)) ||
-            o.user?.profile?.full_name?.toLowerCase().includes(q) ||
-            o.items?.some(item => item.product?.name?.toLowerCase().includes(q)) ||
-            o.items?.some(item => {
-                const catObj = item.product?.category;
-                const catName = typeof catObj === 'object' && catObj ? (catObj as { name: string }).name : (catObj || '');
-                return catName.toLowerCase().includes(q);
-            });
+        const matchesSearch = orderMatchesSearch(o, search);
 
         // TASK-87-02: Normalización exhaustiva de estados de producción y testing
         const matchesStatus = statusFilter === 'Todos' ||
@@ -691,9 +613,10 @@ export default function AdminOrdersPage() {
             (statusFilter === 'Entregado' && (normStatus === 'entregado' || normStatus === 'delivered' || normStatus === 'pedido recibido')) ||
             (statusFilter === 'Cancelado' && (normStatus === 'cancelado' || normStatus === 'cancelled'));
 
-        const orderDispatchDate = o.delivery_date ? (o.delivery_date.includes('T') ? o.delivery_date.split('T')[0] : o.delivery_date.split(' ')[0]) : new Date(o.created_at).toISOString().split('T')[0];
-        const matchesStart = !startDate || orderDispatchDate >= startDate;
-        const matchesEnd = !endDate || orderDispatchDate <= endDate;
+        // TASK-102-05: Normalización de fechas para evitar fallas silenciosas con formatos textuales
+        const orderDispatchDate = normalizeDispatchDate(o.delivery_date, o.created_at);
+        const matchesStart = !startDate || (orderDispatchDate ? orderDispatchDate >= startDate : false);
+        const matchesEnd = !endDate || (orderDispatchDate ? orderDispatchDate <= endDate : false);
         return matchesSearch && matchesStatus && matchesStart && matchesEnd;
     });
 
@@ -705,17 +628,24 @@ export default function AdminOrdersPage() {
         ? checksReconciliation.bounced
         : [];
 
-    const filteredChecks = activeChecks.filter(c => {
-        const q = search.toLowerCase();
-        return (
-            !q ||
-            c.check_number?.toLowerCase().includes(q) ||
-            c.bank_name?.toLowerCase().includes(q) ||
-            c.notes?.toLowerCase().includes(q) ||
-            c.user?.email?.toLowerCase().includes(q) ||
-            c.order_id?.toLowerCase().includes(q)
-        );
+    const filteredChecks = activeChecks.filter(c => checkMatchesSearch(c, search));
+
+    // TASK-102-05: Búsqueda omnicanal e inter-pestañas
+    const otherTabMatches = computeCrossTabMatches({
+        activeTab,
+        search,
+        orders,
+        checksReconciliation
     });
+
+    const tabMatchesCount = {
+        orders: orders.filter(o => orderMatchesSearch(o, search)).length,
+        pending_verification: orders.filter(o => isPendingVerificationOrder(o) && orderMatchesSearch(o, search)).length,
+        drafts: orders.filter(o => isDraftOrder(o) && orderMatchesSearch(o, search)).length,
+        in_hand: (checksReconciliation?.inHand || []).filter(c => checkMatchesSearch(c, search)).length,
+        deposited: (checksReconciliation?.deposited || []).filter(c => checkMatchesSearch(c, search)).length,
+        bounced: (checksReconciliation?.bounced || []).filter(c => checkMatchesSearch(c, search)).length,
+    };
 
     const isModified = (order: Order) => order.notes && order.notes.includes('modificado');
 
@@ -736,7 +666,7 @@ export default function AdminOrdersPage() {
                 year: 'numeric', month: 'long', day: 'numeric'
             });
             const deliveryDateStr = order.delivery_date 
-                ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+                ? (normalizeDispatchDate(order.delivery_date, order.created_at) || order.delivery_date)
                 : 'Standard Dispatch';
             const deliveryAddress = order.delivery_type === 'pickup' 
                 ? 'Store Pick Up (3304 Broadway, Astoria, NY)' 
@@ -917,7 +847,7 @@ table.items-table th:nth-child(3), table.items-table th:nth-child(4) { text-alig
         const clientPhone = order.user?.profile?.phone || '';
         const addr = order.address?.address || '';
         const deliveryDateStr = order.delivery_date 
-            ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0])
+            ? (normalizeDispatchDate(order.delivery_date, order.created_at) || order.delivery_date)
             : 'No programada';
         
         let deliveryLabel = '';
@@ -1069,7 +999,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     </div>
                 )}
 
-                {/* Check Reconciliation & Segmented Orders Tabs (TASK-87-02) */}
+                {/* Check Reconciliation & Segmented Orders Tabs (TASK-87-02 & TASK-102-05) */}
                 <div data-testid="check-reconciliation-tabs" className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl mb-8 overflow-x-auto">
                     <button
                         data-testid="tab-orders"
@@ -1081,6 +1011,17 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <ShoppingBag size={14} /> Todas las Órdenes ({orders.length})
+                        {search.trim() && (
+                            <span
+                                data-testid="tab-badge-orders"
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    tabMatchesCount.orders > 0 ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400'
+                                }`}
+                                title={`${tabMatchesCount.orders} coincidencias en búsqueda`}
+                            >
+                                {tabMatchesCount.orders}
+                            </span>
+                        )}
                     </button>
                     <button
                         data-testid="tab-pending-verifications"
@@ -1092,7 +1033,18 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <Clock size={14} className="text-purple-600" />
-                        Verificaciones Pendientes ({orders.filter(o => o.payment_status === 'pending_zelle_verification' || o.payment_status === 'pending_check_verification' || o.payment_status === 'pending_wire_verification').length})
+                        Verificaciones Pendientes ({orders.filter(o => isPendingVerificationOrder(o)).length})
+                        {search.trim() && (
+                            <span
+                                data-testid="tab-badge-pending_verification"
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    tabMatchesCount.pending_verification > 0 ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-400'
+                                }`}
+                                title={`${tabMatchesCount.pending_verification} coincidencias en búsqueda`}
+                            >
+                                {tabMatchesCount.pending_verification}
+                            </span>
+                        )}
                     </button>
                     <button
                         data-testid="tab-drafts"
@@ -1104,7 +1056,18 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                         }`}
                     >
                         <Receipt size={14} className="text-slate-400" />
-                        Borradores / Abandonados ({orders.filter(o => !o.invoice_number && ((o.status || '').toLowerCase().trim() === 'pending' || (o.status || '').toLowerCase().trim() === 'cancelled') && o.payment_status !== 'pending_zelle_verification' && o.payment_status !== 'pending_check_verification' && o.payment_status !== 'pending_wire_verification').length})
+                        Borradores / Abandonados ({orders.filter(o => isDraftOrder(o)).length})
+                        {search.trim() && (
+                            <span
+                                data-testid="tab-badge-drafts"
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    tabMatchesCount.drafts > 0 ? 'bg-amber-600 text-white' : 'bg-slate-200 text-slate-400'
+                                }`}
+                                title={`${tabMatchesCount.drafts} coincidencias en búsqueda`}
+                            >
+                                {tabMatchesCount.drafts}
+                            </span>
+                        )}
                     </button>
                     <button
                         data-testid="tab-in-hand"
@@ -1117,6 +1080,17 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     >
                         <Clock size={14} className="text-amber-500" />
                         Cheques en Cartera ({checksReconciliation.inHand.length})
+                        {search.trim() && (
+                            <span
+                                data-testid="tab-badge-in_hand"
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    tabMatchesCount.in_hand > 0 ? 'bg-amber-600 text-white' : 'bg-slate-200 text-slate-400'
+                                }`}
+                                title={`${tabMatchesCount.in_hand} coincidencias en búsqueda`}
+                            >
+                                {tabMatchesCount.in_hand}
+                            </span>
+                        )}
                     </button>
                     <button
                         data-testid="tab-deposited"
@@ -1129,6 +1103,17 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     >
                         <CheckCircle2 size={14} className="text-emerald-500" />
                         Cheques Depositados ({checksReconciliation.deposited.length})
+                        {search.trim() && (
+                            <span
+                                data-testid="tab-badge-deposited"
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    tabMatchesCount.deposited > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-400'
+                                }`}
+                                title={`${tabMatchesCount.deposited} coincidencias en búsqueda`}
+                            >
+                                {tabMatchesCount.deposited}
+                            </span>
+                        )}
                     </button>
                     <button
                         data-testid="tab-bounced"
@@ -1141,6 +1126,17 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     >
                         <AlertCircle size={14} className="text-rose-500" />
                         Cheques Rebotados ({checksReconciliation.bounced.length})
+                        {search.trim() && (
+                            <span
+                                data-testid="tab-badge-bounced"
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    tabMatchesCount.bounced > 0 ? 'bg-rose-600 text-white' : 'bg-slate-200 text-slate-400'
+                                }`}
+                                title={`${tabMatchesCount.bounced} coincidencias en búsqueda`}
+                            >
+                                {tabMatchesCount.bounced}
+                            </span>
+                        )}
                     </button>
                 </div>
 
@@ -1169,7 +1165,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                 <p className="font-bold text-xs uppercase tracking-wider">Cargando cheques de conciliación...</p>
                             </div>
                         ) : filteredChecks.length === 0 ? (
-                            <div data-testid="no-checks-found" className="p-16 rounded-3xl bg-white border border-border text-center space-y-2">
+                            <div data-testid="no-checks-found" className="p-16 rounded-3xl bg-white border border-border text-center space-y-4">
                                 <Building2 size={36} className="mx-auto text-slate-300" />
                                 <h4 className="text-sm font-bold text-slate-700">No hay cheques en esta categoría</h4>
                                 <p className="text-xs text-slate-400">
@@ -1179,6 +1175,28 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                         ? 'No hay cheques marcados como depositados.'
                                         : 'No hay cheques rebotados registrados.'}
                                 </p>
+                                {search.trim() && otherTabMatches.length > 0 && (
+                                    <div data-testid="checks-cross-tab-suggestions" className="pt-2 flex flex-col items-center gap-2">
+                                        <p className="text-xs font-bold text-amber-800">
+                                            Se encontraron coincidencias en órdenes:
+                                        </p>
+                                        <div className="flex flex-wrap items-center justify-center gap-2">
+                                            {otherTabMatches.map(match => (
+                                                <button
+                                                    key={`chk-empty-${match.tab}`}
+                                                    data-testid={`chk-empty-switch-tab-${match.tab}`}
+                                                    onClick={() => setActiveTab(match.tab)}
+                                                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                                                >
+                                                    <span>{match.label}</span>
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/20 font-black">
+                                                        {match.count}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="bg-white rounded-[2rem] border border-border overflow-hidden shadow-xl shadow-slate-200/50">
@@ -1331,6 +1349,47 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                     </div>
                 </div>
 
+                {/* TASK-102-05: Banner omnicanal de coincidencias inter-pestañas */}
+                {search.trim() && filteredOrders.length === 0 && otherTabMatches.length > 0 && (
+                    <div
+                        data-testid="cross-tab-matches-banner"
+                        className="p-5 mb-8 bg-amber-50 border-2 border-amber-300 rounded-3xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black shadow-md shadow-amber-500/20 shrink-0">
+                                <Search size={20} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-black text-amber-950 uppercase tracking-wide">
+                                    Sin coincidencias en esta pestaña para "{search}"
+                                </h4>
+                                <p className="text-xs text-amber-800 font-medium">
+                                    Se encontraron coincidencias en otras pestañas. Cambia de pestaña con un clic:
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {otherTabMatches.map(match => (
+                                <button
+                                    key={match.tab}
+                                    data-testid={`switch-tab-${match.tab}`}
+                                    onClick={() => setActiveTab(match.tab)}
+                                    className="px-4 py-2.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                                >
+                                    <span>{match.label}</span>
+                                    <span
+                                        data-testid={`cross-tab-badge-${match.tab}`}
+                                        className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-600 text-white"
+                                    >
+                                        {match.count}
+                                    </span>
+                                    <ChevronRight size={14} className="text-amber-600" />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-4 text-muted-foreground">
                         <Loader2 size={40} className="animate-spin text-primary opacity-60" />
@@ -1438,7 +1497,7 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                                             : 'bg-slate-100 text-slate-500 border-slate-200 italic'
                                                     }`}>
                                                         <Truck size={12} className={order.delivery_date ? 'text-indigo-600' : 'text-slate-400'} />
-                                                        <span>Entrega: {order.delivery_date ? (order.delivery_date.includes('T') ? order.delivery_date.split('T')[0] : order.delivery_date.split(' ')[0]) : 'Sin programar'}</span>
+                                                        <span>Entrega: {order.delivery_date ? (normalizeDispatchDate(order.delivery_date, order.created_at) || order.delivery_date) : 'Sin programar'}</span>
                                                     </span>
                                                 </div>
                                             </div>
@@ -1615,10 +1674,34 @@ ${order.notes ? `<div class="ft" style="margin-top:4px; padding-top:2px"><b>Nota
                                     </tr>
                                 ))}
                                 {filteredOrders.length === 0 && (
-                                    <tr><td colSpan={7} className="px-8 py-24 text-center">
-                                        <div className="flex flex-col items-center gap-3 opacity-30">
-                                            <ShoppingBag size={48} />
-                                            <p className="text-sm font-black uppercase tracking-widest italic">No hay pedidos disponibles</p>
+                                    <tr><td colSpan={7} className="px-8 py-20 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <ShoppingBag size={48} className="opacity-30 text-slate-400" />
+                                            <p className="text-sm font-black uppercase tracking-widest italic text-slate-500">
+                                                No hay pedidos disponibles
+                                            </p>
+                                            {search.trim() && otherTabMatches.length > 0 && (
+                                                <div data-testid="cross-tab-empty-suggestions" className="mt-4 p-4 bg-amber-50/80 border border-amber-200 rounded-2xl max-w-lg">
+                                                    <p className="text-xs font-black uppercase tracking-wide text-amber-900 mb-2">
+                                                        Coincidencias encontradas en otras pestañas:
+                                                    </p>
+                                                    <div className="flex flex-wrap items-center justify-center gap-2">
+                                                        {otherTabMatches.map(match => (
+                                                            <button
+                                                                key={`empty-${match.tab}`}
+                                                                data-testid={`empty-switch-tab-${match.tab}`}
+                                                                onClick={() => setActiveTab(match.tab)}
+                                                                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                                                            >
+                                                                <span>{match.label}</span>
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/20 font-black">
+                                                                    {match.count}
+                                                                </span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </td></tr>
                                 )}
