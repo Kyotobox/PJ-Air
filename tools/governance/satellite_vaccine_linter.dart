@@ -1,182 +1,106 @@
-/// satellite_vaccine_linter.dart — Linter AST de Vacunas y Fronteras de la Tríada (§39, §46, §60.8, §62).
+/// satellite_vaccine_linter.dart — Linter AST de Vacunas de Flota y Fronteras de Dominio (§4, §6, §39, §46, §58, §60.7, §60.8).
 ///
 /// Evalúa el código staged en Git o los archivos locales contra:
-/// 1. Reglas constitucionales de frontera arquitectónica tripartita (§39, §60.8, §62).
-/// 2. Vacunas preventivas registradas en `vault/runtime/preventive_actions.json`.
+/// 1. Reglas universales de frontera arquitectónica y pureza de dominio (SPA §58, Thin Client §40).
+/// 2. Vacunas preventivas específicas de satélite registradas en `vault/runtime/preventive_actions.json`.
 library;
 
-import 'dart:convert';
 import 'dart:io';
-
-class VaccineViolation {
-  final String vaccineId;
-  final String file;
-  final int line;
-  final String snippet;
-  final String mitigation;
-
-  const VaccineViolation({
-    required this.vaccineId,
-    required this.file,
-    required this.line,
-    required this.snippet,
-    required this.mitigation,
-  });
-
-  @override
-  String toString() =>
-      '[VACCINE_VIOLATION] $file:$line [$vaccineId]\n'
-      '  Snippet: "$snippet"\n'
-      '  Mitigación: $mitigation';
-}
-
-/// Escáner modular y determinista para vacunas y fronteras arquitectónicas (§39, §60.8).
-class SatelliteVaccineScanner {
-  final List<Map<String, dynamic>> vaccines;
-  final RegExp suppressionRegex = RegExp(
-    r'//\s*(?:axioma-ignore\s*:\s*([A-Za-z0-9_-]+)|INTENTIONAL\s*:\s*(.+))$',
-  );
-
-  /// Reglas estáticas inmutables de frontera arquitectónica tripartita (§39, §60.8, §62).
-  static const List<Map<String, dynamic>>
-  kBuiltinBoundaryVaccines = <Map<String, dynamic>>[
-    <String, dynamic>{
-      'id': 'VACCINE-TRIPARTITE-BOUNDARY-01',
-      'pattern_regex':
-          r'''import\s+['"]package:(?:automa|ruedas|levita|pj_air|beatme|bluemarket|therank)/''',
-      'mitigation_rule':
-          'Prohibida la importación directa de satélites foráneos en código de Smart. Canalice mediante packages/axioma o Synapse (§60.8, §62).',
-    },
-  ];
-
-  SatelliteVaccineScanner({List<Map<String, dynamic>>? customVaccines})
-    : vaccines = <Map<String, dynamic>>[
-        ...kBuiltinBoundaryVaccines,
-        ...?customVaccines,
-      ];
-
-  /// Escanea un bloque de código y reporta violaciones activas no suprimidas.
-  List<VaccineViolation> scanContent(String content, {String filePath = ''}) {
-    final List<VaccineViolation> violations = <VaccineViolation>[];
-    final List<String> lines = content.split('\n');
-
-    for (final Map<String, dynamic> vac in vaccines) {
-      final String id = (vac['id'] ?? vac['action_id'] ?? '').toString();
-      final String patternStr =
-          (vac['pattern_regex'] ?? vac['defect_pattern'] ?? '').toString();
-      final String mitigation =
-          (vac['mitigation_rule'] ??
-                  vac['synthetic_rule'] ??
-                  'Remediar violación')
-              .toString();
-
-      if (patternStr.isEmpty) continue;
-
-      // La frontera arquitectónica tripartita protege el código de producción (lib/ y tools/) (§39, §60.8)
-      if (id == 'VACCINE-TRIPARTITE-BOUNDARY-01' &&
-          (filePath.contains('test/') || filePath.endsWith('_test.dart'))) {
-        continue;
-      }
-
-      RegExp regex;
-      try {
-        regex = RegExp(patternStr, multiLine: true);
-      } catch (_) {
-        // INTENTIONAL: Regex fallback seguro si el patrón contiene caracteres no escapados (§10).
-        regex = RegExp(RegExp.escape(patternStr), multiLine: true);
-      }
-
-      for (int i = 0; i < lines.length; i++) {
-        final String line = lines[i];
-        if (!regex.hasMatch(line)) continue;
-
-        bool suppressed = suppressionRegex.hasMatch(line);
-        if (!suppressed && i > 0) {
-          suppressed = suppressionRegex.hasMatch(lines[i - 1]);
-        }
-
-        if (!suppressed) {
-          violations.add(
-            VaccineViolation(
-              vaccineId: id,
-              file: filePath,
-              line: i + 1,
-              snippet: line.trim(),
-              mitigation: mitigation,
-            ),
-          );
-        }
-      }
-    }
-    return violations;
-  }
-
-  /// Escanea una lista física de archivos en disco.
-  List<VaccineViolation> scanFiles(List<File> files) {
-    final List<VaccineViolation> allViolations = <VaccineViolation>[];
-    for (final File f in files) {
-      // Las vacunas AST y análisis estático aplican exclusivamente al código Dart (§39, §46)
-      if (!f.path.endsWith('.dart')) continue;
-      try {
-        final String content = f.readAsStringSync();
-        allViolations.addAll(scanContent(content, filePath: f.path));
-      } catch (_) {
-        // INTENTIONAL: Ignora archivos no legibles como binarios o eliminados
-        continue;
-      }
-    }
-    return allViolations;
-  }
-}
+// ignore: implementation_imports
+import 'package:axioma/src/governance/satellite_vaccine_models.dart';
 
 void main(List<String> args) {
-  final List<Map<String, dynamic>> loadedVaccines = <Map<String, dynamic>>[];
-  final File registryFile = File('vault/runtime/preventive_actions.json');
-  if (registryFile.existsSync()) {
-    try {
-      final String raw = registryFile.readAsStringSync().trim();
-      if (raw.isNotEmpty) {
-        final dynamic decoded = jsonDecode(raw);
-        final List<dynamic> rawList = decoded is List<dynamic>
-            ? decoded
-            : (decoded is Map<String, dynamic> &&
-                  decoded['actions'] is List<dynamic>)
-            ? decoded['actions'] as List<dynamic>
-            : <dynamic>[];
+  if (args.contains('--help') || args.contains('-h')) {
+    stdout.writeln(
+      'Uso: dart tools/governance/satellite_vaccine_linter.dart [opciones]',
+    );
+    stdout.writeln(
+      '  --node <nombre>     Nombre o slug del nodo satélite (ej. ruedas, automa, Smart)',
+    );
+    stdout.writeln(
+      '  --root <directorio> Directorio raíz del workspace/satélite a escanear',
+    );
+    stdout.writeln('  --file <archivo>    Escanea un único archivo específico');
+    stdout.writeln(
+      '  --pre-commit        Escanea exclusivamente los archivos staged en git diff --cached',
+    );
+    stdout.writeln(
+      '  --strict            Modo estricto: falla ante advertencias de vacunas',
+    );
+    exit(0);
+  }
 
-        loadedVaccines.addAll(
-          rawList.whereType<Map<String, dynamic>>().where((
-            Map<String, dynamic> v,
-          ) {
-            final String st = (v['status'] as String? ?? 'ACTIVE')
-                .toUpperCase();
-            return st == 'ACTIVE' || st.startsWith('IMMUNIZED');
-          }),
-        );
-      }
-    } catch (_) {
-      // INTENTIONAL: Continuar con vacunas built-in si el archivo no se puede parsear
+  String? targetNode;
+  String workspaceRoot = Directory.current.path;
+  String? singleFile;
+  bool preCommit = false;
+
+  for (int i = 0; i < args.length; i++) {
+    final String arg = args[i];
+    if (arg == '--node' && i + 1 < args.length) {
+      targetNode = args[++i];
+    } else if (arg.startsWith('--node=')) {
+      targetNode = arg.substring(7);
+    } else if (arg == '--root' && i + 1 < args.length) {
+      workspaceRoot = args[++i];
+    } else if (arg.startsWith('--root=')) {
+      workspaceRoot = arg.substring(7);
+    } else if (arg == '--file' && i + 1 < args.length) {
+      singleFile = args[++i];
+    } else if (arg.startsWith('--file=')) {
+      singleFile = arg.substring(7);
+    } else if (arg == '--pre-commit') {
+      preCommit = true;
     }
   }
 
-  final SatelliteVaccineScanner scanner = SatelliteVaccineScanner(
-    customVaccines: loadedVaccines,
-  );
+  // Auto-detección del nodo mediante bunker_profile.json si no fue provisto
+  if (targetNode == null) {
+    final File profileFile = File('$workspaceRoot/bunker_profile.json');
+    if (profileFile.existsSync()) {
+      try {
+        final String content = profileFile.readAsStringSync();
+        final RegExp reg = RegExp(r'"node_name"\s*:\s*"([^"]+)"');
+        final Match? match = reg.firstMatch(content);
+        if (match != null) {
+          targetNode = match.group(1);
+        }
+      } catch (_) {
+        // INTENTIONAL: Fallback si bunker_profile.json no puede parsearse
+      }
+    }
+  }
+
+  final SatelliteVaccineScanner scanner =
+      SatelliteVaccineScanner.loadForWorkspace(
+        workspaceRoot,
+        targetNode: targetNode,
+      );
+
   final List<File> filesToScan = <File>[];
 
-  if (args.contains('--pre-commit')) {
+  if (singleFile != null) {
+    final File f = File(singleFile);
+    if (!f.existsSync()) {
+      stderr.writeln('❌ Error: Archivo objetivo no existe: $singleFile');
+      exit(2);
+    }
+    filesToScan.add(f);
+  } else if (preCommit) {
     try {
       final ProcessResult res = Process.runSync('git', <String>[
         'diff',
         '--cached',
         '--name-only',
-      ]);
+      ], workingDirectory: workspaceRoot);
       if (res.exitCode == 0) {
         final List<String> paths = (res.stdout as String).split('\n');
         for (final String p in paths) {
           final String trimmed = p.trim();
-          if (trimmed.isNotEmpty && File(trimmed).existsSync()) {
-            filesToScan.add(File(trimmed));
+          if (trimmed.isEmpty) continue;
+          final File f = File('$workspaceRoot/$trimmed');
+          if (f.existsSync()) {
+            filesToScan.add(f);
           }
         }
       }
@@ -185,10 +109,10 @@ void main(List<String> args) {
     }
   }
 
-  // Fallback: si no hay archivos staged específicos, escanear lib/, test/, tools/
+  // Fallback: si no hay archivos staged específicos ni archivo único, escanear lib/, test/, tools/
   if (filesToScan.isEmpty) {
-    for (final String dirName in <String>['lib', 'test', 'tools']) {
-      final Directory d = Directory(dirName);
+    for (final String dirName in <String>['lib', 'tools']) {
+      final Directory d = Directory('$workspaceRoot/$dirName');
       if (d.existsSync()) {
         for (final FileSystemEntity entity in d.listSync(recursive: true)) {
           if (entity is File && entity.path.endsWith('.dart')) {
@@ -203,7 +127,10 @@ void main(List<String> args) {
 
   if (violations.isNotEmpty) {
     stderr.writeln(
-      '=== COMISIÓN DE GOBERNANZA: INFRACCIÓN DE VACUNAS AST (§46, §60.8) ===',
+      '=== COMISIÓN DE GOBERNANZA: INFRACCIÓN DE VACUNAS AST (§46, §58, §60.8) ===',
+    );
+    stderr.writeln(
+      'Nodo auditado: ${targetNode ?? "UNIVERSAL"} | Archivos escaneados: ${filesToScan.length}',
     );
     for (final VaccineViolation v in violations) {
       stderr.writeln(v.toString());
@@ -212,7 +139,7 @@ void main(List<String> args) {
   }
 
   stdout.writeln(
-    '[VACCINE-LINTER-OK] Código conforme con las vacunas AST y fronteras tripartitas activas.',
+    '[VACCINE-LINTER-OK] Código conforme con las vacunas AST (${scanner.rules.length} activas en nodo ${targetNode ?? "UNIVERSAL"}).',
   );
   exit(0);
 }

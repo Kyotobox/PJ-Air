@@ -218,3 +218,6 @@ export 'src/protocol/cross_node_exceptions.dart';
 
 // Rules Budget & Modular Governance Gate (Sprint N169, §4, §6, §39, §50, §55)
 export 'src/governance/rules_budget_validator.dart';
+
+// Fleet Mechanical Vaccine Models & Deterministic AST Scanner (Sprint N172, §4, §6, §39, §58, §60.7)
+export 'src/governance/satellite_vaccine_models.dart';
