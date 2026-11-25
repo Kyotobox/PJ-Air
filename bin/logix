@@ -10,7 +10,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Intercepción canónica de versión para paridad SSSoT (§43)
 if [ "$1" = "-v" ] || [ "$1" = "--version" ] || [ "$1" = "version" ]; then
-  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; d = json.load(open(p)) if os.path.exists(p) else {}; v = d.get('kernel_version') or d.get('version') or '5.6.1'; print(f'logix v{v}')"
+  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; d = json.load(open(p)) if os.path.exists(p) else {}; v = d.get('kernel_version') or d.get('version') or '5.6.2'; print(f'logix v{v}')"
   exit 0
 fi
 

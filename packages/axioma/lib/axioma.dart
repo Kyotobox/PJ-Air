@@ -215,3 +215,6 @@ export 'src/validators/fleet_topo.dart';
 export 'src/validators/synapse_health_check.dart';
 export 'src/protocol/uds_connector_transport.dart';
 export 'src/protocol/cross_node_exceptions.dart';
+
+// Rules Budget & Modular Governance Gate (Sprint N169, §4, §6, §39, §50, §55)
+export 'src/governance/rules_budget_validator.dart';
