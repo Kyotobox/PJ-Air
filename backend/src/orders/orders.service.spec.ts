@@ -3233,6 +3233,32 @@ describe('OrdersService', () => {
         expect(result[0].user?.profile).toBeNull();
         expect(result[1].user).toBeNull();
       });
+
+      it('Happy Path (TASK-102-04): uses createQueryBuilder when search term is provided', async () => {
+        const mockFiltered = [{ id: 'ord-search-1', invoice_number: 'INV-9999' }];
+        const qb = orderRepository.createQueryBuilder();
+        qb.getMany = jest.fn().mockResolvedValue(mockFiltered);
+
+        const result = await service.findAll({ search: '9999' });
+        expect(result).toEqual(mockFiltered);
+        expect(orderRepository.createQueryBuilder).toHaveBeenCalledWith('order');
+        expect(qb.andWhere).toHaveBeenCalledWith(
+          expect.stringContaining('order.invoice_number LIKE :term'),
+          expect.objectContaining({ term: '%9999%' })
+        );
+      });
+
+      it('Sad Path (§6 / TASK-102-04): throws BadRequestException when limit is invalid (<1 or >1000 or NaN)', async () => {
+        await expect(service.findAll({ limit: 0 }))
+          .rejects
+          .toThrow(BadRequestException);
+        await expect(service.findAll({ limit: 1005 }))
+          .rejects
+          .toThrow(BadRequestException);
+        await expect(service.findAll({ limit: NaN }))
+          .rejects
+          .toThrow(BadRequestException);
+      });
     });
 
     describe('findOne', () => {
@@ -3469,14 +3495,14 @@ describe('OrdersService', () => {
         {
           id: 'existing-paid-order-1',
           user_id: 'user-blue-fig',
-          delivery_date: '2026-11-25',
+          delivery_date: '2026-12-10',
           status: 'confirmed',
           payment_status: 'paid',
         },
       ]);
 
       const orderData = {
-        deliveryDate: '2026-11-25',
+        deliveryDate: '2026-12-10',
         deliveryType: 'delivery',
         items: [{ productId: 1, quantity: 1 }],
       };
@@ -3501,7 +3527,7 @@ describe('OrdersService', () => {
         {
           id: 'abandoned-draft-order',
           user_id: 'user-blue-fig',
-          delivery_date: '2026-11-25',
+          delivery_date: '2026-12-10',
           status: 'pending',
           payment_status: 'pending',
           is_draft: true,
@@ -3509,7 +3535,7 @@ describe('OrdersService', () => {
       ]);
 
       const orderData = {
-        deliveryDate: '2026-11-25',
+        deliveryDate: '2026-12-10',
         deliveryType: 'delivery',
         items: [{ productId: 1, quantity: 1 }],
       };

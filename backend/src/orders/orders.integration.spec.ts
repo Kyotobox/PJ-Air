@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersService } from './orders.service';
 import { Order } from './order.entity';
@@ -49,6 +50,7 @@ describe('Orders Integration Tests', () => {
     await dataSource.query('DELETE FROM order_items');
     await dataSource.query('DELETE FROM orders');
     await dataSource.query('DELETE FROM products');
+    await dataSource.query('DELETE FROM profiles');
     await dataSource.query('DELETE FROM users');
 
     // Seed test users
@@ -247,5 +249,152 @@ describe('Orders Integration Tests', () => {
     const finalized = await service.completeCheckout(newOrder.id);
     expect(finalized.status).toBe('confirmed');
     expect(finalized.invoice_number).toBe('INV-1601');
+  });
+
+  describe('TASK-102-04: Eliminación de take:100 y Búsqueda Transversal con Paginación', () => {
+    it('Happy path: findAll returns more than 100 orders when database has >100 orders (removal of take:100)', async () => {
+      const orderRepo = dataSource.getRepository(Order);
+      const ordersToSeed = [];
+      for (let i = 1; i <= 105; i++) {
+        ordersToSeed.push({
+          id: `order-mass-${i}`,
+          user_id: 'user-1',
+          total: 10 + i,
+          status: 'confirmed',
+          invoice_number: `INV-${2000 + i}`,
+          created_at: new Date(Date.now() - i * 1000),
+        });
+      }
+      await orderRepo.save(ordersToSeed);
+
+      const allOrders = await service.findAll();
+      expect(allOrders.length).toBe(105);
+      expect(allOrders[0].id).toBe('order-mass-1'); // Ordered by created_at DESC
+    });
+
+    it('Happy path: findAll with search transversally matches client email, ID, and invoice number', async () => {
+      const orderRepo = dataSource.getRepository(Order);
+      const userRepo = dataSource.getRepository(User);
+      const profileRepo = dataSource.getRepository(Profile);
+
+      const specialUser = await userRepo.save({
+        id: 'usr-client-searchable',
+        email: 'special.bakery@domain.com',
+        legal_business_name: 'Special Delights LLC',
+        dba: 'Special Bakery',
+        password: 'hash',
+      });
+
+      await profileRepo.save({
+        id: specialUser.id,
+        company_name: 'Special Bakery Holding',
+        nickname: 'Special Nick',
+        full_name: 'Arthur Baker',
+      });
+
+      await orderRepo.save([
+        {
+          id: 'ord-uuid-target-999',
+          user_id: specialUser.id,
+          total: 80.00,
+          status: 'confirmed',
+          invoice_number: 'INV-7777',
+          delivery_address_text: '456 Grand St, Brooklyn, NY',
+          created_at: new Date(),
+        },
+        {
+          id: 'ord-regular-1',
+          user_id: 'user-1',
+          total: 20.00,
+          status: 'pending',
+          invoice_number: 'INV-1111',
+          created_at: new Date(),
+        },
+      ]);
+
+      // Search by partial invoice number
+      const byInvoice = await service.findAll({ search: '7777' });
+      expect(byInvoice.length).toBe(1);
+      expect(byInvoice[0].id).toBe('ord-uuid-target-999');
+
+      // Search by partial order ID
+      const byId = await service.findAll({ search: 'target-999' });
+      expect(byId.length).toBe(1);
+      expect(byId[0].invoice_number).toBe('INV-7777');
+
+      // Search by client email
+      const byEmail = await service.findAll({ search: 'special.bakery@' });
+      expect(byEmail.length).toBe(1);
+      expect(byEmail[0].id).toBe('ord-uuid-target-999');
+
+      // Search by legal business name
+      const byLegalName = await service.findAll({ search: 'Special Delights' });
+      expect(byLegalName.length).toBe(1);
+      expect(byLegalName[0].id).toBe('ord-uuid-target-999');
+
+      // Search by profile company name
+      const byCompany = await service.findAll({ search: 'Holding' });
+      expect(byCompany.length).toBe(1);
+      expect(byCompany[0].id).toBe('ord-uuid-target-999');
+    });
+
+    it('Happy path: findAll filters by status and supports pagination (limit, page, offset)', async () => {
+      const orderRepo = dataSource.getRepository(Order);
+      const orders = [];
+      for (let i = 1; i <= 15; i++) {
+        orders.push({
+          id: `ord-paged-${i}`,
+          user_id: 'user-1',
+          total: 50,
+          status: i % 2 === 0 ? 'shipped' : 'pending',
+          created_at: new Date(Date.now() - i * 10000),
+        });
+      }
+      await orderRepo.save(orders);
+
+      // Status filter
+      const shipped = await service.findAll({ status: 'shipped' });
+      expect(shipped.every(o => o.status === 'shipped')).toBe(true);
+      expect(shipped.length).toBe(7);
+
+      // Pagination with limit
+      const page1 = await service.findAll({ limit: 5, page: 1 });
+      expect(page1.length).toBe(5);
+
+      const page2 = await service.findAll({ limit: 5, page: 2 });
+      expect(page2.length).toBe(5);
+      expect(page1[0].id).not.toBe(page2[0].id);
+
+      // Pagination with offset
+      const offset5 = await service.findAll({ limit: 5, offset: 5 });
+      expect(offset5.length).toBe(5);
+      expect(offset5[0].id).toBe(page2[0].id);
+    });
+
+    it('Sad path (§6): throws BadRequestException when pagination parameters are invalid', async () => {
+      await expect(service.findAll({ limit: 0 }))
+        .rejects
+        .toThrow(new BadRequestException('El parámetro limit debe ser un número entero mayor o igual a 1'));
+
+      await expect(service.findAll({ limit: -10 }))
+        .rejects
+        .toThrow(new BadRequestException('El parámetro limit debe ser un número entero mayor o igual a 1'));
+
+      await expect(service.findAll({ limit: 1001 }))
+        .rejects
+        .toThrow(new BadRequestException('El parámetro limit no puede exceder 1000'));
+
+      await expect(service.findAll({ page: 0 }))
+        .rejects
+        .toThrow(new BadRequestException('El parámetro page debe ser un número entero mayor o igual a 1'));
+
+      await expect(service.findAll({ offset: -1 }))
+        .rejects
+        .toThrow(new BadRequestException('El parámetro offset debe ser un número entero mayor o igual a 0'));
+
+      await expect(service.findAll({ limit: NaN }))
+        .rejects
+        .toThrow(new BadRequestException('El parámetro limit debe ser un número entero mayor o igual a 1'));
+    });
   });
 });

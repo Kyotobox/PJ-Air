@@ -72,10 +72,33 @@ export class OrdersController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async findAll(@Req() req: any) {
+  async findAll(
+    @Req() req: any,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+    @Query('offset') offset?: string,
+  ) {
     const role = req.user?.role;
     if (role === 'admin' || role === 'delivery' || role === 'produccion' || role === 'auditor') {
-      return this.ordersService.findAll();
+      const parsedLimit = limit !== undefined && limit !== '' ? Number(limit) : undefined;
+      const parsedPage = page !== undefined && page !== '' ? Number(page) : undefined;
+      const parsedOffset = offset !== undefined && offset !== '' ? Number(offset) : undefined;
+
+      const hasParams = search !== undefined || status !== undefined || limit !== undefined || page !== undefined || offset !== undefined;
+
+      if (!hasParams) {
+        return this.ordersService.findAll();
+      }
+
+      return this.ordersService.findAll({
+        search,
+        status,
+        limit: parsedLimit,
+        page: parsedPage,
+        offset: parsedOffset,
+      });
     }
     return this.ordersService.findByUser(req.user.id);
   }

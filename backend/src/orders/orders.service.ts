@@ -16,6 +16,14 @@ import { CheckPaymentsService } from '../payments/check-payments.service';
 import { AddressValidationService } from '../addresses/address-validation.service';
 import { SystemConfigsService } from '../system-configs/system-configs.service';
 
+export interface FindAllOrdersParams {
+  search?: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+  page?: number;
+}
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -460,15 +468,105 @@ export class OrdersService {
   }
 
   /**
-   * S95A: Carga órdenes recientes con contrato normalizado de identidad comercial.
-   * Carga relaciones 'user' (legal_business_name, dba) y 'user.profile' (company_name, nickname, full_name).
+   * TASK-102-04: Carga órdenes con soporte de búsqueda transversal y paginación en base de datos.
+   * Remueve el límite fijo take:100 para garantizar que las 227+ órdenes sean consultables.
+   * Si no se pasan parámetros, retorna la colección completa ordenada por created_at DESC.
    */
-  async findAll(): Promise<Order[]> {
-    return this.orderRepository.find({ 
-      relations: ['items', 'items.product', 'user', 'user.profile', 'delivery_user', 'delivery_user.profile', 'address'],
-      order: { created_at: 'DESC' },
-      take: 100
-    });
+  async findAll(params?: FindAllOrdersParams): Promise<Order[]> {
+    if (params) {
+      if (params.limit !== undefined) {
+        if (typeof params.limit !== 'number' || isNaN(params.limit) || !Number.isInteger(params.limit) || params.limit < 1) {
+          throw new BadRequestException('El parámetro limit debe ser un número entero mayor o igual a 1');
+        }
+        if (params.limit > 1000) {
+          throw new BadRequestException('El parámetro limit no puede exceder 1000');
+        }
+      }
+      if (params.page !== undefined) {
+        if (typeof params.page !== 'number' || isNaN(params.page) || !Number.isInteger(params.page) || params.page < 1) {
+          throw new BadRequestException('El parámetro page debe ser un número entero mayor o igual a 1');
+        }
+      }
+      if (params.offset !== undefined) {
+        if (typeof params.offset !== 'number' || isNaN(params.offset) || !Number.isInteger(params.offset) || params.offset < 0) {
+          throw new BadRequestException('El parámetro offset debe ser un número entero mayor o igual a 0');
+        }
+      }
+    }
+
+    const hasSearch = Boolean(params?.search && params.search.trim().length > 0);
+    const hasStatus = Boolean(params?.status && params.status.trim().length > 0 && params.status.trim().toLowerCase() !== 'all');
+    const hasLimit = params?.limit !== undefined;
+    const hasPagination = params?.page !== undefined || params?.offset !== undefined;
+
+    // Si no hay filtros de búsqueda, estado ni paginación, retornar la colección completa ordenada por created_at DESC
+    // Erradicación definitiva de take: 100 (§TASK-102-04)
+    if (!hasSearch && !hasStatus && !hasLimit && !hasPagination) {
+      return this.orderRepository.find({ 
+        relations: ['items', 'items.product', 'user', 'user.profile', 'delivery_user', 'delivery_user.profile', 'address'],
+        order: { created_at: 'DESC' },
+      });
+    }
+
+    const qb = this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .leftJoinAndSelect('order.delivery_user', 'delivery_user')
+      .leftJoinAndSelect('delivery_user.profile', 'delivery_profile')
+      .leftJoinAndSelect('order.address', 'address');
+
+    if (hasStatus && params?.status) {
+      const rawStatus = params.status.trim();
+      const normStatus = this.normalizeStatus(rawStatus);
+      qb.andWhere('(LOWER(order.status) = LOWER(:rawStatus) OR LOWER(order.status) = LOWER(:normStatus))', {
+        rawStatus,
+        normStatus,
+      });
+    }
+
+    if (hasSearch && params?.search) {
+      const term = `%${params.search.trim()}%`;
+      qb.andWhere(
+        '(order.id LIKE :term OR ' +
+        'order.invoice_number LIKE :term OR ' +
+        'user.email LIKE :term OR ' +
+        'user.legal_business_name LIKE :term OR ' +
+        'user.dba LIKE :term OR ' +
+        'profile.company_name LIKE :term OR ' +
+        'profile.full_name LIKE :term OR ' +
+        'profile.nickname LIKE :term OR ' +
+        'order.delivery_address_text LIKE :term)',
+        { term },
+      );
+    }
+
+    qb.orderBy('order.created_at', 'DESC');
+
+    const effectiveLimit = params?.limit;
+    let effectiveOffset = params?.offset;
+    if (effectiveOffset === undefined && params?.page !== undefined && effectiveLimit !== undefined) {
+      effectiveOffset = (params.page - 1) * effectiveLimit;
+    }
+
+    if (effectiveLimit !== undefined) {
+      if (typeof qb.take === 'function') {
+        qb.take(effectiveLimit);
+      } else if (typeof (qb as any).limit === 'function') {
+        (qb as any).limit(effectiveLimit);
+      }
+    }
+
+    if (effectiveOffset !== undefined) {
+      if (typeof qb.skip === 'function') {
+        qb.skip(effectiveOffset);
+      } else if (typeof (qb as any).offset === 'function') {
+        (qb as any).offset(effectiveOffset);
+      }
+    }
+
+    return qb.getMany();
   }
 
   async findByUser(userId: string): Promise<Order[]> {
@@ -569,8 +667,12 @@ export class OrdersService {
     return unassignedOrders.length;
   }
 
-  async create(userId: string, orderData: any, options?: { isAdmin?: boolean }): Promise<Order> {
-    const isAdmin = Boolean(options?.isAdmin || (orderData as any).is_admin_actor);
+  async create(userId: string, orderData: any, options?: { isAdmin?: boolean } | string): Promise<Order> {
+    const isAdmin = Boolean(
+      (typeof options === 'object' && options?.isAdmin) ||
+      options === 'admin' ||
+      (orderData as any).is_admin_actor
+    );
 
     // TASK-83-04: Boundary Validation for Delivery Fee (§6)
     // TASK-83-04 & TASK-90-02: Boundary Validation for Delivery Fee (desacoplado para rutas de larga distancia)
@@ -629,7 +731,8 @@ export class OrdersService {
     const isCutoffOverrideRequested = Boolean(
       (orderData as any).admin_override_cutoff || 
       (orderData as any).override_cutoff || 
-      (orderData as any).bypass_cutoff
+      (orderData as any).bypass_cutoff ||
+      (isAdmin && Boolean((orderData as any).admin_created || (orderData as any).manual_entry))
     );
     if (isCutoffOverrideRequested && !isAdmin) {
       throw new BadRequestException('Solo administradores pueden eludir la hora de corte de producción');

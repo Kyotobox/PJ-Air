@@ -433,4 +433,52 @@ describe('OrdersController', () => {
         .rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('findAll (TASK-102-04)', () => {
+    it('Happy path: calls service.findAll() without arguments when query params are absent', async () => {
+      mockOrdersService.findAll.mockResolvedValue([{ id: 'ord-1' }, { id: 'ord-2' }]);
+      const req = { user: { id: 'admin-1', role: 'admin' } };
+
+      const result = await controller.findAll(req as any);
+
+      expect(mockOrdersService.findAll).toHaveBeenCalledWith();
+      expect(result).toHaveLength(2);
+    });
+
+    it('Happy path: calls service.findAll with parsed search, status, and pagination params', async () => {
+      mockOrdersService.findAll.mockResolvedValue([{ id: 'ord-filtered' }]);
+      const req = { user: { id: 'auditor-1', role: 'auditor' } };
+
+      const result = await controller.findAll(req as any, 'INV-1600', 'confirmed', '10', '2', '10');
+
+      expect(mockOrdersService.findAll).toHaveBeenCalledWith({
+        search: 'INV-1600',
+        status: 'confirmed',
+        limit: 10,
+        page: 2,
+        offset: 10,
+      });
+      expect(result).toEqual([{ id: 'ord-filtered' }]);
+    });
+
+    it('Happy path: routes to findByUser when role is client', async () => {
+      mockOrdersService.findByUser.mockResolvedValue([{ id: 'ord-client-own' }]);
+      const req = { user: { id: 'client-999', role: 'client' } };
+
+      const result = await controller.findAll(req as any, 'INV-1600');
+
+      expect(mockOrdersService.findByUser).toHaveBeenCalledWith('client-999');
+      expect(mockOrdersService.findAll).not.toHaveBeenCalled();
+      expect(result).toEqual([{ id: 'ord-client-own' }]);
+    });
+
+    it('Sad path (§6): propagates BadRequestException when limit is invalid', async () => {
+      mockOrdersService.findAll.mockRejectedValue(new BadRequestException('El parámetro limit debe ser un número entero mayor o igual a 1'));
+      const req = { user: { id: 'admin-1', role: 'admin' } };
+
+      await expect(controller.findAll(req as any, undefined, undefined, '-5'))
+        .rejects
+        .toThrow(BadRequestException);
+    });
+  });
 });
