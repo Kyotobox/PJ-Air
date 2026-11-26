@@ -71,6 +71,90 @@ class CanonicalBranchMismatchException extends BunkerProfileException {
       'CanonicalBranchMismatchException: $message [bunker: $bunkerId, rama_actual: "$currentBranch", rama_canonica: "$canonicalBranch"]';
 }
 
+/// Excepción arrojada ante violaciones al contrato local-first y sello de no-replicación (§45).
+class LocalFirstNonReplicationException extends BunkerProfileException {
+  final String seal;
+  final String attemptedOperation;
+
+  const LocalFirstNonReplicationException(
+    super.message, {
+    required this.seal,
+    required this.attemptedOperation,
+    super.bunkerId,
+  });
+
+  @override
+  String toString() =>
+      'LocalFirstNonReplicationException: $message [sello: "$seal", operacion: "$attemptedOperation", bunker: "$bunkerId"]';
+}
+
+/// Contrato formal Local-First con Sello de No-Replicación (§45).
+class LocalFirstContract {
+  final bool enabled;
+  final String doctrine;
+  final String replicationPolicy;
+  final String nonReplicationSeal;
+  final bool offlineWalSovereignty;
+  final String partitionTolerance;
+
+  const LocalFirstContract({
+    this.enabled = true,
+    this.doctrine = '§45',
+    this.replicationPolicy = 'local_only',
+    required this.nonReplicationSeal,
+    this.offlineWalSovereignty = true,
+    this.partitionTolerance = 'fail_closed_offline_sovereignty',
+  });
+
+  factory LocalFirstContract.fromJson(Map<String, dynamic> json) {
+    final dynamic rawSeal = json['non_replication_seal'];
+    if (rawSeal == null || rawSeal.toString().trim().isEmpty) {
+      throw const BunkerProfileParseException(
+        'El contrato local-first exige el campo mandatorio "non_replication_seal" (§45).',
+      );
+    }
+    final String seal = rawSeal.toString().trim();
+    if (!seal.startsWith('SEAL-')) {
+      throw const BunkerProfileParseException(
+        'El sello de no-replicación debe iniciar con el prefijo "SEAL-" (§45).',
+      );
+    }
+
+    return LocalFirstContract(
+      enabled: json['enabled'] as bool? ?? true,
+      doctrine: (json['doctrine'] as String?)?.trim() ?? '§45',
+      replicationPolicy:
+          (json['replication_policy'] as String?)?.trim() ?? 'local_only',
+      nonReplicationSeal: seal,
+      offlineWalSovereignty: json['offline_wal_sovereignty'] as bool? ?? true,
+      partitionTolerance:
+          (json['partition_tolerance'] as String?)?.trim() ??
+          'fail_closed_offline_sovereignty',
+    );
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'enabled': enabled,
+    'doctrine': doctrine,
+    'replication_policy': replicationPolicy,
+    'non_replication_seal': nonReplicationSeal,
+    'offline_wal_sovereignty': offlineWalSovereignty,
+    'partition_tolerance': partitionTolerance,
+  };
+
+  /// Valida que la operación respete el sello de no-replicación (§45).
+  void assertCanReplicate(String operation, {String? bunkerId}) {
+    if (enabled && replicationPolicy == 'local_only') {
+      throw LocalFirstNonReplicationException(
+        'Replicación remota bloqueada por Contrato Local-First Soberano (§45).',
+        seal: nonReplicationSeal,
+        attemptedOperation: operation,
+        bunkerId: bunkerId,
+      );
+    }
+  }
+}
+
 /// Resultado de la verificación de rama canónica.
 class CanonicalBranchCheckResult {
   final bool isMatch;
@@ -121,6 +205,7 @@ class BunkerProfile {
   final Set<String> deniedSkills;
   final Map<String, dynamic>? satelliteProtocol;
   final String? binarySignature;
+  final LocalFirstContract? localFirstContract;
   final Map<String, dynamic> rawConfig;
 
   const BunkerProfile({
@@ -140,6 +225,7 @@ class BunkerProfile {
     this.deniedSkills = const <String>{},
     this.satelliteProtocol,
     this.binarySignature,
+    this.localFirstContract,
     this.rawConfig = const <String, dynamic>{},
   });
 
@@ -317,6 +403,15 @@ class BunkerProfile {
         ?.toString()
         .trim();
 
+    final LocalFirstContract? localFirstContract =
+        config['local_first_contract'] is Map
+        ? LocalFirstContract.fromJson(
+            Map<String, dynamic>.from(
+              config['local_first_contract'] as Map<dynamic, dynamic>,
+            ),
+          )
+        : null;
+
     return BunkerProfile(
       schemaVersion:
           config['schema_version']?.toString() ?? currentSchemaVersion,
@@ -335,9 +430,16 @@ class BunkerProfile {
       deniedSkills: deniedSkills,
       satelliteProtocol: satelliteProtocol,
       binarySignature: binarySignature,
+      localFirstContract: localFirstContract,
       rawConfig: config,
     );
   }
+
+  /// Certifica si el búnker posee contrato local-first activo y blindado con sello (§45).
+  bool get hasLocalFirstSovereignty =>
+      localFirstContract != null &&
+      localFirstContract!.enabled &&
+      localFirstContract!.nonReplicationSeal.isNotEmpty;
 
   /// Serializa a JSON preservando la estructura canónica SemVer 2.0.
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -357,6 +459,8 @@ class BunkerProfile {
     if (deniedSkills.isNotEmpty) 'denied_skills': deniedSkills.toList(),
     if (satelliteProtocol != null) 'satellite_protocol': satelliteProtocol,
     if (binarySignature != null) 'binary_signature': binarySignature,
+    if (localFirstContract != null)
+      'local_first_contract': localFirstContract!.toJson(),
   };
 
   /// Detecta la rama activa de Git en el workspace.

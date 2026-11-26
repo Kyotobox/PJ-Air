@@ -136,6 +136,8 @@ export 'src/messaging/phone_sanitizer.dart';
 export 'src/messaging/telegram_models.dart';
 export 'src/messaging/discord_models.dart';
 export 'src/messaging/omnichannel_envelope.dart';
+export 'src/messaging/watchdog_heartbeat_dto.dart';
+export 'src/messaging/lead_captured_event.dart';
 export 'src/messaging/turn0_intent_router.dart';
 export 'src/messaging/intent_signature.dart';
 export 'src/messaging/adapters/whatsapp_envelope_adapter.dart';
@@ -152,6 +154,8 @@ export 'src/security/prompt_sanitizer.dart';
 export 'src/platform_guard.dart';
 
 // Governance & Anti-Rebound Lifecycle Gate (§4, §6, §39, §50, §62)
+export 'src/governance/bunker_profile.dart'
+    show LocalFirstContract, LocalFirstNonReplicationException;
 export 'src/governance/sprint_sequence_validator.dart';
 export 'src/governance/takeover_rebound_gate.dart';
 export 'src/governance/upstream_pointer.dart';
@@ -203,6 +207,7 @@ export 'council.dart';
 export 'src/contracts/creative_studio_contracts.dart';
 export 'src/arbitrage/arbitrage_contracts.dart' hide WhatsAppOfferDTO;
 export 'src/arbitrage/studio_offer_bridge.dart';
+export 'src/arbitrage/scout_market_signal_dto.dart';
 
 // Counterweight Gate & Anti-Sycophancy Governance (Sprint N152, §39, §46, §47, §61.2, §63)
 export 'src/governance/governance_exceptions.dart';
@@ -221,3 +226,15 @@ export 'src/governance/rules_budget_validator.dart';
 
 // Fleet Mechanical Vaccine Models & Deterministic AST Scanner (Sprint N172, §4, §6, §39, §58, §60.7)
 export 'src/governance/satellite_vaccine_models.dart';
+
+// Transcript Integrity Gate & Atomic Quarantine (Sprint N173, §4, §6, §39, §60.7)
+export 'src/governance/transcript_integrity_gate.dart';
+
+// Fiduciary Valuation Models & Multivector Scoring (Sprint N175, §4, §6, §39, §60.2, §60.7)
+export 'src/governance/fiduciary_valuation_models.dart';
+
+// MCCV v3 Telemetry & Odometer Profiles (Sprint N176 / N177, §4, §6, §39, §50, §60.2)
+export 'src/governance/odometer_exceptions.dart';
+export 'src/governance/token_telemetry_extractor.dart';
+export 'src/governance/model_capability_profile.dart';
+export 'src/governance/mccv_v3_calculator.dart';

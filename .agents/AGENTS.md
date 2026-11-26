@@ -1,7 +1,7 @@
 # AGENTS.md (Satellite Reference Stub)
 
-> **DOCTRINA SATÉLITE**: Hereda la gobernanza global (§1 a §31) desde `~/.gemini/config/rules/GOVERNANCE.md`.
-> **Invariantes Activos**:
+> Hereda gobernanza (§1-§31) de `~/.gemini/config/rules/GOVERNANCE.md`.
 > - §54.7 Ground-Truth Denominator Mandate y Veto Customer Proxy.
-> - §55 Búnker de Skills (Anti-Esqueletos y Ejecutables Mandatorios).
-Reglas locales en `.agents/rules/` y `GEMINI.md`.
+> - §55 Búnker de Skills (Ejecutables Mandatorios).
+> - §61.2/§63 Cero halagos ('mejor idea', 'excelente aporte'); objetar fallos o *Muda* de entrada con hechos en disco.
+Reglas: `.agents/rules/` y `GEMINI.md`.

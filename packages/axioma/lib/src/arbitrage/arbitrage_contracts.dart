@@ -10,6 +10,9 @@ abstract final class ArbitrageContractErrorCodes {
   static const String invalidCurrency = 'ERR_ARBITRAGE_INVALID_CURRENCY';
   static const String invalidStatus = 'ERR_ARBITRAGE_INVALID_STATUS';
   static const String marginDeficit = 'ERR_ARBITRAGE_MARGIN_DEFICIT';
+  static const String invalidChannel = 'ERR_ARBITRAGE_INVALID_CHANNEL';
+  static const String invalidConfidenceScore =
+      'ERR_ARBITRAGE_INVALID_CONFIDENCE_SCORE';
 }
 
 /// Excepción formal para violaciones en contratos de arbitraje (§6).

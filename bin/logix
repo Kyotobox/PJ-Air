@@ -10,7 +10,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Intercepción canónica de versión para paridad SSSoT (§43)
 if [ "$1" = "-v" ] || [ "$1" = "--version" ] || [ "$1" = "version" ]; then
-  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; d = json.load(open(p)) if os.path.exists(p) else {}; v = d.get('kernel_version') or d.get('version') or '5.6.2'; print(f'logix v{v}')"
+  python3 -c "import json, os; p = '$ROOT_DIR/backlog.json'; d = json.load(open(p)) if os.path.exists(p) else {}; v = d.get('kernel_version') or d.get('version') or '5.7.0'; print(f'logix v{v}')"
   exit 0
 fi
 
@@ -43,6 +43,31 @@ fi
 if [ "$1" = "install-hooks" ] || [ "$1" = "hooks" ]; then
   if [ -f "$ROOT_DIR/lib/src/commands/logix_install_hooks_command.dart" ]; then
     exec dart run "$ROOT_DIR/lib/src/commands/logix_install_hooks_command.dart" "${@:2}"
+  fi
+fi
+
+# Si el comando es vaccine, despachar al linter de vacunas mecánicas (§46, §58)
+if [ "$1" = "vaccine" ]; then
+  shift
+  if [ "$1" = "run" ]; then
+    shift
+  fi
+  if [ -f "$ROOT_DIR/tools/governance/satellite_vaccine_linter.dart" ]; then
+    exec dart run "$ROOT_DIR/tools/governance/satellite_vaccine_linter.dart" "$@"
+  fi
+fi
+
+# Si el comando es evaluate, despachar al orquestador canónico de valoración fiduciaria (§4, §6, §48, §52, §58)
+if [ "$1" = "evaluate" ]; then
+  if [ -f "$ROOT_DIR/lib/src/commands/logix_evaluate_command.dart" ]; then
+    exec dart run "$ROOT_DIR/lib/src/commands/logix_evaluate_command.dart" "${@:2}"
+  fi
+fi
+
+# Si el comando es quarantine, despachar al ejecutor fiduciario de cuarentena vía evaluate --quarantine (§2, §55, §60.8)
+if [ "$1" = "quarantine" ]; then
+  if [ -f "$ROOT_DIR/lib/src/commands/logix_evaluate_command.dart" ]; then
+    exec dart run "$ROOT_DIR/lib/src/commands/logix_evaluate_command.dart" --quarantine "${@:2}"
   fi
 fi
 
@@ -85,14 +110,19 @@ if [ "$1" = "maintenance" ]; then
   fi
 fi
 
-# Despacho canónico ultrarrápido de verificación telemétrica MCCV v2 (§50, §50-bis)
+# Despacho canónico ultrarrápido de verificación telemétrica MCCV v3 (§50, §50-bis, TASK-N177-01)
 if [ "$1" = "check" ]; then
+  if [ -f "$ROOT_DIR/tools/governance/logix_check_mccv_v3.dart" ] && command -v dart >/dev/null 2>&1; then
+    exec dart run "$ROOT_DIR/tools/governance/logix_check_mccv_v3.dart" --root="$ROOT_DIR" "${@:2}"
+  fi
   python3 -c "
 import json, os, sys
 
 json_output = '--json' in sys.argv
+explicit_transcript = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--transcript=')), None)
+explicit_odometer = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--odometer=')), None)
 home = os.environ.get('HOME') or os.environ.get('USERPROFILE') or ''
-odo_path = os.path.join('$ROOT_DIR', 'vault', 'runtime', 'session_odometer.json')
+odo_path = explicit_odometer or os.path.join('$ROOT_DIR', 'vault', 'runtime', 'session_odometer.json')
 
 offset = 0
 conv_id = ''
@@ -121,31 +151,36 @@ if os.path.exists(odo_path):
                 peak_depth = d.get('epocal_peak_depth', 0.0)
             else:
                 conv_id = active_conv_id or stored_conv
-                offset = d.get('takeover_bytes_offset', 0)
+                offset = 0
                 peak_depth = 0.0
     except:
         conv_id = active_conv_id
 else:
     conv_id = active_conv_id
 
-net_bytes = 0
 tool_calls = 0
 user_turns = 0
 failed_steps = 0
 touched_files = set()
+latest_input_tokens = 0
+latest_cache_tokens = 0
+latest_model = ''
 
-if conv_id:
-    t_path = os.path.join(home, '.gemini', 'antigravity-cli', 'brain', conv_id, '.system_generated', 'logs', 'transcript.jsonl')
+if explicit_transcript is not None:
+    t_path = explicit_transcript
+else:
+    t_path = os.path.join(home, '.gemini', 'antigravity-cli', 'brain', conv_id, '.system_generated', 'logs', 'transcript.jsonl') if conv_id else ''
+
+if t_path:
     if os.path.exists(t_path):
         try:
             total_size = os.path.getsize(t_path)
             if offset <= 0 or offset > total_size:
-                # Si no había offset previo para esta conversación, fijar base en arranque
-                offset = total_size
-            with open(t_path) as f:
+                offset = 0 if explicit_transcript is not None else total_size
+            with open(t_path, 'rb') as f:
                 f.seek(offset)
-                session_lines = f.readlines()
-            for line in session_lines:
+                raw_chunk = f.read().decode('utf-8', errors='replace')
+            for line in raw_chunk.splitlines():
                 line = line.strip()
                 if not line:
                     continue
@@ -158,30 +193,54 @@ if conv_id:
                             user_turns += 1
                         if status in ('ERROR', 'FAILED'):
                             failed_steps += 1
+                        if any(k in ev for k in ('input_tokens', 'cache_read_tokens', 'output_tokens')):
+                            latest_input_tokens = int(ev.get('input_tokens') or 0)
+                            latest_cache_tokens = int(ev.get('cache_read_tokens') or 0)
+                            if ev.get('model'):
+                                latest_model = str(ev.get('model'))
                         tc = ev.get('tool_calls') or ev.get('toolCalls') or []
                         if isinstance(tc, list):
                             tool_calls += len(tc)
                             for item in tc:
                                 if isinstance(item, dict):
-                                    args = item.get('arguments') or item.get('parameters') or {}
+                                    args = item.get('args') or item.get('arguments') or item.get('parameters') or {}
+                                    if isinstance(args, str):
+                                        try:
+                                            args = json.loads(args)
+                                        except:
+                                            args = {}
                                     if isinstance(args, dict):
-                                        p = args.get('Path') or args.get('path') or args.get('file')
+                                        p = args.get('Path') or args.get('path') or args.get('file') or args.get('filePath') or args.get('target_file')
                                         if p:
                                             touched_files.add(str(p))
                         elif tc:
                             tool_calls += 1
                     except:
                         pass
-            net_bytes = max(0, total_size - offset)
         except:
             pass
 
-# Motor Matemático Canónico MCCV v2 (§50-bis)
-harness_bytes = 140000
-ceiling = 500000
-useful_window = ceiling - harness_bytes
+# Motor Matemático Canónico MCCV v3 (§50)
+m_low = latest_model.lower()
+if 'gemini' in m_low:
+    context_window = 1000000
+    profile_family = 'gemini-1m'
+elif 'claude' in m_low:
+    context_window = 200000
+    profile_family = 'claude-200k'
+elif 'gpt' in m_low or 'o1' in m_low or 'o3' in m_low:
+    context_window = 128000
+    profile_family = 'gpt-128k'
+else:
+    context_window = 200000
+    profile_family = 'fallback-default'
 
-context_sat = min(1.0, max(0.0, float(net_bytes - harness_bytes)) / float(useful_window)) if net_bytes > harness_bytes else 0.0
+active_tokens = latest_input_tokens + latest_cache_tokens
+if active_tokens > 0:
+    context_sat = min(1.0, max(0.0, float(active_tokens) / float(context_window)))
+else:
+    context_sat = min(1.0, max(0.0, float(user_turns) / 25.0))
+
 effective_turns = max(3, user_turns)
 net_tools = max(0, tool_calls - 4)
 tool_density = min(1.0, float(net_tools) / float(effective_turns * 12.0))
@@ -190,10 +249,8 @@ fail_entropy = min(1.0, float(failed_steps) / float(max(1, user_turns + tool_cal
 
 composite_score = (context_sat * 0.30) + (tool_density * 0.30) + (mutation_disp * 0.20) + (fail_entropy * 0.20)
 odometer_pct = composite_score * 100.0
-
 depth = max(peak_depth, odometer_pct)
 
-# Actualizar sesión y peak_depth en session_odometer.json
 if os.path.exists(odo_path):
     try:
         with open(odo_path, 'r+') as f:
@@ -212,11 +269,11 @@ zone = 'VERDE'
 exit_code = 0
 action = 'CONTINUAR'
 
-if depth >= 75.0:
+if depth >= 60.0:
     zone = 'ROJA'
     exit_code = 2
-    action = 'HANDOVER_OBLIGATORIO'
-elif depth >= 50.0:
+    action = 'BLOQUEO'
+elif depth >= 40.0:
     zone = 'ÁMBAR'
     exit_code = 1
     action = 'ALERTA'
@@ -228,7 +285,12 @@ if json_output:
         'checkpoint': 0,
         'action': action,
         'exit_code': exit_code,
-        'telemetry_verified': True
+        'telemetry_verified': True,
+        'mccv_version': 'v3',
+        'model': latest_model or None,
+        'active_tokens': active_tokens,
+        'context_window': context_window,
+        'profile_family': profile_family
     }))
 else:
     print(f'[ZONA: {zone} | Odómetro: {depth:.1f}% | Checkpoint: 0 | Acción: {action}]')
